@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "535526992168",
+    "project_id": "ygca-cricket-academy",
+    "storage_bucket": "ygca-cricket-academy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:535526992168:android:bd54f917fa4ec97d4e881d",
+        "android_client_info": {
+          "package_name": "com.example.ygca_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsu9biA4gBwiQvsa8lALW_oLvbtUOQ0aQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
