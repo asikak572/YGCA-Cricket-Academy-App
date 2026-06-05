@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin_dashboard.dart';
 import 'screens/coach_dashboard.dart';
@@ -22,15 +23,21 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'YGCA Management System',
-      initialRoute: '/',
+
+      // App starts with Home Screen
+      home: const HomeScreen(),
+
       routes: {
-        '/': (context) => const LoginScreen(),
+        '/login': (context) => const LoginScreen(),
+
         '/admin': (context) => const AdminDashboard(),
         '/coach': (context) => const CoachDashboard(),
         '/parent': (context) => const ParentDashboard(),
         '/student': (context) => const StudentDashboard(),
+
         '/student-list': (context) => const StudentListScreen(),
         '/add-student': (context) => const AddStudentScreen(),
+
         '/attendance': (context) => const AttendanceScreen(),
         '/fees': (context) => const FeeManagementScreen(),
       },

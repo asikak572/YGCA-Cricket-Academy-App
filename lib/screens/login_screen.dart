@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,6 +29,15 @@ class _LoginScreenState extends State<LoginScreen> {
     } else if (selectedRole == "Player / Student") {
       Navigator.pushNamed(context, '/student');
     }
+  }
+
+  void _goToRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const RegisterScreen(),
+      ),
+    );
   }
 
   @override
@@ -145,8 +155,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("New player? ", style: TextStyle(color: textLight, fontSize: 12)),
-                          Text("Register here", style: TextStyle(color: gold, fontSize: 12)),
+                          Text(
+                            "New player? ",
+                            style: TextStyle(color: textLight, fontSize: 12),
+                          ),
+                          GestureDetector(
+                            onTap: _goToRegister,
+                            child: Text(
+                              "Register here",
+                              style: TextStyle(
+                                color: gold,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 18),
