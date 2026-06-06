@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LeaveRequestScreen extends StatelessWidget {
   const LeaveRequestScreen({super.key});
@@ -8,32 +9,21 @@ class LeaveRequestScreen extends StatelessWidget {
   final Color bg = const Color(0xFFF8FAFC);
   final Color border = const Color(0xFFE2E8F0);
 
+  Future<void> _updateStatus(
+    String docId,
+    String status,
+  ) async {
+    await FirebaseFirestore.instance
+        .collection('leave_requests')
+        .doc(docId)
+        .update({
+      'status': status,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final requests = [
-      {
-        "name": "Arjun R",
-        "batch": "Morning Batch",
-        "date": "12 Jun 2026",
-        "reason": "Fever",
-        "status": "Pending",
-      },
-      {
-        "name": "Kiran M",
-        "batch": "Evening Batch",
-        "date": "10 Jun 2026",
-        "reason": "Family function",
-        "status": "Approved",
-      },
-      {
-        "name": "Priya S",
-        "batch": "Junior Batch",
-        "date": "08 Jun 2026",
-        "reason": "School exam",
-        "status": "Rejected",
-      },
-    ];
-
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -41,107 +31,144 @@ class LeaveRequestScreen extends StatelessWidget {
         backgroundColor: maroon,
         foregroundColor: Colors.white,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: requests.length,
-        itemBuilder: (context, index) {
-          final request = requests[index];
-          final status = request["status"]!;
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('leave_requests')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text("Something went wrong"));
+          }
 
-          Color statusColor = Colors.orange;
-          if (status == "Approved") statusColor = Colors.green;
-          if (status == "Rejected") statusColor = Colors.red;
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: BorderSide(color: border),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                children: [
-                  Row(
+          final requests = snapshot.data?.docs ?? [];
+
+          if (requests.isEmpty) {
+            return const Center(child: Text("No leave requests found"));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: requests.length,
+            itemBuilder: (context, index) {
+              final doc = requests[index];
+              final data = doc.data() as Map<String, dynamic>;
+
+              final name = data['name']?.toString() ?? '';
+              final batch = data['batch']?.toString() ?? '';
+              final date = data['date']?.toString() ?? '';
+              final reason = data['reason']?.toString() ?? '';
+              final status = data['status']?.toString() ?? 'Pending';
+
+              Color statusColor = Colors.orange;
+              if (status == "Approved") statusColor = Colors.green;
+              if (status == "Rejected") statusColor = Colors.red;
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(color: border),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
                     children: [
-                      CircleAvatar(
-                        backgroundColor: maroon,
-                        child: Text(
-                          request["name"]![0],
-                          style: TextStyle(
-                            color: gold,
-                            fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: maroon,
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : "?",
+                              style: TextStyle(
+                                color: gold,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  batch,
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _statusChip(status, statusColor),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                      const SizedBox(height: 12),
+
+                      _row("Leave Date", date),
+                      _row("Reason", reason),
+
+                      if (status == "Pending") ...[
+                        const SizedBox(height: 12),
+                        Row(
                           children: [
-                            Text(request["name"]!,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                            Text(
-                              request["batch"]!,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  await _updateStatus(doc.id, "Rejected");
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Leave rejected"),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.close),
+                                label: const Text("Reject"),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: maroon,
+                                  foregroundColor: gold,
+                                ),
+                                onPressed: () async {
+                                  await _updateStatus(doc.id, "Approved");
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Leave approved"),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.check),
+                                label: const Text("Approve"),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      _statusChip(status, statusColor),
+                      ],
                     ],
                   ),
-
-                  const SizedBox(height: 12),
-
-                  _row("Leave Date", request["date"]!),
-                  _row("Reason", request["reason"]!),
-
-                  if (status == "Pending") ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Leave rejected"),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.close),
-                            label: const Text("Reject"),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: maroon,
-                              foregroundColor: gold,
-                            ),
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Leave approved"),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.check),
-                            label: const Text("Approve"),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -196,36 +223,25 @@ class LeaveRequestScreen extends StatelessWidget {
   }
 
   void _showLeaveForm(BuildContext context) {
+    final nameController = TextEditingController();
+    final batchController = TextEditingController();
+    final dateController = TextEditingController();
+    final reasonController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (_) {
         return AlertDialog(
           title: const Text("New Leave Request"),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(
-                  labelText: "Student Name",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                decoration: InputDecoration(
-                  labelText: "Leave Date",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: "Reason",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                _input("Student Name", nameController),
+                _input("Batch", batchController),
+                _input("Leave Date", dateController),
+                _input("Reason", reasonController, maxLines: 3),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -237,17 +253,48 @@ class LeaveRequestScreen extends StatelessWidget {
                 backgroundColor: maroon,
                 foregroundColor: gold,
               ),
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Leave request submitted")),
-                );
+              onPressed: () async {
+                await FirebaseFirestore.instance
+                    .collection('leave_requests')
+                    .add({
+                  'name': nameController.text.trim(),
+                  'batch': batchController.text.trim(),
+                  'date': dateController.text.trim(),
+                  'reason': reasonController.text.trim(),
+                  'status': 'Pending',
+                  'createdAt': FieldValue.serverTimestamp(),
+                });
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Leave request submitted")),
+                  );
+                }
               },
               child: const Text("Submit"),
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _input(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      ),
     );
   }
 }
