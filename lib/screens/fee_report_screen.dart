@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FeeReportScreen extends StatelessWidget {
   const FeeReportScreen({super.key});
@@ -10,24 +11,6 @@ class FeeReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pendingStudents = [
-      {
-        "name": "Kiran M",
-        "batch": "Evening Batch",
-        "pending": "₹4,000",
-      },
-      {
-        "name": "Priya S",
-        "batch": "Junior Batch",
-        "pending": "₹5,000",
-      },
-      {
-        "name": "Rahul K",
-        "batch": "Senior Batch",
-        "pending": "₹3,000",
-      },
-    ];
-
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -35,56 +18,160 @@ class FeeReportScreen extends StatelessWidget {
         backgroundColor: maroon,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _heroCard(),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('fees')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
 
-            const SizedBox(height: 16),
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.35,
+          final feeDocs = snapshot.data?.docs ?? [];
+
+          int totalFee = 0;
+          int collected = 0;
+          int pending = 0;
+          int paidStudents = 0;
+
+          for (final doc in feeDocs) {
+            final data = doc.data() as Map<String, dynamic>;
+
+            final total = (data['totalFee'] ?? 0) as int;
+            final paid = (data['paidAmount'] ?? 0) as int;
+            final pendingAmount = (data['pendingAmount'] ?? 0) as int;
+            final status = data['status']?.toString() ?? 'Pending';
+
+            totalFee += total;
+            collected += paid;
+            pending += pendingAmount;
+
+            if (status == "Paid") {
+              paidStudents++;
+            }
+          }
+
+          final collectionPercent =
+              totalFee == 0 ? 0 : ((collected / totalFee) * 100).round();
+
+          final pendingStudents = feeDocs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final pendingAmount = (data['pendingAmount'] ?? 0) as int;
+            return pendingAmount > 0;
+          }).toList();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                _statCard("Total Fee", "₹60K", Icons.account_balance_wallet, gold),
-                _statCard("Collected", "₹48K", Icons.check_circle, Colors.green),
-                _statCard("Pending", "₹12K", Icons.warning, Colors.orange),
-                _statCard("Paid Students", "7", Icons.people, Colors.blue),
+                _heroCard(collectionPercent),
+                const SizedBox(height: 16),
+
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.35,
+                  children: [
+                    _statCard(
+                      "Total Fee",
+                      "₹$totalFee",
+                      Icons.account_balance_wallet,
+                      gold,
+                    ),
+                    _statCard(
+                      "Collected",
+                      "₹$collected",
+                      Icons.check_circle,
+                      Colors.green,
+                    ),
+                    _statCard(
+                      "Pending",
+                      "₹$pending",
+                      Icons.warning,
+                      Colors.orange,
+                    ),
+                    _statCard(
+                      "Paid Records",
+                      paidStudents.toString(),
+                      Icons.people,
+                      Colors.blue,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                _sectionTitle("Payment Records"),
+
+                if (feeDocs.isEmpty)
+                  const Card(
+                    child: ListTile(
+                      title: Text("No fee records found"),
+                      subtitle: Text("Add payments from Fee Management"),
+                    ),
+                  )
+                else
+                  ...feeDocs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+
+                    final name =
+                        data['studentName']?.toString() ?? 'Unknown Student';
+                    final studentId = data['studentId']?.toString() ?? '';
+                    final total = (data['totalFee'] ?? 0) as int;
+                    final paid = (data['paidAmount'] ?? 0) as int;
+                    final pendingAmount = (data['pendingAmount'] ?? 0) as int;
+
+                    final progress =
+                        total == 0 ? 0.0 : (paid / total).clamp(0.0, 1.0);
+
+                    return _collectionTile(
+                      title: name,
+                      subtitle: "ID: $studentId",
+                      amount: "Paid ₹$paid / ₹$total",
+                      progress: progress,
+                      pending: "Pending ₹$pendingAmount",
+                    );
+                  }),
+
+                const SizedBox(height: 18),
+
+                _sectionTitle("Pending Fee Students"),
+
+                if (pendingStudents.isEmpty)
+                  const Card(
+                    child: ListTile(
+                      leading: Icon(Icons.check_circle, color: Colors.green),
+                      title: Text("No pending fees"),
+                      subtitle: Text("All fee records are completed"),
+                    ),
+                  )
+                else
+                  ...pendingStudents.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+
+                    return _pendingStudentCard(
+                      name: data['studentName']?.toString() ?? 'Unknown',
+                      batch: "ID: ${data['studentId']?.toString() ?? ''}",
+                      amount: "₹${data['pendingAmount'] ?? 0}",
+                    );
+                  }),
               ],
             ),
-
-            const SizedBox(height: 18),
-
-            _sectionTitle("Monthly Collection"),
-
-            _collectionTile("January", "₹42,000", 0.70),
-            _collectionTile("February", "₹48,000", 0.80),
-            _collectionTile("March", "₹55,000", 0.90),
-            _collectionTile("April", "₹46,000", 0.76),
-
-            const SizedBox(height: 18),
-
-            _sectionTitle("Pending Fee Students"),
-
-            ...pendingStudents.map((student) {
-              return _pendingStudentCard(
-                name: student["name"]!,
-                batch: student["batch"]!,
-                amount: student["pending"]!,
-              );
-            }),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _heroCard() {
+  Widget _heroCard(int collectionPercent) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -95,7 +182,7 @@ class FeeReportScreen extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            "June 2026 Fee Report",
+            "Firebase Fee Report",
             style: TextStyle(
               color: gold,
               fontSize: 22,
@@ -108,16 +195,16 @@ class FeeReportScreen extends StatelessWidget {
             style: TextStyle(color: Colors.white70, fontSize: 12),
           ),
           const SizedBox(height: 16),
-          const LinearProgressIndicator(
-            value: 0.80,
+          LinearProgressIndicator(
+            value: collectionPercent / 100,
             backgroundColor: Colors.white24,
-            color: Color(0xFFD4AF37),
+            color: gold,
             minHeight: 7,
           ),
           const SizedBox(height: 8),
-          const Text(
-            "80% fee collection completed",
-            style: TextStyle(color: Colors.white, fontSize: 12),
+          Text(
+            "$collectionPercent% fee collection completed",
+            style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
         ],
       ),
@@ -170,7 +257,13 @@ class FeeReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _collectionTile(String month, String amount, double progress) {
+  Widget _collectionTile({
+    required String title,
+    required String subtitle,
+    required String amount,
+    required double progress,
+    required String pending,
+  }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
@@ -185,7 +278,7 @@ class FeeReportScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    month,
+                    title,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -198,12 +291,32 @@ class FeeReportScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                subtitle,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ),
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress,
               backgroundColor: const Color(0xFFE2E8F0),
               color: gold,
               minHeight: 6,
+            ),
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                pending,
+                style: const TextStyle(
+                  color: Colors.orange,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -226,7 +339,7 @@ class FeeReportScreen extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: maroon,
           child: Text(
-            name[0],
+            name.isNotEmpty ? name[0].toUpperCase() : "?",
             style: TextStyle(color: gold, fontWeight: FontWeight.bold),
           ),
         ),

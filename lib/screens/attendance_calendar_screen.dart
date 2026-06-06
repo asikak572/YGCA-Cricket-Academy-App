@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AttendanceCalendarScreen extends StatelessWidget {
+  final String studentId;
   final String name;
   final String batch;
   final String rollNo;
@@ -8,10 +10,11 @@ class AttendanceCalendarScreen extends StatelessWidget {
 
   const AttendanceCalendarScreen({
     super.key,
+    this.studentId = "",
     this.name = "Arjun R",
     this.batch = "Morning Batch",
     this.rollNo = "#014",
-    this.attendance = "92%",
+    this.attendance = "0%",
   });
 
   final Color maroon = const Color(0xFF7F0000);
@@ -27,13 +30,13 @@ class AttendanceCalendarScreen extends StatelessWidget {
         .take(2)
         .join();
 
-    final days = [
-      "", "", "", "", "", "1P", "2P",
-      "3A", "4P", "5P", "6C", "7M", "8P", "9P",
-      "10P", "11A", "12P", "13P", "14M", "15P", "16P",
-      "17P", "18C", "19P", "20P", "21A", "22P", "23P",
-      "24P", "25P", "26M", "27P", "28P", "29", "30",
-    ];
+    Query query = FirebaseFirestore.instance.collection('attendance');
+
+    if (studentId.isNotEmpty) {
+      query = query.where('studentId', isEqualTo: studentId);
+    } else {
+      query = query.where('studentName', isEqualTo: name);
+    }
 
     return Scaffold(
       backgroundColor: bg,
@@ -42,24 +45,66 @@ class AttendanceCalendarScreen extends StatelessWidget {
         backgroundColor: maroon,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _studentHeader(initials),
-            const SizedBox(height: 14),
-            _summaryCard(),
-            const SizedBox(height: 16),
-            _legend(),
-            const SizedBox(height: 12),
-            _calendar(days),
-          ],
-        ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: query.snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final records = snapshot.data?.docs ?? [];
+
+          int present = 0;
+          int absent = 0;
+          final Map<int, String> dayStatus = {};
+
+          for (final record in records) {
+            final data = record.data() as Map<String, dynamic>;
+
+            final date = data['date']?.toString() ?? "";
+            final status = data['status']?.toString() ?? "Absent";
+
+            if (status == "Present") {
+              present++;
+            } else {
+              absent++;
+            }
+
+            if (date.length >= 10) {
+              final day = int.tryParse(date.substring(8, 10));
+              if (day != null) {
+                dayStatus[day] = status == "Present" ? "P" : "A";
+              }
+            }
+          }
+
+          final total = present + absent;
+          final percent = total == 0 ? 0 : ((present / total) * 100).round();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _studentHeader(initials, "$percent%"),
+                const SizedBox(height: 14),
+                _summaryCard(present, absent, percent),
+                const SizedBox(height: 16),
+                _legend(),
+                const SizedBox(height: 12),
+                _calendar(dayStatus),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _studentHeader(String initials) {
+  Widget _studentHeader(String initials, String percent) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -101,7 +146,7 @@ class AttendanceCalendarScreen extends StatelessWidget {
               borderRadius: BorderRadius.all(Radius.circular(20)),
             ),
             child: Text(
-              attendance,
+              percent,
               style: const TextStyle(
                 color: Colors.green,
                 fontWeight: FontWeight.bold,
@@ -114,7 +159,7 @@ class AttendanceCalendarScreen extends StatelessWidget {
     );
   }
 
-  Widget _summaryCard() {
+  Widget _summaryCard(int present, int absent, int percent) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -125,22 +170,22 @@ class AttendanceCalendarScreen extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            "June 2026 Attendance",
+            "Firebase Attendance",
             style: TextStyle(color: gold, fontSize: 19, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           const Text(
-            "Student-wise monthly attendance calendar",
+            "Student-wise attendance calendar",
             style: TextStyle(color: Colors.white70, fontSize: 11),
           ),
           const SizedBox(height: 14),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _MiniStat(title: "Present", value: "21"),
-              _MiniStat(title: "Absent", value: "3"),
-              _MiniStat(title: "Makeup", value: "3"),
-              _MiniStat(title: "Cancelled", value: "2"),
+              _MiniStat(title: "Present", value: present.toString()),
+              _MiniStat(title: "Absent", value: absent.toString()),
+              _MiniStat(title: "Total", value: (present + absent).toString()),
+              _MiniStat(title: "Percent", value: "$percent%"),
             ],
           ),
         ],
@@ -155,13 +200,14 @@ class AttendanceCalendarScreen extends StatelessWidget {
       children: const [
         _LegendItem(label: "Present", color: Colors.green),
         _LegendItem(label: "Absent", color: Colors.red),
-        _LegendItem(label: "Makeup", color: Colors.orange),
-        _LegendItem(label: "Cancelled", color: Colors.grey),
+        _LegendItem(label: "No Record", color: Colors.grey),
       ],
     );
   }
 
-  Widget _calendar(List<String> days) {
+  Widget _calendar(Map<int, String> dayStatus) {
+    final days = List.generate(30, (index) => index + 1);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -193,14 +239,9 @@ class AttendanceCalendarScreen extends StatelessWidget {
               mainAxisSpacing: 6,
             ),
             itemBuilder: (context, index) {
-              final item = days[index];
-
-              if (item.isEmpty) return const SizedBox();
-
-              final day = item.replaceAll(RegExp(r'[A-Z]'), '');
-              final status = item.replaceAll(RegExp(r'[0-9]'), '');
-
-              return _DayBox(day: day, status: status);
+              final day = days[index];
+              final status = dayStatus[day] ?? "";
+              return _DayBox(day: day.toString(), status: status);
             },
           ),
         ],
@@ -271,9 +312,9 @@ class _DayBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bgColor = Colors.white;
-    Color textColor = Colors.black;
-    String label = "";
+    Color bgColor = Colors.grey.shade100;
+    Color textColor = Colors.grey;
+    String label = "-";
 
     if (status == "P") {
       bgColor = Colors.green.shade50;
@@ -283,14 +324,6 @@ class _DayBox extends StatelessWidget {
       bgColor = Colors.red.shade50;
       textColor = Colors.red;
       label = "A";
-    } else if (status == "M") {
-      bgColor = Colors.orange.shade50;
-      textColor = Colors.orange;
-      label = "M";
-    } else if (status == "C") {
-      bgColor = Colors.grey.shade200;
-      textColor = Colors.grey;
-      label = "C";
     }
 
     return Container(
@@ -303,8 +336,7 @@ class _DayBox extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(day, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
-          if (label.isNotEmpty)
-            Text(label, style: TextStyle(color: textColor, fontSize: 9)),
+          Text(label, style: TextStyle(color: textColor, fontSize: 9)),
         ],
       ),
     );

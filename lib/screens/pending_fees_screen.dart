@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PendingFeesScreen extends StatelessWidget {
   const PendingFeesScreen({super.key});
@@ -8,119 +9,133 @@ class PendingFeesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pendingStudents = [
-      {
-        "name": "Kiran M",
-        "batch": "Evening Batch",
-        "amount": "₹4,000",
-      },
-      {
-        "name": "Priya S",
-        "batch": "Junior Batch",
-        "amount": "₹5,000",
-      },
-      {
-        "name": "Rahul K",
-        "batch": "Senior Batch",
-        "amount": "₹3,000",
-      },
-      {
-        "name": "Siva T",
-        "batch": "Morning Batch",
-        "amount": "₹2,500",
-      },
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Pending Fees"),
         backgroundColor: maroon,
         foregroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: maroon,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  "Total Pending Amount",
-                  style: TextStyle(
-                    color: gold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "₹14,500",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('fees')
+            .where('pendingAmount', isGreaterThan: 0)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
 
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: pendingStudents.length,
-              itemBuilder: (context, index) {
-                final student = pendingStudents[index];
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: maroon,
-                      child: Text(
-                        student["name"]![0],
-                        style: TextStyle(
-                          color: gold,
-                          fontWeight: FontWeight.bold,
-                        ),
+          final pendingStudents = snapshot.data?.docs ?? [];
+
+          int totalPending = 0;
+
+          for (final doc in pendingStudents) {
+            final data = doc.data() as Map<String, dynamic>;
+            totalPending += (data['pendingAmount'] ?? 0) as int;
+          }
+
+          return Column(
+            children: [
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: maroon,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      "Total Pending Amount",
+                      style: TextStyle(
+                        color: gold,
+                        fontSize: 14,
                       ),
                     ),
-                    title: Text(
-                      student["name"]!,
+                    const SizedBox(height: 8),
+                    Text(
+                      "₹$totalPending",
                       style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    subtitle: Text(student["batch"]!),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          student["amount"]!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Text(
-                          "Pending",
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+                  ],
+                ),
+              ),
+
+              Expanded(
+                child: pendingStudents.isEmpty
+                    ? const Center(
+                        child: Text("No pending fees found"),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: pendingStudents.length,
+                        itemBuilder: (context, index) {
+                          final data = pendingStudents[index].data()
+                              as Map<String, dynamic>;
+
+                          final name =
+                              data['studentName']?.toString() ?? 'Unknown';
+                          final studentId =
+                              data['studentId']?.toString() ?? '';
+                          final pendingAmount =
+                              (data['pendingAmount'] ?? 0).toString();
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: maroon,
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : "?",
+                                  style: TextStyle(
+                                    color: gold,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text("ID: $studentId"),
+                              trailing: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "₹$pendingAmount",
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Text(
+                                    "Pending",
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

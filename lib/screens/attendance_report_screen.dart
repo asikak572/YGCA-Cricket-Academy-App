@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AttendanceReportScreen extends StatelessWidget {
   const AttendanceReportScreen({super.key});
@@ -10,12 +11,6 @@ class AttendanceReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lowAttendance = [
-      {"name": "Rahul K", "batch": "Senior Batch", "percent": "81%"},
-      {"name": "Kiran M", "batch": "Evening Batch", "percent": "85%"},
-      {"name": "Siva T", "batch": "Morning Batch", "percent": "89%"},
-    ];
-
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -23,75 +18,183 @@ class AttendanceReportScreen extends StatelessWidget {
         backgroundColor: maroon,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _heroReportCard(),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('attendance')
+            .orderBy('date', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "Error: ${snapshot.error}",
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
 
-            const SizedBox(height: 16),
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.35,
+          final records = snapshot.data?.docs ?? [];
+
+          int totalRecords = records.length;
+          int presentCount = 0;
+          int absentCount = 0;
+
+          final Map<String, Map<String, dynamic>> studentSummary = {};
+
+          for (final record in records) {
+            final data = record.data() as Map<String, dynamic>;
+
+            final studentId = data['studentId']?.toString() ?? '';
+            final studentName = data['studentName']?.toString() ?? 'No Name';
+            final batch = data['batch']?.toString() ?? 'No Batch';
+            final status = data['status']?.toString() ?? 'Absent';
+
+            if (status == "Present") {
+              presentCount++;
+            } else {
+              absentCount++;
+            }
+
+            if (!studentSummary.containsKey(studentId)) {
+              studentSummary[studentId] = {
+                'name': studentName,
+                'batch': batch,
+                'present': 0,
+                'absent': 0,
+                'total': 0,
+              };
+            }
+
+            studentSummary[studentId]!['total'] =
+                studentSummary[studentId]!['total'] + 1;
+
+            if (status == "Present") {
+              studentSummary[studentId]!['present'] =
+                  studentSummary[studentId]!['present'] + 1;
+            } else {
+              studentSummary[studentId]!['absent'] =
+                  studentSummary[studentId]!['absent'] + 1;
+            }
+          }
+
+          final attendancePercent = totalRecords == 0
+              ? 0
+              : ((presentCount / totalRecords) * 100).round();
+
+          final lowAttendance = studentSummary.values.where((student) {
+            final total = student['total'] as int;
+            final present = student['present'] as int;
+            final percent = total == 0 ? 0 : ((present / total) * 100).round();
+            return percent < 90;
+          }).toList();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                _statCard("Total Students", "5", Icons.people, gold),
-                _statCard("Present Today", "3", Icons.check_circle, Colors.green),
-                _statCard("Absent Today", "2", Icons.cancel, Colors.red),
-                _statCard("Attendance %", "86%", Icons.percent, Colors.blue),
+                _heroReportCard(attendancePercent),
+                const SizedBox(height: 16),
+
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.35,
+                  children: [
+                    _statCard(
+                      "Total Records",
+                      totalRecords.toString(),
+                      Icons.list_alt,
+                      gold,
+                    ),
+                    _statCard(
+                      "Present",
+                      presentCount.toString(),
+                      Icons.check_circle,
+                      Colors.green,
+                    ),
+                    _statCard(
+                      "Absent",
+                      absentCount.toString(),
+                      Icons.cancel,
+                      Colors.red,
+                    ),
+                    _statCard(
+                      "Attendance %",
+                      "$attendancePercent%",
+                      Icons.percent,
+                      Colors.blue,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                _sectionTitle("Student Attendance Summary"),
+
+                if (studentSummary.isEmpty)
+                  const Card(
+                    child: ListTile(
+                      title: Text("No attendance data available"),
+                    ),
+                  )
+                else
+                  ...studentSummary.values.map((student) {
+                    final total = student['total'] as int;
+                    final present = student['present'] as int;
+                    final absent = student['absent'] as int;
+                    final percent =
+                        total == 0 ? 0 : ((present / total) * 100).round();
+
+                    return _studentSummaryCard(
+                      name: student['name'].toString(),
+                      batch: student['batch'].toString(),
+                      present: present,
+                      absent: absent,
+                      percent: percent,
+                    );
+                  }),
+
+                const SizedBox(height: 16),
+
+                _sectionTitle("Low Attendance Alert"),
+
+                if (lowAttendance.isEmpty)
+                  const Card(
+                    child: ListTile(
+                      leading: Icon(Icons.check_circle, color: Colors.green),
+                      title: Text("No low attendance students"),
+                      subtitle: Text("All students are above 90%"),
+                    ),
+                  )
+                else
+                  ...lowAttendance.map((student) {
+                    final total = student['total'] as int;
+                    final present = student['present'] as int;
+                    final percent =
+                        total == 0 ? 0 : ((present / total) * 100).round();
+
+                    return _studentAlertCard(
+                      name: student['name'].toString(),
+                      batch: student['batch'].toString(),
+                      percent: "$percent%",
+                    );
+                  }),
               ],
             ),
-
-            const SizedBox(height: 16),
-
-            _sectionTitle("Session Summary"),
-
-            _summaryTile(
-              icon: Icons.event_repeat,
-              title: "Makeup Sessions",
-              subtitle: "3 scheduled this month",
-              value: "3",
-              color: Colors.orange,
-            ),
-
-            _summaryTile(
-              icon: Icons.event_note,
-              title: "Leave Requests",
-              subtitle: "1 pending, 1 approved, 1 rejected",
-              value: "3",
-              color: Colors.purple,
-            ),
-
-            _summaryTile(
-              icon: Icons.calendar_month,
-              title: "Cancelled Sessions",
-              subtitle: "Heavy rain / ground unavailable",
-              value: "2",
-              color: Colors.grey,
-            ),
-
-            const SizedBox(height: 16),
-
-            _sectionTitle("Low Attendance Alert"),
-
-            ...lowAttendance.map((student) {
-              return _studentAlertCard(
-                name: student["name"]!,
-                batch: student["batch"]!,
-                percent: student["percent"]!,
-              );
-            }),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _heroReportCard() {
+  Widget _heroReportCard(int attendancePercent) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -102,7 +205,7 @@ class AttendanceReportScreen extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            "June 2026 Report",
+            "Attendance Report",
             style: TextStyle(
               color: gold,
               fontSize: 22,
@@ -115,16 +218,16 @@ class AttendanceReportScreen extends StatelessWidget {
             style: TextStyle(color: Colors.white70, fontSize: 12),
           ),
           const SizedBox(height: 16),
-          const LinearProgressIndicator(
-            value: 0.86,
+          LinearProgressIndicator(
+            value: attendancePercent / 100,
             backgroundColor: Colors.white24,
-            color: Color(0xFFD4AF37),
+            color: gold,
             minHeight: 7,
           ),
           const SizedBox(height: 8),
-          const Text(
-            "86% overall attendance",
-            style: TextStyle(color: Colors.white, fontSize: 12),
+          Text(
+            "$attendancePercent% overall attendance",
+            style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
         ],
       ),
@@ -177,12 +280,12 @@ class AttendanceReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _summaryTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String value,
-    required Color color,
+  Widget _studentSummaryCard({
+    required String name,
+    required String batch,
+    required int present,
+    required int absent,
+    required int percent,
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -192,17 +295,30 @@ class AttendanceReportScreen extends StatelessWidget {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.12),
-          child: Icon(icon, color: color),
+          backgroundColor: maroon,
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : "?",
+            style: TextStyle(color: gold, fontWeight: FontWeight.bold),
+          ),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle),
-        trailing: Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text("$batch\nPresent: $present • Absent: $absent"),
+        isThreeLine: true,
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: percent >= 90
+                ? Colors.green.withOpacity(0.12)
+                : Colors.red.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            "$percent%",
+            style: TextStyle(
+              color: percent >= 90 ? Colors.green : Colors.red,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
           ),
         ),
       ),
@@ -224,7 +340,7 @@ class AttendanceReportScreen extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: maroon,
           child: Text(
-            name[0],
+            name.isNotEmpty ? name[0].toUpperCase() : "?",
             style: TextStyle(color: gold, fontWeight: FontWeight.bold),
           ),
         ),

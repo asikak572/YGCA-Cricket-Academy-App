@@ -249,6 +249,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 20),
+
             _infoTile("Age", widget.age),
             _infoTile("Batch", widget.batch),
             _infoTile("Roll No", widget.rollNo),
@@ -256,7 +257,9 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
             _infoTile("Phone Number", widget.phone),
             _infoTile("Attendance", widget.attendance),
             _infoTile("Fee Status", widget.feeStatus),
+
             const SizedBox(height: 20),
+
             Row(
               children: [
                 Expanded(
@@ -270,6 +273,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => AttendanceCalendarScreen(
+                            studentId: widget.studentId,
                             name: widget.name,
                             batch: widget.batch,
                             rollNo: widget.rollNo,
