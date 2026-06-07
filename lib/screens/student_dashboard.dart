@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'attendance_calendar_screen.dart';
 import 'attendance_history_screen.dart';
 import 'performance_report_screen.dart';
@@ -14,90 +17,203 @@ class StudentDashboard extends StatelessWidget {
   final Color bg = const Color(0xFFF8FAFC);
   final Color border = const Color(0xFFE2E8F0);
 
+  Future<void> _logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/login',
+        (route) => false,
+      );
+    }
+  }
+
+  String _safeText(
+    Map<String, dynamic> data,
+    List<String> keys,
+    String fallback,
+  ) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return fallback;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text("No user logged in")),
+      );
+    }
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
         title: const Text("Student Dashboard"),
         backgroundColor: maroon,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            onPressed: () => _logout(context),
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _profileCard(),
-            const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text("Student details not found"));
+          }
+
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+
+          final name = _safeText(
+            data,
+            ['name', 'studentName'],
+            'Student',
+          );
+
+          final email = _safeText(
+            data,
+            ['email'],
+            currentUser.email ?? '',
+          );
+
+          final batch = _safeText(
+            data,
+            ['batch', 'studentBatch'],
+            'Batch not assigned',
+          );
+
+          final rollNo = _safeText(
+            data,
+            ['rollNo', 'studentRollNo'],
+            'Not assigned',
+          );
+
+          final attendance = _safeText(
+            data,
+            ['attendance', 'attendancePercentage'],
+            '0%',
+          );
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                _menuCard(context, Icons.calendar_month, "My Attendance", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AttendanceCalendarScreen(
-                        name: "Arjun R",
-                        batch: "Morning Batch",
-                        rollNo: "#014",
-                        attendance: "92%",
-                      ),
-                    ),
-                  );
-                }),
-                _menuCard(context, Icons.history, "History", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AttendanceHistoryScreen(),
-                    ),
-                  );
-                }),
-                _menuCard(context, Icons.bar_chart, "My Performance", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PerformanceReportScreen(),
-                    ),
-                  );
-                }),
-                _menuCard(context, Icons.sports_cricket, "Matches", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MatchScheduleScreen(),
-                    ),
-                  );
-                }),
-                _menuCard(context, Icons.calendar_today, "Training", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TrainingScheduleScreen(),
-                    ),
-                  );
-                }),
-                _menuCard(context, Icons.notifications, "Notifications", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const NotificationScreen(),
-                    ),
-                  );
-                }),
+                _profileCard(
+                  name: name,
+                  email: email,
+                  batch: batch,
+                  rollNo: rollNo,
+                  attendance: attendance,
+                ),
+                const SizedBox(height: 16),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  children: [
+                    _menuCard(context, Icons.calendar_month, "My Attendance", () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AttendanceCalendarScreen(
+                            studentId: currentUser.uid,
+                            name: name,
+                            batch: batch,
+                            rollNo: rollNo,
+                            attendance: attendance,
+                          ),
+                        ),
+                      );
+                    }),
+                    _menuCard(context, Icons.history, "History", () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AttendanceHistoryScreen(),
+                        ),
+                      );
+                    }),
+                    _menuCard(context, Icons.bar_chart, "My Performance", () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PerformanceReportScreen(),
+                        ),
+                      );
+                    }),
+                    _menuCard(context, Icons.sports_cricket, "Matches", () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MatchScheduleScreen(),
+                        ),
+                      );
+                    }),
+                    _menuCard(context, Icons.calendar_today, "Training", () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TrainingScheduleScreen(),
+                        ),
+                      );
+                    }),
+                    _menuCard(context, Icons.notifications, "Notifications", () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationScreen(),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _profileCard() {
+  Widget _profileCard({
+    required String name,
+    required String email,
+    required String batch,
+    required String rollNo,
+    required String attendance,
+  }) {
+    final initials = name
+        .split(" ")
+        .where((part) => part.isNotEmpty)
+        .map((part) => part[0])
+        .take(2)
+        .join()
+        .toUpperCase();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -111,7 +227,7 @@ class StudentDashboard extends StatelessWidget {
             radius: 30,
             backgroundColor: Colors.white,
             child: Text(
-              "AR",
+              initials.isNotEmpty ? initials : "S",
               style: TextStyle(
                 color: maroon,
                 fontWeight: FontWeight.bold,
@@ -120,27 +236,32 @@ class StudentDashboard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Arjun R",
-                  style: TextStyle(
+                  name,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  "Morning Batch • Roll No: #014",
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  email,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  "Attendance: 92%",
-                  style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
+                  "$batch • Roll No: $rollNo",
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Attendance: $attendance",
+                  style: TextStyle(color: gold, fontSize: 12),
                 ),
               ],
             ),

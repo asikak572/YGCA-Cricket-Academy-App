@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -9,7 +12,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String selectedRole = "Admin";
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool isLoading = false;
 
   final Color maroon = const Color(0xFF7F0000);
   final Color maroonLight = const Color(0xFF991B1B);
@@ -19,15 +25,91 @@ class _LoginScreenState extends State<LoginScreen> {
   final Color textDark = const Color(0xFF1A1A1A);
   final Color textLight = const Color(0xFF94A3B8);
 
-  void _goToDashboard() {
-    if (selectedRole == "Admin") {
-      Navigator.pushNamed(context, '/admin');
-    } else if (selectedRole == "Coach") {
-      Navigator.pushNamed(context, '/coach');
-    } else if (selectedRole == "Parent") {
-      Navigator.pushNamed(context, '/parent');
-    } else if (selectedRole == "Player / Student") {
-      Navigator.pushNamed(context, '/student');
+  Future<void> _login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter email and password")),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      final credential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final uid = credential.user!.uid;
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      if (!userDoc.exists) {
+        await FirebaseAuth.instance.signOut();
+        throw Exception("User role not found");
+      }
+
+      final data = userDoc.data() as Map<String, dynamic>;
+      final role = data['role']?.toString().trim();
+
+      if (!mounted) return;
+
+      if (role == "Admin") {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else if (role == "Coach") {
+        Navigator.pushReplacementNamed(context, '/coach');
+      } else if (role == "Parent") {
+        Navigator.pushReplacementNamed(context, '/parent');
+      } else if (role == "Student") {
+        Navigator.pushReplacementNamed(context, '/student');
+      } else {
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid user role")),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = "Login failed";
+
+      if (e.code == 'user-not-found') {
+        message = "No user found with this email";
+      } else if (e.code == 'wrong-password') {
+        message = "Wrong password";
+      } else if (e.code == 'invalid-email') {
+        message = "Invalid email address";
+      } else if (e.code == 'invalid-credential') {
+        message = "Invalid email or password";
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login error: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -38,6 +120,13 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (_) => const RegisterScreen(),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -63,12 +152,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("9:41", style: TextStyle(color: Colors.white, fontSize: 11)),
-                    Text("YGCA", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11)),
+                    Text(
+                      "9:41",
+                      style: TextStyle(color: Colors.white, fontSize: 11),
+                    ),
+                    Text(
+                      "YGCA",
+                      style: TextStyle(
+                        color: Color(0xFFD4AF37),
+                        fontSize: 11,
+                      ),
+                    ),
                     Text("📶 🔋", style: TextStyle(fontSize: 11)),
                   ],
                 ),
               ),
+
               Container(
                 width: double.infinity,
                 color: maroon,
@@ -104,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 3),
                     const Text(
-                      "Sign in to your account",
+                      "Sign in with Firebase",
                       style: TextStyle(
                         color: Color(0xFFE5E7EB),
                         fontSize: 11,
@@ -113,19 +212,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
+
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(18),
                   child: Column(
                     children: [
-                      _label("Login as"),
-                      _dropDown(),
+                      _label("Email"),
+                      _input(
+                        "Enter email",
+                        false,
+                        controller: emailController,
+                      ),
+
                       const SizedBox(height: 10),
-                      _label("Phone / Email"),
-                      _input("Enter phone or email", false),
-                      const SizedBox(height: 10),
+
                       _label("Password"),
-                      _input("Enter password", true),
+                      _input(
+                        "Enter password",
+                        true,
+                        controller: passwordController,
+                      ),
+
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
@@ -136,6 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
+
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -147,16 +256,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          onPressed: _goToDashboard,
-                          child: const Text("Sign in"),
+                          onPressed: isLoading ? null : _login,
+                          child: Text(
+                            isLoading ? "Checking..." : "Sign in",
+                          ),
                         ),
                       ),
+
                       const SizedBox(height: 10),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "New player? ",
+                            "New user? ",
                             style: TextStyle(color: textLight, fontSize: 12),
                           ),
                           GestureDetector(
@@ -172,14 +285,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 18),
                       Divider(color: border),
                       const SizedBox(height: 8),
+
                       Text(
-                        "Quick role access (POC demo)",
+                        "Role will be checked from Firestore users collection",
+                        textAlign: TextAlign.center,
                         style: TextStyle(color: textLight, fontSize: 10),
                       ),
+
                       const SizedBox(height: 10),
+
                       GridView.count(
                         crossAxisCount: 2,
                         shrinkWrap: true,
@@ -188,10 +306,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisSpacing: 6,
                         childAspectRatio: 3.2,
                         children: [
-                          _roleButton("Admin"),
-                          _roleButton("Coach"),
-                          _roleButton("Parent"),
-                          _roleButton("Student"),
+                          _roleInfo("Admin"),
+                          _roleInfo("Coach"),
+                          _roleInfo("Parent"),
+                          _roleInfo("Student"),
                         ],
                       ),
                     ],
@@ -218,27 +336,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _dropDown() {
-    return DropdownButtonFormField<String>(
-      initialValue: selectedRole,
-      decoration: _decoration(),
-      items: const [
-        DropdownMenuItem(value: "Admin", child: Text("Admin")),
-        DropdownMenuItem(value: "Coach", child: Text("Coach")),
-        DropdownMenuItem(value: "Parent", child: Text("Parent")),
-        DropdownMenuItem(value: "Player / Student", child: Text("Player / Student")),
-      ],
-      onChanged: (value) {
-        if (value == null) return;
-        setState(() {
-          selectedRole = value;
-        });
-      },
-    );
-  }
-
-  Widget _input(String hint, bool obscure) {
+  Widget _input(
+    String hint,
+    bool obscure, {
+    TextEditingController? controller,
+  }) {
     return TextField(
+      controller: controller,
       obscureText: obscure,
       decoration: _decoration().copyWith(hintText: hint),
     );
@@ -264,15 +368,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _roleButton(String text) {
+  Widget _roleInfo(String text) {
     return OutlinedButton(
-      onPressed: () {
-        setState(() {
-          selectedRole = text == "Student" ? "Player / Student" : text;
-        });
-      },
+      onPressed: null,
       style: OutlinedButton.styleFrom(
-        foregroundColor: textDark,
+        disabledForegroundColor: textDark,
         side: BorderSide(color: border, width: 0.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),

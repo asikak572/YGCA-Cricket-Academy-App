@@ -34,17 +34,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final dateId =
           "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
-      final batch = FirebaseFirestore.instance.batch();
+      final firestore = FirebaseFirestore.instance;
+      final batchWrite = firestore.batch();
 
       for (final student in students) {
         final data = student.data() as Map<String, dynamic>;
+
         final studentName = data['name']?.toString() ?? 'No Name';
         final isPresent = attendanceStatus[student.id] ?? true;
 
-        final docRef =
-            FirebaseFirestore.instance.collection('attendance').doc();
+        final attendanceDoc =
+            firestore.collection('attendance').doc("${student.id}_$dateId");
 
-        batch.set(docRef, {
+        batchWrite.set(attendanceDoc, {
           'studentId': student.id,
           'studentName': studentName,
           'batch': selectedBatch,
@@ -53,14 +55,42 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           'present': isPresent,
           'createdAt': FieldValue.serverTimestamp(),
         });
+
+        final oldPresent = int.tryParse(
+              data['presentCount']?.toString() ?? '0',
+            ) ??
+            0;
+
+        final oldTotal = int.tryParse(
+              data['totalAttendanceCount']?.toString() ?? '0',
+            ) ??
+            0;
+
+        final newPresent = oldPresent + (isPresent ? 1 : 0);
+        final newTotal = oldTotal + 1;
+
+        final percentage = newTotal == 0
+            ? 0
+            : ((newPresent / newTotal) * 100).round();
+
+        batchWrite.update(
+          firestore.collection('students').doc(student.id),
+          {
+            'presentCount': newPresent,
+            'totalAttendanceCount': newTotal,
+            'attendance': "$percentage%",
+            'lastAttendanceDate': dateId,
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+        );
       }
 
-      await batch.commit();
+      await batchWrite.commit();
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Attendance saved to Firebase")),
+        const SnackBar(content: Text("Attendance saved and percentage updated")),
       );
     } catch (e) {
       if (!mounted) return;
@@ -119,7 +149,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               },
             ),
           ),
-
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -128,18 +157,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Center(
-                    child: Text("Something went wrong"),
-                  );
+                  return const Center(child: Text("Something went wrong"));
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
-                final students = snapshot.data!.docs;
+                final students = snapshot.data?.docs ?? [];
 
                 if (students.isEmpty) {
                   return Center(
@@ -166,20 +191,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     Expanded(
                       child: ListView.builder(
                         padding: const EdgeInsets.all(12),
                         itemCount: students.length,
                         itemBuilder: (context, index) {
                           final student = students[index];
-                          final data =
-                              student.data() as Map<String, dynamic>;
+                          final data = student.data() as Map<String, dynamic>;
 
-                          final name =
-                              data['name']?.toString() ?? 'No Name';
+                          final name = data['name']?.toString() ?? 'No Name';
+                          final attendance =
+                              data['attendance']?.toString() ?? '0%';
 
                           attendanceStatus.putIfAbsent(student.id, () => true);
 
@@ -188,9 +211,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               activeThumbColor: maroon,
                               title: Text(name),
                               subtitle: Text(
-                                attendanceStatus[student.id] == true
-                                    ? "Present"
-                                    : "Absent",
+                                "${attendanceStatus[student.id] == true ? "Present" : "Absent"} • Current: $attendance",
                               ),
                               value: attendanceStatus[student.id] ?? true,
                               onChanged: (value) {
@@ -203,7 +224,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         },
                       ),
                     ),
-
                     Padding(
                       padding: const EdgeInsets.all(12),
                       child: SizedBox(
@@ -214,11 +234,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             foregroundColor: gold,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          onPressed: isSaving
-                              ? null
-                              : () {
-                                  saveAttendance(students);
-                                },
+                          onPressed:
+                              isSaving ? null : () => saveAttendance(students),
                           child: isSaving
                               ? const SizedBox(
                                   height: 18,

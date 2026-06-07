@@ -73,7 +73,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
           .doc(widget.studentId)
           .update({
         'name': name.trim(),
-        'age': int.tryParse(age.trim()) ?? 0,
+        'age': age.trim(),
         'batch': batch.trim(),
         'parentName': parentName.trim(),
         'phone': phone.trim(),
@@ -87,8 +87,6 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Student updated successfully")),
       );
-
-      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
 
@@ -98,12 +96,12 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     }
   }
 
-  void confirmDelete() {
+  void confirmDelete(String name) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Delete Student"),
-        content: Text("Are you sure you want to delete ${widget.name}?"),
+        content: Text("Are you sure you want to delete $name?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -125,14 +123,21 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     );
   }
 
-  void showEditDialog() {
-    final nameController = TextEditingController(text: widget.name);
-    final ageController = TextEditingController(text: widget.age);
-    final batchController = TextEditingController(text: widget.batch);
-    final parentNameController = TextEditingController(text: widget.parentName);
-    final phoneController = TextEditingController(text: widget.phone);
-    final rollNoController = TextEditingController(text: widget.rollNo);
-    final feeStatusController = TextEditingController(text: widget.feeStatus);
+  void showEditDialog(Map<String, dynamic> data) {
+    final nameController =
+        TextEditingController(text: data['name']?.toString() ?? '');
+    final ageController =
+        TextEditingController(text: data['age']?.toString() ?? '');
+    final batchController =
+        TextEditingController(text: data['batch']?.toString() ?? '');
+    final parentNameController =
+        TextEditingController(text: data['parentName']?.toString() ?? '');
+    final phoneController =
+        TextEditingController(text: data['phone']?.toString() ?? '');
+    final rollNoController =
+        TextEditingController(text: data['rollNo']?.toString() ?? '');
+    final feeStatusController =
+        TextEditingController(text: data['feeStatus']?.toString() ?? 'Pending');
 
     showDialog(
       context: context,
@@ -142,10 +147,18 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
           child: Column(
             children: [
               _editField("Student Name", nameController),
-              _editField("Age", ageController, keyboardType: TextInputType.number),
+              _editField(
+                "Age",
+                ageController,
+                keyboardType: TextInputType.number,
+              ),
               _editField("Batch", batchController),
               _editField("Parent Name", parentNameController),
-              _editField("Phone Number", phoneController, keyboardType: TextInputType.phone),
+              _editField(
+                "Phone Number",
+                phoneController,
+                keyboardType: TextInputType.phone,
+              ),
               _editField("Roll No", rollNoController),
               _editField("Fee Status", feeStatusController),
             ],
@@ -154,13 +167,6 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              nameController.dispose();
-              ageController.dispose();
-              batchController.dispose();
-              parentNameController.dispose();
-              phoneController.dispose();
-              rollNoController.dispose();
-              feeStatusController.dispose();
               Navigator.pop(context);
             },
             child: const Text("Cancel"),
@@ -181,15 +187,9 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 feeStatus: feeStatusController.text,
               );
 
-              nameController.dispose();
-              ageController.dispose();
-              batchController.dispose();
-              parentNameController.dispose();
-              phoneController.dispose();
-              rollNoController.dispose();
-              feeStatusController.dispose();
-
-              if (mounted) Navigator.pop(context);
+              if (mounted) {
+                Navigator.pop(context);
+              }
             },
             child: const Text("Update"),
           ),
@@ -198,118 +198,175 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     );
   }
 
+  String _text(Map<String, dynamic> data, String key, String fallback) {
+    final value = data[key];
+    if (value == null) return fallback;
+
+    final text = value.toString().trim();
+    if (text.isEmpty) return fallback;
+
+    return text;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final initials = widget.name
-        .split(" ")
-        .map((e) => e.isNotEmpty ? e[0] : "")
-        .take(2)
-        .join();
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('students')
+          .doc(widget.studentId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Scaffold(
+            body: Center(child: Text("Something went wrong")),
+          );
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Student Details"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            onPressed: showEditDialog,
-            icon: const Icon(Icons.edit),
-          ),
-          IconButton(
-            onPressed: confirmDelete,
-            icon: const Icon(Icons.delete),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: maroon,
-              child: Text(
-                initials,
-                style: TextStyle(
-                  color: gold,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Scaffold(
+            body: Center(child: Text("Student not found")),
+          );
+        }
+
+        final data = snapshot.data!.data() as Map<String, dynamic>;
+
+        final name = _text(data, 'name', 'No Name');
+        final age = _text(data, 'age', '');
+        final batch = _text(data, 'batch', 'No Batch');
+        final rollNo = _text(data, 'rollNo', '#YGCA');
+        final parentName = _text(data, 'parentName', 'Not Added');
+        final phone = _text(data, 'phone', '');
+        final attendance = _text(data, 'attendance', '0%');
+        final feeStatus = _text(data, 'feeStatus', 'Pending');
+
+        final initials = name
+            .split(" ")
+            .where((e) => e.isNotEmpty)
+            .map((e) => e[0])
+            .take(2)
+            .join()
+            .toUpperCase();
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("Student Details"),
+            backgroundColor: maroon,
+            foregroundColor: Colors.white,
+            actions: [
+              IconButton(
+                onPressed: () => showEditDialog(data),
+                icon: const Icon(Icons.edit),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              widget.name,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "${widget.batch} • Roll No: ${widget.rollNo}",
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            _infoTile("Age", widget.age),
-            _infoTile("Batch", widget.batch),
-            _infoTile("Roll No", widget.rollNo),
-            _infoTile("Parent Name", widget.parentName),
-            _infoTile("Phone Number", widget.phone),
-            _infoTile("Attendance", widget.attendance),
-            _infoTile("Fee Status", widget.feeStatus),
-
-            const SizedBox(height: 20),
-
-            Row(
+              IconButton(
+                onPressed: () => confirmDelete(name),
+                icon: const Icon(Icons.delete),
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: maroon,
-                      foregroundColor: gold,
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: maroon,
+                  child: Text(
+                    initials.isNotEmpty ? initials : "?",
+                    style: TextStyle(
+                      color: gold,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AttendanceCalendarScreen(
-                            studentId: widget.studentId,
-                            name: widget.name,
-                            batch: widget.batch,
-                            rollNo: widget.rollNo,
-                            attendance: widget.attendance,
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.calendar_month),
-                    label: const Text("Calendar"),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: maroon,
-                      foregroundColor: gold,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AttendanceHistoryScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.history),
-                    label: const Text("History"),
+
+                const SizedBox(height: 16),
+
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  "$batch • Roll No: $rollNo",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+
+                const SizedBox(height: 20),
+
+                _infoTile("Age", age),
+                _infoTile("Batch", batch),
+                _infoTile("Roll No", rollNo),
+                _infoTile("Parent Name", parentName),
+                _infoTile("Phone Number", phone),
+                _infoTile("Attendance", attendance),
+                _infoTile("Fee Status", feeStatus),
+
+                const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: maroon,
+                          foregroundColor: gold,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AttendanceCalendarScreen(
+                                studentId: widget.studentId,
+                                name: name,
+                                batch: batch,
+                                rollNo: rollNo,
+                                attendance: attendance,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.calendar_month),
+                        label: const Text("Calendar"),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: maroon,
+                          foregroundColor: gold,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AttendanceHistoryScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.history),
+                        label: const Text("History"),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
