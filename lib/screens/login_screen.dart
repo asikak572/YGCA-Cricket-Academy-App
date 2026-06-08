@@ -66,15 +66,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      if (role == "Admin") {
-        Navigator.pushReplacementNamed(context, '/admin');
-      } else if (role == "Coach") {
-        Navigator.pushReplacementNamed(context, '/coach');
-      } else if (role == "Parent") {
-        Navigator.pushReplacementNamed(context, '/parent');
-      } else if (role == "Student") {
-        Navigator.pushReplacementNamed(context, '/student');
-      } else {
+     if (role == "Admin") {
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/admin',
+    (route) => false,
+  );
+} else if (role == "Coach") {
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/coach',
+    (route) => false,
+  );
+} else if (role == "Parent") {
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/parent',
+    (route) => false,
+  );
+} else if (role == "Student") {
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/student',
+    (route) => false,
+  );
+}else {
         await FirebaseAuth.instance.signOut();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Invalid user role")),
