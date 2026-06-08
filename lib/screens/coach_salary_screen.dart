@@ -11,6 +11,7 @@ class CoachSalaryScreen extends StatelessWidget {
     final coachNameController = TextEditingController();
     final roleController = TextEditingController();
     final salaryController = TextEditingController();
+
     String status = "Pending";
 
     showDialog(
@@ -37,7 +38,10 @@ class CoachSalaryScreen extends StatelessWidget {
                     ),
                     items: const [
                       DropdownMenuItem(value: "Paid", child: Text("Paid")),
-                      DropdownMenuItem(value: "Pending", child: Text("Pending")),
+                      DropdownMenuItem(
+                        value: "Pending",
+                        child: Text("Pending"),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value == null) return;
@@ -60,6 +64,15 @@ class CoachSalaryScreen extends StatelessWidget {
                   foregroundColor: gold,
                 ),
                 onPressed: () async {
+                  if (coachNameController.text.trim().isEmpty ||
+                      roleController.text.trim().isEmpty ||
+                      salaryController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Please fill all fields")),
+                    );
+                    return;
+                  }
+
                   final salary =
                       int.tryParse(salaryController.text.trim()) ?? 0;
 
@@ -89,6 +102,66 @@ class CoachSalaryScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _updateSalaryStatus(
+    BuildContext context,
+    String docId,
+    String status,
+  ) async {
+    await FirebaseFirestore.instance
+        .collection('coach_salaries')
+        .doc(docId)
+        .update({
+      'status': status,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Salary marked as $status")),
+      );
+    }
+  }
+
+  Future<void> _deleteSalary(BuildContext context, String docId) async {
+    await FirebaseFirestore.instance
+        .collection('coach_salaries')
+        .doc(docId)
+        .delete();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Salary record deleted")),
+      );
+    }
+  }
+
+  void _confirmDelete(BuildContext context, String docId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete Salary Record"),
+        content: const Text("Are you sure you want to delete this salary record?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deleteSalary(context, docId);
+            },
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Widget _field(
     String label,
     TextEditingController controller, {
@@ -105,6 +178,11 @@ class CoachSalaryScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    return int.tryParse(value.toString()) ?? 0;
   }
 
   @override
@@ -132,10 +210,21 @@ class CoachSalaryScreen extends StatelessWidget {
           final salaryDocs = snapshot.data?.docs ?? [];
 
           int totalBudget = 0;
+          int paidBudget = 0;
+          int pendingBudget = 0;
 
           for (final doc in salaryDocs) {
             final data = doc.data() as Map<String, dynamic>;
-            totalBudget += (data['salary'] ?? 0) as int;
+            final salary = _toInt(data['salary']);
+            final status = data['status']?.toString() ?? 'Pending';
+
+            totalBudget += salary;
+
+            if (status == "Paid") {
+              paidBudget += salary;
+            } else {
+              pendingBudget += salary;
+            }
           }
 
           return Column(
@@ -163,10 +252,24 @@ class CoachSalaryScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _miniStat("Paid", "₹$paidBudget")),
+                        Expanded(
+                          child: _miniStat("Pending", "₹$pendingBudget"),
+                        ),
+                        Expanded(
+                          child: _miniStat(
+                            "Records",
+                            salaryDocs.length.toString(),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-
               Expanded(
                 child: salaryDocs.isEmpty
                     ? const Center(
@@ -176,15 +279,13 @@ class CoachSalaryScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(12),
                         itemCount: salaryDocs.length,
                         itemBuilder: (context, index) {
-                          final data = salaryDocs[index].data()
-                              as Map<String, dynamic>;
+                          final doc = salaryDocs[index];
+                          final data = doc.data() as Map<String, dynamic>;
 
                           final name =
                               data['coachName']?.toString() ?? 'Unknown Coach';
-                          final role =
-                              data['role']?.toString() ?? 'No Role';
-                          final salary =
-                              (data['salary'] ?? 0).toString();
+                          final role = data['role']?.toString() ?? 'No Role';
+                          final salary = _toInt(data['salary']);
                           final status =
                               data['status']?.toString() ?? 'Pending';
 
@@ -192,44 +293,93 @@ class CoachSalaryScreen extends StatelessWidget {
 
                           return Card(
                             margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: maroon,
-                                child: Text(
-                                  name.isNotEmpty
-                                      ? name[0].toUpperCase()
-                                      : "?",
-                                  style: TextStyle(
-                                    color: gold,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              title: Text(
-                                name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(role),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    "₹$salary",
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                  CircleAvatar(
+                                    backgroundColor: maroon,
+                                    child: Text(
+                                      name.isNotEmpty
+                                          ? name[0].toUpperCase()
+                                          : "?",
+                                      style: TextStyle(
+                                        color: gold,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                  Text(
-                                    status,
-                                    style: TextStyle(
-                                      color: isPaid
-                                          ? Colors.green
-                                          : Colors.orange,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          role,
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        "₹$salary",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        status,
+                                        style: TextStyle(
+                                          color: isPaid
+                                              ? Colors.green
+                                              : Colors.orange,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  PopupMenuButton<String>(
+                                    onSelected: (value) async {
+                                      if (value == "Paid" ||
+                                          value == "Pending") {
+                                        await _updateSalaryStatus(
+                                          context,
+                                          doc.id,
+                                          value,
+                                        );
+                                      }
+
+                                      if (value == "Delete") {
+                                        _confirmDelete(context, doc.id);
+                                      }
+                                    },
+                                    itemBuilder: (context) => const [
+                                      PopupMenuItem(
+                                        value: "Paid",
+                                        child: Text("Mark Paid"),
+                                      ),
+                                      PopupMenuItem(
+                                        value: "Pending",
+                                        child: Text("Mark Pending"),
+                                      ),
+                                      PopupMenuItem(
+                                        value: "Delete",
+                                        child: Text("Delete"),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -249,6 +399,25 @@ class CoachSalaryScreen extends StatelessWidget {
         icon: const Icon(Icons.add),
         label: const Text("Add Salary"),
       ),
+    );
+  }
+
+  Widget _miniStat(String title, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          title,
+          style: const TextStyle(color: Colors.white70, fontSize: 11),
+        ),
+      ],
     );
   }
 }

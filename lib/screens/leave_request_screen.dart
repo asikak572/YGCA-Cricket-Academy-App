@@ -12,6 +12,7 @@ class LeaveRequestScreen extends StatelessWidget {
   Future<void> _updateStatus(
     String docId,
     String status,
+    String name,
   ) async {
     await FirebaseFirestore.instance
         .collection('leave_requests')
@@ -20,6 +21,186 @@ class LeaveRequestScreen extends StatelessWidget {
       'status': status,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'title': 'Leave Request $status',
+      'message': '$name leave request has been $status',
+      'targetRole': 'Parent',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _deleteLeave(BuildContext context, String docId) async {
+    await FirebaseFirestore.instance
+        .collection('leave_requests')
+        .doc(docId)
+        .delete();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Leave request deleted")),
+      );
+    }
+  }
+
+  void _confirmDelete(BuildContext context, String docId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete Leave Request"),
+        content: const Text("Are you sure you want to delete this leave request?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deleteLeave(context, docId);
+            },
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLeaveForm(BuildContext context) {
+    final nameController = TextEditingController();
+    final batchController = TextEditingController();
+    final dateController = TextEditingController();
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("New Leave Request"),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                _input("Student Name", nameController),
+                _input("Batch", batchController),
+                _input("Leave Date", dateController),
+                _input("Reason", reasonController, maxLines: 3),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: maroon,
+                foregroundColor: gold,
+              ),
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty ||
+                    batchController.text.trim().isEmpty ||
+                    dateController.text.trim().isEmpty ||
+                    reasonController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please fill all fields")),
+                  );
+                  return;
+                }
+
+                await FirebaseFirestore.instance
+                    .collection('leave_requests')
+                    .add({
+                  'name': nameController.text.trim(),
+                  'batch': batchController.text.trim(),
+                  'date': dateController.text.trim(),
+                  'reason': reasonController.text.trim(),
+                  'status': 'Pending',
+                  'createdAt': FieldValue.serverTimestamp(),
+                });
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Leave request submitted")),
+                  );
+                }
+              },
+              child: const Text("Submit"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _statusChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _row(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _input(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    if (status == "Approved") return Colors.green;
+    if (status == "Rejected") return Colors.red;
+    return Colors.orange;
   }
 
   @override
@@ -63,10 +244,7 @@ class LeaveRequestScreen extends StatelessWidget {
               final date = data['date']?.toString() ?? '';
               final reason = data['reason']?.toString() ?? '';
               final status = data['status']?.toString() ?? 'Pending';
-
-              Color statusColor = Colors.orange;
-              if (status == "Approved") statusColor = Colors.green;
-              if (status == "Rejected") statusColor = Colors.red;
+              final statusColor = _getStatusColor(status);
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -112,6 +290,10 @@ class LeaveRequestScreen extends StatelessWidget {
                             ),
                           ),
                           _statusChip(status, statusColor),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _confirmDelete(context, doc.id),
+                          ),
                         ],
                       ),
 
@@ -127,7 +309,12 @@ class LeaveRequestScreen extends StatelessWidget {
                             Expanded(
                               child: OutlinedButton.icon(
                                 onPressed: () async {
-                                  await _updateStatus(doc.id, "Rejected");
+                                  await _updateStatus(
+                                    doc.id,
+                                    "Rejected",
+                                    name,
+                                  );
+
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -148,7 +335,12 @@ class LeaveRequestScreen extends StatelessWidget {
                                   foregroundColor: gold,
                                 ),
                                 onPressed: () async {
-                                  await _updateStatus(doc.id, "Approved");
+                                  await _updateStatus(
+                                    doc.id,
+                                    "Approved",
+                                    name,
+                                  );
+
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -175,125 +367,9 @@ class LeaveRequestScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: maroon,
         foregroundColor: gold,
-        onPressed: () {
-          _showLeaveForm(context);
-        },
+        onPressed: () => _showLeaveForm(context),
         icon: const Icon(Icons.add),
         label: const Text("New Leave"),
-      ),
-    );
-  }
-
-  Widget _statusChip(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _row(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLeaveForm(BuildContext context) {
-    final nameController = TextEditingController();
-    final batchController = TextEditingController();
-    final dateController = TextEditingController();
-    final reasonController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("New Leave Request"),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                _input("Student Name", nameController),
-                _input("Batch", batchController),
-                _input("Leave Date", dateController),
-                _input("Reason", reasonController, maxLines: 3),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: maroon,
-                foregroundColor: gold,
-              ),
-              onPressed: () async {
-                await FirebaseFirestore.instance
-                    .collection('leave_requests')
-                    .add({
-                  'name': nameController.text.trim(),
-                  'batch': batchController.text.trim(),
-                  'date': dateController.text.trim(),
-                  'reason': reasonController.text.trim(),
-                  'status': 'Pending',
-                  'createdAt': FieldValue.serverTimestamp(),
-                });
-
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Leave request submitted")),
-                  );
-                }
-              },
-              child: const Text("Submit"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _input(
-    String label,
-    TextEditingController controller, {
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
       ),
     );
   }

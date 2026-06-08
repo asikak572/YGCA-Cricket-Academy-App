@@ -8,76 +8,17 @@ class TrainingScheduleScreen extends StatelessWidget {
   final Color gold = const Color(0xFFD4AF37);
   final Color bg = const Color(0xFFF8FAFC);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Training Schedule"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('training_schedules')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text("Something went wrong"));
-          }
+  Future<void> _deleteTraining(BuildContext context, String docId) async {
+    await FirebaseFirestore.instance
+        .collection('training_schedules')
+        .doc(docId)
+        .delete();
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final schedules = snapshot.data?.docs ?? [];
-
-          if (schedules.isEmpty) {
-            return const Center(child: Text("No training schedule found"));
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: schedules.length,
-            itemBuilder: (context, index) {
-              final data = schedules[index].data() as Map<String, dynamic>;
-
-              final day = data['day']?.toString() ?? '';
-              final time = data['time']?.toString() ?? '';
-              final batch = data['batch']?.toString() ?? '';
-              final type = data['type']?.toString() ?? '';
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: maroon,
-                    child: Icon(Icons.calendar_month, color: gold),
-                  ),
-                  title: Text(
-                    day,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text("$time\n$batch • $type"),
-                  isThreeLine: true,
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        onPressed: () {
-          _showAddTrainingDialog(context);
-        },
-        icon: const Icon(Icons.add),
-        label: const Text("Add Training"),
-      ),
-    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Training schedule deleted")),
+      );
+    }
   }
 
   void _showAddTrainingDialog(BuildContext context) {
@@ -111,6 +52,16 @@ class TrainingScheduleScreen extends StatelessWidget {
               foregroundColor: gold,
             ),
             onPressed: () async {
+              if (dayController.text.trim().isEmpty ||
+                  timeController.text.trim().isEmpty ||
+                  batchController.text.trim().isEmpty ||
+                  typeController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please fill all fields")),
+                );
+                return;
+              }
+
               await FirebaseFirestore.instance
                   .collection('training_schedules')
                   .add({
@@ -144,6 +95,107 @@ class TrainingScheduleScreen extends StatelessWidget {
           labelText: label,
           border: const OutlineInputBorder(),
         ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, String docId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete Training"),
+        content: const Text("Are you sure you want to delete this training schedule?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deleteTraining(context, docId);
+            },
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: bg,
+      appBar: AppBar(
+        title: const Text("Training Schedule"),
+        backgroundColor: maroon,
+        foregroundColor: Colors.white,
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('training_schedules')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text("Something went wrong"));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final schedules = snapshot.data?.docs ?? [];
+
+          if (schedules.isEmpty) {
+            return const Center(child: Text("No training schedule found"));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: schedules.length,
+            itemBuilder: (context, index) {
+              final doc = schedules[index];
+              final data = doc.data() as Map<String, dynamic>;
+
+              final day = data['day']?.toString() ?? '';
+              final time = data['time']?.toString() ?? '';
+              final batch = data['batch']?.toString() ?? '';
+              final type = data['type']?.toString() ?? '';
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: maroon,
+                    child: Icon(Icons.calendar_month, color: gold),
+                  ),
+                  title: Text(
+                    day,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text("$time\n$batch • $type"),
+                  isThreeLine: true,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _confirmDelete(context, doc.id),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: maroon,
+        foregroundColor: gold,
+        onPressed: () => _showAddTrainingDialog(context),
+        icon: const Icon(Icons.add),
+        label: const Text("Add Training"),
       ),
     );
   }

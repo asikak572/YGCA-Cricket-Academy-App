@@ -10,70 +10,159 @@ class FeeManagementScreen extends StatelessWidget {
   final Color border = const Color(0xFFE2E8F0);
 
   Future<void> _addPaymentDialog(BuildContext context) async {
-    final studentNameController = TextEditingController();
-    final studentIdController = TextEditingController();
+    String? selectedStudentId;
+    String selectedStudentName = '';
+    String selectedBatch = '';
+
     final totalFeeController = TextEditingController();
     final paidAmountController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Add Fee Payment"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              _dialogField("Student Name", studentNameController),
-              _dialogField("Student ID", studentIdController),
-              _dialogField(
-                "Total Fee",
-                totalFeeController,
-                keyboardType: TextInputType.number,
-              ),
-              _dialogField(
-                "Paid Amount",
-                paidAmountController,
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
-              foregroundColor: gold,
-            ),
-            onPressed: () async {
-              final totalFee = int.tryParse(totalFeeController.text.trim()) ?? 0;
-              final paidAmount =
-                  int.tryParse(paidAmountController.text.trim()) ?? 0;
-              final pending = totalFee - paidAmount;
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Add Fee Payment"),
+              content: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('students')
+                          .orderBy('name')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Padding(
+                            padding: EdgeInsets.only(bottom: 10),
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-              await FirebaseFirestore.instance.collection('fees').add({
-                'studentName': studentNameController.text.trim(),
-                'studentId': studentIdController.text.trim(),
-                'totalFee': totalFee,
-                'paidAmount': paidAmount,
-                'pendingAmount': pending,
-                'status': pending <= 0 ? 'Paid' : 'Pending',
-                'createdAt': FieldValue.serverTimestamp(),
-              });
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Text("No students found");
+                        }
 
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Fee payment saved")),
-                );
-              }
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
+                        final students = snapshot.data!.docs;
+
+                        return DropdownButtonFormField<String>(
+                          value: selectedStudentId,
+                          decoration: const InputDecoration(
+                            labelText: "Select Student",
+                            border: OutlineInputBorder(),
+                          ),
+                          items: students.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            final name =
+                                data['name']?.toString() ?? 'No Name';
+                            final batch =
+                                data['batch']?.toString() ?? 'No Batch';
+
+                            return DropdownMenuItem(
+                              value: doc.id,
+                              child: Text("$name - $batch"),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+
+                            final selectedDoc = students.firstWhere(
+                              (doc) => doc.id == value,
+                            );
+
+                            final data =
+                                selectedDoc.data() as Map<String, dynamic>;
+
+                            setDialogState(() {
+                              selectedStudentId = selectedDoc.id;
+                              selectedStudentName =
+                                  data['name']?.toString() ?? '';
+                              selectedBatch =
+                                  data['batch']?.toString() ?? '';
+                            });
+                          },
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    _dialogField(
+                      "Total Fee",
+                      totalFeeController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    _dialogField(
+                      "Paid Amount",
+                      paidAmountController,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: maroon,
+                    foregroundColor: gold,
+                  ),
+                  onPressed: () async {
+                    if (selectedStudentId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Please select a student")),
+                      );
+                      return;
+                    }
+
+                    final totalFee =
+                        int.tryParse(totalFeeController.text.trim()) ?? 0;
+                    final paidAmount =
+                        int.tryParse(paidAmountController.text.trim()) ?? 0;
+                    final pending = totalFee - paidAmount;
+                    final status = pending <= 0 ? 'Paid' : 'Pending';
+
+                    await FirebaseFirestore.instance.collection('fees').add({
+                      'studentId': selectedStudentId,
+                      'studentName': selectedStudentName,
+                      'batch': selectedBatch,
+                      'totalFee': totalFee,
+                      'paidAmount': paidAmount,
+                      'pendingAmount': pending < 0 ? 0 : pending,
+                      'status': status,
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+
+                    await FirebaseFirestore.instance
+                        .collection('students')
+                        .doc(selectedStudentId)
+                        .update({
+                      'totalFee': totalFee,
+                      'paidAmount': paidAmount,
+                      'pendingAmount': pending < 0 ? 0 : pending,
+                      'feeStatus': status,
+                      'lastFeeUpdatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Fee payment saved")),
+                      );
+                    }
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -93,6 +182,11 @@ class FeeManagementScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    return int.tryParse(value.toString()) ?? 0;
   }
 
   @override
@@ -125,8 +219,8 @@ class FeeManagementScreen extends StatelessWidget {
 
           for (final doc in fees) {
             final data = doc.data() as Map<String, dynamic>;
-            totalCollection += (data['paidAmount'] ?? 0) as int;
-            totalPending += (data['pendingAmount'] ?? 0) as int;
+            totalCollection += _toInt(data['paidAmount']);
+            totalPending += _toInt(data['pendingAmount']);
           }
 
           return SingleChildScrollView(
@@ -153,15 +247,15 @@ class FeeManagementScreen extends StatelessWidget {
 
                     final name =
                         data['studentName']?.toString() ?? 'Unknown Student';
-                    final studentId = data['studentId']?.toString() ?? '';
-                    final total = (data['totalFee'] ?? 0) as int;
-                    final paid = (data['paidAmount'] ?? 0) as int;
-                    final pending = (data['pendingAmount'] ?? 0) as int;
+                    final batch = data['batch']?.toString() ?? '';
+                    final total = _toInt(data['totalFee']);
+                    final paid = _toInt(data['paidAmount']);
+                    final pending = _toInt(data['pendingAmount']);
                     final status = data['status']?.toString() ?? 'Pending';
 
                     return _feeTile(
                       name: name,
-                      batch: "ID: $studentId",
+                      batch: batch,
                       total: "₹$total",
                       paid: "₹$paid",
                       pending: "₹$pending",

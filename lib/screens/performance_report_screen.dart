@@ -9,6 +9,11 @@ class PerformanceReportScreen extends StatelessWidget {
   final Color bg = const Color(0xFFF8FAFC);
   final Color border = const Color(0xFFE2E8F0);
 
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,52 +30,38 @@ class PerformanceReportScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(
-              child: Text("Something went wrong"),
-            );
+            return const Center(child: Text("Something went wrong"));
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           final reports = snapshot.data?.docs ?? [];
 
           if (reports.isEmpty) {
-            return const Center(
-              child: Text("No performance reports found"),
-            );
+            return const Center(child: Text("No performance reports found"));
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: reports.length,
             itemBuilder: (context, index) {
-              final data =
-                  reports[index].data() as Map<String, dynamic>;
+              final data = reports[index].data() as Map<String, dynamic>;
 
               final name =
-                  data['name']?.toString() ?? '';
+                  data['studentName']?.toString() ??
+                  data['name']?.toString() ??
+                  'Unknown Student';
 
-              final batch =
-                  data['batch']?.toString() ?? '';
+              final batch = data['batch']?.toString() ?? '';
 
-              final batting =
-                  data['batting'] ?? 0;
+              final batting = _toInt(data['batting']);
+              final bowling = _toInt(data['bowling']);
+              final fielding = _toInt(data['fielding']);
+              final fitness = _toInt(data['fitness']);
 
-              final bowling =
-                  data['bowling'] ?? 0;
-
-              final fielding =
-                  data['fielding'] ?? 0;
-
-              final fitness =
-                  data['fitness'] ?? 0;
-
-              final remarks =
-                  data['remarks']?.toString() ?? '';
+              final remarks = data['remarks']?.toString() ?? '';
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 14),
@@ -87,9 +78,7 @@ class PerformanceReportScreen extends StatelessWidget {
                           CircleAvatar(
                             backgroundColor: maroon,
                             child: Text(
-                              name.isNotEmpty
-                                  ? name[0].toUpperCase()
-                                  : "?",
+                              name.isNotEmpty ? name[0].toUpperCase() : "?",
                               style: TextStyle(
                                 color: gold,
                                 fontWeight: FontWeight.bold,
@@ -99,8 +88,7 @@ class PerformanceReportScreen extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   name,
@@ -119,38 +107,16 @@ class PerformanceReportScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Icon(
-                            Icons.sports_cricket,
-                            color: gold,
-                          ),
+                          Icon(Icons.sports_cricket, color: gold),
                         ],
                       ),
 
                       const SizedBox(height: 14),
 
-                      _skillBar(
-                        "Batting",
-                        batting,
-                        Colors.green,
-                      ),
-
-                      _skillBar(
-                        "Bowling",
-                        bowling,
-                        Colors.blue,
-                      ),
-
-                      _skillBar(
-                        "Fielding",
-                        fielding,
-                        Colors.orange,
-                      ),
-
-                      _skillBar(
-                        "Fitness",
-                        fitness,
-                        Colors.purple,
-                      ),
+                      _skillBar("Batting", batting, Colors.green),
+                      _skillBar("Bowling", bowling, Colors.blue),
+                      _skillBar("Fielding", fielding, Colors.orange),
+                      _skillBar("Fitness", fitness, Colors.purple),
 
                       const SizedBox(height: 12),
 
@@ -159,17 +125,12 @@ class PerformanceReportScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8FAFC),
-                          borderRadius:
-                              BorderRadius.circular(12),
-                          border: Border.all(
-                            color: border,
-                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: border),
                         ),
                         child: Text(
                           "Coach Remarks: $remarks",
-                          style: const TextStyle(
-                            fontSize: 12,
-                          ),
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ),
                     ],
@@ -180,7 +141,6 @@ class PerformanceReportScreen extends StatelessWidget {
           );
         },
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: maroon,
         foregroundColor: gold,
@@ -194,8 +154,10 @@ class PerformanceReportScreen extends StatelessWidget {
   }
 
   void _showAddDialog(BuildContext context) {
-    final nameController = TextEditingController();
-    final batchController = TextEditingController();
+    String? selectedStudentId;
+    String selectedStudentName = '';
+    String selectedBatch = '';
+
     final battingController = TextEditingController();
     final bowlingController = TextEditingController();
     final fieldingController = TextEditingController();
@@ -204,66 +166,187 @@ class PerformanceReportScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Add Performance Report"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              _field("Student Name", nameController),
-              _field("Batch", batchController),
-              _field("Batting %", battingController),
-              _field("Bowling %", bowlingController),
-              _field("Fielding %", fieldingController),
-              _field("Fitness %", fitnessController),
-              _field("Coach Remarks", remarksController),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await FirebaseFirestore.instance
-                  .collection('performance_reports')
-                  .add({
-                'name': nameController.text.trim(),
-                'batch': batchController.text.trim(),
-                'batting':
-                    int.tryParse(battingController.text) ?? 0,
-                'bowling':
-                    int.tryParse(bowlingController.text) ?? 0,
-                'fielding':
-                    int.tryParse(fieldingController.text) ?? 0,
-                'fitness':
-                    int.tryParse(fitnessController.text) ?? 0,
-                'remarks':
-                    remarksController.text.trim(),
-                'createdAt':
-                    FieldValue.serverTimestamp(),
-              });
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Add Performance Report"),
+              content: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('students')
+                          .orderBy('name')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Padding(
+                            padding: EdgeInsets.only(bottom: 10),
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-              if (context.mounted) {
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Text("No students found");
+                        }
+
+                        final students = snapshot.data!.docs;
+
+                        return DropdownButtonFormField<String>(
+                          value: selectedStudentId,
+                          decoration: const InputDecoration(
+                            labelText: "Select Student",
+                            border: OutlineInputBorder(),
+                          ),
+                          items: students.map((doc) {
+                            final data =
+                                doc.data() as Map<String, dynamic>;
+                            final name =
+                                data['name']?.toString() ?? 'No Name';
+                            final batch =
+                                data['batch']?.toString() ?? 'No Batch';
+
+                            return DropdownMenuItem(
+                              value: doc.id,
+                              child: Text("$name - $batch"),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+
+                            final selectedDoc = students.firstWhere(
+                              (doc) => doc.id == value,
+                            );
+
+                            final data =
+                                selectedDoc.data() as Map<String, dynamic>;
+
+                            setDialogState(() {
+                              selectedStudentId = selectedDoc.id;
+                              selectedStudentName =
+                                  data['name']?.toString() ?? '';
+                              selectedBatch =
+                                  data['batch']?.toString() ?? '';
+                            });
+                          },
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    _field(
+                      "Batting %",
+                      battingController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    _field(
+                      "Bowling %",
+                      bowlingController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    _field(
+                      "Fielding %",
+                      fieldingController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    _field(
+                      "Fitness %",
+                      fitnessController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    _field("Coach Remarks", remarksController),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: maroon,
+                    foregroundColor: gold,
+                  ),
+                  onPressed: () async {
+                    if (selectedStudentId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please select a student"),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final batting =
+                        int.tryParse(battingController.text.trim()) ?? 0;
+                    final bowling =
+                        int.tryParse(bowlingController.text.trim()) ?? 0;
+                    final fielding =
+                        int.tryParse(fieldingController.text.trim()) ?? 0;
+                    final fitness =
+                        int.tryParse(fitnessController.text.trim()) ?? 0;
+
+                    await FirebaseFirestore.instance
+                        .collection('performance_reports')
+                        .add({
+                      'studentId': selectedStudentId,
+                      'studentName': selectedStudentName,
+                      'batch': selectedBatch,
+                      'batting': batting,
+                      'bowling': bowling,
+                      'fielding': fielding,
+                      'fitness': fitness,
+                      'remarks': remarksController.text.trim(),
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+
+                    await FirebaseFirestore.instance
+                        .collection('students')
+                        .doc(selectedStudentId)
+                        .update({
+                      'latestBatting': batting,
+                      'latestBowling': bowling,
+                      'latestFielding': fielding,
+                      'latestFitness': fitness,
+                      'latestPerformanceRemarks':
+                          remarksController.text.trim(),
+                      'latestPerformanceUpdatedAt':
+                          FieldValue.serverTimestamp(),
+                    });
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Performance report saved"),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
   Widget _field(
     String label,
-    TextEditingController controller,
-  ) {
+    TextEditingController controller, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: controller,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
@@ -277,28 +360,25 @@ class PerformanceReportScreen extends StatelessWidget {
     int value,
     Color color,
   ) {
+    final safeValue = value.clamp(0, 100);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Column(
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(title),
-              ),
+              Expanded(child: Text(title)),
               Text(
-                "$value%",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                "$safeValue%",
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 4),
           LinearProgressIndicator(
-            value: value / 100,
-            backgroundColor:
-                const Color(0xFFE2E8F0),
+            value: safeValue / 100,
+            backgroundColor: const Color(0xFFE2E8F0),
             color: color,
             minHeight: 6,
           ),
