@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'coach_details_screen.dart';
+
 class CoachManagementScreen extends StatelessWidget {
   const CoachManagementScreen({super.key});
 
   final Color maroon = const Color(0xFF7F0000);
   final Color gold = const Color(0xFFD4AF37);
   final Color bg = const Color(0xFFF8FAFC);
+  final Color border = const Color(0xFFE2E8F0);
 
   Future<void> _addCoachDialog(BuildContext context) async {
     final nameController = TextEditingController();
@@ -23,14 +26,24 @@ class CoachManagementScreen extends StatelessWidget {
             children: [
               _field("Coach Name", nameController),
               _field("Role", roleController),
-              _field("Phone", phoneController, keyboardType: TextInputType.phone),
+              _field(
+                "Phone",
+                phoneController,
+                keyboardType: TextInputType.phone,
+              ),
               _field("Assigned Batch", batchController),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              nameController.dispose();
+              roleController.dispose();
+              phoneController.dispose();
+              batchController.dispose();
+              Navigator.pop(context);
+            },
             child: const Text("Cancel"),
           ),
           ElevatedButton(
@@ -39,6 +52,16 @@ class CoachManagementScreen extends StatelessWidget {
               foregroundColor: gold,
             ),
             onPressed: () async {
+              if (nameController.text.trim().isEmpty ||
+                  roleController.text.trim().isEmpty ||
+                  phoneController.text.trim().isEmpty ||
+                  batchController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please fill all fields")),
+                );
+                return;
+              }
+
               await FirebaseFirestore.instance.collection('coaches').add({
                 'name': nameController.text.trim(),
                 'role': roleController.text.trim(),
@@ -47,6 +70,11 @@ class CoachManagementScreen extends StatelessWidget {
                 'status': 'Active',
                 'createdAt': FieldValue.serverTimestamp(),
               });
+
+              nameController.dispose();
+              roleController.dispose();
+              phoneController.dispose();
+              batchController.dispose();
 
               if (context.mounted) {
                 Navigator.pop(context);
@@ -117,6 +145,30 @@ class CoachManagementScreen extends StatelessWidget {
     );
   }
 
+  void _openCoachDetails({
+    required BuildContext context,
+    required String coachId,
+    required String name,
+    required String role,
+    required String phone,
+    required String batch,
+    required String status,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CoachDetailsScreen(
+          coachId: coachId,
+          name: name,
+          role: role,
+          phone: phone,
+          batch: batch,
+          status: status,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,44 +194,112 @@ class CoachManagementScreen extends StatelessWidget {
 
           final coaches = snapshot.data?.docs ?? [];
 
-          if (coaches.isEmpty) {
-            return const Center(
-              child: Text("No coaches found. Click Add Coach."),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: coaches.length,
-            itemBuilder: (context, index) {
-              final doc = coaches[index];
-              final data = doc.data() as Map<String, dynamic>;
-
-              final name = data['name']?.toString() ?? 'No Name';
-              final role = data['role']?.toString() ?? 'No Role';
-              final phone = data['phone']?.toString() ?? 'No Phone';
-              final batch = data['batch']?.toString() ?? 'No Batch';
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: maroon,
-                    child: Icon(Icons.sports, color: gold),
-                  ),
-                  title: Text(
-                    name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text("$role\n$batch • $phone"),
-                  isThreeLine: true,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _confirmDelete(context, doc.id, name),
-                  ),
+          return Column(
+            children: [
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: maroon,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              );
-            },
+                child: Column(
+                  children: [
+                    Text(
+                      "Total Coaches",
+                      style: TextStyle(color: gold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      coaches.length.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: coaches.isEmpty
+                    ? const Center(
+                        child: Text("No coaches found. Click Add Coach."),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: coaches.length,
+                        itemBuilder: (context, index) {
+                          final doc = coaches[index];
+                          final data = doc.data() as Map<String, dynamic>;
+
+                          final name =
+                              data['name']?.toString() ?? 'No Name';
+                          final role =
+                              data['role']?.toString() ?? 'No Role';
+                          final phone =
+                              data['phone']?.toString() ?? 'No Phone';
+                          final batch =
+                              data['batch']?.toString() ?? 'No Batch';
+                          final status =
+                              data['status']?.toString() ?? 'Active';
+
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              side: BorderSide(color: border),
+                            ),
+                            child: ListTile(
+                              onTap: () {
+                                _openCoachDetails(
+                                  context: context,
+                                  coachId: doc.id,
+                                  name: name,
+                                  role: role,
+                                  phone: phone,
+                                  batch: batch,
+                                  status: status,
+                                );
+                              },
+                              leading: CircleAvatar(
+                                backgroundColor: maroon,
+                                child: Icon(Icons.sports, color: gold),
+                              ),
+                              title: Text(
+                                name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text("$role\n$batch • $phone"),
+                              isThreeLine: true,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 16,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                    ),
+                                    onPressed: () =>
+                                        _confirmDelete(context, doc.id, name),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),
