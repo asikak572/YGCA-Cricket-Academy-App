@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/auth_checker.dart';
 
 import 'firebase_options.dart';
 
@@ -33,7 +32,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'YGCA Management System',
-      home: const AuthChecker(),
+
+      // App starts from Home Screen
+      home: const HomeScreen(),
+
       routes: {
         '/login': (context) => const LoginScreen(),
         '/admin': (context) => const AdminDashboard(),

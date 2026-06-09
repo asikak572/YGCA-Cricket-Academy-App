@@ -38,85 +38,110 @@ class AdminDashboard extends StatelessWidget {
             _topHeader(),
             _heroBanner(),
             const SizedBox(height: 18),
+
             _sectionTitle("OVERVIEW"),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: GridView.count(
-                crossAxisCount: 4,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.72,
-                children: [
-                  _overviewCard(Icons.groups, "Total\nStudents", "248", "View all"),
-                  _overviewCard(Icons.check_circle, "Today's\nAttendance", "186", "75%"),
-                  _overviewCard(Icons.receipt, "Pending\nFees", "₹2.45L", "28 Students"),
-                  _overviewCard(Icons.calendar_month, "Today's\nSessions", "6", "2 Cancelled"),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            _sectionTitle("QUICK ACCESS"),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: GridView.count(
-                crossAxisCount: 3,
+                crossAxisCount: 2,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: 1.45,
+                childAspectRatio: 1.22,
                 children: [
-                  _menuCard(context, Icons.dashboard, "Reports\nDashboard", Colors.red, () {
+                  _overviewCard(
+                    Icons.groups,
+                    "Total Students",
+                    "248",
+                    "View all",
+                  ),
+                  _overviewCard(
+                    Icons.check_circle,
+                    "Attendance",
+                    "186",
+                    "75% Today",
+                  ),
+                  _overviewCard(
+                    Icons.receipt,
+                    "Pending Fees",
+                    "₹2.45L",
+                    "28 Students",
+                  ),
+                  _overviewCard(
+                    Icons.calendar_month,
+                    "Sessions",
+                    "6",
+                    "2 Cancelled",
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            _sectionTitle("QUICK ACCESS"),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 1.65,
+                children: [
+                  _menuCard(context, Icons.dashboard, "Reports Dashboard", Colors.red, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsDashboardScreen()));
                   }),
                   _menuCard(context, Icons.people, "Students", Colors.orange, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentListScreen()));
                   }),
-                  _menuCard(context, Icons.sports, "Coach\nManagement", Colors.purple, () {
+                  _menuCard(context, Icons.sports, "Coach Management", Colors.purple, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CoachManagementScreen()));
                   }),
                   _menuCard(context, Icons.check_circle, "Attendance", Colors.green, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceScreen()));
                   }),
-                  _menuCard(context, Icons.history, "Attendance\nHistory", Colors.blue, () {
+                  _menuCard(context, Icons.history, "Attendance History", Colors.blue, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceHistoryScreen()));
                   }),
-                  _menuCard(context, Icons.event_busy, "Cancel\nSession", Colors.red, () {
+                  _menuCard(context, Icons.event_busy, "Cancel Session", Colors.red, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CancelSessionScreen()));
                   }),
-                  _menuCard(context, Icons.event_repeat, "Makeup\nSessions", Colors.teal, () {
+                  _menuCard(context, Icons.event_repeat, "Makeup Sessions", Colors.teal, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const MakeupSessionScreen()));
                   }),
-                  _menuCard(context, Icons.event_note, "Leave\nRequests", Colors.orange, () {
+                  _menuCard(context, Icons.event_note, "Leave Requests", Colors.orange, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
                   }),
-                  _menuCard(context, Icons.analytics, "Attendance\nReports", Colors.green, () {
+                  _menuCard(context, Icons.analytics, "Attendance Reports", Colors.green, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceReportScreen()));
                   }),
-                  _menuCard(context, Icons.receipt_long, "Fee\nReports", Colors.purple, () {
+                  _menuCard(context, Icons.receipt_long, "Fee Reports", Colors.purple, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const FeeReportScreen()));
                   }),
-                  _menuCard(context, Icons.payments, "Fee\nManagement", Colors.blue, () {
+                  _menuCard(context, Icons.payments, "Fee Management", Colors.blue, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const FeeManagementScreen()));
                   }),
-                  _menuCard(context, Icons.receipt, "Payment\nHistory", Colors.green, () {
+                  _menuCard(context, Icons.receipt, "Payment History", Colors.green, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentHistoryScreen()));
                   }),
-                  _menuCard(context, Icons.warning_amber, "Pending\nFees", Colors.orange, () {
+                  _menuCard(context, Icons.warning_amber, "Pending Fees", Colors.orange, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const PendingFeesScreen()));
                   }),
-                  _menuCard(context, Icons.account_balance_wallet, "Coach\nSalary", Colors.brown, () {
+                  _menuCard(context, Icons.account_balance_wallet, "Coach Salary", Colors.brown, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CoachSalaryScreen()));
                   }),
-                  _menuCard(context, Icons.sports_cricket, "Match\nSchedule", Colors.purple, () {
+                  _menuCard(context, Icons.sports_cricket, "Match Schedule", Colors.purple, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const MatchScheduleScreen()));
                   }),
-                  _menuCard(context, Icons.bar_chart, "Performance\nReports", Colors.blue, () {
+                  _menuCard(context, Icons.bar_chart, "Performance Reports", Colors.blue, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const PerformanceReportScreen()));
                   }),
-                  _menuCard(context, Icons.calendar_month, "Training\nSchedule", Colors.teal, () {
+                  _menuCard(context, Icons.calendar_month, "Training Schedule", Colors.teal, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingScheduleScreen()));
                   }),
                   _menuCard(context, Icons.notifications, "Notifications", Colors.red, () {
@@ -125,6 +150,7 @@ class AdminDashboard extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 24),
             _footer(),
             const SizedBox(height: 24),
@@ -136,11 +162,11 @@ class AdminDashboard extends StatelessWidget {
 
   Widget _topHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 42, 20, 14),
-      decoration: BoxDecoration(color: maroon),
+      padding: const EdgeInsets.fromLTRB(18, 42, 18, 14),
+      color: maroon,
       child: Row(
         children: [
-          const Icon(Icons.menu, color: Colors.white, size: 28),
+          const Icon(Icons.menu, color: Colors.white, size: 26),
           const Spacer(),
           Column(
             children: [
@@ -148,37 +174,40 @@ class AdminDashboard extends StatelessWidget {
                 "YGCA",
                 style: TextStyle(
                   color: gold,
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
                 ),
               ),
               const Text(
                 "YOUNG GEN CRICKET ACADEMY",
-                style: TextStyle(color: Colors.white, fontSize: 11),
+                style: TextStyle(color: Colors.white, fontSize: 9),
               ),
             ],
           ),
           const Spacer(),
           Stack(
             children: [
-              const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+              const Icon(Icons.notifications_none, color: Colors.white, size: 26),
               Positioned(
                 right: 0,
                 top: 0,
                 child: CircleAvatar(
-                  radius: 8,
+                  radius: 7,
                   backgroundColor: Colors.orange,
-                  child: const Text("3", style: TextStyle(fontSize: 9, color: Colors.white)),
+                  child: const Text(
+                    "3",
+                    style: TextStyle(fontSize: 8, color: Colors.white),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           const CircleAvatar(
-            radius: 18,
+            radius: 16,
             backgroundColor: Colors.white,
-            child: Icon(Icons.person, color: Colors.black),
+            child: Icon(Icons.person, color: Colors.black, size: 19),
           ),
         ],
       ),
@@ -187,13 +216,13 @@ class AdminDashboard extends StatelessWidget {
 
   Widget _heroBanner() {
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+      height: 210,
+      margin: const EdgeInsets.symmetric(horizontal: 14),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(34),
-          bottomRight: Radius.circular(34),
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
         border: Border.all(color: gold, width: 1),
       ),
@@ -221,53 +250,57 @@ class AdminDashboard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Image.asset(
                   'assets/images/ygca_logo.jpg',
-                  width: 120,
-                  height: 120,
+                  width: 88,
+                  height: 88,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "WELCOME BACK,",
-                        style: TextStyle(
-                          color: gold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "WELCOME BACK,",
+                          style: TextStyle(
+                            color: gold,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
-                      ),
-                      const Text(
-                        "ADMIN",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
+                        const Text(
+                          "ADMIN",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 29,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
+                          ),
                         ),
-                      ),
-                      Text(
-                        "DASHBOARD",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 31,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
+                        Text(
+                          "DASHBOARD",
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 25,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        "Manage your academy\nlike a champion",
-                        style: TextStyle(color: Colors.white, fontSize: 13),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Manage your academy\nlike a champion",
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -298,24 +331,23 @@ class AdminDashboard extends StatelessWidget {
       ),
     );
   }
-
-  Widget _overviewCard(
+    Widget _overviewCard(
     IconData icon,
     String title,
     String value,
     String subtitle,
   ) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: border),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.055),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 12,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -325,24 +357,33 @@ class AdminDashboard extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: maroon,
-            child: Icon(icon, color: Colors.white, size: 22),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(height: 8),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 9, color: Colors.black54),
+            style: const TextStyle(
+              fontSize: 10,
+              color: Colors.black54,
+            ),
           ),
         ],
       ),
@@ -360,14 +401,14 @@ class AdminDashboard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: border),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -376,22 +417,32 @@ class AdminDashboard extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              radius: 21,
+              radius: 20,
               backgroundColor: color,
-              child: Icon(icon, color: Colors.white, size: 22),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+            const Icon(
+              Icons.chevron_right,
+              color: Colors.grey,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -405,12 +456,12 @@ class AdminDashboard extends StatelessWidget {
       decoration: BoxDecoration(
         color: maroon,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: gold, width: 1.3),
+        border: Border.all(color: gold, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: maroon.withOpacity(0.22),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: maroon.withOpacity(0.20),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -418,8 +469,12 @@ class AdminDashboard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.emoji_events, color: gold, size: 48),
-              const SizedBox(width: 14),
+              Icon(
+                Icons.emoji_events,
+                color: gold,
+                size: 42,
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,14 +490,19 @@ class AdminDashboard extends StatelessWidget {
                     const SizedBox(height: 4),
                     const Text(
                       "Building Champions Since 2022",
-                      style: TextStyle(color: Colors.white, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 16),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -456,14 +516,24 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _footerItem(IconData icon, String title) {
+  Widget _footerItem(
+    IconData icon,
+    String title,
+  ) {
     return Column(
       children: [
-        Icon(icon, color: gold, size: 28),
+        Icon(
+          icon,
+          color: gold,
+          size: 26,
+        ),
         const SizedBox(height: 6),
         Text(
           title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
