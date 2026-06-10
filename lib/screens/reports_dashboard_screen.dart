@@ -379,7 +379,7 @@ class ReportsDashboardScreen extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      height: 112,
+      height: 130,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,

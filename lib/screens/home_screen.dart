@@ -35,7 +35,7 @@ class HomeScreen extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.72,
+                childAspectRatio: 1,
                 children: [
                   _featureCard(Icons.calendar_month, "5 Days / Week\nCoaching",
                       "Regular & consistent\ntraining"),

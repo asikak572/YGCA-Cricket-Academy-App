@@ -23,7 +23,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   bool isLoading = false;
 
   final Color maroon = const Color(0xFF7F0000);
+  final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
+  final Color bg = const Color(0xFFFAFAFA);
+  final Color border = const Color(0xFFE2E8F0);
 
   Future<void> saveStudent() async {
     if (nameController.text.trim().isEmpty ||
@@ -37,9 +40,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
       await FirebaseFirestore.instance.collection('students').add({
@@ -62,7 +63,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Student saved to Firebase")),
+        const SnackBar(content: Text("Student saved successfully")),
       );
 
       Navigator.pop(context);
@@ -71,11 +72,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         SnackBar(content: Text("Error: $e")),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -96,96 +93,323 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Add Student"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: bg,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 42,
-              backgroundColor: maroon,
-              child: Icon(Icons.camera_alt, color: gold, size: 30),
-            ),
-
-            const SizedBox(height: 20),
-
-            _field("Student Name *", nameController),
-            _field("Age *", ageController, keyboardType: TextInputType.number),
-            _field("Phone Number *", phoneController, keyboardType: TextInputType.phone),
-            _field("Parent Name", parentNameController),
-            _field("Parent Phone", parentPhoneController, keyboardType: TextInputType.phone),
-            _field("Aadhaar Number", aadhaarController, keyboardType: TextInputType.number),
-            _field("Batch *", batchController),
-            _field("Roll No *", rollNoController),
-            _field("Address", addressController, maxLines: 3),
-
+            _topHeader(context),
+            _heroBanner(),
+            const SizedBox(height: 18),
+            _sectionTitle("STUDENT INFORMATION"),
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: DropdownButtonFormField<String>(
-                value: feeStatus,
-                decoration: const InputDecoration(
-                  labelText: "Fee Status",
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: "Pending", child: Text("Pending")),
-                  DropdownMenuItem(value: "Paid", child: Text("Paid")),
-                  DropdownMenuItem(value: "Partial", child: Text("Partial")),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _field("Student Name *", nameController, Icons.person),
+                  _field(
+                    "Age *",
+                    ageController,
+                    Icons.cake,
+                    keyboardType: TextInputType.number,
+                  ),
+                  _field(
+                    "Phone Number *",
+                    phoneController,
+                    Icons.phone,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  _field("Batch *", batchController, Icons.groups),
+                  _field("Roll No *", rollNoController, Icons.tag),
                 ],
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    feeStatus = value;
-                  });
-                },
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: maroon,
-                  foregroundColor: gold,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: isLoading ? null : saveStudent,
-                child: isLoading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text("Save Student"),
+            const SizedBox(height: 8),
+            _sectionTitle("PARENT / GUARDIAN"),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _field("Parent Name", parentNameController, Icons.family_restroom),
+                  _field(
+                    "Parent Phone",
+                    parentPhoneController,
+                    Icons.call,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  _field(
+                    "Aadhaar Number",
+                    aadhaarController,
+                    Icons.badge,
+                    keyboardType: TextInputType.number,
+                  ),
+                  _field(
+                    "Address",
+                    addressController,
+                    Icons.location_on,
+                    maxLines: 3,
+                  ),
+                  _feeDropdown(),
+                ],
               ),
             ),
+            const SizedBox(height: 18),
+            _saveButton(),
+            const SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
 
+  Widget _topHeader(BuildContext context) {
+    return Container(
+      color: maroon,
+      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          Image.asset('assets/images/ygca_logo.jpg', width: 58),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "ADD STUDENT",
+              style: TextStyle(
+                color: gold,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const CircleAvatar(
+            backgroundColor: Colors.white,
+            child: Icon(Icons.person_add, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroBanner() {
+    return Container(
+      height: 230,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        border: Border.all(color: gold, width: 1),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    darkMaroon.withOpacity(0.96),
+                    maroon.withOpacity(0.70),
+                    Colors.black.withOpacity(0.38),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person_add_alt_1, color: maroon, size: 42),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "NEW PLAYER",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        "STUDENT",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 31,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                      Text(
+                        "REGISTRATION",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 23,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _heroChip("Create student profile"),
+                      const SizedBox(height: 6),
+                      _heroChip("Attendance • Fees • Reports"),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.7)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: maroon,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(width: 42, height: 2, color: gold),
+        ],
+      ),
+    );
+  }
+
   Widget _field(
     String label,
-    TextEditingController controller, {
+    TextEditingController controller,
+    IconData icon, {
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ).copyWith(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: maroon),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: border),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _feeDropdown() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String>(
+        value: feeStatus,
+        decoration: InputDecoration(
+          labelText: "Fee Status",
+          prefixIcon: Icon(Icons.payments, color: maroon),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: border),
+          ),
+        ),
+        items: const [
+          DropdownMenuItem(value: "Pending", child: Text("Pending")),
+          DropdownMenuItem(value: "Paid", child: Text("Paid")),
+          DropdownMenuItem(value: "Partial", child: Text("Partial")),
+        ],
+        onChanged: (value) {
+          if (value == null) return;
+          setState(() => feeStatus = value);
+        },
+      ),
+    );
+  }
+
+  Widget _saveButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 55,
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: maroon,
+            foregroundColor: gold,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          onPressed: isLoading ? null : saveStudent,
+          icon: isLoading
+              ? const SizedBox()
+              : const Icon(Icons.save_alt, size: 22),
+          label: isLoading
+              ? CircularProgressIndicator(color: gold, strokeWidth: 2)
+              : const Text(
+                  "SAVE STUDENT",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+        ),
       ),
     );
   }
