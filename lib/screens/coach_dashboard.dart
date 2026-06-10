@@ -16,8 +16,9 @@ class CoachDashboard extends StatelessWidget {
   const CoachDashboard({super.key});
 
   final Color maroon = const Color(0xFF7F0000);
+  final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
+  final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
   Future<void> _logout(BuildContext context) async {
@@ -32,29 +33,26 @@ class CoachDashboard extends StatelessWidget {
     }
   }
 
+  String _safeText(Map<String, dynamic> data, List<String> keys, String fallback) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return fallback;
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text("No user logged in")),
-      );
+      return const Scaffold(body: Center(child: Text("No user logged in")));
     }
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Coach Dashboard"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -75,106 +73,94 @@ class CoachDashboard extends StatelessWidget {
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
 
-          final name = data['name']?.toString() ?? 'Coach';
-          final email = data['email']?.toString() ?? '';
-          final role = data['role']?.toString() ?? 'Coach';
-          final batch = data['batch']?.toString() ?? 'Batch not assigned';
-          final assignedStudents =
-              data['assignedStudents']?.toString() ?? 'Not assigned';
+          final name = _safeText(data, ['name'], 'Coach');
+          final email = _safeText(data, ['email'], currentUser.email ?? '');
+          final role = _safeText(data, ['role'], 'Coach');
+          final batch = _safeText(data, ['batch', 'assignedBatch'], 'Batch not assigned');
+          final assignedStudents = _safeText(data, ['assignedStudents'], '0');
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _coachCard(
+                _topHeader(context),
+                _coachHero(
                   name: name,
                   email: email,
                   role: role,
                   batch: batch,
                   assignedStudents: assignedStudents,
                 ),
-                const SizedBox(height: 16),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  children: [
-                    _menuCard(context, Icons.check_circle, "Mark Attendance", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AttendanceScreen(),
-                        ),
-                      );
-                    }),
-                    _menuCard(context, Icons.people, "My Students", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const StudentListScreen(),
-                        ),
-                      );
-                    }),
-                    _menuCard(context, Icons.bar_chart, "Performance", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PerformanceReportScreen(),
-                        ),
-                      );
-                    }),
-                    _menuCard(context, Icons.history, "Attendance History", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AttendanceHistoryScreen(),
-                        ),
-                      );
-                    }),
-                    _menuCard(context, Icons.event_repeat, "Makeup Sessions", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MakeupSessionScreen(),
-                        ),
-                      );
-                    }),
-                    _menuCard(context, Icons.event_note, "Leave Requests", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LeaveRequestScreen(),
-                        ),
-                      );
-                    }),
-                    _menuCard(context, Icons.sports_cricket, "Matches", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MatchScheduleScreen(),
-                        ),
-                      );
-                    }),
-                    _menuCard(context, Icons.calendar_month, "Training", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const TrainingScheduleScreen(),
-                        ),
-                      );
-                    }),
-                    _menuCard(context, Icons.notifications, "Notifications", () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const NotificationScreen(),
-                        ),
-                      );
-                    }),
-                  ],
+
+                const SizedBox(height: 18),
+                _sectionTitle("OVERVIEW"),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.25,
+                    children: [
+                      _statCard(Icons.groups, "STUDENTS", assignedStudents, "Assigned", Colors.blue),
+                      _statCard(Icons.check_circle, "ATTENDANCE", "Today", "Mark Now", Colors.green),
+                      _statCard(Icons.sports, "BATCH", batch, "Training", Colors.orange),
+                      _statCard(Icons.verified, "STATUS", "Active", role, Colors.purple),
+                    ],
+                  ),
                 ),
+
+                const SizedBox(height: 18),
+                _sectionTitle("QUICK ACCESS"),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.55,
+                    children: [
+                      _menuCard(context, Icons.check_circle, "Mark Attendance", "Daily attendance", Colors.green, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceScreen()));
+                      }),
+                      _menuCard(context, Icons.people, "My Students", "Student list", Colors.orange, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentListScreen()));
+                      }),
+                      _menuCard(context, Icons.bar_chart, "Performance", "Update progress", Colors.blue, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PerformanceReportScreen()));
+                      }),
+                      _menuCard(context, Icons.history, "Attendance History", "View records", Colors.red, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceHistoryScreen()));
+                      }),
+                      _menuCard(context, Icons.event_repeat, "Makeup Sessions", "Extra sessions", Colors.teal, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const MakeupSessionScreen()));
+                      }),
+                      _menuCard(context, Icons.event_note, "Leave Requests", "Student leaves", Colors.brown, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
+                      }),
+                      _menuCard(context, Icons.sports_cricket, "Matches", "Match schedule", Colors.purple, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const MatchScheduleScreen()));
+                      }),
+                      _menuCard(context, Icons.calendar_month, "Training", "Training plan", Colors.indigo, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingScheduleScreen()));
+                      }),
+                      _menuCard(context, Icons.notifications, "Notifications", "Academy updates", Colors.red, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+                      }),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+                _coachNoteCard(),
+                const SizedBox(height: 22),
+                _footer(),
+                const SizedBox(height: 26),
               ],
             ),
           );
@@ -183,57 +169,270 @@ class CoachDashboard extends StatelessWidget {
     );
   }
 
-  Widget _coachCard({
+  Widget _topHeader(BuildContext context) {
+    return Container(
+      color: maroon,
+      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      child: Row(
+        children: [
+          const Icon(Icons.menu, color: Colors.white, size: 28),
+          const Spacer(),
+          Column(
+            children: [
+              Text(
+                "YGCA",
+                style: TextStyle(
+                  color: gold,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
+              const Text(
+                "YOUNG GEN CRICKET ACADEMY",
+                style: TextStyle(color: Colors.white, fontSize: 10),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                "COACH DASHBOARD",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Stack(
+            children: [
+              const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+              Positioned(
+                right: 0,
+                top: 0,
+                child: CircleAvatar(
+                  radius: 8,
+                  backgroundColor: Colors.orange,
+                  child: const Text("3", style: TextStyle(fontSize: 9, color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 10),
+          IconButton(
+            onPressed: () => _logout(context),
+            icon: const Icon(Icons.logout, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _coachHero({
     required String name,
     required String email,
     required String role,
     required String batch,
     required String assignedStudents,
   }) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : "C";
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      height: 250,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: maroon,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        border: Border.all(color: gold, width: 1),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white,
-            child: Icon(Icons.sports, color: maroon, size: 30),
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    darkMaroon.withOpacity(0.96),
+                    maroon.withOpacity(0.68),
+                    Colors.black.withOpacity(0.38),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.white,
+                  child: Text(
+                    initial,
+                    style: TextStyle(
+                      color: maroon,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  email,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "$role • $batch",
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Assigned Students: $assignedStudents",
-                  style: TextStyle(color: gold, fontSize: 12),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 29,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.only(top: 5, bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: gold,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          role.toUpperCase(),
+                          style: TextStyle(
+                            color: maroon,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          _heroChip("Batch: $batch"),
+                          _heroChip("Students: $assignedStudents"),
+                          _heroChip("Status: Active"),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.7)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: maroon,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(width: 42, height: 2, color: gold),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCard(
+    IconData icon,
+    String title,
+    String value,
+    String subtitle,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.055),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 32),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+          ),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 11, color: Colors.black54),
           ),
         ],
       ),
@@ -244,37 +443,131 @@ class CoachDashboard extends StatelessWidget {
     BuildContext context,
     IconData icon,
     String title,
+    String subtitle,
+    Color color,
     VoidCallback onTap,
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: border),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.045),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
-            Icon(icon, size: 36, color: gold),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            CircleAvatar(
+              radius: 23,
+              backgroundColor: color,
+              child: Icon(icon, color: Colors.white, size: 23),
             ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: gold, size: 20),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _coachNoteCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: maroon,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: gold, width: 1.3),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.emoji_events, color: gold, size: 42),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "TRAIN. GUIDE. INSPIRE.",
+                  style: TextStyle(
+                    color: Color(0xFFD4AF37),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  "Great coaches build great players.",
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _footer() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: maroon,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: gold, width: 1.3),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _footerItem(Icons.favorite_border, "Passion"),
+          _footerItem(Icons.star_border, "Discipline"),
+          _footerItem(Icons.emoji_events_outlined, "Success"),
+        ],
+      ),
+    );
+  }
+
+  Widget _footerItem(IconData icon, String title) {
+    return Column(
+      children: [
+        Icon(icon, color: gold, size: 28),
+        const SizedBox(height: 6),
+        Text(
+          title,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }

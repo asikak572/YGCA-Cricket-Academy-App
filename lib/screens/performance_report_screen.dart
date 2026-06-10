@@ -5,8 +5,9 @@ class PerformanceReportScreen extends StatelessWidget {
   const PerformanceReportScreen({super.key});
 
   final Color maroon = const Color(0xFF7F0000);
+  final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
+  final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
   int _toInt(dynamic value) {
@@ -14,15 +15,28 @@ class PerformanceReportScreen extends StatelessWidget {
     return int.tryParse(value.toString()) ?? 0;
   }
 
+  String _ratingText(int batting, int bowling, int fielding, int fitness) {
+    final avg = ((batting + bowling + fielding + fitness) / 4).round();
+
+    if (avg >= 90) return "ELITE";
+    if (avg >= 75) return "EXCELLENT";
+    if (avg >= 60) return "GOOD";
+    if (avg >= 40) return "AVERAGE";
+    return "NEEDS WORK";
+  }
+
+  Color _ratingColor(String rating) {
+    if (rating == "ELITE") return Colors.purple;
+    if (rating == "EXCELLENT") return Colors.green;
+    if (rating == "GOOD") return Colors.blue;
+    if (rating == "AVERAGE") return Colors.orange;
+    return Colors.red;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Performance Reports"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('performance_reports')
@@ -39,105 +53,85 @@ class PerformanceReportScreen extends StatelessWidget {
 
           final reports = snapshot.data?.docs ?? [];
 
-          if (reports.isEmpty) {
-            return const Center(child: Text("No performance reports found"));
+          int excellent = 0;
+          int average = 0;
+          int needsWork = 0;
+
+          for (final doc in reports) {
+            final data = doc.data() as Map<String, dynamic>;
+            final batting = _toInt(data['batting']);
+            final bowling = _toInt(data['bowling']);
+            final fielding = _toInt(data['fielding']);
+            final fitness = _toInt(data['fitness']);
+
+            final rating = _ratingText(batting, bowling, fielding, fitness);
+
+            if (rating == "ELITE" || rating == "EXCELLENT") {
+              excellent++;
+            } else if (rating == "AVERAGE" || rating == "NEEDS WORK") {
+              needsWork++;
+            } else {
+              average++;
+            }
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: reports.length,
-            itemBuilder: (context, index) {
-              final data = reports[index].data() as Map<String, dynamic>;
-
-              final name =
-                  data['studentName']?.toString() ??
-                  data['name']?.toString() ??
-                  'Unknown Student';
-
-              final batch = data['batch']?.toString() ?? '';
-
-              final batting = _toInt(data['batting']);
-              final bowling = _toInt(data['bowling']);
-              final fielding = _toInt(data['fielding']);
-              final fitness = _toInt(data['fitness']);
-
-              final remarks = data['remarks']?.toString() ?? '';
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: border),
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _topHeader(context),
+                _heroBanner(
+                  totalReports: reports.length,
+                  excellent: excellent,
+                  average: average,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: maroon,
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : "?",
-                              style: TextStyle(
-                                color: gold,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                Text(
-                                  batch,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.sports_cricket, color: gold),
-                        ],
-                      ),
 
-                      const SizedBox(height: 14),
+                const SizedBox(height: 18),
 
-                      _skillBar("Batting", batting, Colors.green),
-                      _skillBar("Bowling", bowling, Colors.blue),
-                      _skillBar("Fielding", fielding, Colors.orange),
-                      _skillBar("Fitness", fitness, Colors.purple),
+                _sectionTitle("PERFORMANCE REPORTS"),
 
-                      const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: reports.isEmpty
+                      ? _emptyCard()
+                      : Column(
+                          children: reports.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
 
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: border),
+                            final name =
+                                data['studentName']?.toString() ??
+                                    data['name']?.toString() ??
+                                    'Unknown Student';
+
+                            final batch = data['batch']?.toString() ?? '';
+
+                            final batting = _toInt(data['batting']);
+                            final bowling = _toInt(data['bowling']);
+                            final fielding = _toInt(data['fielding']);
+                            final fitness = _toInt(data['fitness']);
+
+                            final remarks = data['remarks']?.toString() ?? '';
+                            final rating =
+                                _ratingText(batting, bowling, fielding, fitness);
+                            final ratingColor = _ratingColor(rating);
+
+                            return _performanceCard(
+                              name: name,
+                              batch: batch,
+                              batting: batting,
+                              bowling: bowling,
+                              fielding: fielding,
+                              fitness: fitness,
+                              remarks: remarks,
+                              rating: rating,
+                              ratingColor: ratingColor,
+                            );
+                          }).toList(),
                         ),
-                        child: Text(
-                          "Coach Remarks: $remarks",
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-              );
-            },
+
+                const SizedBox(height: 90),
+              ],
+            ),
           );
         },
       ),
@@ -149,6 +143,327 @@ class PerformanceReportScreen extends StatelessWidget {
         },
         icon: const Icon(Icons.add),
         label: const Text("Add Report"),
+      ),
+    );
+  }
+
+  Widget _topHeader(BuildContext context) {
+    return Container(
+      color: maroon,
+      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 58,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "PERFORMANCE REPORTS",
+              style: TextStyle(
+                color: gold,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const CircleAvatar(
+            backgroundColor: Colors.white,
+            child: Icon(Icons.bar_chart, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroBanner({
+    required int totalReports,
+    required int excellent,
+    required int average,
+  }) {
+    return Container(
+      height: 240,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        border: Border.all(color: gold, width: 1),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    darkMaroon.withOpacity(0.96),
+                    maroon.withOpacity(0.72),
+                    Colors.black.withOpacity(0.40),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.emoji_events,
+                    color: maroon,
+                    size: 42,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "PLAYER",
+                        style: TextStyle(
+                          color: gold,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        "PERFORMANCE",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 27,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                      Text(
+                        "CENTER",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          _heroChip("Reports: $totalReports"),
+                          _heroChip("Excellent: $excellent"),
+                          _heroChip("Average: $average"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: gold.withOpacity(0.7),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: maroon,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            width: 42,
+            height: 2,
+            color: gold,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _performanceCard({
+    required String name,
+    required String batch,
+    required int batting,
+    required int bowling,
+    required int fielding,
+    required int fitness,
+    required String remarks,
+    required String rating,
+    required Color ratingColor,
+  }) {
+    final initials = name
+        .split(" ")
+        .where((part) => part.isNotEmpty)
+        .map((part) => part[0])
+        .take(2)
+        .join()
+        .toUpperCase();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.045),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: maroon,
+                child: Text(
+                  initials.isNotEmpty ? initials : "?",
+                  style: TextStyle(
+                    color: gold,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      batch,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              _ratingChip(rating, ratingColor),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          _skillBar("Batting", batting, Colors.green),
+          _skillBar("Bowling", bowling, Colors.blue),
+          _skillBar("Fielding", fielding, Colors.orange),
+          _skillBar("Fitness", fitness, Colors.purple),
+
+          const SizedBox(height: 12),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBF2),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFFDE68A)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.rate_review, color: gold, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    remarks.isEmpty
+                        ? "Coach Remarks: No remarks added"
+                        : "Coach Remarks: $remarks",
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _ratingChip(String rating, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        rating,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -201,8 +516,7 @@ class PerformanceReportScreen extends StatelessWidget {
                             border: OutlineInputBorder(),
                           ),
                           items: students.map((doc) {
-                            final data =
-                                doc.data() as Map<String, dynamic>;
+                            final data = doc.data() as Map<String, dynamic>;
                             final name =
                                 data['name']?.toString() ?? 'No Name';
                             final batch =
@@ -263,7 +577,14 @@ class PerformanceReportScreen extends StatelessWidget {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    battingController.dispose();
+                    bowlingController.dispose();
+                    fieldingController.dispose();
+                    fitnessController.dispose();
+                    remarksController.dispose();
+                    Navigator.pop(context);
+                  },
                   child: const Text("Cancel"),
                 ),
                 ElevatedButton(
@@ -318,6 +639,12 @@ class PerformanceReportScreen extends StatelessWidget {
                           FieldValue.serverTimestamp(),
                     });
 
+                    battingController.dispose();
+                    bowlingController.dispose();
+                    fieldingController.dispose();
+                    fitnessController.dispose();
+                    remarksController.dispose();
+
                     if (context.mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -363,25 +690,57 @@ class PerformanceReportScreen extends StatelessWidget {
     final safeValue = value.clamp(0, 100);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.only(bottom: 11),
       child: Column(
         children: [
           Row(
             children: [
-              Expanded(child: Text(title)),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
               Text(
                 "$safeValue%",
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: safeValue / 100,
-            backgroundColor: const Color(0xFFE2E8F0),
-            color: color,
-            minHeight: 6,
+          const SizedBox(height: 5),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: safeValue / 100,
+              backgroundColor: const Color(0xFFE2E8F0),
+              color: color,
+              minHeight: 8,
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.bar_chart, size: 38, color: Colors.grey),
+          SizedBox(height: 10),
+          Text(
+            "No performance reports found",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 4),
+          Text("Click Add Report to create one"),
         ],
       ),
     );

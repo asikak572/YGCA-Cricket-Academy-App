@@ -5,8 +5,10 @@ class TrainingScheduleScreen extends StatelessWidget {
   const TrainingScheduleScreen({super.key});
 
   final Color maroon = const Color(0xFF7F0000);
+  final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
+  final Color bg = const Color(0xFFFAFAFA);
+  final Color border = const Color(0xFFE2E8F0);
 
   Future<void> _deleteTraining(BuildContext context, String docId) async {
     await FirebaseFirestore.instance
@@ -43,7 +45,13 @@ class TrainingScheduleScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              dayController.dispose();
+              timeController.dispose();
+              batchController.dispose();
+              typeController.dispose();
+              Navigator.pop(context);
+            },
             child: const Text("Cancel"),
           ),
           ElevatedButton(
@@ -71,6 +79,11 @@ class TrainingScheduleScreen extends StatelessWidget {
                 'type': typeController.text.trim(),
                 'createdAt': FieldValue.serverTimestamp(),
               });
+
+              dayController.dispose();
+              timeController.dispose();
+              batchController.dispose();
+              typeController.dispose();
 
               if (context.mounted) {
                 Navigator.pop(context);
@@ -104,7 +117,9 @@ class TrainingScheduleScreen extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Delete Training"),
-        content: const Text("Are you sure you want to delete this training schedule?"),
+        content: const Text(
+          "Are you sure you want to delete this training schedule?",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -126,15 +141,32 @@ class TrainingScheduleScreen extends StatelessWidget {
     );
   }
 
+  IconData _typeIcon(String type) {
+    final lower = type.toLowerCase();
+
+    if (lower.contains("fitness")) return Icons.fitness_center;
+    if (lower.contains("bat")) return Icons.sports_cricket;
+    if (lower.contains("bowl")) return Icons.sports_baseball;
+    if (lower.contains("field")) return Icons.sports_handball;
+
+    return Icons.calendar_month;
+  }
+
+  Color _typeColor(String type) {
+    final lower = type.toLowerCase();
+
+    if (lower.contains("fitness")) return Colors.green;
+    if (lower.contains("bat")) return Colors.orange;
+    if (lower.contains("bowl")) return Colors.blue;
+    if (lower.contains("field")) return Colors.purple;
+
+    return Colors.teal;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Training Schedule"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('training_schedules')
@@ -151,42 +183,39 @@ class TrainingScheduleScreen extends StatelessWidget {
 
           final schedules = snapshot.data?.docs ?? [];
 
-          if (schedules.isEmpty) {
-            return const Center(child: Text("No training schedule found"));
-          }
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _topHeader(context),
+                _heroBanner(total: schedules.length),
+                const SizedBox(height: 18),
+                _sectionTitle("TRAINING SCHEDULES"),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: schedules.isEmpty
+                      ? _emptyCard()
+                      : Column(
+                          children: schedules.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: schedules.length,
-            itemBuilder: (context, index) {
-              final doc = schedules[index];
-              final data = doc.data() as Map<String, dynamic>;
+                            final day = data['day']?.toString() ?? '';
+                            final time = data['time']?.toString() ?? '';
+                            final batch = data['batch']?.toString() ?? '';
+                            final type = data['type']?.toString() ?? '';
 
-              final day = data['day']?.toString() ?? '';
-              final time = data['time']?.toString() ?? '';
-              final batch = data['batch']?.toString() ?? '';
-              final type = data['type']?.toString() ?? '';
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: maroon,
-                    child: Icon(Icons.calendar_month, color: gold),
-                  ),
-                  title: Text(
-                    day,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text("$time\n$batch • $type"),
-                  isThreeLine: true,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _confirmDelete(context, doc.id),
-                  ),
+                            return _trainingCard(
+                              day: day,
+                              time: time,
+                              batch: batch,
+                              type: type,
+                              onDelete: () => _confirmDelete(context, doc.id),
+                            );
+                          }).toList(),
+                        ),
                 ),
-              );
-            },
+                const SizedBox(height: 90),
+              ],
+            ),
           );
         },
       ),
@@ -196,6 +225,286 @@ class TrainingScheduleScreen extends StatelessWidget {
         onPressed: () => _showAddTrainingDialog(context),
         icon: const Icon(Icons.add),
         label: const Text("Add Training"),
+      ),
+    );
+  }
+
+  Widget _topHeader(BuildContext context) {
+    return Container(
+      color: maroon,
+      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 58,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "TRAINING SCHEDULE",
+              style: TextStyle(
+                color: gold,
+                fontSize: 19,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const CircleAvatar(
+            backgroundColor: Colors.white,
+            child: Icon(Icons.calendar_month, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroBanner({required int total}) {
+    return Container(
+      height: 230,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        border: Border.all(color: gold, width: 1),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    darkMaroon.withOpacity(0.96),
+                    maroon.withOpacity(0.70),
+                    Colors.black.withOpacity(0.38),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.fitness_center, color: maroon, size: 42),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "YGCA",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        "TRAINING",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 31,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                      Text(
+                        "CENTER",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          _heroChip("Schedules: $total"),
+                          _heroChip("Cricket • Fitness • Skills"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.7)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: maroon,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(width: 42, height: 2, color: gold),
+        ],
+      ),
+    );
+  }
+
+  Widget _trainingCard({
+    required String day,
+    required String time,
+    required String batch,
+    required String type,
+    required VoidCallback onDelete,
+  }) {
+    final color = _typeColor(type);
+    final icon = _typeIcon(type);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.045),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: color,
+            child: Icon(icon, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  day,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "$time • $batch",
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _typeChip(type, color),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _typeChip(String type, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        type,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.calendar_month, size: 38, color: Colors.grey),
+          SizedBox(height: 10),
+          Text(
+            "No training schedule found",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 4),
+          Text("Click Add Training to create one"),
+        ],
       ),
     );
   }

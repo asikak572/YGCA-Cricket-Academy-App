@@ -5,8 +5,9 @@ class FeeManagementScreen extends StatelessWidget {
   const FeeManagementScreen({super.key});
 
   final Color maroon = const Color(0xFF7F0000);
+  final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
+  final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
   Future<void> _addPaymentDialog(BuildContext context) async {
@@ -33,12 +34,8 @@ class FeeManagementScreen extends StatelessWidget {
                           .orderBy('name')
                           .snapshots(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Padding(
-                            padding: EdgeInsets.only(bottom: 10),
-                            child: CircularProgressIndicator(),
-                          );
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
                         }
 
                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -55,10 +52,8 @@ class FeeManagementScreen extends StatelessWidget {
                           ),
                           items: students.map((doc) {
                             final data = doc.data() as Map<String, dynamic>;
-                            final name =
-                                data['name']?.toString() ?? 'No Name';
-                            final batch =
-                                data['batch']?.toString() ?? 'No Batch';
+                            final name = data['name']?.toString() ?? 'No Name';
+                            final batch = data['batch']?.toString() ?? 'No Batch';
 
                             return DropdownMenuItem(
                               value: doc.id,
@@ -72,23 +67,18 @@ class FeeManagementScreen extends StatelessWidget {
                               (doc) => doc.id == value,
                             );
 
-                            final data =
-                                selectedDoc.data() as Map<String, dynamic>;
+                            final data = selectedDoc.data() as Map<String, dynamic>;
 
                             setDialogState(() {
                               selectedStudentId = selectedDoc.id;
-                              selectedStudentName =
-                                  data['name']?.toString() ?? '';
-                              selectedBatch =
-                                  data['batch']?.toString() ?? '';
+                              selectedStudentName = data['name']?.toString() ?? '';
+                              selectedBatch = data['batch']?.toString() ?? '';
                             });
                           },
                         );
                       },
                     ),
-
-                    const SizedBox(height: 10),
-
+                    const SizedBox(height: 12),
                     _dialogField(
                       "Total Fee",
                       totalFeeController,
@@ -120,10 +110,8 @@ class FeeManagementScreen extends StatelessWidget {
                       return;
                     }
 
-                    final totalFee =
-                        int.tryParse(totalFeeController.text.trim()) ?? 0;
-                    final paidAmount =
-                        int.tryParse(paidAmountController.text.trim()) ?? 0;
+                    final totalFee = int.tryParse(totalFeeController.text.trim()) ?? 0;
+                    final paidAmount = int.tryParse(paidAmountController.text.trim()) ?? 0;
                     final pending = totalFee - paidAmount;
                     final status = pending <= 0 ? 'Paid' : 'Pending';
 
@@ -193,11 +181,6 @@ class FeeManagementScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Fee Management"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('fees')
@@ -224,46 +207,46 @@ class FeeManagementScreen extends StatelessWidget {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _summaryCard(
+                _topHeader(context),
+                _heroCard(
                   totalCollection: totalCollection,
                   totalPending: totalPending,
-                  students: fees.length,
+                  records: fees.length,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
+                _sectionTitle("FEE RECORDS"),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: fees.isEmpty
+                      ? _emptyCard()
+                      : Column(
+                          children: fees.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
 
-                if (fees.isEmpty)
-                  const Card(
-                    child: ListTile(
-                      title: Text("No fee records found"),
-                      subtitle: Text("Click Add Payment to create one"),
-                    ),
-                  )
-                else
-                  ...fees.map((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
+                            final name =
+                                data['studentName']?.toString() ?? 'Unknown Student';
+                            final batch = data['batch']?.toString() ?? '';
+                            final total = _toInt(data['totalFee']);
+                            final paid = _toInt(data['paidAmount']);
+                            final pending = _toInt(data['pendingAmount']);
+                            final status = data['status']?.toString() ?? 'Pending';
 
-                    final name =
-                        data['studentName']?.toString() ?? 'Unknown Student';
-                    final batch = data['batch']?.toString() ?? '';
-                    final total = _toInt(data['totalFee']);
-                    final paid = _toInt(data['paidAmount']);
-                    final pending = _toInt(data['pendingAmount']);
-                    final status = data['status']?.toString() ?? 'Pending';
-
-                    return _feeTile(
-                      name: name,
-                      batch: batch,
-                      total: "₹$total",
-                      paid: "₹$paid",
-                      pending: "₹$pending",
-                      status: status,
-                      statusColor:
-                          status == "Paid" ? Colors.green : Colors.orange,
-                    );
-                  }),
+                            return _feeTile(
+                              name: name,
+                              batch: batch,
+                              total: "₹$total",
+                              paid: "₹$paid",
+                              pending: "₹$pending",
+                              status: status,
+                              statusColor:
+                                  status == "Paid" ? Colors.green : Colors.orange,
+                            );
+                          }).toList(),
+                        ),
+                ),
+                const SizedBox(height: 90),
               ],
             ),
           );
@@ -279,62 +262,201 @@ class FeeManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _summaryCard({
-    required int totalCollection,
-    required int totalPending,
-    required int students,
-  }) {
+  Widget _topHeader(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: maroon,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
+      color: maroon,
+      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      child: Row(
         children: [
-          const Text(
-            "This Month Collection",
-            style: TextStyle(color: Colors.white70, fontSize: 13),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
           ),
-          const SizedBox(height: 6),
-          Text(
-            "₹$totalCollection",
-            style: TextStyle(
-              color: gold,
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 58,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "FEE MANAGEMENT",
+              style: TextStyle(
+                color: gold,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(child: _miniStat("Paid", "₹$totalCollection")),
-              Expanded(child: _miniStat("Pending", "₹$totalPending")),
-              Expanded(child: _miniStat("Records", students.toString())),
-            ],
+          const CircleAvatar(
+            backgroundColor: Colors.white,
+            child: Icon(Icons.payments, color: Colors.black),
           ),
         ],
       ),
     );
   }
 
-  Widget _miniStat(String title, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+  Widget _heroCard({
+    required int totalCollection,
+    required int totalPending,
+    required int records,
+  }) {
+    return Container(
+      height: 240,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        border: Border.all(color: gold, width: 1),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
           ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    darkMaroon.withOpacity(0.96),
+                    maroon.withOpacity(0.70),
+                    Colors.black.withOpacity(0.38),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.currency_rupee, color: maroon, size: 42),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "THIS MONTH",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "₹$totalCollection",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        "Total Collection",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          _heroChip("Pending: ₹$totalPending"),
+                          _heroChip("Records: $records"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.7)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
         ),
-        const SizedBox(height: 3),
-        Text(
-          title,
-          style: const TextStyle(color: Colors.white70, fontSize: 11),
-        ),
-      ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: maroon,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(width: 42, height: 2, color: gold),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.receipt_long, size: 38, color: Colors.grey),
+          SizedBox(height: 10),
+          Text(
+            "No fee records found",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 4),
+          Text("Click Add Payment to create one"),
+        ],
+      ),
     );
   }
 
@@ -347,78 +469,110 @@ class FeeManagementScreen extends StatelessWidget {
     required String status,
     required Color statusColor,
   }) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: border),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.045),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: maroon,
-                  child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : "?",
-                    style: TextStyle(color: gold, fontWeight: FontWeight.bold),
-                  ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: maroon,
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : "?",
+                  style: TextStyle(color: gold, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(batch, style: const TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
                     ),
+                    Text(
+                      batch,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(child: _amountBox("Total", total)),
-                Expanded(child: _amountBox("Paid", paid)),
-                Expanded(child: _amountBox("Pending", pending)),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(child: _amountBox("Total", total, Colors.blue)),
+              Expanded(child: _amountBox("Paid", paid, Colors.green)),
+              Expanded(child: _amountBox("Pending", pending, Colors.orange)),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _amountBox(String title, String amount) {
-    return Column(
-      children: [
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-        const SizedBox(height: 4),
-        Text(
-          amount,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-        ),
-      ],
+  Widget _amountBox(String title, String amount, Color color) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(color: color, fontSize: 11),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            amount,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 }

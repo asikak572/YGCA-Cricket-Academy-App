@@ -5,7 +5,10 @@ class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
   final Color maroon = const Color(0xFF7F0000);
+  final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
+  final Color bg = const Color(0xFFFAFAFA);
+  final Color border = const Color(0xFFE2E8F0);
 
   Future<void> _addNotificationDialog(BuildContext context) async {
     final titleController = TextEditingController();
@@ -54,7 +57,11 @@ class NotificationScreen extends StatelessWidget {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    titleController.dispose();
+                    messageController.dispose();
+                    Navigator.pop(context);
+                  },
                   child: const Text("Cancel"),
                 ),
                 ElevatedButton(
@@ -81,6 +88,9 @@ class NotificationScreen extends StatelessWidget {
                       'targetRole': selectedTarget,
                       'createdAt': FieldValue.serverTimestamp(),
                     });
+
+                    titleController.dispose();
+                    messageController.dispose();
 
                     if (context.mounted) {
                       Navigator.pop(context);
@@ -170,14 +180,62 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
+  Color _targetColor(String role) {
+    switch (role) {
+      case "Admin":
+        return Colors.red;
+      case "Coach":
+        return Colors.blue;
+      case "Parent":
+        return Colors.orange;
+      case "Student":
+        return Colors.green;
+      default:
+        return Colors.purple;
+    }
+  }
+
+  IconData _targetIcon(String role) {
+    switch (role) {
+      case "Admin":
+        return Icons.admin_panel_settings;
+      case "Coach":
+        return Icons.sports;
+      case "Parent":
+        return Icons.family_restroom;
+      case "Student":
+        return Icons.school;
+      default:
+        return Icons.groups;
+    }
+  }
+
+  int _todayCount(List<QueryDocumentSnapshot> notifications) {
+    final now = DateTime.now();
+
+    int count = 0;
+
+    for (final doc in notifications) {
+      final data = doc.data() as Map<String, dynamic>;
+      final timestamp = data['createdAt'];
+
+      if (timestamp is Timestamp) {
+        final date = timestamp.toDate();
+        if (date.year == now.year &&
+            date.month == now.month &&
+            date.day == now.day) {
+          count++;
+        }
+      }
+    }
+
+    return count;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Notifications"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: bg,
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('notifications')
@@ -193,97 +251,51 @@ class NotificationScreen extends StatelessWidget {
           }
 
           final notifications = snapshot.data?.docs ?? [];
+          final todayCount = _todayCount(notifications);
 
-          if (notifications.isEmpty) {
-            return const Center(
-              child: Text("No notifications found"),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: notifications.length,
-            itemBuilder: (context, index) {
-              final doc = notifications[index];
-              final data = doc.data() as Map<String, dynamic>;
-
-              final title = data['title']?.toString() ?? 'No Title';
-              final message = data['message']?.toString() ?? 'No Message';
-              final targetRole = data['targetRole']?.toString() ?? 'All';
-              final time = _formatDate(data['createdAt']);
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: maroon,
-                        child: Icon(
-                          Icons.notifications,
-                          color: gold,
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              message,
-                              softWrap: true,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              "To: $targetRole",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              time,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(width: 4),
-
-                      SizedBox(
-                        width: 40,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                          ),
-                          onPressed: () {
-                            _confirmDelete(context, doc.id);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _topHeader(context),
+                _heroBanner(
+                  total: notifications.length,
+                  today: todayCount,
                 ),
-              );
-            },
+
+                const SizedBox(height: 18),
+
+                _sectionTitle("NOTIFICATION LIST"),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: notifications.isEmpty
+                      ? _emptyCard()
+                      : Column(
+                          children: notifications.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+
+                            final title =
+                                data['title']?.toString() ?? 'No Title';
+                            final message =
+                                data['message']?.toString() ?? 'No Message';
+                            final targetRole =
+                                data['targetRole']?.toString() ?? 'All';
+                            final time = _formatDate(data['createdAt']);
+
+                            return _notificationCard(
+                              title: title,
+                              message: message,
+                              targetRole: targetRole,
+                              time: time,
+                              onDelete: () => _confirmDelete(context, doc.id),
+                            );
+                          }).toList(),
+                        ),
+                ),
+
+                const SizedBox(height: 90),
+              ],
+            ),
           );
         },
       ),
@@ -293,6 +305,306 @@ class NotificationScreen extends StatelessWidget {
         onPressed: () => _addNotificationDialog(context),
         icon: const Icon(Icons.add),
         label: const Text("Add Notification"),
+      ),
+    );
+  }
+
+  Widget _topHeader(BuildContext context) {
+    return Container(
+      color: maroon,
+      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 58,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "NOTIFICATIONS",
+              style: TextStyle(
+                color: gold,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const CircleAvatar(
+            backgroundColor: Colors.white,
+            child: Icon(Icons.notifications, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroBanner({
+    required int total,
+    required int today,
+  }) {
+    return Container(
+      height: 230,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        border: Border.all(color: gold, width: 1),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    darkMaroon.withOpacity(0.96),
+                    maroon.withOpacity(0.70),
+                    Colors.black.withOpacity(0.38),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.notifications_active,
+                      color: maroon, size: 42),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "ACADEMY",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        "UPDATES",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 31,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                      Text(
+                        "CENTER",
+                        style: TextStyle(
+                          color: gold,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          _heroChip("Total: $total"),
+                          _heroChip("Today: $today"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.7)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: maroon,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(width: 42, height: 2, color: gold),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.notifications_none, size: 38, color: Colors.grey),
+          SizedBox(height: 10),
+          Text(
+            "No notifications found",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 4),
+          Text("Click Add Notification to create one"),
+        ],
+      ),
+    );
+  }
+
+  Widget _notificationCard({
+    required String title,
+    required String message,
+    required String targetRole,
+    required String time,
+    required VoidCallback onDelete,
+  }) {
+    final color = _targetColor(targetRole);
+    final icon = _targetIcon(targetRole);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.045),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundColor: color,
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  message,
+                  softWrap: true,
+                  style: const TextStyle(
+                    color: Color(0xFF475569),
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _roleChip(targetRole, color),
+                    const SizedBox(width: 8),
+                    Text(
+                      time,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red, size: 21),
+            onPressed: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roleChip(String role, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        role,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
       ),
     );
   }
