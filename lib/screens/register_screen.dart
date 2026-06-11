@@ -72,6 +72,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         message = "Invalid email address";
       }
 
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
@@ -90,29 +92,82 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final h = MediaQuery.of(context).size.height;
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: bg,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _hero(context),
-            _formCard(context),
-            _footer(),
-          ],
+      body: SafeArea(
+        child: SizedBox(
+          height: h,
+          child: Column(
+            children: [
+              _hero(context, h),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+                  child: Column(
+                    children: [
+                      _input(
+                        icon: Icons.person_outline,
+                        label: "Full Name",
+                        controller: nameController,
+                      ),
+                      const SizedBox(height: 10),
+                      _input(
+                        icon: Icons.mail_outline,
+                        label: "Email Address",
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 10),
+                      _input(
+                        icon: Icons.lock_outline,
+                        label: "Password",
+                        controller: passwordController,
+                        obscureText: obscurePassword,
+                        suffix: IconButton(
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              obscurePassword = !obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _roleDropdown(),
+                      const SizedBox(height: 14),
+                      _registerButton(),
+                      const SizedBox(height: 12),
+                      _loginText(),
+                      const Spacer(),
+                      _footerMini(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _hero(BuildContext context) {
+  Widget _hero(BuildContext context, double h) {
     return Container(
-      height: 430,
+      height: h * 0.32,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(44),
-          bottomRight: Radius.circular(44),
+          bottomLeft: Radius.circular(34),
+          bottomRight: Radius.circular(34),
         ),
       ),
       child: Stack(
@@ -138,378 +193,62 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 26,
-                        backgroundColor: Colors.black.withOpacity(0.35),
-                        child: IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
-                  Image.asset(
-                    'assets/images/ygca_logo.jpg',
-                    height: 120,
-                    width: 120,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    "CREATE YOUR",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  Text(
-                    "ACCOUNT",
-                    style: TextStyle(
-                      color: gold,
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "Join YGCA and start your\njourney towards excellence",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      height: 1.45,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _formCard(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(0, -30),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: border),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              CircleAvatar(
-                radius: 42,
-                backgroundColor: maroon,
-                child: Icon(Icons.person_add, color: gold, size: 34),
-              ),
-              const SizedBox(height: 18),
-
-              _premiumInput(
-                icon: Icons.person_outline,
-                label: "Full Name",
-                hint: "Enter your full name",
-                controller: nameController,
-              ),
-
-              const SizedBox(height: 14),
-
-              _premiumInput(
-                icon: Icons.mail_outline,
-                label: "Email Address",
-                hint: "Enter your email address",
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-              ),
-
-              const SizedBox(height: 14),
-
-              _premiumInput(
-                icon: Icons.lock_outline,
-                label: "Password",
-                hint: "Enter your password",
-                controller: passwordController,
-                obscureText: obscurePassword,
-                suffix: IconButton(
-                  icon: Icon(
-                    obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.grey,
-                  ),
-                  onPressed: () {
-                    setState(() => obscurePassword = !obscurePassword);
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              _roleDropdown(),
-
-              const SizedBox(height: 16),
-
-              _trustBox(),
-
-              const SizedBox(height: 18),
-
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: maroon,
-                    foregroundColor: gold,
-                    elevation: 8,
-                    shadowColor: maroon.withOpacity(0.35),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: isLoading ? null : registerUser,
-                  icon: isLoading
-                      ? const SizedBox()
-                      : const Icon(Icons.arrow_forward, size: 22),
-                  label: isLoading
-                      ? CircularProgressIndicator(color: gold, strokeWidth: 2)
-                      : const Text(
-                          "REGISTER ACCOUNT",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                ),
-              ),
-
-              const SizedBox(height: 22),
-
-              Row(
-                children: [
-                  Expanded(child: Divider(color: border)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14),
-                    child: Text(
-                      "OR",
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: border)),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _socialButton(
-                      icon: Icons.g_mobiledata,
-                      text: "Google",
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _socialButton(
-                      icon: Icons.apple,
-                      text: "Apple",
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Already have an account? ",
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 13,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Text(
-                      "Login Now",
-                      style: TextStyle(
-                        color: maroon,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _premiumInput({
-    required IconData icon,
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    TextInputType keyboardType = TextInputType.text,
-    bool obscureText = false,
-    Widget? suffix,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          prefixIcon: Container(
-            margin: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: maroon,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: gold, size: 22),
-          ),
-          suffixIcon: suffix,
-          labelText: label,
-          hintText: hint,
-          labelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-        ),
-      ),
-    );
-  }
-
-  Widget _roleDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            "Select Role",
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: border),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: DropdownButtonFormField<String>(
-            value: selectedRole,
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              prefixIcon: Container(
-                margin: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: maroon,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.shield_outlined, color: gold, size: 22),
-              ),
-            ),
-            items: const [
-              DropdownMenuItem(value: "Admin", child: Text("Admin")),
-              DropdownMenuItem(value: "Coach", child: Text("Coach")),
-              DropdownMenuItem(value: "Parent", child: Text("Parent")),
-              DropdownMenuItem(value: "Student", child: Text("Student")),
-            ],
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() => selectedRole = value);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _trustBox() {
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFDE68A)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: gold,
-            child: const Icon(Icons.verified, color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Join thousands of players who trust YGCA",
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 23,
+                      backgroundColor: Colors.black.withOpacity(0.35),
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                  ],
+                ),
+                const Spacer(),
+                Image.asset(
+                  'assets/images/ygca_logo.jpg',
+                  height: 82,
+                  width: 82,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  "CREATE YOUR",
                   style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    fontSize: 13,
+                    letterSpacing: 1,
                   ),
                 ),
-                SizedBox(height: 3),
                 Text(
-                  "Best coaches, world-class training and bright futures",
+                  "ACCOUNT",
                   style: TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 11,
+                    color: gold,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  "Join YGCA and start your journey",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -520,75 +259,148 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _socialButton({
+  Widget _input({
     required IconData icon,
-    required String text,
+    required String label,
+    required TextEditingController controller,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    Widget? suffix,
   }) {
     return SizedBox(
-      height: 52,
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          side: BorderSide(color: border),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(13),
+      height: 58,
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: maroon),
+          suffixIcon: suffix,
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: gold, width: 1.3),
           ),
         ),
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("$text sign up coming soon")),
-          );
+      ),
+    );
+  }
+
+  Widget _roleDropdown() {
+    return SizedBox(
+      height: 58,
+      child: DropdownButtonFormField<String>(
+        value: selectedRole,
+        decoration: InputDecoration(
+          labelText: "Select Role",
+          prefixIcon: Icon(Icons.shield_outlined, color: maroon),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: border),
+          ),
+        ),
+        items: const [
+          DropdownMenuItem(value: "Admin", child: Text("Admin")),
+          DropdownMenuItem(value: "Coach", child: Text("Coach")),
+          DropdownMenuItem(value: "Parent", child: Text("Parent")),
+          DropdownMenuItem(value: "Student", child: Text("Student")),
+        ],
+        onChanged: (value) {
+          if (value == null) return;
+          setState(() => selectedRole = value);
         },
-        icon: Icon(icon, size: 28),
-        label: Text(
-          text,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-        ),
       ),
     );
   }
 
-  Widget _footer() {
-    return Transform.translate(
-      offset: const Offset(0, -10),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
-        decoration: BoxDecoration(
-          color: maroon,
-          border: Border(top: BorderSide(color: gold, width: 2)),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(26),
-            topRight: Radius.circular(26),
+  Widget _registerButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: maroon,
+          foregroundColor: gold,
+          elevation: 8,
+          shadowColor: maroon.withOpacity(0.35),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _footerItem(Icons.favorite_border, "PASSION"),
-            _footerItem(Icons.star_border, "DISCIPLINE"),
-            _footerItem(Icons.emoji_events_outlined, "SUCCESS"),
-          ],
-        ),
+        onPressed: isLoading ? null : registerUser,
+        icon: isLoading ? const SizedBox() : const Icon(Icons.person_add),
+        label: isLoading
+            ? CircularProgressIndicator(color: gold, strokeWidth: 2)
+            : const Text(
+                "REGISTER ACCOUNT",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
       ),
     );
   }
 
-  Widget _footerItem(IconData icon, String text) {
-    return Column(
+  Widget _loginText() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: gold, size: 28),
-        const SizedBox(height: 8),
-        Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
+        const Text(
+          "Already have an account? ",
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 12,
+          ),
+        ),
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Text(
+            "Login Now",
+            style: TextStyle(
+              color: maroon,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _footerMini() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        "♥ Passion  •  ★ Discipline  •  🏆 Success",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: maroon,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

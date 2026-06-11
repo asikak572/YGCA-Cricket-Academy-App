@@ -23,7 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final Color gold = const Color(0xFFD4AF37);
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
-  final Color textLight = const Color(0xFF94A3B8);
 
   Future<void> _login() async {
     final email = emailController.text.trim();
@@ -47,7 +46,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       final uid = credential.user!.uid;
-
       final userDoc =
           await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
@@ -56,8 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception("User role not found");
       }
 
-      final data = userDoc.data() as Map<String, dynamic>;
-      final role = data['role']?.toString().trim();
+      final role = userDoc.data()?['role']?.toString().trim();
 
       if (!mounted) return;
 
@@ -78,13 +75,10 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       String message = "Login failed";
 
-      if (e.code == 'user-not-found') {
-        message = "No user found with this email";
-      } else if (e.code == 'wrong-password') {
-        message = "Wrong password";
-      } else if (e.code == 'invalid-email') {
-        message = "Invalid email address";
-      } else if (e.code == 'invalid-credential') {
+      if (e.code == 'user-not-found') message = "No user found";
+      if (e.code == 'wrong-password') message = "Wrong password";
+      if (e.code == 'invalid-email') message = "Invalid email";
+      if (e.code == 'invalid-credential') {
         message = "Invalid email or password";
       }
 
@@ -118,29 +112,76 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final h = MediaQuery.of(context).size.height;
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: bg,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _hero(),
-            _loginForm(),
-            _footer(),
-          ],
+      body: SafeArea(
+        child: SizedBox(
+          height: h,
+          child: Column(
+            children: [
+              _hero(h),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+                  child: Column(
+                    children: [
+                      _field(
+                        label: "Email Address",
+                        controller: emailController,
+                        icon: Icons.mail_outline,
+                        hint: "Enter email",
+                        obscure: false,
+                      ),
+                      const SizedBox(height: 10),
+                      _field(
+                        label: "Password",
+                        controller: passwordController,
+                        icon: Icons.lock_outline,
+                        hint: "Enter password",
+                        obscure: obscurePassword,
+                        suffix: IconButton(
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              obscurePassword = !obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _loginButton(),
+                      const SizedBox(height: 10),
+                      _registerCard(),
+                      const Spacer(),
+                      _footerMini(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _hero() {
+  Widget _hero(double h) {
     return Container(
-      height: 390,
+      height: h * 0.36,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(42),
-          bottomRight: Radius.circular(42),
+          bottomLeft: Radius.circular(34),
+          bottomRight: Radius.circular(34),
         ),
       ),
       child: Stack(
@@ -158,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   colors: [
                     darkMaroon.withOpacity(0.96),
                     maroon.withOpacity(0.72),
-                    Colors.black.withOpacity(0.55),
+                    Colors.black.withOpacity(0.50),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -166,188 +207,55 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 14, 24, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Image.asset(
-                    'assets/images/ygca_logo.jpg',
-                    height: 115,
-                    width: 115,
-                    fit: BoxFit.contain,
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      Text(
-                        "WELCOME BACK",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(child: Container(height: 1, color: gold)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "LOGIN",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      height: 0.95,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  Text(
-                    "TO CONTINUE",
-                    style: TextStyle(
-                      color: gold,
-                      fontSize: 44,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Build your Cricket Career with us",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _loginForm() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
-      child: Column(
-        children: [
-          _label(Icons.mail_outline, "Email Address"),
-          _input(
-            controller: emailController,
-            hint: "Enter your email",
-            obscure: false,
-          ),
-          const SizedBox(height: 18),
-          _label(Icons.lock_outline, "Password"),
-          _input(
-            controller: passwordController,
-            hint: "Enter your password",
-            obscure: obscurePassword,
-            suffix: IconButton(
-              icon: Icon(
-                obscurePassword ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey,
-              ),
-              onPressed: () {
-                setState(() => obscurePassword = !obscurePassword);
-              },
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {},
-              child: Text(
-                "Forgot Password?",
-                style: TextStyle(
-                  color: maroon,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 14, 24, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image.asset(
+                  'assets/images/ygca_logo.jpg',
+                  height: 78,
+                  width: 78,
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC247),
-                foregroundColor: maroon,
-                elevation: 8,
-                shadowColor: gold.withOpacity(0.45),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: isLoading ? null : _login,
-              icon: isLoading ? const SizedBox() : const Icon(Icons.login),
-              label: isLoading
-                  ? CircularProgressIndicator(color: maroon, strokeWidth: 2)
-                  : const Text(
-                      "LOGIN",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(child: Divider(color: border)),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Text(
-                  "OR",
+                const Spacer(),
+                Text(
+                  "WELCOME BACK",
                   style: TextStyle(
-                    color: textLight,
+                    color: gold,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
                   ),
                 ),
-              ),
-              Expanded(child: Divider(color: border)),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _socialButton(
-            icon: Icons.g_mobiledata,
-            text: "Continue with Google",
-          ),
-          const SizedBox(height: 12),
-          _socialButton(
-            icon: Icons.apple,
-            text: "Continue with Apple",
-          ),
-          const SizedBox(height: 20),
-          _registerCard(),
-        ],
-      ),
-    );
-  }
-
-  Widget _label(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: maroon, size: 20),
-          const SizedBox(width: 10),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
+                const SizedBox(height: 5),
+                const Text(
+                  "LOGIN",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.w900,
+                    height: 0.95,
+                  ),
+                ),
+                Text(
+                  "TO CONTINUE",
+                  style: TextStyle(
+                    color: gold,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  "Young Gen Cricket Academy",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -355,74 +263,87 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _input({
+  Widget _field({
+    required String label,
     required TextEditingController controller,
+    required IconData icon,
     required String hint,
     required bool obscure,
     Widget? suffix,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      decoration: InputDecoration(
-        hintText: hint,
-        suffixIcon: suffix,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
-          borderSide: BorderSide(color: border),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
-          borderSide: BorderSide(color: border),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          obscureText: obscure,
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: Icon(icon, color: maroon),
+            suffixIcon: suffix,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide(color: border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide(color: border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide(color: gold, width: 1.3),
+            ),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
-          borderSide: BorderSide(color: gold, width: 1.3),
-        ),
-      ),
+      ],
     );
   }
 
-  Widget _socialButton({
-    required IconData icon,
-    required String text,
-  }) {
+  Widget _loginButton() {
     return SizedBox(
       width: double.infinity,
-      height: 54,
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          side: BorderSide(color: border),
+      height: 50,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFFC247),
+          foregroundColor: maroon,
+          elevation: 8,
+          shadowColor: gold.withOpacity(0.45),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
         ),
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("$text coming soon")),
-          );
-        },
-        icon: Icon(icon, size: 28),
-        label: Text(
-          text,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-          ),
-        ),
+        onPressed: isLoading ? null : _login,
+        icon: isLoading ? const SizedBox() : const Icon(Icons.login),
+        label: isLoading
+            ? CircularProgressIndicator(color: maroon, strokeWidth: 2)
+            : const Text(
+                "LOGIN",
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                  letterSpacing: 0.8,
+                ),
+              ),
       ),
     );
   }
 
   Widget _registerCard() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBF2),
         borderRadius: BorderRadius.circular(16),
@@ -430,22 +351,12 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.verified_user_outlined, color: maroon, size: 32),
-          const SizedBox(width: 12),
+          Icon(Icons.verified_user_outlined, color: maroon, size: 28),
+          const SizedBox(width: 10),
           const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "New to YGCA?",
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  "Create an account to get started",
-                  style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
-                ),
-              ],
+            child: Text(
+              "New to YGCA?",
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
             ),
           ),
           ElevatedButton(
@@ -453,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: maroon,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -469,30 +380,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _footer() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-      decoration: BoxDecoration(
-        color: maroon,
-        border: Border(top: BorderSide(color: gold, width: 2)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            "♥  Passion   |   ★  Discipline   |   🏆  Success",
-            style: TextStyle(
-              color: gold,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "Since 2022",
-            style: TextStyle(color: Colors.white, fontSize: 12),
-          ),
-        ],
+  Widget _footerMini() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        "♥ Passion  •  ★ Discipline  •  🏆 Success",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: maroon,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
