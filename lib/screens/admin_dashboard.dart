@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'student_list_screen.dart';
-import 'attendance_screen.dart';
-import 'attendance_history_screen.dart';
 import 'makeup_session_screen.dart';
-import 'leave_request_screen.dart';
-import 'attendance_report_screen.dart';
 import 'cancel_session_screen.dart';
 import 'fee_report_screen.dart';
 import 'fee_management_screen.dart';
@@ -18,6 +14,7 @@ import 'training_schedule_screen.dart';
 import 'notification_screen.dart';
 import 'coach_management_screen.dart';
 import 'reports_dashboard_screen.dart';
+import 'attendance_module_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -81,7 +78,7 @@ class AdminDashboard extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            _sectionTitle("QUICK ACCESS"),
+            _sectionTitle("MODULE ACCESS"),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -93,60 +90,230 @@ class AdminDashboard extends StatelessWidget {
                 mainAxisSpacing: 10,
                 childAspectRatio: 1.65,
                 children: [
-                  _menuCard(context, Icons.dashboard, "Reports Dashboard", Colors.red, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsDashboardScreen()));
-                  }),
-                  _menuCard(context, Icons.people, "Students", Colors.orange, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentListScreen()));
-                  }),
-                  _menuCard(context, Icons.sports, "Coach Management", Colors.purple, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CoachManagementScreen()));
-                  }),
-                  _menuCard(context, Icons.check_circle, "Attendance", Colors.green, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceScreen()));
-                  }),
-                  _menuCard(context, Icons.history, "Attendance History", Colors.blue, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceHistoryScreen()));
-                  }),
-                  _menuCard(context, Icons.event_busy, "Cancel Session", Colors.red, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CancelSessionScreen()));
-                  }),
-                  _menuCard(context, Icons.event_repeat, "Makeup Sessions", Colors.teal, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MakeupSessionScreen()));
-                  }),
-                  _menuCard(context, Icons.event_note, "Leave Requests", Colors.orange, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
-                  }),
-                  _menuCard(context, Icons.analytics, "Attendance Reports", Colors.green, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceReportScreen()));
-                  }),
-                  _menuCard(context, Icons.receipt_long, "Fee Reports", Colors.purple, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const FeeReportScreen()));
-                  }),
-                  _menuCard(context, Icons.payments, "Fee Management", Colors.blue, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const FeeManagementScreen()));
-                  }),
-                  _menuCard(context, Icons.receipt, "Payment History", Colors.green, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentHistoryScreen()));
-                  }),
-                  _menuCard(context, Icons.warning_amber, "Pending Fees", Colors.orange, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PendingFeesScreen()));
-                  }),
-                  _menuCard(context, Icons.account_balance_wallet, "Coach Salary", Colors.brown, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CoachSalaryScreen()));
-                  }),
-                  _menuCard(context, Icons.sports_cricket, "Match Schedule", Colors.purple, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MatchScheduleScreen()));
-                  }),
-                  _menuCard(context, Icons.bar_chart, "Performance Reports", Colors.blue, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PerformanceReportScreen()));
-                  }),
-                  _menuCard(context, Icons.calendar_month, "Training Schedule", Colors.teal, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingScheduleScreen()));
-                  }),
-                  _menuCard(context, Icons.notifications, "Notifications", Colors.red, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
-                  }),
+                  _menuCard(
+                    context,
+                    Icons.dashboard,
+                    "Reports Dashboard",
+                    Colors.red,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ReportsDashboardScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.people,
+                    "Students",
+                    Colors.orange,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const StudentListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.check_circle,
+                    "Attendance Module",
+                    Colors.green,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AttendanceModuleScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.sports,
+                    "Coach Management",
+                    Colors.purple,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CoachManagementScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.payments,
+                    "Fee Management",
+                    Colors.blue,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FeeManagementScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.receipt,
+                    "Payment History",
+                    Colors.green,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PaymentHistoryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.warning_amber,
+                    "Pending Fees",
+                    Colors.orange,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PendingFeesScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.receipt_long,
+                    "Fee Reports",
+                    Colors.purple,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FeeReportScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.account_balance_wallet,
+                    "Coach Salary",
+                    Colors.brown,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CoachSalaryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.sports_cricket,
+                    "Match Schedule",
+                    Colors.purple,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MatchScheduleScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.calendar_month,
+                    "Training Schedule",
+                    Colors.teal,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TrainingScheduleScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.event_repeat,
+                    "Makeup Sessions",
+                    Colors.teal,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MakeupSessionScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.event_busy,
+                    "Cancel Session",
+                    Colors.red,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CancelSessionScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.bar_chart,
+                    "Performance Reports",
+                    Colors.blue,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PerformanceReportScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.notifications,
+                    "Notifications",
+                    Colors.red,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -188,7 +355,11 @@ class AdminDashboard extends StatelessWidget {
           const Spacer(),
           Stack(
             children: [
-              const Icon(Icons.notifications_none, color: Colors.white, size: 26),
+              const Icon(
+                Icons.notifications_none,
+                color: Colors.white,
+                size: 26,
+              ),
               Positioned(
                 right: 0,
                 top: 0,
@@ -331,7 +502,8 @@ class AdminDashboard extends StatelessWidget {
       ),
     );
   }
-    Widget _overviewCard(
+
+  Widget _overviewCard(
     IconData icon,
     String title,
     String value,
@@ -500,9 +672,7 @@ class AdminDashboard extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [

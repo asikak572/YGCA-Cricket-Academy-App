@@ -17,36 +17,54 @@ class CancelSessionScreen extends StatelessWidget {
     required TextEditingController timeController,
     required TextEditingController reasonController,
   }) async {
-    if (batchController.text.trim().isEmpty ||
-        dateController.text.trim().isEmpty ||
-        timeController.text.trim().isEmpty ||
-        reasonController.text.trim().isEmpty) {
+    final batch = batchController.text.trim();
+    final date = dateController.text.trim();
+    final time = timeController.text.trim();
+    final reason = reasonController.text.trim();
+
+    if (batch.isEmpty || date.isEmpty || time.isEmpty || reason.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields")),
       );
       return;
     }
 
-    await FirebaseFirestore.instance.collection('cancelled_sessions').add({
-      'batch': batchController.text.trim(),
-      'date': dateController.text.trim(),
-      'time': timeController.text.trim(),
-      'reason': reasonController.text.trim(),
+    final cancelledDoc =
+        await FirebaseFirestore.instance.collection('cancelled_sessions').add({
+      'batch': batch,
+      'date': date,
+      'time': time,
+      'reason': reason,
       'makeup': 'Not scheduled',
+      'status': 'Cancelled',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    await FirebaseFirestore.instance.collection('makeup_sessions').add({
+      'cancelledSessionId': cancelledDoc.id,
+      'batch': batch,
+      'cancelledDate': date,
+      'cancelledTime': time,
+      'reason': reason,
+      'makeupDate': '',
+      'makeupTime': '',
+      'status': 'Pending',
       'createdAt': FieldValue.serverTimestamp(),
     });
 
     await FirebaseFirestore.instance.collection('notifications').add({
       'title': 'Session Cancelled',
       'message':
-          '${batchController.text.trim()} session on ${dateController.text.trim()} has been cancelled. Reason: ${reasonController.text.trim()}',
+          '$batch session on $date at $time has been cancelled. Reason: $reason. Makeup session will be scheduled soon.',
       'targetRole': 'All',
       'createdAt': FieldValue.serverTimestamp(),
     });
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Session cancelled and parents notified")),
+        const SnackBar(
+          content: Text("Session cancelled and makeup session created"),
+        ),
       );
 
       batchController.clear();
@@ -114,9 +132,22 @@ class CancelSessionScreen extends StatelessWidget {
                       _warningBox(),
                       const SizedBox(height: 14),
                       _inputBox("Select Batch", batchController, Icons.groups),
-                      _inputBox("Session Date", dateController, Icons.calendar_month),
-                      _inputBox("Session Time", timeController, Icons.access_time),
-                      _inputBox("Reason", reasonController, Icons.warning_amber, maxLines: 2),
+                      _inputBox(
+                        "Session Date",
+                        dateController,
+                        Icons.calendar_month,
+                      ),
+                      _inputBox(
+                        "Session Time",
+                        timeController,
+                        Icons.access_time,
+                      ),
+                      _inputBox(
+                        "Reason",
+                        reasonController,
+                        Icons.warning_amber,
+                        maxLines: 2,
+                      ),
                       const SizedBox(height: 6),
                       SizedBox(
                         width: double.infinity,
@@ -138,7 +169,7 @@ class CancelSessionScreen extends StatelessWidget {
                           ),
                           icon: const Icon(Icons.notifications_active),
                           label: const Text(
-                            "CANCEL & NOTIFY",
+                            "CANCEL & CREATE MAKEUP",
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1,
@@ -164,9 +195,24 @@ class CancelSessionScreen extends StatelessWidget {
                     mainAxisSpacing: 8,
                     childAspectRatio: 0.9,
                     children: [
-                      _smallStatCard(Icons.event_busy, "TOTAL", sessions.length.toString(), Colors.red),
-                      _smallStatCard(Icons.groups, "BATCHES", batches.length.toString(), Colors.blue),
-                      _smallStatCard(Icons.event_repeat, "MAKEUP", makeupPending.toString(), Colors.orange),
+                      _smallStatCard(
+                        Icons.event_busy,
+                        "TOTAL",
+                        sessions.length.toString(),
+                        Colors.red,
+                      ),
+                      _smallStatCard(
+                        Icons.groups,
+                        "BATCHES",
+                        batches.length.toString(),
+                        Colors.blue,
+                      ),
+                      _smallStatCard(
+                        Icons.event_repeat,
+                        "MAKEUP",
+                        makeupPending.toString(),
+                        Colors.orange,
+                      ),
                     ],
                   ),
                 ),
@@ -370,7 +416,7 @@ class CancelSessionScreen extends StatelessWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Cancel a training session only when required. Parents and students will be notified immediately. A makeup session can be scheduled after cancellation.",
+              "Cancel a session only when required. Parents and students will be notified immediately. A makeup session will be created automatically.",
               style: TextStyle(fontSize: 12, color: Colors.red),
             ),
           ),
@@ -507,7 +553,6 @@ class CancelSessionScreen extends StatelessWidget {
             child: Icon(Icons.event_busy, color: Colors.red.shade700),
           ),
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

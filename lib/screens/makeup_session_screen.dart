@@ -10,14 +10,108 @@ class MakeupSessionScreen extends StatelessWidget {
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
-  Future<void> _updateStatus(String docId, String status) async {
+  Future<void> _scheduleMakeup(
+    BuildContext context,
+    String docId,
+    String cancelledSessionId,
+  ) async {
+    final dateController = TextEditingController();
+    final timeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Schedule Makeup Session"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _input("Makeup Date", dateController),
+            _input("Makeup Time", timeController),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              dateController.dispose();
+              timeController.dispose();
+              Navigator.pop(context);
+            },
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: maroon,
+              foregroundColor: gold,
+            ),
+            onPressed: () async {
+              final date = dateController.text.trim();
+              final time = timeController.text.trim();
+
+              if (date.isEmpty || time.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please fill date and time")),
+                );
+                return;
+              }
+
+              await FirebaseFirestore.instance
+                  .collection('makeup_sessions')
+                  .doc(docId)
+                  .update({
+                'makeupDate': date,
+                'makeupTime': time,
+                'status': 'Scheduled',
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+
+              if (cancelledSessionId.isNotEmpty) {
+                await FirebaseFirestore.instance
+                    .collection('cancelled_sessions')
+                    .doc(cancelledSessionId)
+                    .update({
+                  'makeup': "$date • $time",
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+              }
+
+              await FirebaseFirestore.instance.collection('notifications').add({
+                'title': 'Makeup Session Scheduled',
+                'message': 'Makeup session scheduled on $date at $time',
+                'targetRole': 'All',
+                'createdAt': FieldValue.serverTimestamp(),
+              });
+
+              dateController.dispose();
+              timeController.dispose();
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Makeup session scheduled")),
+                );
+              }
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _markCompleted(BuildContext context, String docId) async {
     await FirebaseFirestore.instance
         .collection('makeup_sessions')
         .doc(docId)
         .update({
-      'status': status,
+      'status': 'Completed',
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Makeup session marked as completed")),
+      );
+    }
   }
 
   Future<void> _deleteSession(BuildContext context, String docId) async {
@@ -54,115 +148,6 @@ class MakeupSessionScreen extends StatelessWidget {
               await _deleteSession(context, docId);
             },
             child: const Text("Delete"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showStatusDialog(BuildContext context, String docId) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Update Status"),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await _updateStatus(docId, "Pending");
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text("Pending"),
-          ),
-          TextButton(
-            onPressed: () async {
-              await _updateStatus(docId, "Scheduled");
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text("Scheduled"),
-          ),
-          TextButton(
-            onPressed: () async {
-              await _updateStatus(docId, "Completed");
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text("Completed"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showScheduleDialog(BuildContext context) {
-    final titleController = TextEditingController();
-    final batchController = TextEditingController();
-    final reasonController = TextEditingController();
-    final makeupDateController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Schedule Makeup Session"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              _input("Missed Session Date / Title", titleController),
-              _input("Batch", batchController),
-              _input("Reason", reasonController),
-              _input("Makeup Date", makeupDateController),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              titleController.dispose();
-              batchController.dispose();
-              reasonController.dispose();
-              makeupDateController.dispose();
-              Navigator.pop(context);
-            },
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
-              foregroundColor: gold,
-            ),
-            onPressed: () async {
-              if (titleController.text.trim().isEmpty ||
-                  batchController.text.trim().isEmpty ||
-                  reasonController.text.trim().isEmpty ||
-                  makeupDateController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please fill all fields")),
-                );
-                return;
-              }
-
-              await FirebaseFirestore.instance
-                  .collection('makeup_sessions')
-                  .add({
-                'title': titleController.text.trim(),
-                'batch': batchController.text.trim(),
-                'reason': reasonController.text.trim(),
-                'makeupDate': makeupDateController.text.trim(),
-                'status': 'Scheduled',
-                'createdAt': FieldValue.serverTimestamp(),
-              });
-
-              titleController.dispose();
-              batchController.dispose();
-              reasonController.dispose();
-              makeupDateController.dispose();
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Makeup session scheduled")),
-                );
-              }
-            },
-            child: const Text("Save"),
           ),
         ],
       ),
@@ -219,7 +204,7 @@ class MakeupSessionScreen extends StatelessWidget {
 
           for (final doc in sessions) {
             final data = doc.data() as Map<String, dynamic>;
-            final status = data['status']?.toString() ?? 'Scheduled';
+            final status = data['status']?.toString() ?? 'Pending';
 
             if (status == "Completed") {
               completed++;
@@ -240,11 +225,8 @@ class MakeupSessionScreen extends StatelessWidget {
                   completed: completed,
                   pending: pending,
                 ),
-
                 const SizedBox(height: 18),
-
                 _sectionTitle("MAKEUP OVERVIEW"),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: GridView.count(
@@ -255,49 +237,24 @@ class MakeupSessionScreen extends StatelessWidget {
                     mainAxisSpacing: 10,
                     childAspectRatio: 1.25,
                     children: [
-                      _statCard(
-                        Icons.event_repeat,
-                        "TOTAL",
-                        sessions.length.toString(),
-                        "Sessions",
-                        Colors.blue,
-                      ),
-                      _statCard(
-                        Icons.calendar_month,
-                        "SCHEDULED",
-                        scheduled.toString(),
-                        "Planned",
-                        Colors.green,
-                      ),
-                      _statCard(
-                        Icons.pending_actions,
-                        "PENDING",
-                        pending.toString(),
-                        "Waiting",
-                        Colors.orange,
-                      ),
-                      _statCard(
-                        Icons.check_circle,
-                        "COMPLETED",
-                        completed.toString(),
-                        "Done",
-                        Colors.purple,
-                      ),
+                      _statCard(Icons.event_repeat, "TOTAL",
+                          sessions.length.toString(), "Sessions", Colors.blue),
+                      _statCard(Icons.calendar_month, "SCHEDULED",
+                          scheduled.toString(), "Planned", Colors.green),
+                      _statCard(Icons.pending_actions, "PENDING",
+                          pending.toString(), "Waiting", Colors.orange),
+                      _statCard(Icons.check_circle, "COMPLETED",
+                          completed.toString(), "Done", Colors.purple),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 18),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _infoBanner(),
                 ),
-
                 const SizedBox(height: 18),
-
-                _sectionTitle("SESSION LIST"),
-
+                _sectionTitle("MAKEUP SESSION LIST"),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: sessions.isEmpty
@@ -306,21 +263,31 @@ class MakeupSessionScreen extends StatelessWidget {
                           children: sessions.map((doc) {
                             final data = doc.data() as Map<String, dynamic>;
 
-                            final title = data['title']?.toString() ?? '';
                             final batch = data['batch']?.toString() ?? '';
+                            final cancelledDate =
+                                data['cancelledDate']?.toString() ?? '';
+                            final cancelledTime =
+                                data['cancelledTime']?.toString() ?? '';
                             final reason = data['reason']?.toString() ?? '';
                             final makeupDate =
                                 data['makeupDate']?.toString() ?? '';
+                            final makeupTime =
+                                data['makeupTime']?.toString() ?? '';
                             final status =
-                                data['status']?.toString() ?? 'Scheduled';
+                                data['status']?.toString() ?? 'Pending';
+                            final cancelledSessionId =
+                                data['cancelledSessionId']?.toString() ?? '';
 
                             return _makeupCard(
                               context: context,
                               docId: doc.id,
-                              title: title,
+                              cancelledSessionId: cancelledSessionId,
                               batch: batch,
+                              cancelledDate: cancelledDate,
+                              cancelledTime: cancelledTime,
                               reason: reason,
                               makeupDate: makeupDate,
+                              makeupTime: makeupTime,
                               status: status,
                               statusColor: _statusColor(status),
                               icon: _statusIcon(status),
@@ -328,19 +295,11 @@ class MakeupSessionScreen extends StatelessWidget {
                           }).toList(),
                         ),
                 ),
-
-                const SizedBox(height: 90),
+                const SizedBox(height: 30),
               ],
             ),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        onPressed: () => _showScheduleDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text("Schedule Makeup"),
       ),
     );
   }
@@ -588,7 +547,7 @@ class MakeupSessionScreen extends StatelessWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Makeup sessions are used when a regular training session is cancelled or missed. Parents and students should be notified after scheduling.",
+              "Makeup sessions are automatically created when a training session is cancelled. Schedule a makeup date and notify parents/students.",
               style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
             ),
           ),
@@ -600,14 +559,24 @@ class MakeupSessionScreen extends StatelessWidget {
   Widget _makeupCard({
     required BuildContext context,
     required String docId,
-    required String title,
+    required String cancelledSessionId,
     required String batch,
+    required String cancelledDate,
+    required String cancelledTime,
     required String reason,
     required String makeupDate,
+    required String makeupTime,
     required String status,
     required Color statusColor,
     required IconData icon,
   }) {
+    final isPending = status == "Pending";
+    final makeupText = makeupDate.isEmpty
+        ? "Not scheduled"
+        : makeupTime.isEmpty
+            ? makeupDate
+            : "$makeupDate • $makeupTime";
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -634,76 +603,55 @@ class MakeupSessionScreen extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title.isEmpty ? "Untitled Session" : title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      batch.isEmpty ? "No batch assigned" : batch,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  batch.isEmpty ? "Unknown Batch" : batch,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
                 ),
               ),
               _statusChip(status, statusColor),
             ],
           ),
-
           const SizedBox(height: 14),
-
-          _detailRow("Cancel / Missed Reason", reason),
-          _detailRow("Makeup Date", makeupDate),
-
+          _detailRow("Cancelled Date", cancelledDate),
+          _detailRow("Cancelled Time", cancelledTime),
+          _detailRow("Reason", reason),
+          _detailRow("Makeup Date", makeupText),
           const SizedBox(height: 12),
-
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showStatusDialog(context, docId),
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text("Update"),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: maroon,
-                    foregroundColor: gold,
+              if (isPending)
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: maroon,
+                      foregroundColor: gold,
+                    ),
+                    onPressed: () => _scheduleMakeup(
+                      context,
+                      docId,
+                      cancelledSessionId,
+                    ),
+                    icon: const Icon(Icons.calendar_month, size: 16),
+                    label: const Text("Schedule"),
                   ),
-                  onPressed: () async {
-                    await FirebaseFirestore.instance
-                        .collection('notifications')
-                        .add({
-                      'title': 'Makeup Session',
-                      'message': '$batch makeup session scheduled on $makeupDate',
-                      'targetRole': 'All',
-                      'createdAt': FieldValue.serverTimestamp(),
-                    });
-
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Notification added")),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.notifications_active, size: 16),
-                  label: const Text("Notify"),
+                )
+              else
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => _markCompleted(context, docId),
+                    icon: const Icon(Icons.check_circle, size: 16),
+                    label: const Text("Complete"),
+                  ),
                 ),
-              ),
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
@@ -789,7 +737,7 @@ class MakeupSessionScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 4),
-          Text("Schedule a makeup session to show here"),
+          Text("Cancel a session to automatically create makeup session"),
         ],
       ),
     );

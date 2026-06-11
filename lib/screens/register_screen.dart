@@ -245,9 +245,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const Text(
                   "Join YGCA and start your journey",
                   textAlign: TextAlign.center,
+                  maxLines: 2,
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
