@@ -11,68 +11,84 @@ class CancelSessionScreen extends StatelessWidget {
   final Color border = const Color(0xFFE2E8F0);
 
   Future<void> _cancelSession({
-    required BuildContext context,
-    required TextEditingController batchController,
-    required TextEditingController dateController,
-    required TextEditingController timeController,
-    required TextEditingController reasonController,
-  }) async {
-    final batch = batchController.text.trim();
-    final date = dateController.text.trim();
-    final time = timeController.text.trim();
-    final reason = reasonController.text.trim();
+  required BuildContext context,
+  required TextEditingController batchController,
+  required TextEditingController dateController,
+  required TextEditingController timeController,
+  required TextEditingController reasonController,
+}) async {
+  final batch = batchController.text.trim();
+  final date = dateController.text.trim();
+  final time = timeController.text.trim();
+  final reason = reasonController.text.trim();
 
-    if (batch.isEmpty || date.isEmpty || time.isEmpty || reason.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
-      );
-      return;
-    }
-
-    final cancelledDoc =
-        await FirebaseFirestore.instance.collection('cancelled_sessions').add({
-      'batch': batch,
-      'date': date,
-      'time': time,
-      'reason': reason,
-      'makeup': 'Not scheduled',
-      'status': 'Cancelled',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    await FirebaseFirestore.instance.collection('makeup_sessions').add({
-      'cancelledSessionId': cancelledDoc.id,
-      'batch': batch,
-      'cancelledDate': date,
-      'cancelledTime': time,
-      'reason': reason,
-      'makeupDate': '',
-      'makeupTime': '',
-      'status': 'Pending',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'title': 'Session Cancelled',
-      'message':
-          '$batch session on $date at $time has been cancelled. Reason: $reason. Makeup session will be scheduled soon.',
-      'targetRole': 'All',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Session cancelled and makeup session created"),
-        ),
-      );
-
-      batchController.clear();
-      dateController.clear();
-      timeController.clear();
-      reasonController.clear();
-    }
+  if (batch.isEmpty || date.isEmpty || time.isEmpty || reason.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please fill all fields")),
+    );
+    return;
   }
+
+  final notificationMessage =
+      '$batch session on $date at $time has been cancelled. Reason: $reason. Makeup session will be scheduled soon.';
+
+  final cancelledDoc =
+      await FirebaseFirestore.instance.collection('cancelled_sessions').add({
+    'batch': batch,
+    'date': date,
+    'time': time,
+    'reason': reason,
+    'makeup': 'Not scheduled',
+    'status': 'Cancelled',
+    'makeupStatus': 'Pending',
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+
+  await FirebaseFirestore.instance.collection('makeup_sessions').add({
+    'cancelledSessionId': cancelledDoc.id,
+    'batch': batch,
+    'cancelledDate': date,
+    'cancelledTime': time,
+    'reason': reason,
+    'makeupDate': '',
+    'makeupTime': '',
+    'status': 'Pending',
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+
+  await FirebaseFirestore.instance.collection('notifications').add({
+    'title': 'Session Cancelled',
+    'message': notificationMessage,
+    'targetRole': 'Parent',
+    'batch': batch,
+    'type': 'session_cancelled',
+    'status': 'Unread',
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+
+  await FirebaseFirestore.instance.collection('notifications').add({
+    'title': 'Session Cancelled',
+    'message': notificationMessage,
+    'targetRole': 'Student',
+    'batch': batch,
+    'type': 'session_cancelled',
+    'status': 'Unread',
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Session cancelled, makeup created and notified"),
+      ),
+    );
+
+    batchController.clear();
+    dateController.clear();
+    timeController.clear();
+    reasonController.clear();
+  }
+}
 
   @override
   Widget build(BuildContext context) {

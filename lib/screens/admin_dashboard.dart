@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'student_list_screen.dart';
-import 'coach_salary_screen.dart';
-import 'match_schedule_screen.dart';
 import 'performance_report_screen.dart';
-import 'training_schedule_screen.dart';
 import 'notification_screen.dart';
-import 'coach_management_screen.dart';
 import 'reports_dashboard_screen.dart';
 import 'attendance_module_screen.dart';
 import 'fee_module_screen.dart';
 import 'coach_module_screen.dart';
+import 'schedule_module_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -44,10 +41,30 @@ class AdminDashboard extends StatelessWidget {
                 mainAxisSpacing: 10,
                 childAspectRatio: 1.22,
                 children: [
-                  _overviewCard(Icons.groups, "Total Students", "248", "View all"),
-                  _overviewCard(Icons.check_circle, "Attendance", "186", "75% Today"),
-                  _overviewCard(Icons.receipt, "Pending Fees", "₹2.45L", "28 Students"),
-                  _overviewCard(Icons.calendar_month, "Sessions", "6", "2 Cancelled"),
+                  _overviewCard(
+                    Icons.groups,
+                    "Total Students",
+                    "248",
+                    "View all",
+                  ),
+                  _overviewCard(
+                    Icons.check_circle,
+                    "Attendance",
+                    "186",
+                    "75% Today",
+                  ),
+                  _overviewCard(
+                    Icons.receipt,
+                    "Pending Fees",
+                    "₹2.45L",
+                    "28 Students",
+                  ),
+                  _overviewCard(
+                    Icons.calendar_month,
+                    "Sessions",
+                    "6",
+                    "2 Cancelled",
+                  ),
                 ],
               ),
             ),
@@ -66,34 +83,125 @@ class AdminDashboard extends StatelessWidget {
                 mainAxisSpacing: 10,
                 childAspectRatio: 1.65,
                 children: [
-                  _menuCard(context, Icons.dashboard, "Reports Dashboard", Colors.red, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsDashboardScreen()));
-                  }),
-                  _menuCard(context, Icons.people, "Students", Colors.orange, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentListScreen()));
-                  }),
-                  _menuCard(context, Icons.check_circle, "Attendance Module", Colors.green, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceModuleScreen()));
-                  }),
-                _menuCard(context, Icons.sports, "Coach Module", Colors.purple, () { 
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => CoachModuleScreen()));
-                   }),
-                  _menuCard(context, Icons.payments, "Fee Module", Colors.blue, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => FeeModuleScreen()));
-                  }),
-                 
-                  _menuCard(context, Icons.sports_cricket, "Match Schedule", Colors.purple, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MatchScheduleScreen()));
-                  }),
-                  _menuCard(context, Icons.calendar_month, "Training Schedule", Colors.teal, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingScheduleScreen()));
-                  }),
-                  _menuCard(context, Icons.bar_chart, "Performance Reports", Colors.blue, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PerformanceReportScreen()));
-                  }),
-                  _menuCard(context, Icons.notifications, "Notifications", Colors.red, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
-                  }),
+                  _menuCard(
+                    context,
+                    Icons.dashboard,
+                    "Reports Dashboard",
+                    Colors.red,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ReportsDashboardScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.people,
+                    "Students",
+                    Colors.orange,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const StudentListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.check_circle,
+                    "Attendance Module",
+                    Colors.green,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AttendanceModuleScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.sports,
+                    "Coach Module",
+                    Colors.purple,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CoachModuleScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.payments,
+                    "Fee Module",
+                    Colors.blue,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FeeModuleScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.calendar_month,
+                    "Schedule Module",
+                    Colors.teal,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ScheduleModuleScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.bar_chart,
+                    "Performance Reports",
+                    Colors.blue,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PerformanceReportScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _menuCard(
+                    context,
+                    Icons.notifications,
+                    "Notifications",
+                    Colors.red,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -135,7 +243,11 @@ class AdminDashboard extends StatelessWidget {
           const Spacer(),
           Stack(
             children: [
-              const Icon(Icons.notifications_none, color: Colors.white, size: 26),
+              const Icon(
+                Icons.notifications_none,
+                color: Colors.white,
+                size: 26,
+              ),
               Positioned(
                 right: 0,
                 top: 0,
@@ -176,7 +288,10 @@ class AdminDashboard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset('assets/images/home_hero_bg.png', fit: BoxFit.cover),
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
           ),
           Positioned.fill(
             child: Container(
@@ -275,7 +390,12 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _overviewCard(IconData icon, String title, String value, String subtitle) {
+  Widget _overviewCard(
+    IconData icon,
+    String title,
+    String value,
+    String subtitle,
+  ) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -302,18 +422,27 @@ class AdminDashboard extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 10, color: Colors.black54),
+            style: const TextStyle(
+              fontSize: 10,
+              color: Colors.black54,
+            ),
           ),
         ],
       ),
