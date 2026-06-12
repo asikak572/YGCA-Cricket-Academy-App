@@ -183,7 +183,7 @@ class CancelSessionScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                _sectionTitle("CANCELLED SESSION OVERVIEW"),
+                _sectionTitle("SESSION OVERVIEW"),
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -193,7 +193,7 @@ class CancelSessionScreen extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
-                    childAspectRatio: 0.9,
+                    childAspectRatio: 1.15,
                     children: [
                       _smallStatCard(
                         Icons.event_busy,
@@ -287,7 +287,7 @@ class CancelSessionScreen extends StatelessWidget {
     required int batches,
   }) {
     return Container(
-      height: 230,
+      height: 210,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -455,25 +455,35 @@ class CancelSessionScreen extends StatelessWidget {
   }
 
   Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-      child: Row(
-        children: [
-          Text(
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: maroon,
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
-          const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
-        ],
-      ),
-    );
-  }
+        ),
+
+        const SizedBox(width: 8),
+
+        Container(
+          width: 35,
+          height: 2,
+          color: gold,
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _smallStatCard(
     IconData icon,

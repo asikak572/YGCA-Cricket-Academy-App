@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-
 import 'student_list_screen.dart';
-import 'makeup_session_screen.dart';
-import 'cancel_session_screen.dart';
 import 'fee_report_screen.dart';
 import 'fee_management_screen.dart';
 import 'payment_history_screen.dart';
@@ -250,36 +247,6 @@ class AdminDashboard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const TrainingScheduleScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _menuCard(
-                    context,
-                    Icons.event_repeat,
-                    "Makeup Sessions",
-                    Colors.teal,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MakeupSessionScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _menuCard(
-                    context,
-                    Icons.event_busy,
-                    "Cancel Session",
-                    Colors.red,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CancelSessionScreen(),
                         ),
                       );
                     },
