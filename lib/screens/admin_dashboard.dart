@@ -10,6 +10,7 @@ import 'coach_management_screen.dart';
 import 'reports_dashboard_screen.dart';
 import 'attendance_module_screen.dart';
 import 'fee_module_screen.dart';
+import 'coach_module_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -74,15 +75,13 @@ class AdminDashboard extends StatelessWidget {
                   _menuCard(context, Icons.check_circle, "Attendance Module", Colors.green, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceModuleScreen()));
                   }),
-                  _menuCard(context, Icons.sports, "Coach Management", Colors.purple, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CoachManagementScreen()));
-                  }),
+                _menuCard(context, Icons.sports, "Coach Module", Colors.purple, () { 
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => CoachModuleScreen()));
+                   }),
                   _menuCard(context, Icons.payments, "Fee Module", Colors.blue, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => FeeModuleScreen()));
                   }),
-                  _menuCard(context, Icons.account_balance_wallet, "Coach Salary", Colors.brown, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CoachSalaryScreen()));
-                  }),
+                 
                   _menuCard(context, Icons.sports_cricket, "Match Schedule", Colors.purple, () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const MatchScheduleScreen()));
                   }),
