@@ -11,6 +11,10 @@ import 'student_list_screen.dart';
 import 'match_schedule_screen.dart';
 import 'training_schedule_screen.dart';
 import 'notification_screen.dart';
+import 'coach_attendance_module_screen.dart';
+import 'coach_student_module_screen.dart';
+import 'coach_performance_module_screen.dart';
+import 'coach_schedule_module_screen.dart';
 
 class CoachDashboard extends StatelessWidget {
   const CoachDashboard({super.key});
@@ -125,33 +129,93 @@ class CoachDashboard extends StatelessWidget {
                     mainAxisSpacing: 10,
                     childAspectRatio: 1.55,
                     children: [
-                      _menuCard(context, Icons.check_circle, "Mark Attendance", "Daily attendance", Colors.green, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceScreen()));
-                      }),
-                      _menuCard(context, Icons.people, "My Students", "Student list", Colors.orange, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentListScreen()));
-                      }),
-                      _menuCard(context, Icons.bar_chart, "Performance", "Update progress", Colors.blue, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PerformanceReportScreen()));
-                      }),
-                      _menuCard(context, Icons.history, "Attendance History", "View records", Colors.red, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceHistoryScreen()));
-                      }),
-                      _menuCard(context, Icons.event_repeat, "Makeup Sessions", "Extra sessions", Colors.teal, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const MakeupSessionScreen()));
-                      }),
-                      _menuCard(context, Icons.event_note, "Leave Requests", "Student leaves", Colors.brown, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
-                      }),
-                      _menuCard(context, Icons.sports_cricket, "Matches", "Match schedule", Colors.purple, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const MatchScheduleScreen()));
-                      }),
-                      _menuCard(context, Icons.calendar_month, "Training", "Training plan", Colors.indigo, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingScheduleScreen()));
-                      }),
-                      _menuCard(context, Icons.notifications, "Notifications", "Academy updates", Colors.red, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
-                      }),
+                      _menuCard(
+  context,
+  Icons.fact_check,
+  "Attendance Module",
+  Colors.green,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CoachAttendanceModuleScreen(),
+      ),
+    );
+  },
+),
+                     
+                    _menuCard(
+  context,
+  Icons.people,
+  "Student Module",
+  Colors.orange,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CoachStudentModuleScreen(),
+      ),
+    );
+  },
+),
+                      _menuCard(
+  context,
+  Icons.bar_chart,
+  "Performance Module",
+  Colors.blue,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CoachPerformanceModuleScreen(),
+      ),
+    );
+  },
+),
+                      _menuCard(
+  context,
+  Icons.calendar_month,
+  "Schedule Module",
+  Colors.teal,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CoachScheduleModuleScreen(),
+      ),
+    );
+  },
+),
+                     
+                     _menuCard(
+  context,
+  Icons.event_note,
+  "Leave Requests",
+  Colors.brown,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LeaveRequestScreen(),
+      ),
+    );
+  },
+),
+
+_menuCard(
+  context,
+  Icons.notifications,
+  "Notifications",
+  Colors.red,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const NotificationScreen(),
+      ),
+    );
+  },
+),
                     ],
                   ),
                 ),
@@ -440,66 +504,66 @@ class CoachDashboard extends StatelessWidget {
   }
 
   Widget _menuCard(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: border),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.045),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+  BuildContext context,
+  IconData icon,
+  String title,
+  Color color,
+  VoidCallback onTap,
+) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(16),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: color,
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 20,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 23,
-              backgroundColor: color,
-              child: Icon(icon, color: Colors.white, size: 23),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
-                  ),
-                ],
+          ),
+
+          const SizedBox(width: 8),
+
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.15,
               ),
             ),
-            Icon(Icons.chevron_right, color: gold, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
+          ),
 
+          const Icon(
+            Icons.chevron_right,
+            color: Colors.grey,
+            size: 18,
+          ),
+        ],
+      ),
+    ),
+  );
+}
   Widget _coachNoteCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
