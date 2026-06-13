@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'attendance_calendar_screen.dart';
-import 'attendance_history_screen.dart';
-import 'performance_report_screen.dart';
-import 'match_schedule_screen.dart';
-import 'training_schedule_screen.dart';
 import 'notification_screen.dart';
+import 'leave_request_screen.dart';
+import 'student_attendance_module_screen.dart';
+import 'student_performance_module_screen.dart';
+import 'student_schedule_module_screen.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});
@@ -112,7 +111,9 @@ class StudentDashboard extends StatelessWidget {
                   attendance: attendance,
                 ),
                 const SizedBox(height: 18),
+
                 _sectionTitle("OVERVIEW"),
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: GridView.count(
@@ -154,8 +155,11 @@ class StudentDashboard extends StatelessWidget {
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 18),
+
                 _sectionTitle("QUICK ACCESS"),
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: GridView.count(
@@ -164,19 +168,18 @@ class StudentDashboard extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1.55,
+                    childAspectRatio: 1.65,
                     children: [
                       _menuCard(
                         context,
-                        Icons.calendar_month,
-                        "My Attendance",
-                        "Calendar & status",
+                        Icons.fact_check,
+                        "Attendance Module",
                         Colors.orange,
                         () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => AttendanceCalendarScreen(
+                              builder: (_) => StudentAttendanceModuleScreen(
                                 studentId: currentUser.uid,
                                 name: name,
                                 batch: batch,
@@ -189,60 +192,44 @@ class StudentDashboard extends StatelessWidget {
                       ),
                       _menuCard(
                         context,
-                        Icons.history,
-                        "History",
-                        "Attendance history",
-                        Colors.red,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AttendanceHistoryScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
                         Icons.bar_chart,
-                        "Performance",
-                        "Track progress",
+                        "Performance Module",
                         Colors.green,
                         () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PerformanceReportScreen(),
+                              builder: (_) =>
+                                  const StudentPerformanceModuleScreen(),
                             ),
                           );
                         },
                       ),
                       _menuCard(
                         context,
-                        Icons.sports_cricket,
-                        "Matches",
-                        "Match schedule",
-                        Colors.purple,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MatchScheduleScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.calendar_today,
-                        "Training",
-                        "Training schedule",
+                        Icons.calendar_month,
+                        "Schedule Module",
                         Colors.teal,
                         () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const TrainingScheduleScreen(),
+                              builder: (_) =>
+                                  const StudentScheduleModuleScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _menuCard(
+                        context,
+                        Icons.event_note,
+                        "Apply Leave",
+                        Colors.brown,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LeaveRequestScreen(),
                             ),
                           );
                         },
@@ -251,7 +238,6 @@ class StudentDashboard extends StatelessWidget {
                         context,
                         Icons.notifications,
                         "Notifications",
-                        "Academy updates",
                         Colors.red,
                         () {
                           Navigator.push(
@@ -265,6 +251,7 @@ class StudentDashboard extends StatelessWidget {
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 22),
                 _motivationCard(),
                 const SizedBox(height: 22),
@@ -316,7 +303,11 @@ class StudentDashboard extends StatelessWidget {
           const Spacer(),
           Stack(
             children: [
-              const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+              const Icon(
+                Icons.notifications_none,
+                color: Colors.white,
+                size: 28,
+              ),
               Positioned(
                 right: 0,
                 top: 0,
@@ -559,7 +550,10 @@ class StudentDashboard extends StatelessWidget {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: Colors.black54),
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.black54,
+            ),
           ),
         ],
       ),
@@ -570,22 +564,21 @@ class StudentDashboard extends StatelessWidget {
     BuildContext context,
     IconData icon,
     String title,
-    String subtitle,
     Color color,
     VoidCallback onTap,
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: border),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.045),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -594,39 +587,32 @@ class StudentDashboard extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              radius: 23,
+              radius: 20,
               backgroundColor: color,
-              child: Icon(icon, color: Colors.white, size: 23),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
               ),
             ),
-            Icon(Icons.chevron_right, color: gold, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: Colors.grey,
+              size: 18,
+            ),
           ],
         ),
       ),

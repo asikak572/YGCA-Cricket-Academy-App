@@ -10,6 +10,10 @@ import 'match_schedule_screen.dart';
 import 'notification_screen.dart';
 import 'training_schedule_screen.dart';
 import 'leave_request_screen.dart';
+import 'parent_attendance_module_screen.dart';
+import 'parent_fee_module_screen.dart';
+import 'parent_schedule_module_screen.dart';
+import 'parent_performance_module_screen.dart';
 
 class ParentDashboard extends StatelessWidget {
   const ParentDashboard({super.key});
@@ -196,98 +200,66 @@ class ParentDashboard extends StatelessWidget {
                     childAspectRatio: 1.45,
                     children: [
                       _menuCard(
-                        context,
-                        Icons.calendar_month,
-                        "Attendance\nCalendar",
-                        Colors.orange,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AttendanceCalendarScreen(
-                                name: childName,
-                                batch: childBatch,
-                                rollNo: rollNo,
-                                attendance: attendance,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+  context,
+  Icons.fact_check,
+  "Attendance\nModule",
+  Colors.orange,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const ParentAttendanceModuleScreen(),
+      ),
+    );
+  },
+),
                       _menuCard(
-                        context,
-                        Icons.history,
-                        "Attendance\nHistory",
-                        Colors.red,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AttendanceHistoryScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.bar_chart,
-                        "Performance\nReport",
-                        Colors.green,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const PerformanceReportScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.payments,
-                        "Fee\nReport",
-                        Colors.blue,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const FeeReportScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.sports_cricket,
-                        "Match\nSchedule",
-                        Colors.purple,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MatchScheduleScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.calendar_today,
-                        "Training\nSchedule",
-                        Colors.teal,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const TrainingScheduleScreen(),
-                            ),
-                          );
-                        },
-                      ),
+  context,
+  Icons.bar_chart,
+  "Performance\nModule",
+  Colors.green,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ParentPerformanceModuleScreen(),
+      ),
+    );
+  },
+),
+                     _menuCard(
+  context,
+  Icons.payments,
+  "Fee\nModule",
+  Colors.blue,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ParentFeeModuleScreen(),
+      ),
+    );
+  },
+),
+                     _menuCard(
+  context,
+  Icons.calendar_month,
+  "Schedule\nModule",
+  Colors.teal,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ParentScheduleModuleScreen(),
+      ),
+    );
+  },
+),
                       _menuCard(
                         context,
                         Icons.event_note,
-                        "Leave\nRequest",
+                        "Apply\nLeave",
                         Colors.brown,
                         () {
                           Navigator.push(
