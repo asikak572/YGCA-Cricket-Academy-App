@@ -2,19 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'attendance_screen.dart';
-import 'attendance_history_screen.dart';
-import 'makeup_session_screen.dart';
 import 'leave_request_screen.dart';
-import 'performance_report_screen.dart';
-import 'student_list_screen.dart';
-import 'match_schedule_screen.dart';
-import 'training_schedule_screen.dart';
 import 'notification_screen.dart';
+
 import 'coach_attendance_module_screen.dart';
 import 'coach_student_module_screen.dart';
 import 'coach_performance_module_screen.dart';
 import 'coach_schedule_module_screen.dart';
+import 'edit_profile_screen.dart';
 
 class CoachDashboard extends StatelessWidget {
   const CoachDashboard({super.key});
@@ -106,7 +101,7 @@ class CoachDashboard extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1.25,
+                    childAspectRatio: 1.08,
                     children: [
                       _statCard(Icons.groups, "STUDENTS", assignedStudents, "Assigned", Colors.blue),
                       _statCard(Icons.check_circle, "ATTENDANCE", "Today", "Mark Now", Colors.green),
@@ -197,6 +192,20 @@ class CoachDashboard extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => const LeaveRequestScreen(),
+      ),
+    );
+  },
+),
+_menuCard(
+  context,
+  Icons.person,
+  "Edit Profile",
+  Colors.indigo,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const EditProfileScreen(),
       ),
     );
   },

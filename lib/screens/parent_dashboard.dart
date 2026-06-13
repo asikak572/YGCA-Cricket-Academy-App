@@ -2,18 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'attendance_calendar_screen.dart';
-import 'attendance_history_screen.dart';
-import 'performance_report_screen.dart';
-import 'fee_report_screen.dart';
-import 'match_schedule_screen.dart';
 import 'notification_screen.dart';
-import 'training_schedule_screen.dart';
 import 'leave_request_screen.dart';
 import 'parent_attendance_module_screen.dart';
 import 'parent_fee_module_screen.dart';
 import 'parent_schedule_module_screen.dart';
 import 'parent_performance_module_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ParentDashboard extends StatelessWidget {
   const ParentDashboard({super.key});
@@ -151,13 +146,15 @@ class ParentDashboard extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1.25,
+                    childAspectRatio: 1.08,
                     children: [
                       _statCard(
                         Icons.verified,
                         "ATTENDANCE",
                         "$attendanceNumber%",
-                        attendanceNumber >= 75 ? "Good Progress" : "Needs Focus",
+                        attendanceNumber >= 75
+                            ? "Good Progress"
+                            : "Needs Focus",
                         Colors.green,
                       ),
                       _statCard(
@@ -200,66 +197,68 @@ class ParentDashboard extends StatelessWidget {
                     childAspectRatio: 1.45,
                     children: [
                       _menuCard(
-  context,
-  Icons.fact_check,
-  "Attendance\nModule",
-  Colors.orange,
-  () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const ParentAttendanceModuleScreen(),
-      ),
-    );
-  },
-),
+                        context,
+                        Icons.fact_check,
+                        "Attendance Module",
+                        Colors.orange,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ParentAttendanceModuleScreen(),
+                            ),
+                          );
+                        },
+                      ),
                       _menuCard(
-  context,
-  Icons.bar_chart,
-  "Performance\nModule",
-  Colors.green,
-  () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ParentPerformanceModuleScreen(),
-      ),
-    );
-  },
-),
-                     _menuCard(
-  context,
-  Icons.payments,
-  "Fee\nModule",
-  Colors.blue,
-  () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ParentFeeModuleScreen(),
-      ),
-    );
-  },
-),
-                     _menuCard(
-  context,
-  Icons.calendar_month,
-  "Schedule\nModule",
-  Colors.teal,
-  () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ParentScheduleModuleScreen(),
-      ),
-    );
-  },
-),
+                        context,
+                        Icons.bar_chart,
+                        "Performance Module",
+                        Colors.green,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ParentPerformanceModuleScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _menuCard(
+                        context,
+                        Icons.payments,
+                        "Fee Module",
+                        Colors.blue,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ParentFeeModuleScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _menuCard(
+                        context,
+                        Icons.calendar_month,
+                        "Schedule Module",
+                        Colors.teal,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ParentScheduleModuleScreen(),
+                            ),
+                          );
+                        },
+                      ),
                       _menuCard(
                         context,
                         Icons.event_note,
-                        "Apply\nLeave",
+                        "Apply Leave",
                         Colors.brown,
                         () {
                           Navigator.push(
@@ -280,6 +279,20 @@ class ParentDashboard extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const NotificationScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _menuCard(
+                        context,
+                        Icons.person,
+                        "Edit Profile",
+                        Colors.indigo,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EditProfileScreen(),
                             ),
                           );
                         },
@@ -583,12 +596,13 @@ class ParentDashboard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
           ),
           Text(
             subtitle,
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 11, color: Colors.black54),
           ),
         ],
@@ -607,14 +621,14 @@ class ParentDashboard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: border),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -623,18 +637,20 @@ class ParentDashboard extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              radius: 21,
+              radius: 20,
               backgroundColor: color,
-              child: Icon(icon, color: Colors.white, size: 22),
+              child: Icon(icon, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
                 ),
               ),
             ),
@@ -663,10 +679,26 @@ class ParentDashboard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _activityRow(Icons.check_circle, "Attendance updated recently", Colors.green),
-          _activityRow(Icons.sports_cricket, "Training schedule available", Colors.blue),
-          _activityRow(Icons.payments, "Fee status is visible", Colors.orange),
-          _activityRow(Icons.notifications, "New academy notifications", Colors.red),
+          _activityRow(
+            Icons.check_circle,
+            "Attendance updated recently",
+            Colors.green,
+          ),
+          _activityRow(
+            Icons.sports_cricket,
+            "Training schedule available",
+            Colors.blue,
+          ),
+          _activityRow(
+            Icons.payments,
+            "Fee status is visible",
+            Colors.orange,
+          ),
+          _activityRow(
+            Icons.notifications,
+            "New academy notifications",
+            Colors.red,
+          ),
         ],
       ),
     );

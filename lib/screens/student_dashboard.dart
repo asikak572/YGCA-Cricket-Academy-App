@@ -7,6 +7,7 @@ import 'leave_request_screen.dart';
 import 'student_attendance_module_screen.dart';
 import 'student_performance_module_screen.dart';
 import 'student_schedule_module_screen.dart';
+import 'edit_profile_screen.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});
@@ -122,7 +123,7 @@ class StudentDashboard extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1.25,
+                    childAspectRatio: 1.08,
                     children: [
                       _statCard(
                         Icons.verified,
@@ -220,6 +221,21 @@ class StudentDashboard extends StatelessWidget {
                           );
                         },
                       ),
+
+                      _menuCard(
+  context,
+  Icons.person,
+  "Edit Profile",
+  Colors.indigo,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const EditProfileScreen(),
+      ),
+    );
+  },
+),
                       _menuCard(
                         context,
                         Icons.event_note,
