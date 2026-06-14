@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'widgets/ygca_app_bar.dart';
+
 class AttendanceReportScreen extends StatelessWidget {
   const AttendanceReportScreen({super.key});
 
@@ -13,11 +15,7 @@ class AttendanceReportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Attendance Reports"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
+      appBar: const YgcaAppBar(title: "Attendance Reports"),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('attendance')

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/ygca_app_bar.dart';
+
 import 'attendance_screen.dart';
 import 'attendance_history_screen.dart';
 import 'attendance_report_screen.dart';
@@ -20,15 +22,7 @@ class AttendanceModuleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          "Attendance Module",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
+      appBar: const YgcaAppBar(title: "Attendance Module"),
       body: Column(
         children: [
           _header(),

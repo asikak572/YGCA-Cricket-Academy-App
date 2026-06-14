@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/ygca_app_bar.dart';
+
 import 'student_list_screen.dart';
 
 class CoachStudentModuleScreen extends StatelessWidget {
@@ -7,18 +9,10 @@ class CoachStudentModuleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color maroon = Color(0xFF7F0000);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FC),
-      appBar: AppBar(
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-        title: const Text(
-          "Student Module",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
+      appBar: const YgcaAppBar(title: "Student Module"),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: GridView.count(

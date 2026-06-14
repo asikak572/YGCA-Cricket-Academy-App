@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'leave_request_screen.dart';
 import 'notification_screen.dart';
+import 'widgets/ygca_dashboard_app_bar.dart';
+import 'widgets/ygca_drawer.dart';
 
 import 'coach_attendance_module_screen.dart';
 import 'coach_student_module_screen.dart';
@@ -52,6 +54,82 @@ class CoachDashboard extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bg,
+      appBar: YgcaDashboardAppBar(
+        role: 'COACH',
+        notificationCount: 3,
+        onNotificationTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NotificationScreen()),
+        ),
+        onLogout: () => _logout(context),
+      ),
+      drawer: YgcaDrawer(
+        role: 'Coach',
+        navItems: [
+          YgcaNavItem(
+            icon: Icons.home_rounded,
+            label: 'Dashboard',
+            onTap: () {},
+          ),
+          YgcaNavItem(
+            icon: Icons.people_rounded,
+            label: 'Student Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CoachStudentModuleScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.fact_check_rounded,
+            label: 'Attendance Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CoachAttendanceModuleScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.bar_chart_rounded,
+            label: 'Performance Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CoachPerformanceModuleScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.calendar_month_rounded,
+            label: 'Schedule Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CoachScheduleModuleScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.event_note_rounded,
+            label: 'Leave Requests',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LeaveRequestScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.person_rounded,
+            label: 'Edit Profile',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.notifications_rounded,
+            label: 'Notifications',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationScreen()),
+            ),
+          ),
+        ],
+        onLogout: () => _logout(context),
+      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -81,7 +159,6 @@ class CoachDashboard extends StatelessWidget {
           return SingleChildScrollView(
             child: Column(
               children: [
-                _topHeader(context),
                 _coachHero(
                   name: name,
                   email: email,
@@ -242,65 +319,7 @@ _menuCard(
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
-      child: Row(
-        children: [
-          const Icon(Icons.menu, color: Colors.white, size: 28),
-          const Spacer(),
-          Column(
-            children: [
-              Text(
-                "YGCA",
-                style: TextStyle(
-                  color: gold,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-              const Text(
-                "YOUNG GEN CRICKET ACADEMY",
-                style: TextStyle(color: Colors.white, fontSize: 10),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                "COACH DASHBOARD",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Stack(
-            children: [
-              const Icon(Icons.notifications_none, color: Colors.white, size: 28),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: CircleAvatar(
-                  radius: 8,
-                  backgroundColor: Colors.orange,
-                  child: const Text("3", style: TextStyle(fontSize: 9, color: Colors.white)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 10),
-          IconButton(
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout, color: Colors.white),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _coachHero({
     required String name,

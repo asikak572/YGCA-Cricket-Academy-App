@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'widgets/ygca_app_bar.dart';
+
 class FeeReportScreen extends StatelessWidget {
   const FeeReportScreen({super.key});
 
@@ -13,11 +15,7 @@ class FeeReportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Fee Reports"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
+      appBar: const YgcaAppBar(title: "Fee Reports"),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('fees')

@@ -20,44 +20,116 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  final ageController = TextEditingController();
+  final phoneController = TextEditingController();
+  final parentNameController = TextEditingController();
+
   String selectedRole = "Student";
   bool isLoading = false;
   bool obscurePassword = true;
 
   Future<void> registerUser() async {
-    if (nameController.text.trim().isEmpty ||
-        emailController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty) {
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+    final age = ageController.text.trim();
+    final phone = phoneController.text.trim();
+    final parentName = parentNameController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
+        const SnackBar(content: Text("Please fill name, email and password")),
       );
       return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password must be at least 6 characters")),
+      );
+      return;
+    }
+
+    if (selectedRole == "Student") {
+      if (age.isEmpty || phone.isEmpty || parentName.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please fill student age, phone and parent name"),
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => isLoading = true);
 
     try {
-      final credential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(credential.user!.uid)
-          .set({
-        'uid': credential.user!.uid,
-        'name': nameController.text.trim(),
-        'email': emailController.text.trim(),
+      final uid = credential.user!.uid;
+      final firestore = FirebaseFirestore.instance;
+      final batch = firestore.batch();
+
+      final userRef = firestore.collection('users').doc(uid);
+
+      batch.set(userRef, {
+        'uid': uid,
+        'name': name,
+        'email': email,
         'role': selectedRole,
+
+        // Student should wait for admin approval
+        'approvalStatus': selectedRole == "Student" ? 'Pending' : 'Approved',
+        'status': selectedRole == "Student" ? 'Pending' : 'Active',
+        'isApproved': selectedRole == "Student" ? false : true,
+
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      if (selectedRole == "Student") {
+        final studentRef = firestore.collection('students').doc(uid);
+
+        batch.set(studentRef, {
+          'uid': uid,
+          'name': name,
+          'email': email,
+          'age': age,
+          'phone': phone,
+          'parentName': parentName,
+
+          // Important approval fields
+          'approvalStatus': 'Pending',
+          'status': 'Pending',
+          'isApproved': false,
+
+          // Admin will assign these later from Student Center
+          'batch': '',
+          'rollNo': '',
+
+          // Default student values
+          'attendance': '0%',
+          'feeStatus': 'Pending',
+
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Account registered successfully")),
+        SnackBar(
+          content: Text(
+            selectedRole == "Student"
+                ? "Student registered. Waiting for admin approval."
+                : "Account registered successfully.",
+          ),
+          backgroundColor: Colors.green,
+        ),
       );
 
       Navigator.pop(context);
@@ -75,7 +147,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Something went wrong: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -87,6 +168,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    ageController.dispose();
+    phoneController.dispose();
+    parentNameController.dispose();
     super.dispose();
   }
 
@@ -95,61 +179,85 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final h = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: bg,
       body: SafeArea(
-        child: SizedBox(
-          height: h,
+        child: SingleChildScrollView(
           child: Column(
             children: [
               _hero(context, h),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
-                  child: Column(
-                    children: [
-                      _input(
-                        icon: Icons.person_outline,
-                        label: "Full Name",
-                        controller: nameController,
-                      ),
-                      const SizedBox(height: 10),
-                      _input(
-                        icon: Icons.mail_outline,
-                        label: "Email Address",
-                        controller: emailController,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 10),
-                      _input(
-                        icon: Icons.lock_outline,
-                        label: "Password",
-                        controller: passwordController,
-                        obscureText: obscurePassword,
-                        suffix: IconButton(
-                          icon: Icon(
-                            obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.grey,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              obscurePassword = !obscurePassword;
-                            });
-                          },
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+                child: Column(
+                  children: [
+                    _input(
+                      icon: Icons.person_outline,
+                      label: "Full Name",
+                      controller: nameController,
+                    ),
+                    const SizedBox(height: 10),
+                    _input(
+                      icon: Icons.mail_outline,
+                      label: "Email Address",
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 10),
+                    _input(
+                      icon: Icons.lock_outline,
+                      label: "Password",
+                      controller: passwordController,
+                      obscureText: obscurePassword,
+                      suffix: IconButton(
+                        icon: Icon(
+                          obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey,
                         ),
+                        onPressed: () {
+                          setState(() {
+                            obscurePassword = !obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _roleDropdown(),
+
+                    if (selectedRole == "Student") ...[
+                      const SizedBox(height: 14),
+                      _studentNoteCard(),
+                      const SizedBox(height: 10),
+                      _input(
+                        icon: Icons.cake_outlined,
+                        label: "Student Age",
+                        controller: ageController,
+                        keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 10),
-                      _roleDropdown(),
-                      const SizedBox(height: 14),
-                      _registerButton(),
-                      const SizedBox(height: 12),
-                      _loginText(),
-                      const Spacer(),
-                      _footerMini(),
+                      _input(
+                        icon: Icons.phone_outlined,
+                        label: "Phone Number",
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 10),
+                      _input(
+                        icon: Icons.family_restroom,
+                        label: "Parent Name",
+                        controller: parentNameController,
+                      ),
                     ],
-                  ),
+
+                    const SizedBox(height: 14),
+                    _registerButton(),
+                    const SizedBox(height: 12),
+                    _loginText(),
+                    const SizedBox(height: 20),
+                    _footerMini(),
+                    const SizedBox(height: 12),
+                  ],
                 ),
               ),
             ],
@@ -161,7 +269,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _hero(BuildContext context, double h) {
     return Container(
-      height: h * 0.32,
+      height: h * 0.30,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
@@ -217,8 +325,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const Spacer(),
                 Image.asset(
                   'assets/images/ygca_logo.jpg',
-                  height: 82,
-                  width: 82,
+                  height: 78,
+                  width: 78,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 6),
@@ -235,7 +343,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   "ACCOUNT",
                   style: TextStyle(
                     color: gold,
-                    fontSize: 36,
+                    fontSize: 34,
                     fontWeight: FontWeight.w900,
                     height: 1,
                     letterSpacing: 1,
@@ -280,8 +388,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           suffixIcon: suffix,
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(color: border),
@@ -309,8 +419,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           prefixIcon: Icon(Icons.shield_outlined, color: maroon),
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(color: border),
@@ -330,6 +442,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
           if (value == null) return;
           setState(() => selectedRole = value);
         },
+      ),
+    );
+  }
+
+  Widget _studentNoteCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange.withOpacity(0.35)),
+      ),
+      child: Row(
+        children: const [
+          Icon(Icons.pending_actions, color: Colors.orange),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Student accounts will be sent to admin approval. Admin will assign batch and roll number.",
+              style: TextStyle(
+                color: Color(0xFF92400E),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -370,10 +510,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         const Text(
           "Already have an account? ",
-          style: TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 12,
-          ),
+          style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
         ),
         GestureDetector(
           onTap: () => Navigator.pop(context),
@@ -405,3 +542,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
+  

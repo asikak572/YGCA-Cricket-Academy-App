@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/ygca_app_bar.dart';
+
 import 'fee_management_screen.dart';
 import 'payment_history_screen.dart';
 import 'pending_fees_screen.dart';
@@ -17,14 +19,7 @@ class FeeModuleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-        title: const Text(
-          "Fee Module",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
+      appBar: const YgcaAppBar(title: "Fee Module"),
       body: Column(
         children: [
           _header(),

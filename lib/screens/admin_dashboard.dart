@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'widgets/ygca_dashboard_app_bar.dart';
+import 'widgets/ygca_drawer.dart';
 
 import 'student_list_screen.dart';
 import 'performance_report_screen.dart';
@@ -18,14 +22,105 @@ class AdminDashboard extends StatelessWidget {
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
+  Future<void> _logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
+      appBar: YgcaDashboardAppBar(
+        role: 'ADMIN',
+        showProfileAvatar: true,
+        notificationCount: 3,
+        onNotificationTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NotificationScreen()),
+        ),
+        onLogout: () => _logout(context),
+      ),
+      drawer: YgcaDrawer(
+        role: 'Admin',
+        navItems: [
+          YgcaNavItem(
+            icon: Icons.home_rounded,
+            label: 'Dashboard',
+            onTap: () {},
+          ),
+          YgcaNavItem(
+            icon: Icons.dashboard_rounded,
+            label: 'Reports Dashboard',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ReportsDashboardScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.people_rounded,
+            label: 'Students',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StudentListScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.check_circle_rounded,
+            label: 'Attendance Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AttendanceModuleScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.sports_rounded,
+            label: 'Coach Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => CoachModuleScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.payments_rounded,
+            label: 'Fee Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => FeeModuleScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.calendar_month_rounded,
+            label: 'Schedule Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ScheduleModuleScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.bar_chart_rounded,
+            label: 'Performance Reports',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PerformanceReportScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.notifications_rounded,
+            label: 'Notifications',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationScreen()),
+            ),
+          ),
+        ],
+        onLogout: () => _logout(context),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _topHeader(),
             _heroBanner(),
             const SizedBox(height: 18),
 
@@ -215,63 +310,7 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _topHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 42, 18, 14),
-      color: maroon,
-      child: Row(
-        children: [
-          const Icon(Icons.menu, color: Colors.white, size: 26),
-          const Spacer(),
-          Column(
-            children: [
-              Text(
-                "YGCA",
-                style: TextStyle(
-                  color: gold,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-              const Text(
-                "YOUNG GEN CRICKET ACADEMY",
-                style: TextStyle(color: Colors.white, fontSize: 9),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Stack(
-            children: [
-              const Icon(
-                Icons.notifications_none,
-                color: Colors.white,
-                size: 26,
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: CircleAvatar(
-                  radius: 7,
-                  backgroundColor: Colors.orange,
-                  child: const Text(
-                    "3",
-                    style: TextStyle(fontSize: 8, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 10),
-          const CircleAvatar(
-            radius: 16,
-            backgroundColor: Colors.white,
-            child: Icon(Icons.person, color: Colors.black, size: 19),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _heroBanner() {
     return Container(

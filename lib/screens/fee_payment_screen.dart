@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/ygca_app_bar.dart';
+
 class FeePaymentScreen extends StatelessWidget {
   const FeePaymentScreen({super.key});
 
@@ -11,11 +13,7 @@ class FeePaymentScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Fee Payment"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
+      appBar: const YgcaAppBar(title: "Fee Payment"),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

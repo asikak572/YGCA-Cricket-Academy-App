@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'notification_screen.dart';
 import 'leave_request_screen.dart';
+import 'widgets/ygca_dashboard_header.dart';
 import 'parent_attendance_module_screen.dart';
 import 'parent_fee_module_screen.dart';
 import 'parent_schedule_module_screen.dart';
@@ -123,7 +124,12 @@ class ParentDashboard extends StatelessWidget {
           return SingleChildScrollView(
             child: Column(
               children: [
-                _topHeader(context, parentName),
+                YgcaDashboardHeader(
+                  dashboardTitle: "PARENT DASHBOARD",
+                  onLogout: () => _logout(context),
+                  useLogoLayout: true,
+                  dynamicSubtitle: "Welcome, $parentName",
+                ),
                 _childHero(
                   childName: childName,
                   parentName: parentName,
@@ -323,69 +329,7 @@ class ParentDashboard extends StatelessWidget {
     );
   }
 
-  Widget _topHeader(BuildContext context, String parentName) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 18),
-      child: Row(
-        children: [
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 58,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "PARENT DASHBOARD",
-                  style: TextStyle(
-                    color: gold,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  "Welcome, $parentName",
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Stack(
-            children: [
-              const Icon(
-                Icons.notifications_none,
-                color: Colors.white,
-                size: 28,
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: CircleAvatar(
-                  radius: 8,
-                  backgroundColor: Colors.orange,
-                  child: const Text(
-                    "3",
-                    style: TextStyle(fontSize: 9, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout, color: Colors.white),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _childHero({
     required String childName,

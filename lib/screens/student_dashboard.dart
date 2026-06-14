@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'notification_screen.dart';
+import 'widgets/ygca_dashboard_app_bar.dart';
+import 'widgets/ygca_drawer.dart';
 import 'leave_request_screen.dart';
 import 'student_attendance_module_screen.dart';
 import 'student_performance_module_screen.dart';
@@ -22,11 +24,7 @@ class StudentDashboard extends StatelessWidget {
     await FirebaseAuth.instance.signOut();
 
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/login',
-        (route) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
   }
 
@@ -53,13 +51,91 @@ class StudentDashboard extends StatelessWidget {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text("No user logged in")),
-      );
+      return const Scaffold(body: Center(child: Text("No user logged in")));
     }
 
     return Scaffold(
       backgroundColor: bg,
+      appBar: YgcaDashboardAppBar(
+        role: 'STUDENT',
+        notificationCount: 3,
+        onNotificationTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NotificationScreen()),
+        ),
+        onLogout: () => _logout(context),
+      ),
+      drawer: YgcaDrawer(
+        role: 'Student',
+        navItems: [
+          YgcaNavItem(
+            icon: Icons.home_rounded,
+            label: 'Dashboard',
+            onTap: () {},
+          ),
+          YgcaNavItem(
+            icon: Icons.fact_check_rounded,
+            label: 'Attendance Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StudentAttendanceModuleScreen(
+                  studentId: currentUser.uid,
+                  name: '',
+                  batch: '',
+                  rollNo: '',
+                  attendance: '0%',
+                ),
+              ),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.bar_chart_rounded,
+            label: 'Performance Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StudentPerformanceModuleScreen(),
+              ),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.calendar_month_rounded,
+            label: 'Schedule Module',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const StudentScheduleModuleScreen(),
+              ),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.person_rounded,
+            label: 'Edit Profile',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.event_note_rounded,
+            label: 'Apply Leave',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LeaveRequestScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.notifications_rounded,
+            label: 'Notifications',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationScreen()),
+            ),
+          ),
+        ],
+        onLogout: () => _logout(context),
+      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -82,28 +158,24 @@ class StudentDashboard extends StatelessWidget {
 
           final name = _safeText(data, ['name', 'studentName'], 'Student');
           final email = _safeText(data, ['email'], currentUser.email ?? '');
-          final batch = _safeText(
-            data,
-            ['batch', 'studentBatch'],
-            'Batch not assigned',
-          );
-          final rollNo = _safeText(
-            data,
-            ['rollNo', 'studentRollNo'],
-            'Not assigned',
-          );
-          final attendance = _safeText(
-            data,
-            ['attendance', 'attendancePercentage'],
-            '0%',
-          );
+          final batch = _safeText(data, [
+            'batch',
+            'studentBatch',
+          ], 'Batch not assigned');
+          final rollNo = _safeText(data, [
+            'rollNo',
+            'studentRollNo',
+          ], 'Not assigned');
+          final attendance = _safeText(data, [
+            'attendance',
+            'attendancePercentage',
+          ], '0%');
 
           final attendanceNumber = _percentValue(attendance);
 
           return SingleChildScrollView(
             child: Column(
               children: [
-                _topHeader(context),
                 _studentHero(
                   name: name,
                   email: email,
@@ -123,13 +195,15 @@ class StudentDashboard extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 1.08,
+                    childAspectRatio: 0.95,
                     children: [
                       _statCard(
                         Icons.verified,
                         "ATTENDANCE",
                         "$attendanceNumber%",
-                        attendanceNumber >= 75 ? "Good Progress" : "Needs Focus",
+                        attendanceNumber >= 75
+                            ? "Good Progress"
+                            : "Needs Focus",
                         Colors.green,
                       ),
                       _statCard(
@@ -223,19 +297,19 @@ class StudentDashboard extends StatelessWidget {
                       ),
 
                       _menuCard(
-  context,
-  Icons.person,
-  "Edit Profile",
-  Colors.indigo,
-  () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const EditProfileScreen(),
-      ),
-    );
-  },
-),
+                        context,
+                        Icons.person,
+                        "Edit Profile",
+                        Colors.indigo,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EditProfileScreen(),
+                            ),
+                          );
+                        },
+                      ),
                       _menuCard(
                         context,
                         Icons.event_note,
@@ -281,72 +355,7 @@ class StudentDashboard extends StatelessWidget {
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
-      child: Row(
-        children: [
-          const Icon(Icons.menu, color: Colors.white, size: 28),
-          const Spacer(),
-          Column(
-            children: [
-              Text(
-                "YGCA",
-                style: TextStyle(
-                  color: gold,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-              const Text(
-                "YOUNG GEN CRICKET ACADEMY",
-                style: TextStyle(color: Colors.white, fontSize: 10),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                "STUDENT DASHBOARD",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Stack(
-            children: [
-              const Icon(
-                Icons.notifications_none,
-                color: Colors.white,
-                size: 28,
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: CircleAvatar(
-                  radius: 8,
-                  backgroundColor: Colors.orange,
-                  child: const Text(
-                    "3",
-                    style: TextStyle(fontSize: 9, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 10),
-          IconButton(
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout, color: Colors.white),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _studentHero({
     required String name,
@@ -364,14 +373,13 @@ class StudentDashboard extends StatelessWidget {
         .toUpperCase();
 
     return Container(
-      height: 250,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 260,
+      width: double.infinity,
+      margin: EdgeInsets.zero,
+      // margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
         border: Border.all(color: gold, width: 1),
       ),
       child: Stack(
@@ -497,26 +505,50 @@ class StudentDashboard extends StatelessWidget {
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-      child: Row(
-        children: [
-          Text(
+Widget _sectionTitle(String title) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 18,
+      vertical: 8,
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 2,
+            decoration: BoxDecoration(
+              color: gold,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
             title,
             style: TextStyle(
               color: maroon,
               fontSize: 18,
               fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+              letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
-        ],
-      ),
-    );
-  }
+        ),
+
+        Expanded(
+          child: Container(
+            height: 2,
+            decoration: BoxDecoration(
+              color: gold,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _statCard(
     IconData icon,
@@ -526,7 +558,10 @@ class StudentDashboard extends StatelessWidget {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(
+  horizontal: 12,
+  vertical: 14,
+),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: border),
@@ -542,7 +577,15 @@ class StudentDashboard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 32),
+          CircleAvatar(
+  radius: 20,
+  backgroundColor: color.withOpacity(0.15),
+  child: Icon(
+    icon,
+    color: color,
+    size: 22,
+  ),
+),
           const SizedBox(height: 8),
           Text(
             title,
@@ -553,23 +596,21 @@ class StudentDashboard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
+         Text(
+  value,
+  textAlign: TextAlign.center,
+  maxLines: 2,
+  overflow: TextOverflow.visible,
+  style: const TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w900,
+    height: 1.2,
+  ),
+),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.black54,
-            ),
+            style: const TextStyle(fontSize: 10, color: Colors.black54),
           ),
         ],
       ),
@@ -605,11 +646,7 @@ class StudentDashboard extends StatelessWidget {
             CircleAvatar(
               radius: 20,
               backgroundColor: color,
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 20,
-              ),
+              child: Icon(icon, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -624,11 +661,7 @@ class StudentDashboard extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: Colors.grey,
-              size: 18,
-            ),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
           ],
         ),
       ),

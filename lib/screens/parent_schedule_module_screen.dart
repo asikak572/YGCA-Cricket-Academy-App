@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/ygca_app_bar.dart';
+
 import 'match_schedule_screen.dart';
 import 'training_schedule_screen.dart';
 
@@ -8,18 +10,10 @@ class ParentScheduleModuleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color maroon = Color(0xFF7F0000);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FC),
-      appBar: AppBar(
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-        title: const Text(
-          "Schedule Module",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
+      appBar: const YgcaAppBar(title: "Schedule Module"),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: GridView.count(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'widgets/ygca_app_bar.dart';
+
 class LeaveRequestScreen extends StatelessWidget {
   const LeaveRequestScreen({super.key});
 
@@ -207,11 +209,7 @@ class LeaveRequestScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Leave Requests"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
+      appBar: const YgcaAppBar(title: "Leave Requests"),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('leave_requests')
