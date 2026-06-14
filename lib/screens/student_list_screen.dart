@@ -20,6 +20,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   String searchQuery = "";
 
+  bool get isSmallScreen {
+    final width = MediaQuery.of(context).size.width;
+    return width < 370;
+  }
+
   int _percentValue(String value) {
     return int.tryParse(value.replaceAll("%", "").trim()) ?? 0;
   }
@@ -80,20 +85,33 @@ class _StudentListScreenState extends State<StudentListScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
               ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+              contentPadding: const EdgeInsets.fromLTRB(18, 8, 18, 10),
+              actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               title: Row(
                 children: [
                   CircleAvatar(
+                    radius: 18,
                     backgroundColor: maroon,
-                    child: Icon(Icons.verified_user, color: gold),
+                    child: Icon(Icons.verified_user, color: gold, size: 18),
                   ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Text(
                       "Approve Student",
-                      style: TextStyle(fontWeight: FontWeight.w900),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ],
@@ -116,16 +134,21 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         "Phone",
                         data['phone']?.toString() ?? 'Not Added',
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       TextFormField(
                         controller: batchController,
                         textCapitalization: TextCapitalization.characters,
+                        style: const TextStyle(fontSize: 13),
                         decoration: InputDecoration(
                           labelText: "Assign Batch",
-                          hintText: "Example: U-14 Morning Batch",
-                          prefixIcon: const Icon(Icons.groups),
+                          hintText: "Example: U-14 Morning",
+                          prefixIcon: const Icon(Icons.groups, size: 20),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         validator: (value) {
@@ -135,16 +158,24 @@ class _StudentListScreenState extends State<StudentListScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextFormField(
                         controller: rollNoController,
                         textCapitalization: TextCapitalization.characters,
+                        style: const TextStyle(fontSize: 13),
                         decoration: InputDecoration(
                           labelText: "Assign Roll No",
                           hintText: "Example: YGCA-001",
-                          prefixIcon: const Icon(Icons.confirmation_number),
+                          prefixIcon: const Icon(
+                            Icons.confirmation_number,
+                            size: 20,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         validator: (value) {
@@ -163,22 +194,26 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   onPressed: isSaving
                       ? null
                       : () {
-                          Navigator.pop(dialogContext);
+                          FocusScope.of(dialogContext).unfocus();
+                          Navigator.of(dialogContext).pop();
                         },
-                  child: const Text("Cancel"),
+                  child: const Text("Cancel", style: TextStyle(fontSize: 12)),
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: maroon,
                     foregroundColor: gold,
+                    minimumSize: const Size(105, 38),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   onPressed: isSaving
                       ? null
                       : () async {
                           if (!formKey.currentState!.validate()) return;
+
+                          FocusScope.of(dialogContext).unfocus();
 
                           setDialogState(() {
                             isSaving = true;
@@ -202,7 +237,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
                             if (!mounted) return;
 
-                            Navigator.pop(dialogContext);
+                            Navigator.of(dialogContext).pop();
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -227,15 +262,21 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         },
                   icon: isSaving
                       ? const SizedBox(
-                          width: 18,
-                          height: 18,
+                          width: 15,
+                          height: 15,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.check_circle),
-                  label: Text(isSaving ? "Approving..." : "Approve"),
+                      : const Icon(Icons.check_circle, size: 17),
+                  label: Text(
+                    isSaving ? "Saving..." : "Approve",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -244,8 +285,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
       },
     );
 
-    batchController.dispose();
-    rollNoController.dispose();
+    // IMPORTANT:
+    // Do not dispose batchController and rollNoController here.
+    // Flutter may still rebuild the dialog during closing animation.
   }
 
   Future<void> _rejectStudent({
@@ -256,22 +298,37 @@ class _StudentListScreenState extends State<StudentListScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text("Reject Student?"),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: const Text(
+            "Reject Student?",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+          ),
           content: const Text(
             "This student will be marked as rejected and will not appear in the active student list.",
+            style: TextStyle(fontSize: 13),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text("Cancel"),
+              child: const Text("Cancel", style: TextStyle(fontSize: 12)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
+                minimumSize: const Size(85, 38),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text("Reject"),
+              child: const Text("Reject", style: TextStyle(fontSize: 12)),
             ),
           ],
         );
@@ -314,28 +371,41 @@ class _StudentListScreenState extends State<StudentListScreen> {
   Widget _approvalInfoTile(String title, String value) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.all(9),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(11),
         border: Border.all(color: border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
+          Icon(Icons.info_outline, size: 16, color: maroon),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
           ),
         ],
       ),
@@ -344,234 +414,281 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final small = isSmallScreen;
+
     return Scaffold(
       backgroundColor: bg,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('students')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text("Something went wrong"));
-          }
+      body: SafeArea(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('students')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Center(child: Text("Something went wrong"));
+            }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          final allStudents = snapshot.data?.docs ?? [];
+            final allStudents = snapshot.data?.docs ?? [];
 
-          final pendingStudents = allStudents.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final status = data['status']?.toString().toLowerCase() ?? '';
-            final approvalStatus =
-                data['approvalStatus']?.toString().toLowerCase() ?? '';
+            final pendingStudents = allStudents.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final status = data['status']?.toString().toLowerCase() ?? '';
+              final approvalStatus =
+                  data['approvalStatus']?.toString().toLowerCase() ?? '';
 
-            return !_isApproved(data) &&
-                status != 'rejected' &&
-                approvalStatus != 'rejected' &&
-                _matchesSearch(data);
-          }).toList();
+              return !_isApproved(data) &&
+                  status != 'rejected' &&
+                  approvalStatus != 'rejected' &&
+                  _matchesSearch(data);
+            }).toList();
 
-          final approvedStudents = allStudents.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return _isApproved(data) && _matchesSearch(data);
-          }).toList();
+            final approvedStudents = allStudents.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return _isApproved(data) && _matchesSearch(data);
+            }).toList();
 
-          int pendingFees = 0;
-          int totalAttendance = 0;
+            int totalAttendance = 0;
 
-          for (final doc in approvedStudents) {
-            final data = doc.data() as Map<String, dynamic>;
+            for (final doc in approvedStudents) {
+              final data = doc.data() as Map<String, dynamic>;
+              final attendance = data['attendance']?.toString() ?? '0%';
+              totalAttendance += _percentValue(attendance);
+            }
 
-            final feeStatus = data['feeStatus']?.toString() ?? 'Pending';
-            final attendance = data['attendance']?.toString() ?? '0%';
+            final avgAttendance = approvedStudents.isEmpty
+                ? 0
+                : (totalAttendance / approvedStudents.length).round();
 
-            if (feeStatus != 'Paid') pendingFees++;
-            totalAttendance += _percentValue(attendance);
-          }
-
-          final avgAttendance = approvedStudents.isEmpty
-              ? 0
-              : (totalAttendance / approvedStudents.length).round();
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _heroBanner(
-                  totalStudents: allStudents.length,
-                  activeStudents: approvedStudents.length,
-                  pendingApprovals: pendingStudents.length,
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("STUDENT OVERVIEW"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.25,
-                    children: [
-                      _statCard(
-                        Icons.groups,
-                        "REGISTERED",
-                        allStudents.length.toString(),
-                        "Students",
-                        Colors.blue,
-                      ),
-                      _statCard(
-                        Icons.verified,
-                        "APPROVED",
-                        approvedStudents.length.toString(),
-                        "Active Players",
-                        Colors.green,
-                      ),
-                      _statCard(
-                        Icons.pending_actions,
-                        "PENDING",
-                        pendingStudents.length.toString(),
-                        "Approvals",
-                        Colors.orange,
-                      ),
-                      _statCard(
-                        Icons.bar_chart,
-                        "AVG ATTENDANCE",
-                        "$avgAttendance%",
-                        "Approved Students",
-                        Colors.purple,
-                      ),
-                    ],
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Column(
+                children: [
+                  _topHeader(context),
+                  _heroBanner(
+                    totalStudents: allStudents.length,
+                    activeStudents: approvedStudents.length,
+                    pendingApprovals: pendingStudents.length,
                   ),
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("SEARCH STUDENT"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _searchBox(),
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("PENDING APPROVAL"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: pendingStudents.isEmpty
-                      ? _emptyCard(
-                          icon: Icons.verified_user_outlined,
-                          title: "No Pending Approvals",
-                          subtitle:
-                              "Newly registered students will appear here for batch and roll number assignment.",
-                        )
-                      : Column(
-                          children: pendingStudents.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
+                  SizedBox(height: small ? 14 : 18),
 
-                            return _pendingStudentCard(
-                              context: context,
-                              doc: doc,
-                              name: data['name']?.toString() ?? 'No Name',
-                              age: data['age']?.toString() ?? '',
-                              parentName:
-                                  data['parentName']?.toString() ?? 'Not Added',
-                              phone: data['phone']?.toString() ?? 'Not Added',
-                              registeredAt: data['createdAt'],
-                            );
-                          }).toList(),
+                  _sectionTitle(
+                    title: "STUDENT OVERVIEW",
+                    leftIcon: Icons.dashboard_rounded,
+                    rightIcon: Icons.insights_rounded,
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: small ? 8 : 10,
+                      mainAxisSpacing: small ? 8 : 10,
+                      childAspectRatio: small ? 1.18 : 1.28,
+                      children: [
+                        _statCard(
+                          Icons.groups,
+                          "REGISTERED",
+                          allStudents.length.toString(),
+                          "Students",
+                          Colors.blue,
                         ),
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("APPROVED STUDENT LIST"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: approvedStudents.isEmpty
-                      ? _emptyCard(
-                          icon: Icons.people_outline,
-                          title: "No Approved Students Found",
-                          subtitle:
-                              "Approved students will appear here after assigning batch and roll number.",
-                        )
-                      : Column(
-                          children: approvedStudents.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-
-                            final name = data['name']?.toString() ?? 'No Name';
-                            final age = data['age']?.toString() ?? '';
-                            final batch =
-                                data['batch']?.toString() ?? 'No Batch';
-                            final phone = data['phone']?.toString() ?? '';
-                            final parentName =
-                                data['parentName']?.toString() ?? 'Not Added';
-                            final rollNo =
-                                data['rollNo']?.toString() ?? '#YGCA';
-                            final attendance =
-                                data['attendance']?.toString() ?? '0%';
-                            final feeStatus =
-                                data['feeStatus']?.toString() ?? 'Pending';
-
-                            return _studentCard(
-                              context: context,
-                              studentId: doc.id,
-                              name: name,
-                              age: age,
-                              batch: batch,
-                              rollNo: rollNo,
-                              parentName: parentName,
-                              phone: phone,
-                              attendance: attendance,
-                              feeStatus: feeStatus,
-                            );
-                          }).toList(),
+                        _statCard(
+                          Icons.verified,
+                          "APPROVED",
+                          approvedStudents.length.toString(),
+                          "Active Players",
+                          Colors.green,
                         ),
-                ),
-                const SizedBox(height: 90),
-              ],
-            ),
-          );
-        },
+                        _statCard(
+                          Icons.pending_actions,
+                          "PENDING",
+                          pendingStudents.length.toString(),
+                          "Approvals",
+                          Colors.orange,
+                        ),
+                        _statCard(
+                          Icons.bar_chart,
+                          "ATTENDANCE",
+                          "$avgAttendance%",
+                          "Average",
+                          Colors.purple,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: small ? 14 : 18),
+
+                  _sectionTitle(
+                    title: "SEARCH STUDENT",
+                    leftIcon: Icons.search_rounded,
+                    rightIcon: Icons.tune_rounded,
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
+                    child: _searchBox(),
+                  ),
+
+                  SizedBox(height: small ? 14 : 18),
+
+                  _sectionTitle(
+                    title: "PENDING APPROVAL",
+                    leftIcon: Icons.pending_actions_rounded,
+                    rightIcon: Icons.verified_user_outlined,
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
+                    child: pendingStudents.isEmpty
+                        ? _emptyCard(
+                            icon: Icons.verified_user_outlined,
+                            title: "No Pending Approvals",
+                            subtitle:
+                                "Newly registered students will appear here for batch and roll number assignment.",
+                          )
+                        : Column(
+                            children: pendingStudents.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+
+                              return _pendingStudentCard(
+                                context: context,
+                                doc: doc,
+                                name: data['name']?.toString() ?? 'No Name',
+                                age: data['age']?.toString() ?? '',
+                                parentName:
+                                    data['parentName']?.toString() ??
+                                    'Not Added',
+                                phone: data['phone']?.toString() ?? 'Not Added',
+                                registeredAt: data['createdAt'],
+                              );
+                            }).toList(),
+                          ),
+                  ),
+
+                  SizedBox(height: small ? 14 : 18),
+
+                  _sectionTitle(
+                    title: "APPROVED STUDENTS",
+                    leftIcon: Icons.people_alt_rounded,
+                    rightIcon: Icons.arrow_forward_rounded,
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
+                    child: approvedStudents.isEmpty
+                        ? _emptyCard(
+                            icon: Icons.people_outline,
+                            title: "No Approved Students Found",
+                            subtitle:
+                                "Approved students will appear here after assigning batch and roll number.",
+                          )
+                        : Column(
+                            children: approvedStudents.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+
+                              final name =
+                                  data['name']?.toString() ?? 'No Name';
+                              final age = data['age']?.toString() ?? '';
+                              final batch =
+                                  data['batch']?.toString() ?? 'No Batch';
+                              final phone = data['phone']?.toString() ?? '';
+                              final parentName =
+                                  data['parentName']?.toString() ?? 'Not Added';
+                              final rollNo =
+                                  data['rollNo']?.toString() ?? '#YGCA';
+                              final attendance =
+                                  data['attendance']?.toString() ?? '0%';
+                              final feeStatus =
+                                  data['feeStatus']?.toString() ?? 'Pending';
+
+                              return _studentCard(
+                                context: context,
+                                studentId: doc.id,
+                                name: name,
+                                age: age,
+                                batch: batch,
+                                rollNo: rollNo,
+                                parentName: parentName,
+                                phone: phone,
+                                attendance: attendance,
+                                feeStatus: feeStatus,
+                              );
+                            }).toList(),
+                          ),
+                  ),
+
+                  const SizedBox(height: 95),
+                ],
+              ),
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: maroon,
         foregroundColor: gold,
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 16),
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddStudentScreen()),
           );
         },
-        icon: const Icon(Icons.add),
-        label: const Text("Add Student"),
+        icon: const Icon(Icons.add, size: 19),
+        label: const Text(
+          "Add Student",
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }
 
   Widget _topHeader(BuildContext context) {
+    final small = isSmallScreen;
+
     return Container(
       color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      padding: EdgeInsets.fromLTRB(12, small ? 12 : 16, 14, 16),
       child: Row(
         children: [
           IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
           ),
-          Image.asset('assets/images/ygca_logo.jpg', width: 58),
           const SizedBox(width: 12),
+          Image.asset('assets/images/ygca_logo.jpg', width: small ? 44 : 52),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               "STUDENT CENTER",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: gold,
-                fontSize: 20,
+                fontSize: small ? 16 : 18,
                 fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
               ),
             ),
           ),
-          const CircleAvatar(
+          CircleAvatar(
+            radius: small ? 18 : 20,
             backgroundColor: Colors.white,
-            child: Icon(Icons.people, color: Colors.black),
+            child: Icon(
+              Icons.people,
+              color: Colors.black,
+              size: small ? 19 : 21,
+            ),
           ),
         ],
       ),
@@ -583,14 +700,16 @@ class _StudentListScreenState extends State<StudentListScreen> {
     required int activeStudents,
     required int pendingApprovals,
   }) {
+    final small = isSmallScreen;
+
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: small ? 205 : 225,
+      margin: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
         ),
         border: Border.all(color: gold, width: 1),
       ),
@@ -618,15 +737,19 @@ class _StudentListScreenState extends State<StudentListScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(small ? 14 : 18),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: small ? 38 : 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.groups, color: maroon, size: 42),
+                  child: Icon(
+                    Icons.groups,
+                    color: maroon,
+                    size: small ? 34 : 40,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: small ? 12 : 16),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -636,15 +759,15 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         "YGCA",
                         style: TextStyle(
                           color: gold,
-                          fontSize: 14,
+                          fontSize: small ? 12 : 13,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text(
+                      Text(
                         "STUDENT",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 31,
+                          fontSize: small ? 25 : 29,
                           fontWeight: FontWeight.w900,
                           height: 1,
                         ),
@@ -653,14 +776,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         "APPROVAL",
                         style: TextStyle(
                           color: gold,
-                          fontSize: 25,
+                          fontSize: small ? 21 : 24,
                           fontWeight: FontWeight.w900,
                           height: 1,
                         ),
                       ),
                       const SizedBox(height: 10),
                       Wrap(
-                        spacing: 8,
+                        spacing: 6,
                         runSpacing: 6,
                         children: [
                           _heroChip("Registered: $totalStudents"),
@@ -681,63 +804,104 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   Widget _heroChip(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: gold.withOpacity(0.7)),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: gold,
-          fontSize: 11,
+          fontSize: isSmallScreen ? 10 : 11,
           fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle({
+    required String title,
+    required IconData leftIcon,
+    required IconData rightIcon,
+  }) {
+    final small = isSmallScreen;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      padding: EdgeInsets.fromLTRB(small ? 12 : 16, 0, small ? 12 : 16, 10),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: maroon,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Container(
+            width: small ? 28 : 31,
+            height: small ? 28 : 31,
+            decoration: BoxDecoration(
+              color: maroon.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: maroon.withOpacity(0.15)),
+            ),
+            child: Icon(leftIcon, color: maroon, size: small ? 16 : 17),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: maroon,
+                fontSize: small ? 13 : 15,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.7,
+              ),
             ),
           ),
-          const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
+          // const SizedBox(width: 8),
+          // Expanded(
+          //   child: Container(
+          //     height: 1.4,
+          //     decoration: BoxDecoration(
+          //       color: gold.withOpacity(0.85),
+          //       borderRadius: BorderRadius.circular(10),
+          //     ),
+          //   ),
+          // ),
+          const SizedBox(width: 8),
+          Icon(rightIcon, color: gold, size: small ? 17 : 19),
         ],
       ),
     );
   }
 
   Widget _searchBox() {
-    return TextField(
-      onChanged: (value) {
-        setState(() {
-          searchQuery = value;
-        });
-      },
-      decoration: InputDecoration(
-        hintText: "Search by name, phone, parent, batch or roll no",
-        prefixIcon: const Icon(Icons.search),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: border),
+    return SizedBox(
+      height: 48,
+      child: TextField(
+        style: const TextStyle(fontSize: 13),
+        onChanged: (value) {
+          setState(() {
+            searchQuery = value;
+          });
+        },
+        decoration: InputDecoration(
+          hintText: "Search name, phone, parent, batch",
+          hintStyle: const TextStyle(fontSize: 12),
+          prefixIcon: Icon(Icons.search, color: maroon, size: 20),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: gold, width: 1.2),
+          ),
         ),
       ),
     );
@@ -750,16 +914,19 @@ class _StudentListScreenState extends State<StudentListScreen> {
     String subtitle,
     Color color,
   ) {
+    final small = isSmallScreen;
+
     return Container(
+      padding: EdgeInsets.all(small ? 8 : 10),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.045),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -767,21 +934,35 @@ class _StudentListScreenState extends State<StudentListScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircleAvatar(
+            radius: small ? 17 : 19,
             backgroundColor: color,
-            child: Icon(icon, color: Colors.white),
+            child: Icon(icon, color: Colors.white, size: small ? 17 : 19),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: small ? 6 : 7),
           Text(
             value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: small ? 17 : 19,
+              fontWeight: FontWeight.w900,
+            ),
           ),
+          const SizedBox(height: 2),
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: small ? 9.5 : 10.5,
+            ),
           ),
           Text(
             subtitle,
-            style: const TextStyle(color: Colors.grey, fontSize: 10),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: Colors.grey, fontSize: small ? 9 : 10),
           ),
         ],
       ),
@@ -797,7 +978,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
     required String phone,
     required dynamic registeredAt,
   }) {
-    String dateText = "Recently Registered";
+    final small = isSmallScreen;
+
+    String dateText = "Recently";
 
     if (registeredAt is Timestamp) {
       final date = registeredAt.toDate();
@@ -806,36 +989,37 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(small ? 12 : 14),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.orange.withOpacity(0.35)),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(17),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
-                radius: 28,
+                radius: small ? 23 : 26,
                 backgroundColor: Colors.orange,
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : "?",
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: small ? 15 : 17,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: small ? 9 : 11),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -844,36 +1028,37 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 15,
+                        fontSize: small ? 13 : 14,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       "Parent: $parentName",
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 12,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: const Color(0xFF64748B),
+                        fontSize: small ? 11 : 12,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       "Phone: $phone",
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 12,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: const Color(0xFF64748B),
+                        fontSize: small ? 11 : 12,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 7),
                     Wrap(
-                      spacing: 8,
+                      spacing: 6,
+                      runSpacing: 5,
                       children: [
-                        _chip(
-                          Icons.pending_actions,
-                          "Pending Approval",
-                          Colors.orange,
-                        ),
+                        _chip(Icons.pending_actions, "Pending", Colors.orange),
                         _chip(Icons.calendar_month, dateText, Colors.blueGrey),
                       ],
                     ),
@@ -882,47 +1067,93 @@ class _StudentListScreenState extends State<StudentListScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () {
-                    _rejectStudent(context: context, doc: doc);
-                  },
-                  icon: const Icon(Icons.close),
-                  label: const Text("Reject"),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: maroon,
-                    foregroundColor: gold,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () {
-                    _showApprovalDialog(context: context, doc: doc);
-                  },
-                  icon: const Icon(Icons.assignment_turned_in),
-                  label: const Text("Assign & Approve"),
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 12),
+          _pendingActionButtons(context: context, doc: doc),
         ],
       ),
+    );
+  }
+
+  Widget _pendingActionButtons({
+    required BuildContext context,
+    required QueryDocumentSnapshot doc,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 330;
+
+        final rejectButton = SizedBox(
+          height: 39,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red, width: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: () {
+              _rejectStudent(context: context, doc: doc);
+            },
+            icon: const Icon(Icons.close, size: 15),
+            label: const Text(
+              "Reject",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+
+        final approveButton = SizedBox(
+          height: 39,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: maroon,
+              foregroundColor: gold,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: () {
+              _showApprovalDialog(context: context, doc: doc);
+            },
+            icon: const Icon(Icons.assignment_turned_in, size: 15),
+            label: const Text(
+              "Assign & Approve",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+
+        if (compact) {
+          return Column(
+            children: [
+              SizedBox(width: double.infinity, child: approveButton),
+              const SizedBox(height: 8),
+              SizedBox(width: double.infinity, child: rejectButton),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: rejectButton),
+            const SizedBox(width: 8),
+            Expanded(flex: 2, child: approveButton),
+          ],
+        );
+      },
     );
   }
 
@@ -938,23 +1169,25 @@ class _StudentListScreenState extends State<StudentListScreen> {
     required String attendance,
     required String feeStatus,
   }) {
+    final small = isSmallScreen;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(small ? 12 : 14),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(17),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(17),
         onTap: () {
           Navigator.push(
             context,
@@ -976,18 +1209,18 @@ class _StudentListScreenState extends State<StudentListScreen> {
         child: Row(
           children: [
             CircleAvatar(
-              radius: 28,
+              radius: small ? 23 : 26,
               backgroundColor: maroon,
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : "?",
                 style: TextStyle(
                   color: gold,
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: small ? 15 : 17,
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: small ? 9 : 11),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -996,23 +1229,25 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w900,
-                      fontSize: 15,
+                      fontSize: small ? 13 : 14,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     "$rollNo • $batch",
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 12,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: const Color(0xFF64748B),
+                      fontSize: small ? 11 : 12,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 7),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
+                    spacing: 6,
+                    runSpacing: 5,
                     children: [
                       _chip(Icons.check_circle, attendance, Colors.green),
                       _chip(
@@ -1025,7 +1260,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
+            const Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
           ],
         ),
       ),
@@ -1034,22 +1269,24 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   Widget _chip(IconData icon, String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 13),
+          Icon(icon, color: color, size: 12),
           const SizedBox(width: 4),
           Text(
             text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
-              fontSize: 11,
+              fontSize: isSmallScreen ? 10 : 10.5,
             ),
           ),
         ],
@@ -1062,29 +1299,34 @@ class _StudentListScreenState extends State<StudentListScreen> {
     required String title,
     required String subtitle,
   }) {
+    final small = isSmallScreen;
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(small ? 16 : 18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(17),
         border: Border.all(color: border),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 40, color: Colors.grey),
-          const SizedBox(height: 10),
+          Icon(icon, size: small ? 34 : 38, color: Colors.grey),
+          const SizedBox(height: 8),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: small ? 13 : 14,
+            ),
           ),
           const SizedBox(height: 5),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            style: TextStyle(color: Colors.grey, fontSize: small ? 11 : 12),
           ),
         ],
       ),

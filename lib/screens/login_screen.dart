@@ -46,15 +46,19 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       final uid = credential.user!.uid;
-      final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
 
       if (!userDoc.exists) {
         await FirebaseAuth.instance.signOut();
         throw Exception("User role not found");
       }
 
-      final role = userDoc.data()?['role']?.toString().trim();
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final role = userData['role']?.toString().trim();
 
       if (!mounted) return;
 
@@ -65,12 +69,61 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (role == "Parent") {
         Navigator.pushNamedAndRemoveUntil(context, '/parent', (route) => false);
       } else if (role == "Student") {
-        Navigator.pushNamedAndRemoveUntil(context, '/student', (route) => false);
+        final studentDoc = await FirebaseFirestore.instance
+            .collection('students')
+            .doc(uid)
+            .get();
+
+        if (!studentDoc.exists) {
+          await FirebaseAuth.instance.signOut();
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Student profile not found. Contact admin."),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        final studentData = studentDoc.data() as Map<String, dynamic>;
+
+        final approvalStatus =
+            studentData['approvalStatus']?.toString().toLowerCase().trim() ??
+            '';
+        final status =
+            studentData['status']?.toString().toLowerCase().trim() ?? '';
+        final isApproved = studentData['isApproved'] == true;
+
+        final canLogin =
+            approvalStatus == 'approved' || status == 'active' || isApproved;
+
+        if (!canLogin) {
+          await FirebaseAuth.instance.signOut();
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Your account is waiting for admin approval. Please try after approval.",
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/student',
+          (route) => false,
+        );
       } else {
         await FirebaseAuth.instance.signOut();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Invalid user role")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Invalid user role")));
       }
     } on FirebaseAuthException catch (e) {
       String message = "Login failed";
@@ -84,12 +137,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login error: $e")),
+        SnackBar(content: Text("Login error: $e"), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -276,10 +329,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-          ),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 6),
         TextField(
@@ -291,8 +341,10 @@ class _LoginScreenState extends State<LoginScreen> {
             suffixIcon: suffix,
             filled: true,
             fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide: BorderSide(color: border),

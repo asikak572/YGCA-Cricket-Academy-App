@@ -54,6 +54,121 @@ class StudentDashboard extends StatelessWidget {
       return const Scaffold(body: Center(child: Text("No user logged in")));
     }
 
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('students')
+          .doc(currentUser.uid)
+          .snapshots(),
+      builder: (context, studentSnapshot) {
+        if (studentSnapshot.hasError) {
+          return Scaffold(
+            backgroundColor: bg,
+            body: Center(child: Text("Error: ${studentSnapshot.error}")),
+          );
+        }
+
+        if (studentSnapshot.connectionState == ConnectionState.waiting) {
+          return _loadingScaffold(context);
+        }
+
+        if (studentSnapshot.hasData && studentSnapshot.data!.exists) {
+          final data = studentSnapshot.data!.data() ?? {};
+          return _dashboardScaffold(
+            context: context,
+            currentUser: currentUser,
+            studentData: data,
+          );
+        }
+
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('students')
+              .where('uid', isEqualTo: currentUser.uid)
+              .limit(1)
+              .snapshots(),
+          builder: (context, querySnapshot) {
+            if (querySnapshot.hasError) {
+              return Scaffold(
+                backgroundColor: bg,
+                body: Center(child: Text("Error: ${querySnapshot.error}")),
+              );
+            }
+
+            if (querySnapshot.connectionState == ConnectionState.waiting) {
+              return _loadingScaffold(context);
+            }
+
+            if (!querySnapshot.hasData || querySnapshot.data!.docs.isEmpty) {
+              return Scaffold(
+                backgroundColor: bg,
+                appBar: YgcaDashboardAppBar(
+                  role: 'STUDENT',
+                  notificationCount: 0,
+                  onNotificationTap: () {},
+                  onLogout: () => _logout(context),
+                ),
+                body: const Center(
+                  child: Text(
+                    "Student details not found.\nPlease contact admin.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              );
+            }
+
+            final data = querySnapshot.data!.docs.first.data();
+
+            return _dashboardScaffold(
+              context: context,
+              currentUser: currentUser,
+              studentData: data,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _loadingScaffold(BuildContext context) {
+    return Scaffold(
+      backgroundColor: bg,
+      appBar: YgcaDashboardAppBar(
+        role: 'STUDENT',
+        notificationCount: 0,
+        onNotificationTap: () {},
+        onLogout: () => _logout(context),
+      ),
+      body: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _dashboardScaffold({
+    required BuildContext context,
+    required User currentUser,
+    required Map<String, dynamic> studentData,
+  }) {
+    final name = _safeText(studentData, ['name', 'studentName'], 'Student');
+
+    final email = _safeText(studentData, ['email'], currentUser.email ?? '');
+
+    final batch = _safeText(studentData, [
+      'batch',
+      'studentBatch',
+    ], 'Batch not assigned');
+
+    final rollNo = _safeText(studentData, [
+      'rollNo',
+      'studentRollNo',
+    ], 'Not assigned');
+
+    final attendance = _safeText(studentData, [
+      'attendance',
+      'attendancePercentage',
+    ], '0%');
+
+    final attendanceNumber = _percentValue(attendance);
+
     return Scaffold(
       backgroundColor: bg,
       appBar: YgcaDashboardAppBar(
@@ -81,10 +196,10 @@ class StudentDashboard extends StatelessWidget {
               MaterialPageRoute(
                 builder: (_) => StudentAttendanceModuleScreen(
                   studentId: currentUser.uid,
-                  name: '',
-                  batch: '',
-                  rollNo: '',
-                  attendance: '0%',
+                  name: name,
+                  batch: batch,
+                  rollNo: rollNo,
+                  attendance: attendance,
                 ),
               ),
             ),
@@ -136,226 +251,183 @@ class StudentDashboard extends StatelessWidget {
         ],
         onLogout: () => _logout(context),
       ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _studentHero(
+                name: name,
+                email: email,
+                batch: batch,
+                rollNo: rollNo,
+                attendance: attendance,
+              ),
+              const SizedBox(height: 18),
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+              _sectionTitle("OVERVIEW"),
 
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text("Student details not found"));
-          }
-
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-
-          final name = _safeText(data, ['name', 'studentName'], 'Student');
-          final email = _safeText(data, ['email'], currentUser.email ?? '');
-          final batch = _safeText(data, [
-            'batch',
-            'studentBatch',
-          ], 'Batch not assigned');
-          final rollNo = _safeText(data, [
-            'rollNo',
-            'studentRollNo',
-          ], 'Not assigned');
-          final attendance = _safeText(data, [
-            'attendance',
-            'attendancePercentage',
-          ], '0%');
-
-          final attendanceNumber = _percentValue(attendance);
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _studentHero(
-                  name: name,
-                  email: email,
-                  batch: batch,
-                  rollNo: rollNo,
-                  attendance: attendance,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.95,
+                  children: [
+                    _statCard(
+                      Icons.verified,
+                      "ATTENDANCE",
+                      "$attendanceNumber%",
+                      attendanceNumber >= 75 ? "Good Progress" : "Needs Focus",
+                      Colors.green,
+                    ),
+                    _statCard(
+                      Icons.groups,
+                      "BATCH",
+                      batch,
+                      "Assigned Batch",
+                      Colors.blue,
+                    ),
+                    _statCard(
+                      Icons.tag,
+                      "ROLL NO.",
+                      rollNo,
+                      "Student ID",
+                      Colors.purple,
+                    ),
+                    _statCard(
+                      Icons.sports_cricket,
+                      "PLAYER",
+                      "Active",
+                      "YGCA Student",
+                      Colors.orange,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 18),
+              ),
 
-                _sectionTitle("OVERVIEW"),
+              const SizedBox(height: 18),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 0.95,
-                    children: [
-                      _statCard(
-                        Icons.verified,
-                        "ATTENDANCE",
-                        "$attendanceNumber%",
-                        attendanceNumber >= 75
-                            ? "Good Progress"
-                            : "Needs Focus",
-                        Colors.green,
-                      ),
-                      _statCard(
-                        Icons.groups,
-                        "BATCH",
-                        batch,
-                        "Assigned Batch",
-                        Colors.blue,
-                      ),
-                      _statCard(
-                        Icons.tag,
-                        "ROLL NO.",
-                        rollNo,
-                        "Student ID",
-                        Colors.purple,
-                      ),
-                      _statCard(
-                        Icons.sports_cricket,
-                        "PLAYER",
-                        "Active",
-                        "YGCA Student",
-                        Colors.orange,
-                      ),
-                    ],
-                  ),
+              _sectionTitle("QUICK ACCESS"),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.65,
+                  children: [
+                    _menuCard(
+                      context,
+                      Icons.fact_check,
+                      "Attendance Module",
+                      Colors.orange,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StudentAttendanceModuleScreen(
+                              studentId: currentUser.uid,
+                              name: name,
+                              batch: batch,
+                              rollNo: rollNo,
+                              attendance: attendance,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    _menuCard(
+                      context,
+                      Icons.bar_chart,
+                      "Performance Module",
+                      Colors.green,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const StudentPerformanceModuleScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _menuCard(
+                      context,
+                      Icons.calendar_month,
+                      "Schedule Module",
+                      Colors.teal,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const StudentScheduleModuleScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _menuCard(
+                      context,
+                      Icons.person,
+                      "Edit Profile",
+                      Colors.indigo,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EditProfileScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _menuCard(
+                      context,
+                      Icons.event_note,
+                      "Apply Leave",
+                      Colors.brown,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LeaveRequestScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _menuCard(
+                      context,
+                      Icons.notifications,
+                      "Notifications",
+                      Colors.red,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const NotificationScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
+              ),
 
-                const SizedBox(height: 18),
-
-                _sectionTitle("QUICK ACCESS"),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.65,
-                    children: [
-                      _menuCard(
-                        context,
-                        Icons.fact_check,
-                        "Attendance Module",
-                        Colors.orange,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => StudentAttendanceModuleScreen(
-                                studentId: currentUser.uid,
-                                name: name,
-                                batch: batch,
-                                rollNo: rollNo,
-                                attendance: attendance,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.bar_chart,
-                        "Performance Module",
-                        Colors.green,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const StudentPerformanceModuleScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.calendar_month,
-                        "Schedule Module",
-                        Colors.teal,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const StudentScheduleModuleScreen(),
-                            ),
-                          );
-                        },
-                      ),
-
-                      _menuCard(
-                        context,
-                        Icons.person,
-                        "Edit Profile",
-                        Colors.indigo,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const EditProfileScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.event_note,
-                        "Apply Leave",
-                        Colors.brown,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LeaveRequestScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.notifications,
-                        "Notifications",
-                        Colors.red,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const NotificationScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 22),
-                _motivationCard(),
-                const SizedBox(height: 22),
-                _footer(),
-                const SizedBox(height: 26),
-              ],
-            ),
-          );
-        },
+              const SizedBox(height: 22),
+              _motivationCard(),
+              const SizedBox(height: 22),
+              _footer(),
+              const SizedBox(height: 26),
+            ],
+          ),
+        ),
       ),
     );
   }
-
-
 
   Widget _studentHero({
     required String name,
@@ -376,7 +448,6 @@ class StudentDashboard extends StatelessWidget {
       height: 260,
       width: double.infinity,
       margin: EdgeInsets.zero,
-      // margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
@@ -505,50 +576,45 @@ class StudentDashboard extends StatelessWidget {
     );
   }
 
-Widget _sectionTitle(String title) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 18,
-      vertical: 8,
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 2,
-            decoration: BoxDecoration(
-              color: gold,
-              borderRadius: BorderRadius.circular(10),
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 2,
+              decoration: BoxDecoration(
+                color: gold,
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
-        ),
-
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: maroon,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.2,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              title,
+              style: TextStyle(
+                color: maroon,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
-        ),
-
-        Expanded(
-          child: Container(
-            height: 2,
-            decoration: BoxDecoration(
-              color: gold,
-              borderRadius: BorderRadius.circular(10),
+          Expanded(
+            child: Container(
+              height: 2,
+              decoration: BoxDecoration(
+                color: gold,
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _statCard(
     IconData icon,
@@ -558,10 +624,7 @@ Widget _sectionTitle(String title) {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-  horizontal: 12,
-  vertical: 14,
-),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: border),
@@ -578,14 +641,10 @@ Widget _sectionTitle(String title) {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircleAvatar(
-  radius: 20,
-  backgroundColor: color.withOpacity(0.15),
-  child: Icon(
-    icon,
-    color: color,
-    size: 22,
-  ),
-),
+            radius: 20,
+            backgroundColor: color.withOpacity(0.15),
+            child: Icon(icon, color: color, size: 22),
+          ),
           const SizedBox(height: 8),
           Text(
             title,
@@ -596,17 +655,17 @@ Widget _sectionTitle(String title) {
             ),
           ),
           const SizedBox(height: 6),
-         Text(
-  value,
-  textAlign: TextAlign.center,
-  maxLines: 2,
-  overflow: TextOverflow.visible,
-  style: const TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w900,
-    height: 1.2,
-  ),
-),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.visible,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              height: 1.2,
+            ),
+          ),
           Text(
             subtitle,
             textAlign: TextAlign.center,
