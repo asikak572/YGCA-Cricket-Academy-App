@@ -55,7 +55,6 @@ class PerformanceReportScreen extends StatelessWidget {
 
           int excellent = 0;
           int average = 0;
-          int needsWork = 0;
 
           for (final doc in reports) {
             final data = doc.data() as Map<String, dynamic>;
@@ -68,9 +67,7 @@ class PerformanceReportScreen extends StatelessWidget {
 
             if (rating == "ELITE" || rating == "EXCELLENT") {
               excellent++;
-            } else if (rating == "AVERAGE" || rating == "NEEDS WORK") {
-              needsWork++;
-            } else {
+            } else if (rating == "GOOD") {
               average++;
             }
           }
@@ -84,11 +81,8 @@ class PerformanceReportScreen extends StatelessWidget {
                   excellent: excellent,
                   average: average,
                 ),
-
                 const SizedBox(height: 18),
-
                 _sectionTitle("PERFORMANCE REPORTS"),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: reports.isEmpty
@@ -99,8 +93,8 @@ class PerformanceReportScreen extends StatelessWidget {
 
                             final name =
                                 data['studentName']?.toString() ??
-                                    data['name']?.toString() ??
-                                    'Unknown Student';
+                                data['name']?.toString() ??
+                                'Unknown Student';
 
                             final batch = data['batch']?.toString() ?? '';
 
@@ -128,7 +122,6 @@ class PerformanceReportScreen extends StatelessWidget {
                           }).toList(),
                         ),
                 ),
-
                 const SizedBox(height: 90),
               ],
             ),
@@ -382,9 +375,7 @@ class PerformanceReportScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(width: 12),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,20 +399,15 @@ class PerformanceReportScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               _ratingChip(rating, ratingColor),
             ],
           ),
-
           const SizedBox(height: 16),
-
           _skillBar("Batting", batting, Colors.green),
           _skillBar("Bowling", bowling, Colors.blue),
           _skillBar("Fielding", fielding, Colors.orange),
           _skillBar("Fitness", fitness, Colors.purple),
-
           const SizedBox(height: 12),
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -517,8 +503,7 @@ class PerformanceReportScreen extends StatelessWidget {
                           ),
                           items: students.map((doc) {
                             final data = doc.data() as Map<String, dynamic>;
-                            final name =
-                                data['name']?.toString() ?? 'No Name';
+                            final name = data['name']?.toString() ?? 'No Name';
                             final batch =
                                 data['batch']?.toString() ?? 'No Batch';
 
@@ -541,16 +526,13 @@ class PerformanceReportScreen extends StatelessWidget {
                               selectedStudentId = selectedDoc.id;
                               selectedStudentName =
                                   data['name']?.toString() ?? '';
-                              selectedBatch =
-                                  data['batch']?.toString() ?? '';
+                              selectedBatch = data['batch']?.toString() ?? '';
                             });
                           },
                         );
                       },
                     ),
-
                     const SizedBox(height: 10),
-
                     _field(
                       "Batting %",
                       battingController,
@@ -578,11 +560,6 @@ class PerformanceReportScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () {
-                    battingController.dispose();
-                    bowlingController.dispose();
-                    fieldingController.dispose();
-                    fitnessController.dispose();
-                    remarksController.dispose();
                     Navigator.pop(context);
                   },
                   child: const Text("Cancel"),
@@ -638,12 +615,6 @@ class PerformanceReportScreen extends StatelessWidget {
                       'latestPerformanceUpdatedAt':
                           FieldValue.serverTimestamp(),
                     });
-
-                    battingController.dispose();
-                    bowlingController.dispose();
-                    fieldingController.dispose();
-                    fitnessController.dispose();
-                    remarksController.dispose();
 
                     if (context.mounted) {
                       Navigator.pop(context);

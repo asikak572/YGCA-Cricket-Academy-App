@@ -225,46 +225,33 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              nameController.dispose();
-              ageController.dispose();
-              batchController.dispose();
-              parentNameController.dispose();
-              phoneController.dispose();
-              rollNoController.dispose();
-              feeStatusController.dispose();
-              Navigator.pop(context);
-            },
-            child: const Text("Cancel"),
-          ),
+  onPressed: () {
+    Navigator.pop(context);
+  },
+  child: const Text("Cancel"),
+),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
-              foregroundColor: gold,
-            ),
-            onPressed: () async {
-              await _updateStudent(
-                name: nameController.text,
-                age: ageController.text,
-                batch: batchController.text,
-                parentName: parentNameController.text,
-                phone: phoneController.text,
-                rollNo: rollNoController.text,
-                feeStatus: feeStatusController.text,
-              );
+  style: ElevatedButton.styleFrom(
+    backgroundColor: maroon,
+    foregroundColor: gold,
+  ),
+  onPressed: () async {
+    await _updateStudent(
+      name: nameController.text,
+      age: ageController.text,
+      batch: batchController.text,
+      parentName: parentNameController.text,
+      phone: phoneController.text,
+      rollNo: rollNoController.text,
+      feeStatus: feeStatusController.text,
+    );
 
-              nameController.dispose();
-              ageController.dispose();
-              batchController.dispose();
-              parentNameController.dispose();
-              phoneController.dispose();
-              rollNoController.dispose();
-              feeStatusController.dispose();
-
-              if (mounted) Navigator.pop(context);
-            },
-            child: const Text("Update"),
-          ),
+    if (mounted) {
+      Navigator.pop(context);
+    }
+  },
+  child: const Text("Update"),
+),
         ],
       ),
     );
