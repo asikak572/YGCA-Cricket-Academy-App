@@ -1,14 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
   final Color maroon = const Color(0xFF7F0000);
   final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
+
+  String role = '';
+  String uid = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    uid = user.uid;
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (!userDoc.exists) return;
+
+    final data = userDoc.data() ?? {};
+
+    if (!mounted) return;
+
+    setState(() {
+      role = data['role']?.toString() ?? '';
+    });
+  }
+
+  Query _notificationQuery() {
+    Query query = FirebaseFirestore.instance.collection('notifications');
+
+    if (role == 'Student') {
+      query = query.where('targetRole', whereIn: ['All', 'Student']);
+    } else if (role == 'Parent') {
+      query = query.where('targetRole', whereIn: ['All', 'Parent']);
+    } else if (role == 'Coach') {
+      query = query.where('targetRole', whereIn: ['All', 'Coach']);
+    }
+
+    return query.orderBy('createdAt', descending: true);
+  }
 
   Future<void> _addNotificationDialog(BuildContext context) async {
     final titleController = TextEditingController();
@@ -57,11 +106,7 @@ class NotificationScreen extends StatelessWidget {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    titleController.dispose();
-                    messageController.dispose();
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   child: const Text("Cancel"),
                 ),
                 ElevatedButton(
@@ -86,11 +131,9 @@ class NotificationScreen extends StatelessWidget {
                       'title': titleController.text.trim(),
                       'message': messageController.text.trim(),
                       'targetRole': selectedTarget,
+                      'createdBy': uid,
                       'createdAt': FieldValue.serverTimestamp(),
                     });
-
-                    titleController.dispose();
-                    messageController.dispose();
 
                     if (context.mounted) {
                       Navigator.pop(context);
@@ -212,7 +255,6 @@ class NotificationScreen extends StatelessWidget {
 
   int _todayCount(List<QueryDocumentSnapshot> notifications) {
     final now = DateTime.now();
-
     int count = 0;
 
     for (final doc in notifications) {
@@ -237,10 +279,7 @@ class NotificationScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: bg,
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('notifications')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
+        stream: _notificationQuery().snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text("Error: ${snapshot.error}"));
@@ -261,11 +300,8 @@ class NotificationScreen extends StatelessWidget {
                   total: notifications.length,
                   today: todayCount,
                 ),
-
                 const SizedBox(height: 18),
-
                 _sectionTitle("NOTIFICATION LIST"),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: notifications.isEmpty
@@ -292,20 +328,21 @@ class NotificationScreen extends StatelessWidget {
                           }).toList(),
                         ),
                 ),
-
                 const SizedBox(height: 90),
               ],
             ),
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        onPressed: () => _addNotificationDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text("Add Notification"),
-      ),
+      floatingActionButton: role == 'Admin'
+          ? FloatingActionButton.extended(
+              backgroundColor: maroon,
+              foregroundColor: gold,
+              onPressed: () => _addNotificationDialog(context),
+              icon: const Icon(Icons.add),
+              label: const Text("Add Notification"),
+            )
+          : null,
     );
   }
 
@@ -388,8 +425,11 @@ class NotificationScreen extends StatelessWidget {
                 CircleAvatar(
                   radius: 48,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.notifications_active,
-                      color: maroon, size: 42),
+                  child: Icon(
+                    Icons.notifications_active,
+                    color: maroon,
+                    size: 42,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -501,7 +541,7 @@ class NotificationScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 4),
-          Text("Click Add Notification to create one"),
+          Text("No updates available for your role"),
         ],
       ),
     );
@@ -539,9 +579,7 @@ class NotificationScreen extends StatelessWidget {
             backgroundColor: color,
             child: Icon(icon, color: Colors.white, size: 20),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -581,11 +619,11 @@ class NotificationScreen extends StatelessWidget {
               ],
             ),
           ),
-
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red, size: 21),
-            onPressed: onDelete,
-          ),
+          if (role == 'Admin')
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red, size: 21),
+              onPressed: onDelete,
+            ),
         ],
       ),
     );

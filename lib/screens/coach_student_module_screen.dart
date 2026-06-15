@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'widgets/ygca_app_bar.dart';
 
-import 'student_list_screen.dart';
+
+import 'coach_assigned_students_screen.dart';
 
 class CoachStudentModuleScreen extends StatelessWidget {
   const CoachStudentModuleScreen({super.key});
@@ -30,7 +31,7 @@ class CoachStudentModuleScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const StudentListScreen(),
+                    builder: (_) => const CoachAssignedStudentsScreen(),
                   ),
                 );
               },
