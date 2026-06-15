@@ -235,6 +235,48 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                   'feeStatus': data['feeStatus'] ?? 'Pending',
                                 });
 
+                                await FirebaseFirestore.instance
+    .collection('users')
+    .doc(doc.id)
+    .set({
+  'approvalStatus': 'Approved',
+  'status': 'Active',
+  'isApproved': true,
+  'updatedAt': FieldValue.serverTimestamp(),
+}, SetOptions(merge: true));
+
+
+                                final parentEmail =
+    data['parentEmail']?.toString().trim() ?? '';
+
+if (parentEmail.isNotEmpty) {
+  final parentQuery = await FirebaseFirestore.instance
+      .collection('users')
+      .where('role', isEqualTo: 'Parent')
+      .where('email', isEqualTo: parentEmail)
+      .limit(1)
+      .get();
+
+  if (parentQuery.docs.isNotEmpty) {
+    final parentDoc = parentQuery.docs.first;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(parentDoc.id)
+        .set({
+      'linkedChildrenIds': FieldValue.arrayUnion([doc.id]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await FirebaseFirestore.instance
+        .collection('students')
+        .doc(doc.id)
+        .set({
+      'parentUid': parentDoc.id,
+    }, SetOptions(merge: true));
+  }
+}
+
                             if (!mounted) return;
 
                             Navigator.of(dialogContext).pop();

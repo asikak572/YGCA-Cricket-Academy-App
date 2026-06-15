@@ -23,6 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final ageController = TextEditingController();
   final phoneController = TextEditingController();
   final parentNameController = TextEditingController();
+  final parentEmailController = TextEditingController();
 
   String selectedRole = "Student";
   bool isLoading = false;
@@ -35,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final age = ageController.text.trim();
     final phone = phoneController.text.trim();
     final parentName = parentNameController.text.trim();
+    final parentEmail = parentEmailController.text.trim();
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (selectedRole == "Student") {
-      if (age.isEmpty || phone.isEmpty || parentName.isEmpty) {
+      if (age.isEmpty || phone.isEmpty || parentName.isEmpty || parentEmail.isEmpty){
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Please fill student age, phone and parent name"),
@@ -98,6 +100,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'age': age,
           'phone': phone,
           'parentName': parentName,
+          'parentEmail': parentEmail,
 
           // Important approval fields
           'approvalStatus': 'Pending',
@@ -171,6 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     ageController.dispose();
     phoneController.dispose();
     parentNameController.dispose();
+    parentEmailController.dispose();
     super.dispose();
   }
 
@@ -247,6 +251,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         icon: Icons.family_restroom,
                         label: "Parent Name",
                         controller: parentNameController,
+                      ),
+
+                      const SizedBox(height: 10),
+                      _input(
+                        icon: Icons.email_outlined,
+                        label: "Parent Email",
+                        controller: parentEmailController,
+                        keyboardType: TextInputType.emailAddress,
                       ),
                     ],
 
