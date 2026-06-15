@@ -1,14 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PerformanceReportScreen extends StatelessWidget {
+class PerformanceReportScreen extends StatefulWidget {
   const PerformanceReportScreen({super.key});
 
+  @override
+  State<PerformanceReportScreen> createState() =>
+      _PerformanceReportScreenState();
+}
+
+class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
   final Color maroon = const Color(0xFF7F0000);
   final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
+
+  String role = '';
+  String uid = '';
+  List<String> linkedChildrenIds = [];
+   Query _performanceQuery() {
+    Query query =
+        FirebaseFirestore.instance.collection('performance_reports');
+
+    if (role == 'Student') {
+      query = query.where('studentId', isEqualTo: uid);
+    } else if (role == 'Parent') {
+      if (linkedChildrenIds.isNotEmpty) {
+        query = query.where(
+          'studentId',
+          whereIn: linkedChildrenIds.take(10).toList(),
+        );
+      } else {
+        query = query.where('studentId', isEqualTo: 'NO_CHILD');
+      }
+    }
+
+    return query.orderBy('createdAt', descending: true);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    uid = user.uid;
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    if (!userDoc.exists) return;
+
+    final data = userDoc.data() ?? {};
+
+    if (!mounted) return;
+
+    setState(() {
+      role = data['role']?.toString() ?? '';
+      linkedChildrenIds = List<String>.from(data['linkedChildrenIds'] ?? []);
+    });
+  }
 
   int _toInt(dynamic value) {
     if (value == null) return 0;
@@ -38,15 +97,16 @@ class PerformanceReportScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: bg,
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('performance_reports')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
+       stream: _performanceQuery().snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(child: Text("Something went wrong"));
-          }
-
+  return Center(
+    child: Text(
+      snapshot.error.toString(),
+      style: const TextStyle(color: Colors.red),
+    ),
+  );
+}
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -104,8 +164,12 @@ class PerformanceReportScreen extends StatelessWidget {
                             final fitness = _toInt(data['fitness']);
 
                             final remarks = data['remarks']?.toString() ?? '';
-                            final rating =
-                                _ratingText(batting, bowling, fielding, fitness);
+                            final rating = _ratingText(
+                              batting,
+                              bowling,
+                              fielding,
+                              fitness,
+                            );
                             final ratingColor = _ratingColor(rating);
 
                             return _performanceCard(
@@ -128,15 +192,17 @@ class PerformanceReportScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        onPressed: () {
-          _showAddDialog(context);
-        },
-        icon: const Icon(Icons.add),
-        label: const Text("Add Report"),
-      ),
+      floatingActionButton: role == 'Admin' || role == 'Coach'
+          ? FloatingActionButton.extended(
+              backgroundColor: maroon,
+              foregroundColor: gold,
+              onPressed: () {
+                _showAddDialog(context);
+              },
+              icon: const Icon(Icons.add),
+              label: const Text("Add Report"),
+            )
+          : null,
     );
   }
 
@@ -279,16 +345,11 @@ class PerformanceReportScreen extends StatelessWidget {
 
   Widget _heroChip(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.14),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: gold.withOpacity(0.7),
-        ),
+        border: Border.all(color: gold.withOpacity(0.7)),
       ),
       child: Text(
         text,
@@ -316,11 +377,7 @@ class PerformanceReportScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Container(
-            width: 42,
-            height: 2,
-            color: gold,
-          ),
+          Container(width: 42, height: 2, color: gold),
         ],
       ),
     );
@@ -352,13 +409,6 @@ class PerformanceReportScreen extends StatelessWidget {
         color: Colors.white,
         border: Border.all(color: border),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.045),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -369,10 +419,7 @@ class PerformanceReportScreen extends StatelessWidget {
                 backgroundColor: maroon,
                 child: Text(
                   initials.isNotEmpty ? initials : "?",
-                  style: TextStyle(
-                    color: gold,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: gold, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 12),
@@ -559,9 +606,7 @@ class PerformanceReportScreen extends StatelessWidget {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   child: const Text("Cancel"),
                 ),
                 ElevatedButton(
@@ -653,11 +698,7 @@ class PerformanceReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _skillBar(
-    String title,
-    int value,
-    Color color,
-  ) {
+  Widget _skillBar(String title, int value, Color color) {
     final safeValue = value.clamp(0, 100);
 
     return Padding(
