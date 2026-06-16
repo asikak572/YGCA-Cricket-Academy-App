@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'performance_chart_screen.dart';
+
 class PerformanceReportScreen extends StatefulWidget {
   const PerformanceReportScreen({super.key});
 
@@ -20,7 +22,8 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
   String role = '';
   String uid = '';
   List<String> linkedChildrenIds = [];
-   Query _performanceQuery() {
+
+  Query _performanceQuery() {
     Query query =
         FirebaseFirestore.instance.collection('performance_reports');
 
@@ -92,21 +95,31 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
     return Colors.red;
   }
 
+  void _openAnalytics(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PerformanceChartScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
       body: StreamBuilder<QuerySnapshot>(
-       stream: _performanceQuery().snapshots(),
+        stream: _performanceQuery().snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-  return Center(
-    child: Text(
-      snapshot.error.toString(),
-      style: const TextStyle(color: Colors.red),
-    ),
-  );
-}
+            return Center(
+              child: Text(
+                snapshot.error.toString(),
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -141,8 +154,35 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                   excellent: excellent,
                   average: average,
                 ),
+
+                const SizedBox(height: 12),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: maroon,
+                        foregroundColor: gold,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () => _openAnalytics(context),
+                      icon: const Icon(Icons.analytics),
+                      label: const Text(
+                        "View Performance Analytics",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 18),
                 _sectionTitle("PERFORMANCE REPORTS"),
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: reports.isEmpty
@@ -153,8 +193,8 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
 
                             final name =
                                 data['studentName']?.toString() ??
-                                data['name']?.toString() ??
-                                'Unknown Student';
+                                    data['name']?.toString() ??
+                                    'Unknown Student';
 
                             final batch = data['batch']?.toString() ?? '';
 
