@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'widgets/ygca_app_bar.dart';
+import '../services/pdf_service.dart';
+import '../services/excel_service.dart';
 
 class FeeReportScreen extends StatelessWidget {
   const FeeReportScreen({super.key});
@@ -11,11 +12,77 @@ class FeeReportScreen extends StatelessWidget {
   final Color bg = const Color(0xFFF8FAFC);
   final Color border = const Color(0xFFE2E8F0);
 
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  Future<List<Map<String, dynamic>>> _getFeeRecords() async {
+    final snapshot = await FirebaseFirestore.instance.collection('fees').get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  Future<void> _generatePdf() async {
+    final records = await _getFeeRecords();
+
+    int totalFee = 0;
+    int collected = 0;
+    int pending = 0;
+    int paidStudents = 0;
+
+    for (final data in records) {
+      totalFee += _toInt(data['totalFee']);
+      collected += _toInt(data['paidAmount']);
+      pending += _toInt(data['pendingAmount']);
+
+      if (data['status']?.toString() == "Paid") {
+        paidStudents++;
+      }
+    }
+
+    await PdfService.generateFeeReportPdf(
+      totalFee: totalFee,
+      collected: collected,
+      pending: pending,
+      paidStudents: paidStudents,
+      feeRecords: records,
+    );
+  }
+
+  Future<void> _generateExcel() async {
+    final records = await _getFeeRecords();
+
+    await ExcelService.generateFeeReportExcel(
+      feeRecords: records,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      appBar: const YgcaAppBar(title: "Fee Reports"),
+      appBar: AppBar(
+        title: const Text(
+          "Fee Reports",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: maroon,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            tooltip: "Export PDF",
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: _generatePdf,
+          ),
+          IconButton(
+            tooltip: "Export Excel",
+            icon: const Icon(Icons.table_chart),
+            onPressed: _generateExcel,
+          ),
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('fees')
@@ -40,9 +107,9 @@ class FeeReportScreen extends StatelessWidget {
           for (final doc in feeDocs) {
             final data = doc.data() as Map<String, dynamic>;
 
-            final total = (data['totalFee'] ?? 0) as int;
-            final paid = (data['paidAmount'] ?? 0) as int;
-            final pendingAmount = (data['pendingAmount'] ?? 0) as int;
+            final total = _toInt(data['totalFee']);
+            final paid = _toInt(data['paidAmount']);
+            final pendingAmount = _toInt(data['pendingAmount']);
             final status = data['status']?.toString() ?? 'Pending';
 
             totalFee += total;
@@ -59,7 +126,7 @@ class FeeReportScreen extends StatelessWidget {
 
           final pendingStudents = feeDocs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
-            final pendingAmount = (data['pendingAmount'] ?? 0) as int;
+            final pendingAmount = _toInt(data['pendingAmount']);
             return pendingAmount > 0;
           }).toList();
 
@@ -69,7 +136,6 @@ class FeeReportScreen extends StatelessWidget {
               children: [
                 _heroCard(collectionPercent),
                 const SizedBox(height: 16),
-
                 GridView.count(
                   crossAxisCount: 2,
                   shrinkWrap: true,
@@ -104,11 +170,8 @@ class FeeReportScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 18),
-
                 _sectionTitle("Payment Records"),
-
                 if (feeDocs.isEmpty)
                   const Card(
                     child: ListTile(
@@ -123,9 +186,9 @@ class FeeReportScreen extends StatelessWidget {
                     final name =
                         data['studentName']?.toString() ?? 'Unknown Student';
                     final studentId = data['studentId']?.toString() ?? '';
-                    final total = (data['totalFee'] ?? 0) as int;
-                    final paid = (data['paidAmount'] ?? 0) as int;
-                    final pendingAmount = (data['pendingAmount'] ?? 0) as int;
+                    final total = _toInt(data['totalFee']);
+                    final paid = _toInt(data['paidAmount']);
+                    final pendingAmount = _toInt(data['pendingAmount']);
 
                     final progress =
                         total == 0 ? 0.0 : (paid / total).clamp(0.0, 1.0);
@@ -138,11 +201,8 @@ class FeeReportScreen extends StatelessWidget {
                       pending: "Pending ₹$pendingAmount",
                     );
                   }),
-
                 const SizedBox(height: 18),
-
                 _sectionTitle("Pending Fee Students"),
-
                 if (pendingStudents.isEmpty)
                   const Card(
                     child: ListTile(
@@ -158,7 +218,7 @@ class FeeReportScreen extends StatelessWidget {
                     return _pendingStudentCard(
                       name: data['studentName']?.toString() ?? 'Unknown',
                       batch: "ID: ${data['studentId']?.toString() ?? ''}",
-                      amount: "₹${data['pendingAmount'] ?? 0}",
+                      amount: "₹${_toInt(data['pendingAmount'])}",
                     );
                   }),
               ],
