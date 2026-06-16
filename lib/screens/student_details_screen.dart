@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'attendance_calendar_screen.dart';
 import 'attendance_history_screen.dart';
+import 'digital_id_card_screen.dart';
 
 class StudentDetailsScreen extends StatefulWidget {
   final String studentId;
@@ -401,6 +402,32 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                               () => _showEditDialog(data),
                             ),
                           ),
+
+
+                          const SizedBox(width: 8),
+
+Expanded(
+  child: _actionCard(
+    Icons.badge,
+    "ID Card",
+    Colors.green,
+    () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DigitalIdCardScreen(
+            name: name,
+            rollNo: rollNo,
+            batch: batch,
+            parentName: parentName,
+            phone: phone,
+            photoUrl: photoUrl,
+          ),
+        ),
+      );
+    },
+  ),
+),
                           const SizedBox(width: 8),
                           Expanded(
                             child: _actionCard(
