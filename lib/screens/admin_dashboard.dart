@@ -13,7 +13,6 @@ import 'fee_module_screen.dart';
 import 'coach_module_screen.dart';
 import 'schedule_module_screen.dart';
 import 'coach_salary_analytics_screen.dart';
-import 'sms_notification_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -121,14 +120,6 @@ class AdminDashboard extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const NotificationScreen()),
-            ),
-          ),
-          YgcaNavItem(
-            icon: Icons.sms_rounded,
-            label: 'SMS Notifications',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SmsNotificationScreen()),
             ),
           ),
         ],
@@ -291,20 +282,6 @@ class AdminDashboard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const NotificationScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _menuCard(
-                    context,
-                    Icons.sms,
-                    "SMS Notifications",
-                    Colors.deepOrange,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SmsNotificationScreen(),
                         ),
                       );
                     },

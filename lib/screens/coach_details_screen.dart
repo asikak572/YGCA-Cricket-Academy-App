@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'coach_salary_screen.dart';
+
 class CoachDetailsScreen extends StatefulWidget {
   final String coachId;
   final String name;
@@ -49,6 +51,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     required String phone,
     required String batch,
     required String status,
+    required String experience,
+    required String specialization,
   }) async {
     await FirebaseFirestore.instance
         .collection('coaches')
@@ -59,6 +63,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
       'phone': phone.trim(),
       'batch': batch.trim(),
       'status': status.trim(),
+      'experience': experience.trim(),
+      'specialization': specialization.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
@@ -96,12 +102,28 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     );
   }
 
-  void _showEditDialog() {
-    final nameController = TextEditingController(text: widget.name);
-    final roleController = TextEditingController(text: widget.role);
-    final phoneController = TextEditingController(text: widget.phone);
-    final batchController = TextEditingController(text: widget.batch);
-    final statusController = TextEditingController(text: widget.status);
+  void _showEditDialog(Map<String, dynamic> data) {
+    final nameController = TextEditingController(
+      text: data['name']?.toString() ?? widget.name,
+    );
+    final roleController = TextEditingController(
+      text: data['role']?.toString() ?? widget.role,
+    );
+    final phoneController = TextEditingController(
+      text: data['phone']?.toString() ?? widget.phone,
+    );
+    final batchController = TextEditingController(
+      text: data['batch']?.toString() ?? widget.batch,
+    );
+    final statusController = TextEditingController(
+      text: data['status']?.toString() ?? widget.status,
+    );
+    final experienceController = TextEditingController(
+      text: data['experience']?.toString() ?? '5 Years',
+    );
+    final specializationController = TextEditingController(
+      text: data['specialization']?.toString() ?? 'Batting Coach',
+    );
 
     showDialog(
       context: context,
@@ -112,9 +134,14 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
             children: [
               _editField("Coach Name", nameController),
               _editField("Role", roleController),
-              _editField("Phone Number", phoneController,
-                  keyboardType: TextInputType.phone),
+              _editField(
+                "Phone Number",
+                phoneController,
+                keyboardType: TextInputType.phone,
+              ),
               _editField("Assigned Batch", batchController),
+              _editField("Experience", experienceController),
+              _editField("Specialization", specializationController),
               _editField("Status", statusController),
             ],
           ),
@@ -127,6 +154,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               phoneController.dispose();
               batchController.dispose();
               statusController.dispose();
+              experienceController.dispose();
+              specializationController.dispose();
               Navigator.pop(context);
             },
             child: const Text("Cancel"),
@@ -143,6 +172,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                 phone: phoneController.text,
                 batch: batchController.text,
                 status: statusController.text,
+                experience: experienceController.text,
+                specialization: specializationController.text,
               );
 
               nameController.dispose();
@@ -150,6 +181,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               phoneController.dispose();
               batchController.dispose();
               statusController.dispose();
+              experienceController.dispose();
+              specializationController.dispose();
 
               if (mounted) Navigator.pop(context);
             },
@@ -160,155 +193,199 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     );
   }
 
+  String _text(Map<String, dynamic> data, String key, String fallback) {
+    final value = data[key];
+    if (value == null || value.toString().trim().isEmpty) return fallback;
+    return value.toString().trim();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final initial = widget.name.isNotEmpty ? widget.name[0].toUpperCase() : "?";
-    final isActive = widget.status.toLowerCase() == "active";
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('coaches')
+          .doc(widget.coachId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _topHeader(context),
-            _profileHero(initial, isActive),
-            const SizedBox(height: 18),
+        final name = _text(data, 'name', widget.name);
+        final role = _text(data, 'role', widget.role);
+        final phone = _text(data, 'phone', widget.phone);
+        final batch = _text(data, 'batch', widget.batch);
+        final status = _text(data, 'status', widget.status);
+        final experience = _text(data, 'experience', '5 Years');
+        final specialization =
+            _text(data, 'specialization', 'Batting Coach');
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.25,
-                children: [
-                  _statCard(Icons.groups, "BATCH", widget.batch, "Assigned",
-                      Colors.blue),
-                  _statCard(Icons.verified, "STATUS", widget.status,
-                      isActive ? "Working" : "Inactive", Colors.green),
-                  _statCard(Icons.phone, "PHONE", widget.phone, "Contact",
-                      Colors.orange),
-                  _statCard(Icons.work, "ROLE", widget.role, "Coach Type",
-                      Colors.purple),
-                ],
-              ),
-            ),
+        final initial = name.isNotEmpty ? name[0].toUpperCase() : "?";
+        final isActive = status.toLowerCase() == "active";
 
-            const SizedBox(height: 16),
+        return Scaffold(
+          backgroundColor: bg,
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                _topHeader(context),
+                _profileHero(initial, name, role, status),
+                const SizedBox(height: 18),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _infoCard(
-                title: "COACH INFORMATION",
-                children: [
-                  _infoRow("Coach Name", widget.name),
-                  _infoRow("Role", widget.role),
-                  _infoRow("Phone Number", widget.phone),
-                  _infoRow("Assigned Batch", widget.batch),
-                  _infoRow("Status", widget.status),
-                ],
-              ),
-            ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.25,
+                    children: [
+                      _statCard(Icons.groups, "BATCH", batch, "Assigned", Colors.blue),
+                      _statCard(Icons.verified, "STATUS", status, isActive ? "Working" : "Inactive", Colors.green),
+                      _statCard(Icons.work_history, "EXPERIENCE", experience, "Coaching", Colors.orange),
+                      _statCard(Icons.sports_cricket, "SPECIALITY", specialization, "Skill Area", Colors.purple),
+                    ],
+                  ),
+                ),
 
-            const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _infoCard(
-                title: "QUICK ACTIONS",
-                children: [
-                  Row(
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _infoCard(
+                    title: "COACH INFORMATION",
+                    children: [
+                      _infoRow("Coach Name", name),
+                      _infoRow("Role", role),
+                      _infoRow("Phone Number", phone),
+                      _infoRow("Assigned Batch", batch),
+                      _infoRow("Experience", experience),
+                      _infoRow("Specialization", specialization),
+                      _infoRow("Status", status),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _infoCard(
+                    title: "QUICK ACTIONS",
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _actionCard(
+                              icon: Icons.edit,
+                              title: "Edit\nCoach",
+                              color: Colors.blue,
+                              onTap: () => _showEditDialog(data),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _actionCard(
+                              icon: Icons.delete,
+                              title: "Delete\nCoach",
+                              color: Colors.red,
+                              onTap: _confirmDelete,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      _actionCard(
+                        icon: Icons.account_balance_wallet,
+                        title: "Salary Details",
+                        color: Colors.green,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CoachSalaryScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBF2),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: gold),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            "Coach details are managed by Admin. Assigned batch is used for attendance and student monitoring.",
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
                     children: [
                       Expanded(
-                        child: _actionCard(
-                          icon: Icons.edit,
-                          title: "Edit\nCoach",
-                          color: Colors.blue,
-                          onTap: _showEditDialog,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: maroon,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(55),
+                          ),
+                          onPressed: () => _showEditDialog(data),
+                          icon: const Icon(Icons.edit),
+                          label: const Text("EDIT COACH"),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: _actionCard(
-                          icon: Icons.delete,
-                          title: "Delete\nCoach",
-                          color: Colors.red,
-                          onTap: _confirmDelete,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.green,
+                            minimumSize: const Size.fromHeight(55),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CoachSalaryScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.account_balance_wallet),
+                          label: const Text("SALARY"),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBF2),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: gold),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        "Coach details are managed by Admin. Assigned batch is used for attendance and student monitoring.",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+
+                const SizedBox(height: 30),
+              ],
             ),
-
-            const SizedBox(height: 20),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: maroon,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(55),
-                      ),
-                      onPressed: _showEditDialog,
-                      icon: const Icon(Icons.edit),
-                      label: const Text("EDIT COACH"),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        minimumSize: const Size.fromHeight(55),
-                      ),
-                      onPressed: _confirmDelete,
-                      icon: const Icon(Icons.delete),
-                      label: const Text("DELETE"),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -322,10 +399,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back, color: Colors.white),
           ),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 60,
-          ),
+          Image.asset('assets/images/ygca_logo.jpg', width: 60),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -346,7 +420,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     );
   }
 
-  Widget _profileHero(String initial, bool isActive) {
+  Widget _profileHero(String initial, String name, String role, String status) {
     return Container(
       margin: const EdgeInsets.all(16),
       height: 210,
@@ -391,7 +465,9 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.name,
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 27,
@@ -399,7 +475,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                       ),
                     ),
                     Text(
-                      widget.role,
+                      role,
                       style: TextStyle(
                         color: gold,
                         fontSize: 15,
@@ -407,7 +483,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _statusChip(widget.status),
+                    _statusChip(status),
                     const SizedBox(height: 10),
                     const Text(
                       "Guiding players towards excellence.",
@@ -531,9 +607,13 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
       child: Row(
         children: [
           Expanded(child: Text(title)),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -560,10 +640,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
           children: [
             Icon(icon, color: color),
             const SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-            ),
+            Text(title, textAlign: TextAlign.center),
           ],
         ),
       ),
