@@ -12,6 +12,7 @@ import 'attendance_module_screen.dart';
 import 'fee_module_screen.dart';
 import 'coach_module_screen.dart';
 import 'schedule_module_screen.dart';
+import 'coach_salary_analytics_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -282,6 +283,21 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
+
+                  _menuCard(
+  context,
+  Icons.payments,
+  "Coach Salary Analytics",
+  Colors.green,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CoachSalaryAnalyticsScreen(),
+      ),
+    );
+  },
+),
 
                   _menuCard(
                     context,
