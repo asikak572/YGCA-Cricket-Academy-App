@@ -13,6 +13,7 @@ import 'fee_module_screen.dart';
 import 'coach_module_screen.dart';
 import 'schedule_module_screen.dart';
 import 'coach_salary_analytics_screen.dart';
+import 'sms_notification_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -47,11 +48,7 @@ class AdminDashboard extends StatelessWidget {
       drawer: YgcaDrawer(
         role: 'Admin',
         navItems: [
-          YgcaNavItem(
-            icon: Icons.home_rounded,
-            label: 'Dashboard',
-            onTap: () {},
-          ),
+          YgcaNavItem(icon: Icons.home_rounded, label: 'Dashboard', onTap: () {}),
           YgcaNavItem(
             icon: Icons.dashboard_rounded,
             label: 'Reports Dashboard',
@@ -109,11 +106,29 @@ class AdminDashboard extends StatelessWidget {
             ),
           ),
           YgcaNavItem(
+            icon: Icons.payments,
+            label: 'Coach Salary Analytics',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CoachSalaryAnalyticsScreen(),
+              ),
+            ),
+          ),
+          YgcaNavItem(
             icon: Icons.notifications_rounded,
             label: 'Notifications',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const NotificationScreen()),
+            ),
+          ),
+          YgcaNavItem(
+            icon: Icons.sms_rounded,
+            label: 'SMS Notifications',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SmsNotificationScreen()),
             ),
           ),
         ],
@@ -124,9 +139,7 @@ class AdminDashboard extends StatelessWidget {
           children: [
             _heroBanner(),
             const SizedBox(height: 18),
-
             _sectionTitle("OVERVIEW"),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: GridView.count(
@@ -137,38 +150,15 @@ class AdminDashboard extends StatelessWidget {
                 mainAxisSpacing: 10,
                 childAspectRatio: 1.22,
                 children: [
-                  _overviewCard(
-                    Icons.groups,
-                    "Total Students",
-                    "248",
-                    "View all",
-                  ),
-                  _overviewCard(
-                    Icons.check_circle,
-                    "Attendance",
-                    "186",
-                    "75% Today",
-                  ),
-                  _overviewCard(
-                    Icons.receipt,
-                    "Pending Fees",
-                    "₹2.45L",
-                    "28 Students",
-                  ),
-                  _overviewCard(
-                    Icons.calendar_month,
-                    "Sessions",
-                    "6",
-                    "2 Cancelled",
-                  ),
+                  _overviewCard(Icons.groups, "Total Students", "248", "View all"),
+                  _overviewCard(Icons.check_circle, "Attendance", "186", "75% Today"),
+                  _overviewCard(Icons.receipt, "Pending Fees", "₹2.45L", "28 Students"),
+                  _overviewCard(Icons.calendar_month, "Sessions", "6", "2 Cancelled"),
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
-
             _sectionTitle("MODULE ACCESS"),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: GridView.count(
@@ -193,7 +183,6 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
-
                   _menuCard(
                     context,
                     Icons.people,
@@ -208,7 +197,6 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
-
                   _menuCard(
                     context,
                     Icons.check_circle,
@@ -223,7 +211,6 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
-
                   _menuCard(
                     context,
                     Icons.sports,
@@ -238,7 +225,6 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
-
                   _menuCard(
                     context,
                     Icons.payments,
@@ -253,7 +239,6 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
-
                   _menuCard(
                     context,
                     Icons.calendar_month,
@@ -268,7 +253,6 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
-
                   _menuCard(
                     context,
                     Icons.bar_chart,
@@ -283,22 +267,20 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
-
                   _menuCard(
-  context,
-  Icons.payments,
-  "Coach Salary Analytics",
-  Colors.green,
-  () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const CoachSalaryAnalyticsScreen(),
-      ),
-    );
-  },
-),
-
+                    context,
+                    Icons.payments,
+                    "Coach Salary Analytics",
+                    Colors.green,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CoachSalaryAnalyticsScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   _menuCard(
                     context,
                     Icons.notifications,
@@ -313,10 +295,23 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
+                  _menuCard(
+                    context,
+                    Icons.sms,
+                    "SMS Notifications",
+                    Colors.deepOrange,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SmsNotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
             _footer(),
             const SizedBox(height: 24),
@@ -325,8 +320,6 @@ class AdminDashboard extends StatelessWidget {
       ),
     );
   }
-
-
 
   Widget _heroBanner() {
     return Container(
