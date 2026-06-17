@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'performance_chart_screen.dart';
+import 'notification_service.dart';
 
 class PerformanceReportScreen extends StatefulWidget {
   const PerformanceReportScreen({super.key});
@@ -700,6 +701,12 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                       'latestPerformanceUpdatedAt':
                           FieldValue.serverTimestamp(),
                     });
+
+                    await NotificationService.performanceUpdate(
+  studentName: selectedStudentName,
+  studentId: selectedStudentId!,
+  batch: selectedBatch,
+);
 
                     if (context.mounted) {
                       Navigator.pop(context);
