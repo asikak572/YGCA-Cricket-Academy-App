@@ -13,6 +13,7 @@ import 'fee_module_screen.dart';
 import 'coach_module_screen.dart';
 import 'schedule_module_screen.dart';
 import 'coach_salary_analytics_screen.dart';
+import 'communication_center_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -286,6 +287,20 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                   ),
+                  _menuCard(
+  context,
+  Icons.campaign,
+  "Communication Center",
+  Colors.deepPurple,
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CommunicationCenterScreen(),
+      ),
+    );
+  },
+),
                 ],
               ),
             ),
