@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'notification_service.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -76,6 +77,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             'updatedAt': FieldValue.serverTimestamp(),
           },
         );
+        if (!isPresent) {
+  await NotificationService.attendanceAlert(
+    studentName: studentName,
+    studentId: student.id,
+    batch: selectedBatch,
+  );
+}
       }
 
       await batchWrite.commit();

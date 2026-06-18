@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'notification_service.dart';
 
 class FeeManagementScreen extends StatelessWidget {
   const FeeManagementScreen({super.key});
@@ -136,6 +137,13 @@ class FeeManagementScreen extends StatelessWidget {
                       'feeStatus': status,
                       'lastFeeUpdatedAt': FieldValue.serverTimestamp(),
                     });
+                    if (pending > 0) {
+  await NotificationService.feeReminder(
+    studentName: selectedStudentName,
+    studentId: selectedStudentId!,
+    pendingAmount: pending,
+  );
+}
 
                     if (context.mounted) {
                       Navigator.pop(context);

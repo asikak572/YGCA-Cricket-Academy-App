@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'notification_service.dart';
 
 import 'widgets/ygca_app_bar.dart';
 
@@ -79,6 +80,10 @@ class LeaveRequestScreen extends StatelessWidget {
       'targetRole': 'Parent',
       'createdAt': FieldValue.serverTimestamp(),
     });
+    await NotificationService.leaveStatus(
+  studentName: name,
+  status: status,
+);
   }
 
   Future<void> _deleteLeave(BuildContext context, String docId) async {
