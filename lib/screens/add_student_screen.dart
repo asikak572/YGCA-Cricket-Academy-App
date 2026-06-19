@@ -15,7 +15,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   final parentNameController = TextEditingController();
   final parentPhoneController = TextEditingController();
   final aadhaarController = TextEditingController();
-  final batchController = TextEditingController();
   final rollNoController = TextEditingController();
   final addressController = TextEditingController();
 
@@ -32,7 +31,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     if (nameController.text.trim().isEmpty ||
         ageController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty ||
-        batchController.text.trim().isEmpty ||
         rollNoController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill required fields")),
@@ -50,7 +48,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         'parentName': parentNameController.text.trim(),
         'parentPhone': parentPhoneController.text.trim(),
         'aadhaarNumber': aadhaarController.text.trim(),
-        'batch': batchController.text.trim(),
         'rollNo': rollNoController.text.trim(),
         'address': addressController.text.trim(),
         'attendance': '0%',
@@ -84,7 +81,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     parentNameController.dispose();
     parentPhoneController.dispose();
     aadhaarController.dispose();
-    batchController.dispose();
     rollNoController.dispose();
     addressController.dispose();
     super.dispose();
@@ -118,7 +114,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     Icons.phone,
                     keyboardType: TextInputType.phone,
                   ),
-                  _field("Batch *", batchController, Icons.groups),
                   _field("Roll No *", rollNoController, Icons.tag),
                 ],
               ),

@@ -56,27 +56,58 @@ class _StudentListScreenState extends State<StudentListScreen> {
         batch.contains(query) ||
         rollNo.contains(query);
   }
+  Future<String> _generateRollNumber(String studentName) async {
+  final firstLetter = studentName.trim()[0].toUpperCase();
 
-  Future<void> _showApprovalDialog({
-    required BuildContext context,
-    required QueryDocumentSnapshot doc,
-  }) async {
-    final data = doc.data() as Map<String, dynamic>;
+  final snapshot = await FirebaseFirestore.instance
+      .collection('students')
+      .where('approvalStatus', isEqualTo: 'Approved')
+      .get();
 
-    final batchController = TextEditingController(
-      text: data['batch']?.toString() == 'No Batch'
-          ? ''
-          : data['batch']?.toString() ?? '',
-    );
+  int count = 0;
 
-    final rollNoController = TextEditingController(
-      text: data['rollNo']?.toString() == '#YGCA'
-          ? ''
-          : data['rollNo']?.toString() ?? '',
-    );
+  for (final doc in snapshot.docs) {
+    final rollNo =
+        doc.data()['rollNo']?.toString().toUpperCase() ?? '';
 
-    final formKey = GlobalKey<FormState>();
-    bool isSaving = false;
+    if (rollNo.startsWith(firstLetter)) {
+      count++;
+    }
+  }
+
+  return '$firstLetter${count + 1}';
+}
+Future<void> _showApprovalDialog({
+  required BuildContext context,
+  required QueryDocumentSnapshot doc,
+}) async {
+  final data = doc.data() as Map<String, dynamic>;
+
+  final batchOptions = [
+    "Friday: 6:00 PM – 8:00 PM",
+    "Saturday: 7:00 AM – 9:00 AM",
+    "Saturday: 4:00 PM – 6:00 PM",
+    "Saturday: 6:00 PM – 8:00 PM",
+  ];
+
+  String selectedBatch =
+      data['batch']?.toString() ?? batchOptions.first;
+
+  if (!batchOptions.contains(selectedBatch)) {
+    selectedBatch = batchOptions.first;
+  }
+
+  final formKey = GlobalKey<FormState>();
+  bool isSaving = false;
+
+ 
+
+                  
+ 
+    
+
+
+   
 
     await showDialog(
       context: context,
@@ -116,79 +147,75 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   ),
                 ],
               ),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _approvalInfoTile(
-                        "Student Name",
-                        data['name']?.toString() ?? 'No Name',
-                      ),
-                      _approvalInfoTile(
-                        "Parent",
-                        data['parentName']?.toString() ?? 'Not Added',
-                      ),
-                      _approvalInfoTile(
-                        "Phone",
-                        data['phone']?.toString() ?? 'Not Added',
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: batchController,
-                        textCapitalization: TextCapitalization.characters,
-                        style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          labelText: "Assign Batch",
-                          hintText: "Example: U-14 Morning",
-                          prefixIcon: const Icon(Icons.groups, size: 20),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return "Please assign batch";
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: rollNoController,
-                        textCapitalization: TextCapitalization.characters,
-                        style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          labelText: "Assign Roll No",
-                          hintText: "Example: YGCA-001",
-                          prefixIcon: const Icon(
-                            Icons.confirmation_number,
-                            size: 20,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return "Please assign roll number";
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              
+  content: Form(
+  key: formKey,
+  child: SingleChildScrollView(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _approvalInfoTile(
+          "Student Name",
+          data['name']?.toString() ?? 'No Name',
+        ),
+        _approvalInfoTile(
+          "Parent",
+          data['parentName']?.toString() ?? 'Not Added',
+        ),
+        _approvalInfoTile(
+          "Phone",
+          data['phone']?.toString() ?? 'Not Added',
+        ),
+
+        const SizedBox(height: 12),
+
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: border),
+          ),
+          child: Text(
+            "Roll No will be generated automatically after approval",
+            style: TextStyle(
+              color: maroon,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        DropdownButtonFormField<String>(
+          value: selectedBatch,
+          decoration: InputDecoration(
+            labelText: "Session Batch",
+            prefixIcon: const Icon(Icons.groups),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          items: batchOptions.map((batch) {
+            return DropdownMenuItem<String>(
+              value: batch,
+              child: Text(batch, style: const TextStyle(fontSize: 12)),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              setDialogState(() {
+                selectedBatch = value;
+              });
+            }
+          },
+        ),
+      ],
+    ),
+  ),
+),
               actions: [
                 TextButton(
                   onPressed: isSaving
@@ -220,34 +247,37 @@ class _StudentListScreenState extends State<StudentListScreen> {
                           });
 
                           try {
-                            await FirebaseFirestore.instance
-                                .collection('students')
-                                .doc(doc.id)
-                                .update({
-                                  'batch': batchController.text.trim(),
-                                  'rollNo': rollNoController.text.trim(),
-                                  'approvalStatus': 'Approved',
-                                  'status': 'Active',
-                                  'isApproved': true,
-                                  'approvedAt': FieldValue.serverTimestamp(),
-                                  'updatedAt': FieldValue.serverTimestamp(),
-                                  'attendance': data['attendance'] ?? '0%',
-                                  'feeStatus': data['feeStatus'] ?? 'Pending',
-                                });
+  final studentName = data['name']?.toString().trim() ?? '';
+  final generatedRollNo = await _generateRollNumber(studentName);
 
-                                await FirebaseFirestore.instance
-    .collection('users')
-    .doc(doc.id)
-    .set({
-  'approvalStatus': 'Approved',
-  'status': 'Active',
-  'isApproved': true,
-  'updatedAt': FieldValue.serverTimestamp(),
-}, SetOptions(merge: true));
+  await FirebaseFirestore.instance
+      .collection('students')
+      .doc(doc.id)
+      .update({
+    'batch': selectedBatch,
+    'rollNo': generatedRollNo,
+    'approvalStatus': 'Approved',
+    'status': 'Active',
+    'isApproved': true,
+    'approvedAt': FieldValue.serverTimestamp(),
+    'updatedAt': FieldValue.serverTimestamp(),
+    'attendance': data['attendance'] ?? '0%',
+    'feeStatus': data['feeStatus'] ?? 'Pending',
+  });
 
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(doc.id)
+      .set({
+    'approvalStatus': 'Approved',
+    'status': 'Active',
+    'rollNo': generatedRollNo,
+    'batch': selectedBatch,
+    'isApproved': true,
+    'updatedAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
 
-                                final parentEmail =
-    data['parentEmail']?.toString().trim() ?? '';
+  final parentEmail = data['parentEmail']?.toString().trim() ?? '';
 
 if (parentEmail.isNotEmpty) {
   final parentQuery = await FirebaseFirestore.instance
@@ -328,7 +358,7 @@ if (parentEmail.isNotEmpty) {
     );
 
     // IMPORTANT:
-    // Do not dispose batchController and rollNoController here.
+    // Do not dispose   and rollNoController here.
     // Flutter may still rebuild the dialog during closing animation.
   }
 
@@ -594,7 +624,7 @@ if (parentEmail.isNotEmpty) {
                             icon: Icons.verified_user_outlined,
                             title: "No Pending Approvals",
                             subtitle:
-                                "Newly registered students will appear here for batch and roll number assignment.",
+                                "Newly registered students will appear here for approval.",
                           )
                         : Column(
                             children: pendingStudents.map((doc) {
@@ -1171,7 +1201,7 @@ if (parentEmail.isNotEmpty) {
             },
             icon: const Icon(Icons.assignment_turned_in, size: 15),
             label: const Text(
-              "Assign & Approve",
+              "Approve Student",
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
