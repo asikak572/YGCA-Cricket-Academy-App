@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -22,7 +26,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   bool isLoading = true;
   bool isSaving = false;
+  bool isUploadingPhoto = false;
+
   String role = "";
+  String photoUrl = "";
 
   @override
   void initState() {
@@ -30,36 +37,159 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _loadProfile();
   }
 
+  Future<DocumentReference<Map<String, dynamic>>?> _studentDocRef(
+    String uid,
+  ) async {
+    final directRef = FirebaseFirestore.instance.collection('students').doc(uid);
+    final directDoc = await directRef.get();
+
+    if (directDoc.exists) return directRef;
+
+    final query = await FirebaseFirestore.instance
+        .collection('students')
+        .where('uid', isEqualTo: uid)
+        .limit(1)
+        .get();
+
+    if (query.docs.isEmpty) return null;
+
+    return query.docs.first.reference;
+  }
+
   Future<void> _loadProfile() async {
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
-    final doc =
+    final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
-    if (doc.exists) {
-      final data = doc.data() ?? {};
+    if (userDoc.exists) {
+      final data = userDoc.data() ?? {};
 
       nameController.text = data['name']?.toString() ?? '';
       phoneController.text = data['phone']?.toString() ?? '';
       emailController.text = data['email']?.toString() ?? user.email ?? '';
       addressController.text = data['address']?.toString() ?? '';
       role = data['role']?.toString() ?? '';
+      photoUrl = data['photoUrl']?.toString() ?? '';
     } else {
       emailController.text = user.email ?? '';
     }
 
+    final studentRef = await _studentDocRef(user.uid);
+    final studentDoc = await studentRef?.get();
+
+    if (studentDoc != null && studentDoc.exists) {
+      final data = studentDoc.data() ?? {};
+
+      nameController.text =
+          nameController.text.isNotEmpty ? nameController.text : data['name']?.toString() ?? '';
+      phoneController.text =
+          phoneController.text.isNotEmpty ? phoneController.text : data['phone']?.toString() ?? '';
+      addressController.text =
+          addressController.text.isNotEmpty ? addressController.text : data['address']?.toString() ?? '';
+      photoUrl = photoUrl.isNotEmpty ? photoUrl : data['photoUrl']?.toString() ?? '';
+    }
+
     if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 
+ Future<void> _uploadPhoto() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  try {
+    final pickedImage = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+
+    if (pickedImage == null) return;
+
+    final file = File(pickedImage.path);
+
+    final fileSizeBytes = await file.length();
+    final fileSizeMB = fileSizeBytes / (1024 * 1024);
+
+    if (fileSizeMB > 2) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Image size must be less than 2 MB"),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isUploadingPhoto = true;
+    });
+
+    final storageRef = FirebaseStorage.instance
+        .ref()
+        .child(
+          'student_photos/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+
+    final uploadTask = await storageRef.putFile(
+      file,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+
+    final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+      {
+        'photoUrl': downloadUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+
+    final studentRef = await _studentDocRef(user.uid);
+
+    if (studentRef != null) {
+      await studentRef.set(
+        {
+          'photoUrl': downloadUrl,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      photoUrl = downloadUrl;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Profile photo uploaded successfully"),
+      ),
+    );
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Photo upload failed: $e"),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        isUploadingPhoto = false;
+      });
+    }
+  }
+}
   Future<void> _saveProfile() async {
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
     if (nameController.text.trim().isEmpty ||
@@ -70,32 +200,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
-    setState(() {
-      isSaving = true;
-    });
+    setState(() => isSaving = true);
 
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
-      {
-        'name': nameController.text.trim(),
-        'phone': phoneController.text.trim(),
-        'email': emailController.text.trim(),
-        'address': addressController.text.trim(),
-        'role': role,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+        {
+          'name': nameController.text.trim(),
+          'phone': phoneController.text.trim(),
+          'email': emailController.text.trim(),
+          'address': addressController.text.trim(),
+          'role': role,
+          'photoUrl': photoUrl,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
 
-    if (mounted) {
-      setState(() {
-        isSaving = false;
-      });
+      final studentRef = await _studentDocRef(user.uid);
+
+      if (studentRef != null) {
+        await studentRef.update({
+          'name': nameController.text.trim(),
+          'phone': phoneController.text.trim(),
+          'address': addressController.text.trim(),
+          'photoUrl': photoUrl,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Profile updated successfully")),
       );
 
       Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => isSaving = false);
     }
   }
 
@@ -214,15 +361,64 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 48,
-            backgroundColor: Colors.white,
-            child: Text(
-              initial,
-              style: TextStyle(
-                color: maroon,
-                fontSize: 34,
-                fontWeight: FontWeight.w900,
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 48,
+                backgroundColor: Colors.white,
+                backgroundImage:
+                    photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                child: photoUrl.isEmpty
+                    ? Text(
+                        initial,
+                        style: TextStyle(
+                          color: maroon,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      )
+                    : null,
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: InkWell(
+                  onTap: isUploadingPhoto ? null : _uploadPhoto,
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: gold,
+                    child: isUploadingPhoto
+                        ? SizedBox(
+                            height: 14,
+                            width: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: maroon,
+                            ),
+                          )
+                        : Icon(Icons.camera_alt, color: maroon, size: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: isUploadingPhoto ? null : _uploadPhoto,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: gold),
+              ),
+              child: Text(
+                photoUrl.isEmpty ? "Upload Photo" : "Change Photo",
+                style: TextStyle(
+                  color: gold,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),

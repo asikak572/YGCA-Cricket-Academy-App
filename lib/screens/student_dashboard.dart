@@ -149,7 +149,6 @@ class StudentDashboard extends StatelessWidget {
     required Map<String, dynamic> studentData,
   }) {
     final name = _safeText(studentData, ['name', 'studentName'], 'Student');
-
     final email = _safeText(studentData, ['email'], currentUser.email ?? '');
 
     final batch = _safeText(studentData, [
@@ -166,6 +165,8 @@ class StudentDashboard extends StatelessWidget {
       'attendance',
       'attendancePercentage',
     ], '0%');
+
+    final photoUrl = _safeText(studentData, ['photoUrl'], '');
 
     final attendanceNumber = _percentValue(attendance);
 
@@ -261,11 +262,10 @@ class StudentDashboard extends StatelessWidget {
                 batch: batch,
                 rollNo: rollNo,
                 attendance: attendance,
+                photoUrl: photoUrl,
               ),
               const SizedBox(height: 18),
-
               _sectionTitle("OVERVIEW"),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: GridView.count(
@@ -307,11 +307,8 @@ class StudentDashboard extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 18),
-
               _sectionTitle("QUICK ACCESS"),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: GridView.count(
@@ -416,7 +413,6 @@ class StudentDashboard extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 22),
               _motivationCard(),
               const SizedBox(height: 22),
@@ -435,6 +431,7 @@ class StudentDashboard extends StatelessWidget {
     required String batch,
     required String rollNo,
     required String attendance,
+    required String photoUrl,
   }) {
     final initials = name
         .split(" ")
@@ -483,14 +480,18 @@ class StudentDashboard extends StatelessWidget {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.white,
-                  child: Text(
-                    initials.isNotEmpty ? initials : "S",
-                    style: TextStyle(
-                      color: maroon,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+                  backgroundImage:
+                      photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  child: photoUrl.isEmpty
+                      ? Text(
+                          initials.isNotEmpty ? initials : "S",
+                          style: TextStyle(
+                            color: maroon,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
