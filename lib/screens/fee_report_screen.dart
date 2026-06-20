@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/pdf_service.dart';
 import '../services/excel_service.dart';
 
-class FeeReportScreen extends StatelessWidget {
+class FeeReportScreen extends StatefulWidget {
   const FeeReportScreen({super.key});
 
+  @override
+  State<FeeReportScreen> createState() => _FeeReportScreenState();
+}
+
+class _FeeReportScreenState extends State<FeeReportScreen> {
   final Color maroon = const Color(0xFF7F0000);
   final Color gold = const Color(0xFFD4AF37);
   final Color bg = const Color(0xFFF8FAFC);
@@ -19,9 +25,67 @@ class FeeReportScreen extends StatelessWidget {
     return int.tryParse(value.toString()) ?? 0;
   }
 
+  Future<Map<String, dynamic>> _getUserAccess() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return {'role': '', 'allowedIds': <String>[]};
+    }
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
+    if (!userDoc.exists) {
+      return {'role': '', 'allowedIds': <String>[]};
+    }
+
+    final data = userDoc.data() ?? {};
+    final role = data['role']?.toString() ?? '';
+
+    if (role == 'Admin') {
+      return {'role': role, 'allowedIds': <String>['ALL']};
+    }
+
+    if (role == 'Student') {
+      return {'role': role, 'allowedIds': <String>[user.uid]};
+    }
+
+    if (role == 'Parent') {
+      final linkedChildrenIds = data['linkedChildrenIds'];
+
+      if (linkedChildrenIds is List && linkedChildrenIds.isNotEmpty) {
+        return {
+          'role': role,
+          'allowedIds': linkedChildrenIds.map((e) => e.toString()).toList(),
+        };
+      }
+    }
+
+    return {'role': role, 'allowedIds': <String>[]};
+  }
+
+  List<QueryDocumentSnapshot> _filterDocs(
+    List<QueryDocumentSnapshot> docs,
+    List<String> allowedIds,
+  ) {
+    if (allowedIds.contains('ALL')) return docs;
+
+    return docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final studentId = data['studentId']?.toString() ?? '';
+      return allowedIds.contains(studentId);
+    }).toList();
+  }
+
   Future<List<Map<String, dynamic>>> _getFeeRecords() async {
+    final access = await _getUserAccess();
+    final allowedIds = List<String>.from(access['allowedIds'] ?? []);
+
     final snapshot = await FirebaseFirestore.instance.collection('fees').get();
-    return snapshot.docs.map((doc) => doc.data()).toList();
+
+    final docs = _filterDocs(snapshot.docs, allowedIds);
+
+    return docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
   }
 
   Future<void> _generatePdf() async {
@@ -83,146 +147,163 @@ class FeeReportScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('fees')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _getUserAccess(),
+        builder: (context, accessSnapshot) {
+          if (accessSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final feeDocs = snapshot.data?.docs ?? [];
-
-          int totalFee = 0;
-          int collected = 0;
-          int pending = 0;
-          int paidStudents = 0;
-
-          for (final doc in feeDocs) {
-            final data = doc.data() as Map<String, dynamic>;
-
-            final total = _toInt(data['totalFee']);
-            final paid = _toInt(data['paidAmount']);
-            final pendingAmount = _toInt(data['pendingAmount']);
-            final status = data['status']?.toString() ?? 'Pending';
-
-            totalFee += total;
-            collected += paid;
-            pending += pendingAmount;
-
-            if (status == "Paid") {
-              paidStudents++;
-            }
+          if (!accessSnapshot.hasData) {
+            return const Center(child: Text("User access not found"));
           }
 
-          final collectionPercent =
-              totalFee == 0 ? 0 : ((collected / totalFee) * 100).round();
+          final accessData = accessSnapshot.data!;
+          final allowedIds = List<String>.from(accessData['allowedIds'] ?? []);
 
-          final pendingStudents = feeDocs.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final pendingAmount = _toInt(data['pendingAmount']);
-            return pendingAmount > 0;
-          }).toList();
+          return StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('fees')
+                .orderBy('createdAt', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text("Error: ${snapshot.error}"));
+              }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _heroCard(collectionPercent),
-                const SizedBox(height: 16),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.35,
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final allDocs = snapshot.data?.docs ?? [];
+              final feeDocs = _filterDocs(allDocs, allowedIds);
+
+              int totalFee = 0;
+              int collected = 0;
+              int pending = 0;
+              int paidStudents = 0;
+
+              for (final doc in feeDocs) {
+                final data = doc.data() as Map<String, dynamic>;
+
+                final total = _toInt(data['totalFee']);
+                final paid = _toInt(data['paidAmount']);
+                final pendingAmount = _toInt(data['pendingAmount']);
+                final status = data['status']?.toString() ?? 'Pending';
+
+                totalFee += total;
+                collected += paid;
+                pending += pendingAmount;
+
+                if (status == "Paid") {
+                  paidStudents++;
+                }
+              }
+
+              final collectionPercent =
+                  totalFee == 0 ? 0 : ((collected / totalFee) * 100).round();
+
+              final pendingStudents = feeDocs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final pendingAmount = _toInt(data['pendingAmount']);
+                return pendingAmount > 0;
+              }).toList();
+
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                   children: [
-                    _statCard(
-                      "Total Fee",
-                      "₹$totalFee",
-                      Icons.account_balance_wallet,
-                      gold,
+                    _heroCard(collectionPercent),
+                    const SizedBox(height: 16),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 1.35,
+                      children: [
+                        _statCard(
+                          "Total Fee",
+                          "₹$totalFee",
+                          Icons.account_balance_wallet,
+                          gold,
+                        ),
+                        _statCard(
+                          "Collected",
+                          "₹$collected",
+                          Icons.check_circle,
+                          Colors.green,
+                        ),
+                        _statCard(
+                          "Pending",
+                          "₹$pending",
+                          Icons.warning,
+                          Colors.orange,
+                        ),
+                        _statCard(
+                          "Paid Records",
+                          paidStudents.toString(),
+                          Icons.people,
+                          Colors.blue,
+                        ),
+                      ],
                     ),
-                    _statCard(
-                      "Collected",
-                      "₹$collected",
-                      Icons.check_circle,
-                      Colors.green,
-                    ),
-                    _statCard(
-                      "Pending",
-                      "₹$pending",
-                      Icons.warning,
-                      Colors.orange,
-                    ),
-                    _statCard(
-                      "Paid Records",
-                      paidStudents.toString(),
-                      Icons.people,
-                      Colors.blue,
-                    ),
+                    const SizedBox(height: 18),
+                    _sectionTitle("Payment Records"),
+                    if (feeDocs.isEmpty)
+                      const Card(
+                        child: ListTile(
+                          title: Text("No fee records found"),
+                          subtitle: Text("No fee record available for this user"),
+                        ),
+                      )
+                    else
+                      ...feeDocs.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+
+                        final name = data['studentName']?.toString() ??
+                            'Unknown Student';
+                        final studentId = data['studentId']?.toString() ?? '';
+                        final total = _toInt(data['totalFee']);
+                        final paid = _toInt(data['paidAmount']);
+                        final pendingAmount = _toInt(data['pendingAmount']);
+
+                        final progress =
+                            total == 0 ? 0.0 : (paid / total).clamp(0.0, 1.0);
+
+                        return _collectionTile(
+                          title: name,
+                          subtitle: "ID: $studentId",
+                          amount: "Paid ₹$paid / ₹$total",
+                          progress: progress,
+                          pending: "Pending ₹$pendingAmount",
+                        );
+                      }),
+                    const SizedBox(height: 18),
+                    _sectionTitle("Pending Fee Students"),
+                    if (pendingStudents.isEmpty)
+                      const Card(
+                        child: ListTile(
+                          leading: Icon(Icons.check_circle, color: Colors.green),
+                          title: Text("No pending fees"),
+                          subtitle: Text("All fee records are completed"),
+                        ),
+                      )
+                    else
+                      ...pendingStudents.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+
+                        return _pendingStudentCard(
+                          name: data['studentName']?.toString() ?? 'Unknown',
+                          batch: "ID: ${data['studentId']?.toString() ?? ''}",
+                          amount: "₹${_toInt(data['pendingAmount'])}",
+                        );
+                      }),
                   ],
                 ),
-                const SizedBox(height: 18),
-                _sectionTitle("Payment Records"),
-                if (feeDocs.isEmpty)
-                  const Card(
-                    child: ListTile(
-                      title: Text("No fee records found"),
-                      subtitle: Text("Add payments from Fee Management"),
-                    ),
-                  )
-                else
-                  ...feeDocs.map((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-
-                    final name =
-                        data['studentName']?.toString() ?? 'Unknown Student';
-                    final studentId = data['studentId']?.toString() ?? '';
-                    final total = _toInt(data['totalFee']);
-                    final paid = _toInt(data['paidAmount']);
-                    final pendingAmount = _toInt(data['pendingAmount']);
-
-                    final progress =
-                        total == 0 ? 0.0 : (paid / total).clamp(0.0, 1.0);
-
-                    return _collectionTile(
-                      title: name,
-                      subtitle: "ID: $studentId",
-                      amount: "Paid ₹$paid / ₹$total",
-                      progress: progress,
-                      pending: "Pending ₹$pendingAmount",
-                    );
-                  }),
-                const SizedBox(height: 18),
-                _sectionTitle("Pending Fee Students"),
-                if (pendingStudents.isEmpty)
-                  const Card(
-                    child: ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text("No pending fees"),
-                      subtitle: Text("All fee records are completed"),
-                    ),
-                  )
-                else
-                  ...pendingStudents.map((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-
-                    return _pendingStudentCard(
-                      name: data['studentName']?.toString() ?? 'Unknown',
-                      batch: "ID: ${data['studentId']?.toString() ?? ''}",
-                      amount: "₹${_toInt(data['pendingAmount'])}",
-                    );
-                  }),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
