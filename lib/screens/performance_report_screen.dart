@@ -233,7 +233,7 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
           );
         },
       ),
-      floatingActionButton: role == 'Admin' || role == 'Coach'
+      floatingActionButton: role == 'Admin' 
           ? FloatingActionButton.extended(
               backgroundColor: maroon,
               foregroundColor: gold,
@@ -799,7 +799,7 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 4),
-          Text("Click Add Report to create one"),
+          Text("Performance data will be available here"),
         ],
       ),
     );

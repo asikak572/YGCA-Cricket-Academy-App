@@ -16,7 +16,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
-  String selectedBatch = "U15";
+  String selectedBatch = "Friday: 6:00 PM – 8:00 PM";
   bool isSaving = false;
 
   final Map<String, bool> attendanceStatus = {};
@@ -106,14 +106,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final batches = [
-      "U15",
-      "Senior",
-      "Junior Batch",
-      "Senior Batch",
-      "Morning Batch",
-      "Evening Batch",
-    ];
+   final batches = [
+  "Friday: 6:00 PM – 8:00 PM",
+  "Saturday: 7:00 AM – 9:00 AM",
+  "Saturday: 4:00 PM – 6:00 PM",
+  "Saturday: 6:00 PM – 8:00 PM",
+];
 
     return Scaffold(
       backgroundColor: bg,
