@@ -13,6 +13,7 @@ import 'screens/student_list_screen.dart';
 import 'screens/add_student_screen.dart';
 import 'screens/attendance_screen.dart';
 import 'screens/fee_management_screen.dart';
+import 'screens/notification_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
         '/add-student': (context) => const AddStudentScreen(),
         '/attendance': (context) => const AttendanceScreen(),
         '/fees': (context) => const FeeManagementScreen(),
+        '/notifications': (context) => const NotificationScreen(),
       },
     );
   }

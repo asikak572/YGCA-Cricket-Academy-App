@@ -73,13 +73,6 @@ class LeaveRequestScreen extends StatelessWidget {
       'status': status,
       'updatedAt': FieldValue.serverTimestamp(),
     });
-
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'title': 'Leave Request $status',
-      'message': '$name leave request has been $status',
-      'targetRole': 'Parent',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
     await NotificationService.leaveStatus(
   studentName: name,
   status: status,

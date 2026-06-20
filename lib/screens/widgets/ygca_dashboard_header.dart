@@ -1,32 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Shared YGCA-branded dashboard header (top navigation bar) used across
-/// all four dashboard screens: Student, Coach, Parent, and Admin.
-///
-/// Replaces the duplicated inline `_topHeader()` method found in each dashboard.
-///
-/// Usage:
-/// ```dart
-/// // Student / Coach dashboard (with logout):
-/// YgcaDashboardHeader(
-///   dashboardTitle: "STUDENT DASHBOARD",
-///   onLogout: () => _logout(context),
-/// )
-///
-/// // Parent dashboard (with logout + dynamic subtitle from user name):
-/// YgcaDashboardHeader(
-///   dashboardTitle: "PARENT DASHBOARD",
-///   onLogout: () => _logout(context),
-///   useLogoLayout: true,
-///   dynamicSubtitle: "Welcome, $parentName",
-/// )
-///
-/// // Admin dashboard (no logout, shows profile avatar):
-/// YgcaDashboardHeader(
-///   dashboardTitle: null,
-///   showProfileAvatar: true,
-/// )
-/// ```
 class YgcaDashboardHeader extends StatelessWidget {
   const YgcaDashboardHeader({
     super.key,
@@ -37,24 +10,10 @@ class YgcaDashboardHeader extends StatelessWidget {
     this.dynamicSubtitle,
   });
 
-  /// Dashboard role label shown below the YGCA subtitle.
-  /// e.g. "STUDENT DASHBOARD", "COACH DASHBOARD".
-  /// If null, the center column shows only "YGCA" + subtitle (admin style).
   final String? dashboardTitle;
-
-  /// Logout callback. When non-null, a logout IconButton is shown on the right.
   final VoidCallback? onLogout;
-
-  /// When true, shows a CircleAvatar profile icon instead of the logout button.
-  /// Used by the Admin dashboard.
   final bool showProfileAvatar;
-
-  /// When true, uses the logo-left layout (Parent dashboard style) instead of
-  /// the centered YGCA title layout (Student / Coach style).
   final bool useLogoLayout;
-
-  /// Optional dynamic text shown below the dashboard title in logo layout.
-  /// e.g. "Welcome, $parentName"
   final String? dynamicSubtitle;
 
   static const Color _maroon = Color(0xFF7F0000);
@@ -62,11 +21,12 @@ class YgcaDashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return useLogoLayout ? _buildLogoLayout() : _buildCenteredLayout();
+    return useLogoLayout
+        ? _buildLogoLayout(context)
+        : _buildCenteredLayout(context);
   }
 
-  // ── Parent Dashboard Layout ──────────────────────────────────────────────
-  Widget _buildLogoLayout() {
+  Widget _buildLogoLayout(BuildContext context) {
     return Container(
       color: _maroon,
       padding: const EdgeInsets.fromLTRB(16, 45, 16, 18),
@@ -90,12 +50,15 @@ class YgcaDashboardHeader extends StatelessWidget {
                 if (dynamicSubtitle != null)
                   Text(
                     dynamicSubtitle!,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
                   ),
               ],
             ),
           ),
-          _notificationBell(),
+          _notificationBell(context),
           const SizedBox(width: 12),
           if (onLogout != null) _logoutButton(),
           if (showProfileAvatar) _profileAvatar(),
@@ -104,8 +67,7 @@ class YgcaDashboardHeader extends StatelessWidget {
     );
   }
 
-  // ── Student / Coach / Admin Dashboard Layout ─────────────────────────────
-  Widget _buildCenteredLayout() {
+  Widget _buildCenteredLayout(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 42, 16, 14),
       color: _maroon,
@@ -146,7 +108,7 @@ class YgcaDashboardHeader extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          _notificationBell(),
+          _notificationBell(context),
           const SizedBox(width: 10),
           if (onLogout != null) _logoutButton(),
           if (showProfileAvatar) _profileAvatar(),
@@ -155,32 +117,37 @@ class YgcaDashboardHeader extends StatelessWidget {
     );
   }
 
-  // ── Shared Sub-Widgets ───────────────────────────────────────────────────
-
-  Widget _notificationBell() {
-    return Stack(
-      children: [
-        Icon(
-          Icons.notifications_none,
-          color: Colors.white,
-          size: showProfileAvatar ? 26 : 28,
-        ),
-        Positioned(
-          right: 0,
-          top: 0,
-          child: CircleAvatar(
-            radius: showProfileAvatar ? 7 : 8,
-            backgroundColor: Colors.orange,
-            child: Text(
-              "3",
-              style: TextStyle(
-                fontSize: showProfileAvatar ? 8 : 9,
-                color: Colors.white,
+  Widget _notificationBell(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () {
+        Navigator.pushNamed(context, '/notifications');
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            Icons.notifications_none,
+            color: Colors.white,
+            size: showProfileAvatar ? 26 : 28,
+          ),
+          Positioned(
+            right: -2,
+            top: -2,
+            child: CircleAvatar(
+              radius: showProfileAvatar ? 7 : 8,
+              backgroundColor: Colors.orange,
+              child: Text(
+                "3",
+                style: TextStyle(
+                  fontSize: showProfileAvatar ? 8 : 9,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
