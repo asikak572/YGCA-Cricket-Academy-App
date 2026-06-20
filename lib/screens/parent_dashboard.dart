@@ -24,30 +24,44 @@ class ParentDashboard extends StatelessWidget {
     await FirebaseAuth.instance.signOut();
 
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/login',
-        (route) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
   }
 
-  String _safeText(
-    Map<String, dynamic> data,
-    List<String> keys,
-    String fallback,
-  ) {
-    for (final key in keys) {
-      final value = data[key];
-      if (value != null && value.toString().trim().isNotEmpty) {
-        return value.toString().trim();
-      }
+  String _safeText(Map<String, dynamic> data, String key, String fallback) {
+    final value = data[key];
+    if (value != null && value.toString().trim().isNotEmpty) {
+      return value.toString().trim();
     }
     return fallback;
   }
 
   int _percentValue(String text) {
     return int.tryParse(text.replaceAll("%", "").trim()) ?? 0;
+  }
+
+  Future<Map<String, dynamic>?> _loadLinkedChild(
+    Map<String, dynamic> parentData,
+  ) async {
+    final linkedChildrenIds = parentData['linkedChildrenIds'];
+
+    if (linkedChildrenIds is! List || linkedChildrenIds.isEmpty) {
+      return null;
+    }
+
+    final childId = linkedChildrenIds.first.toString();
+
+    final childDoc = await FirebaseFirestore.instance
+        .collection('students')
+        .doc(childId)
+        .get();
+
+    if (!childDoc.exists) return null;
+
+    return {
+      'childId': childId,
+      ...childDoc.data()!,
+    };
   }
 
   @override
@@ -67,269 +81,255 @@ class ParentDashboard extends StatelessWidget {
             .collection('users')
             .doc(currentUser.uid)
             .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+        builder: (context, parentSnapshot) {
+          if (parentSnapshot.hasError) {
+            return Center(child: Text("Error: ${parentSnapshot.error}"));
           }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (parentSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || !snapshot.data!.exists) {
+          if (!parentSnapshot.hasData || !parentSnapshot.data!.exists) {
             return const Center(child: Text("Parent details not found"));
           }
 
-          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final parentData =
+              parentSnapshot.data!.data() as Map<String, dynamic>;
 
-          final parentName = _safeText(data, ['name'], 'Parent');
-          final parentEmail = _safeText(
-            data,
-            ['email'],
-            currentUser.email ?? '',
-          );
+          final parentName = _safeText(parentData, 'name', 'Parent');
+          final parentEmail =
+              _safeText(parentData, 'email', currentUser.email ?? '');
 
-          final childName = _safeText(
-            data,
-            ['childName', 'studentName', 'nameOfChild'],
-            'Child not assigned',
-          );
+          return FutureBuilder<Map<String, dynamic>?>(
+            future: _loadLinkedChild(parentData),
+            builder: (context, childSnapshot) {
+              if (childSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          final childBatch = _safeText(
-            data,
-            ['childBatch', 'batch'],
-            'Batch not assigned',
-          );
+              final childData = childSnapshot.data;
 
-          final rollNo = _safeText(
-            data,
-            ['childRollNo', 'rollNo'],
-            'Not assigned',
-          );
+              final childName = childData == null
+                  ? 'Child not assigned'
+                  : _safeText(childData, 'name', 'Child not assigned');
 
-          final attendance = _safeText(
-            data,
-            ['attendance', 'childAttendance', 'attendancePercentage'],
-            '0%',
-          );
+              final childBatch = childData == null
+                  ? 'Batch not assigned'
+                  : _safeText(childData, 'batch', 'Batch not assigned');
 
-          final feeStatus = _safeText(
-            data,
-            ['feeStatus', 'fee'],
-            'Pending',
-          );
+              final rollNo = childData == null
+                  ? 'Not assigned'
+                  : _safeText(childData, 'rollNo', 'Not assigned');
 
-          final attendanceNumber = _percentValue(attendance);
+              final attendance = childData == null
+                  ? '0%'
+                  : _safeText(childData, 'attendance', '0%');
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                YgcaDashboardHeader(
-                  dashboardTitle: "PARENT DASHBOARD",
-                  onLogout: () => _logout(context),
-                  useLogoLayout: true,
-                  dynamicSubtitle: "Welcome, $parentName",
+              final feeStatus = childData == null
+                  ? 'Pending'
+                  : _safeText(childData, 'feeStatus', 'Pending');
+
+              final attendanceNumber = _percentValue(attendance);
+
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    YgcaDashboardHeader(
+                      dashboardTitle: "PARENT DASHBOARD",
+                      onLogout: () => _logout(context),
+                      useLogoLayout: true,
+                      dynamicSubtitle: "Welcome, $parentName",
+                    ),
+                    _childHero(
+                      childName: childName,
+                      parentName: parentName,
+                      parentEmail: parentEmail,
+                      childBatch: childBatch,
+                      rollNo: rollNo,
+                      attendance: attendance,
+                      feeStatus: feeStatus,
+                    ),
+                    const SizedBox(height: 18),
+                    _sectionTitle("OVERVIEW"),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.08,
+                        children: [
+                          _statCard(
+                            Icons.verified,
+                            "ATTENDANCE",
+                            "$attendanceNumber%",
+                            attendanceNumber >= 75
+                                ? "Good Progress"
+                                : "Needs Focus",
+                            Colors.green,
+                          ),
+                          _statCard(
+                            Icons.currency_rupee,
+                            "FEE STATUS",
+                            feeStatus,
+                            feeStatus == "Paid" ? "No Due" : "Check Fees",
+                            Colors.orange,
+                          ),
+                          _statCard(
+                            Icons.groups,
+                            "BATCH",
+                            childBatch,
+                            "Assigned",
+                            Colors.blue,
+                          ),
+                          _statCard(
+                            Icons.tag,
+                            "ROLL NO.",
+                            rollNo,
+                            "Student ID",
+                            Colors.purple,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    _sectionTitle("QUICK ACCESS"),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.45,
+                        children: [
+                          _menuCard(
+                            context,
+                            Icons.fact_check,
+                            "Attendance Module",
+                            Colors.orange,
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const ParentAttendanceModuleScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _menuCard(
+                            context,
+                            Icons.bar_chart,
+                            "Performance Module",
+                            Colors.green,
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const ParentPerformanceModuleScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _menuCard(
+                            context,
+                            Icons.payments,
+                            "Fee Module",
+                            Colors.blue,
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const ParentFeeModuleScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _menuCard(
+                            context,
+                            Icons.calendar_month,
+                            "Schedule Module",
+                            Colors.teal,
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const ParentScheduleModuleScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _menuCard(
+                            context,
+                            Icons.event_note,
+                            "Apply Leave",
+                            Colors.brown,
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LeaveRequestScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _menuCard(
+                            context,
+                            Icons.notifications,
+                            "Notifications",
+                            Colors.red,
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const NotificationScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _menuCard(
+                            context,
+                            Icons.person,
+                            "Edit Profile",
+                            Colors.indigo,
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const EditProfileScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    _sectionTitle("RECENT ACTIVITY"),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _activityCard(),
+                    ),
+                    const SizedBox(height: 22),
+                    _footer(),
+                    const SizedBox(height: 26),
+                  ],
                 ),
-                _childHero(
-                  childName: childName,
-                  parentName: parentName,
-                  parentEmail: parentEmail,
-                  childBatch: childBatch,
-                  rollNo: rollNo,
-                  attendance: attendance,
-                  feeStatus: feeStatus,
-                ),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("OVERVIEW"),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.08,
-                    children: [
-                      _statCard(
-                        Icons.verified,
-                        "ATTENDANCE",
-                        "$attendanceNumber%",
-                        attendanceNumber >= 75
-                            ? "Good Progress"
-                            : "Needs Focus",
-                        Colors.green,
-                      ),
-                      _statCard(
-                        Icons.currency_rupee,
-                        "FEE STATUS",
-                        feeStatus,
-                        feeStatus == "Paid" ? "No Due" : "Check Fees",
-                        Colors.orange,
-                      ),
-                      _statCard(
-                        Icons.groups,
-                        "BATCH",
-                        childBatch,
-                        "Assigned",
-                        Colors.blue,
-                      ),
-                      _statCard(
-                        Icons.tag,
-                        "ROLL NO.",
-                        rollNo,
-                        "Student ID",
-                        Colors.purple,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("QUICK ACCESS"),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.45,
-                    children: [
-                      _menuCard(
-                        context,
-                        Icons.fact_check,
-                        "Attendance Module",
-                        Colors.orange,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const ParentAttendanceModuleScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.bar_chart,
-                        "Performance Module",
-                        Colors.green,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const ParentPerformanceModuleScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.payments,
-                        "Fee Module",
-                        Colors.blue,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ParentFeeModuleScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.calendar_month,
-                        "Schedule Module",
-                        Colors.teal,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const ParentScheduleModuleScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.event_note,
-                        "Apply Leave",
-                        Colors.brown,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LeaveRequestScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.notifications,
-                        "Notifications",
-                        Colors.red,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const NotificationScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _menuCard(
-                        context,
-                        Icons.person,
-                        "Edit Profile",
-                        Colors.indigo,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const EditProfileScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("RECENT ACTIVITY"),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _activityCard(),
-                ),
-
-                const SizedBox(height: 22),
-
-                _footer(),
-
-                const SizedBox(height: 26),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
     );
   }
-
-
 
   Widget _childHero({
     required String childName,
