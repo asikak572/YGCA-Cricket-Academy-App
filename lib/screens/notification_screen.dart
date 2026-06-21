@@ -18,6 +18,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   String role = '';
   String uid = '';
+  List<String> linkedChildrenIds = [];
 
   @override
   void initState() {
@@ -41,9 +42,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (!mounted) return;
 
     setState(() {
-      role = data['role']?.toString() ?? '';
-    });
+  role = data['role']?.toString() ?? '';
+  linkedChildrenIds =
+      List<String>.from(data['linkedChildrenIds'] ?? []);
+});
   }
+
 
   Query _notificationQuery() {
     Query query = FirebaseFirestore.instance.collection('notifications');
@@ -290,24 +294,53 @@ class _NotificationScreenState extends State<NotificationScreen> {
           }
 
           final notifications = snapshot.data?.docs ?? [];
-          final todayCount = _todayCount(notifications);
+          final filteredNotifications = notifications.where((doc) {
+  final data = doc.data() as Map<String, dynamic>;
+
+  final targetRole =
+      data['targetRole']?.toString() ?? 'All';
+
+  final studentId =
+      data['studentId']?.toString() ?? '';
+
+  final type =
+      data['type']?.toString() ?? 'General';
+
+  if (role != 'Parent') {
+    return true;
+  }
+
+  if (targetRole == 'All') {
+    return true;
+  }
+
+  if (targetRole == 'Parent' &&
+      (type == 'General' ||
+       type == 'Announcement')) {
+    return true;
+  }
+
+  return studentId.isNotEmpty &&
+      linkedChildrenIds.contains(studentId);
+}).toList();
+         final todayCount = _todayCount(filteredNotifications);
 
           return SingleChildScrollView(
             child: Column(
               children: [
                 _topHeader(context),
                 _heroBanner(
-                  total: notifications.length,
-                  today: todayCount,
+                total: filteredNotifications.length,
+                today: todayCount,
                 ),
                 const SizedBox(height: 18),
                 _sectionTitle("NOTIFICATION LIST"),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: notifications.isEmpty
+                  child: filteredNotifications.isEmpty
                       ? _emptyCard()
                       : Column(
-                          children: notifications.map((doc) {
+                          children: filteredNotifications.map((doc) {
                             final data = doc.data() as Map<String, dynamic>;
 
                             final title =
