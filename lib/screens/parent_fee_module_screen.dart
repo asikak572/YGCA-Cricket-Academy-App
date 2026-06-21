@@ -26,21 +26,6 @@ class ParentFeeModuleScreen extends StatelessWidget {
 
             _moduleCard(
               context,
-              Icons.payments,
-              "Fee Status\n& Pay",
-              Colors.blue,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const FeeReportScreen(),
-                  ),
-                );
-              },
-            ),
-
-            _moduleCard(
-              context,
               Icons.receipt_long,
               "Payment\nHistory",
               Colors.green,

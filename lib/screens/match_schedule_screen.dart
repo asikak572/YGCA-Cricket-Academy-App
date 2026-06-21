@@ -10,171 +10,6 @@ class MatchScheduleScreen extends StatelessWidget {
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
-  Future<void> _deleteMatch(BuildContext context, String docId) async {
-    await FirebaseFirestore.instance.collection('matches').doc(docId).delete();
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Match deleted")),
-      );
-    }
-  }
-
-  void _confirmDelete(BuildContext context, String docId) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Delete Match"),
-        content: const Text("Are you sure you want to delete this match?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deleteMatch(context, docId);
-            },
-            child: const Text("Delete"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddMatchDialog(BuildContext context) {
-    final titleController = TextEditingController();
-    final opponentController = TextEditingController();
-    final dateController = TextEditingController();
-    final timeController = TextEditingController();
-    final venueController = TextEditingController();
-
-    String status = "Upcoming";
-
-    showDialog(
-      context: context,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text("Add Match"),
-              content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _field("Match Title", titleController),
-                    _field("Opponent", opponentController),
-                    _field("Date", dateController),
-                    _field("Time", timeController),
-                    _field("Venue", venueController),
-                    DropdownButtonFormField<String>(
-                      value: status,
-                      decoration: const InputDecoration(
-                        labelText: "Status",
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: "Upcoming",
-                          child: Text("Upcoming"),
-                        ),
-                        DropdownMenuItem(
-                          value: "Completed",
-                          child: Text("Completed"),
-                        ),
-                        DropdownMenuItem(
-                          value: "Cancelled",
-                          child: Text("Cancelled"),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setDialogState(() => status = value);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    titleController.dispose();
-                    opponentController.dispose();
-                    dateController.dispose();
-                    timeController.dispose();
-                    venueController.dispose();
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: maroon,
-                    foregroundColor: gold,
-                  ),
-                  onPressed: () async {
-                    if (titleController.text.trim().isEmpty ||
-                        dateController.text.trim().isEmpty ||
-                        timeController.text.trim().isEmpty ||
-                        venueController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please fill required fields"),
-                        ),
-                      );
-                      return;
-                    }
-
-                    await FirebaseFirestore.instance.collection('matches').add({
-                      'title': titleController.text.trim(),
-                      'opponent': opponentController.text.trim(),
-                      'date': dateController.text.trim(),
-                      'time': timeController.text.trim(),
-                      'venue': venueController.text.trim(),
-                      'status': status,
-                      'createdAt': FieldValue.serverTimestamp(),
-                    });
-
-                    titleController.dispose();
-                    opponentController.dispose();
-                    dateController.dispose();
-                    timeController.dispose();
-                    venueController.dispose();
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Match added")),
-                      );
-                    }
-                  },
-                  child: const Text("Save"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _field(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
-
   Color _statusColor(String status) {
     if (status == "Completed") return Colors.green;
     if (status == "Cancelled") return Colors.red;
@@ -209,7 +44,6 @@ class MatchScheduleScreen extends StatelessWidget {
 
           int upcoming = 0;
           int completed = 0;
-          int cancelled = 0;
 
           for (final doc in matches) {
             final data = doc.data() as Map<String, dynamic>;
@@ -217,9 +51,7 @@ class MatchScheduleScreen extends StatelessWidget {
 
             if (status == "Completed") {
               completed++;
-            } else if (status == "Cancelled") {
-              cancelled++;
-            } else {
+            } else if (status != "Cancelled") {
               upcoming++;
             }
           }
@@ -243,24 +75,14 @@ class MatchScheduleScreen extends StatelessWidget {
                           children: matches.map((doc) {
                             final data = doc.data() as Map<String, dynamic>;
 
-                            final title =
-                                data['title']?.toString() ?? 'No Title';
-                            final opponent =
-                                data['opponent']?.toString() ?? '';
-                            final date = data['date']?.toString() ?? '';
-                            final time = data['time']?.toString() ?? '';
-                            final venue = data['venue']?.toString() ?? '';
-                            final status =
-                                data['status']?.toString() ?? 'Upcoming';
-
                             return _matchCard(
-                              title: title,
-                              opponent: opponent,
-                              date: date,
-                              time: time,
-                              venue: venue,
-                              status: status,
-                              onDelete: () => _confirmDelete(context, doc.id),
+                              title: data['title']?.toString() ?? 'No Title',
+                              opponent: data['opponent']?.toString() ?? '',
+                              date: data['date']?.toString() ?? '',
+                              time: data['time']?.toString() ?? '',
+                              venue: data['venue']?.toString() ?? '',
+                              status:
+                                  data['status']?.toString() ?? 'Upcoming',
                             );
                           }).toList(),
                         ),
@@ -270,13 +92,6 @@ class MatchScheduleScreen extends StatelessWidget {
             ),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        onPressed: () => _showAddMatchDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text("Add Match"),
       ),
     );
   }
@@ -291,10 +106,7 @@ class MatchScheduleScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back, color: Colors.white),
           ),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 58,
-          ),
+          Image.asset('assets/images/ygca_logo.jpg', width: 58),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -463,7 +275,6 @@ class MatchScheduleScreen extends StatelessWidget {
     required String time,
     required String venue,
     required String status,
-    required VoidCallback onDelete,
   }) {
     final color = _statusColor(status);
     final icon = _statusIcon(status);
@@ -537,10 +348,6 @@ class MatchScheduleScreen extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: onDelete,
-          ),
         ],
       ),
     );
@@ -582,7 +389,7 @@ class MatchScheduleScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 4),
-          Text("Click Add Match to create one"),
+          Text("Match updates will appear here"),
         ],
       ),
     );

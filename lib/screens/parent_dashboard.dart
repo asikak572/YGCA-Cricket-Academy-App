@@ -10,6 +10,7 @@ import 'parent_fee_module_screen.dart';
 import 'parent_schedule_module_screen.dart';
 import 'parent_performance_module_screen.dart';
 import 'edit_profile_screen.dart';
+import 'widgets/ygca_drawer.dart';
 
 class ParentDashboard extends StatelessWidget {
   const ParentDashboard({super.key});
@@ -75,6 +76,9 @@ class ParentDashboard extends StatelessWidget {
     }
 
     return Scaffold(
+        drawer: const YgcaDrawer(
+    role: 'Parent',
+  ),
       backgroundColor: bg,
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance

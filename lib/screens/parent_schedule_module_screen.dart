@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'widgets/ygca_app_bar.dart';
-
 import 'match_schedule_screen.dart';
-import 'training_schedule_screen.dart';
 
 class ParentScheduleModuleScreen extends StatelessWidget {
   const ParentScheduleModuleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FC),
       appBar: const YgcaAppBar(title: "Schedule Module"),
@@ -32,20 +29,6 @@ class ParentScheduleModuleScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const MatchScheduleScreen(),
-                  ),
-                );
-              },
-            ),
-            _moduleCard(
-              context,
-              Icons.calendar_today,
-              "Training\nSchedule",
-              Colors.teal,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TrainingScheduleScreen(),
                   ),
                 );
               },

@@ -58,7 +58,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadProfile() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+   if (user == null) {
+  if (mounted) {
+    setState(() => isLoading = false);
+  }
+  return;
+}
 
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
@@ -76,10 +81,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       emailController.text = user.email ?? '';
     }
 
-    final studentRef = await _studentDocRef(user.uid);
-    final studentDoc = await studentRef?.get();
+    DocumentSnapshot<Map<String, dynamic>>? studentDoc;
 
-    if (studentDoc != null && studentDoc.exists) {
+try {
+  final studentRef = await _studentDocRef(user.uid);
+  studentDoc = await studentRef?.get();
+} catch (_) {
+  studentDoc = null;
+}
+
+if (studentDoc != null && studentDoc.exists) {
       final data = studentDoc.data() ?? {};
 
       nameController.text =
@@ -149,18 +160,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       SetOptions(merge: true),
     );
 
-    final studentRef = await _studentDocRef(user.uid);
+    if (role == "Student") {
+  final studentRef = await _studentDocRef(user.uid);
 
-    if (studentRef != null) {
-      await studentRef.set(
-        {
-          'photoUrl': downloadUrl,
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-    }
-
+  if (studentRef != null) {
+    await studentRef.set(
+      {
+        'name': nameController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'address': addressController.text.trim(),
+        'photoUrl': photoUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+}
     if (!mounted) return;
 
     setState(() {
@@ -216,17 +231,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         SetOptions(merge: true),
       );
 
-      final studentRef = await _studentDocRef(user.uid);
+      if (role == "Student") {
+  final studentRef = await _studentDocRef(user.uid);
 
-      if (studentRef != null) {
-        await studentRef.update({
-          'name': nameController.text.trim(),
-          'phone': phoneController.text.trim(),
-          'address': addressController.text.trim(),
-          'photoUrl': photoUrl,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
+  if (studentRef != null) {
+    await studentRef.set(
+      {
+        'name': nameController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'address': addressController.text.trim(),
+        'photoUrl': photoUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+}
 
       if (!mounted) return;
 
