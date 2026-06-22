@@ -58,53 +58,71 @@ class LeaveRequestScreen extends StatelessWidget {
 
     return null;
   }
+Future<List<Map<String, dynamic>>> _getLinkedChildren(
+  Map<String, dynamic> userData,
+) async {
+  final role = _text(userData['role']);
+  final uid = _text(userData['uid']);
 
-  Future<List<Map<String, dynamic>>> _getLinkedChildren(
-    Map<String, dynamic> userData,
-  ) async {
-    final role = _text(userData['role']);
-    final uid = _text(userData['uid']);
-
-    if (role == 'Student') {
-      return [
-        {
-          'studentId': uid,
-          'name': _text(userData['name']),
-          'batch': _text(userData['batch']),
-        }
-      ];
-    }
-
-    if (role != 'Parent') return [];
-
-    final linkedChildrenIds = userData['linkedChildrenIds'];
-    final ids = <String>{};
-
-    if (linkedChildrenIds is List) {
-      for (final id in linkedChildrenIds) {
-        final value = _text(id);
-        if (value.isNotEmpty) ids.add(value);
+  if (role == 'Student') {
+    return [
+      {
+        'studentId': uid,
+        'name': _text(userData['name']),
+        'batch': _text(userData['batch']),
       }
-    }
-
-    final childId = _text(userData['childId']);
-    if (childId.isNotEmpty) ids.add(childId);
-
-    final studentId = _text(userData['studentId']);
-    if (studentId.isNotEmpty) ids.add(studentId);
-
-    final children = <Map<String, dynamic>>[];
-
-    for (final id in ids) {
-      final childData = await _getStudentDoc(id);
-
-      if (childData != null) {
-        children.add(childData);
-      }
-    }
-
-    return children;
+    ];
   }
+
+  if (role != 'Parent') return [];
+
+  final children = <Map<String, dynamic>>[];
+  final ids = <String>{};
+
+  final linkedChildrenIds = userData['linkedChildrenIds'];
+
+  if (linkedChildrenIds is List) {
+    for (final id in linkedChildrenIds) {
+      final value = _text(id);
+      if (value.isNotEmpty) ids.add(value);
+    }
+  }
+
+  final childId = _text(userData['childId']);
+  if (childId.isNotEmpty) ids.add(childId);
+
+  final studentId = _text(userData['studentId']);
+  if (studentId.isNotEmpty) ids.add(studentId);
+
+  for (final id in ids) {
+    final childData = await _getStudentDoc(id);
+
+    if (childData != null) {
+      children.add(childData);
+    }
+  }
+
+  // Auto fallback: find students by parent email
+  if (children.isEmpty) {
+    final parentEmail = _text(userData['email']);
+
+    if (parentEmail.isNotEmpty) {
+      final studentSnapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmail', isEqualTo: parentEmail)
+          .get();
+
+      for (final doc in studentSnapshot.docs) {
+        children.add({
+          'studentId': doc.id,
+          ...doc.data(),
+        });
+      }
+    }
+  }
+
+  return children;
+}
 
   Map<String, dynamic>? _findChildByName(
     List<Map<String, dynamic>> children,

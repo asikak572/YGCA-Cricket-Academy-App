@@ -3,7 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AttendanceHistoryScreen extends StatelessWidget {
-  const AttendanceHistoryScreen({super.key});
+  final List<String> allowedStudentIds;
+
+  const AttendanceHistoryScreen({
+    super.key,
+    this.allowedStudentIds = const [],
+  });
 
   final Color maroon = const Color(0xFF7F0000);
   final Color darkMaroon = const Color(0xFF3B0000);
@@ -33,48 +38,66 @@ class AttendanceHistoryScreen extends StatelessWidget {
     };
   }
 
-  Query<Map<String, dynamic>> _attendanceQuery(Map<String, dynamic> userData) {
-    final role = userData['role']?.toString() ?? '';
-    final uid = userData['uid']?.toString() ?? '';
+ Query<Map<String, dynamic>> _attendanceQuery(Map<String, dynamic> userData) {
+  final role = userData['role']?.toString() ?? '';
+  final uid = userData['uid']?.toString() ?? '';
 
-    Query<Map<String, dynamic>> query =
-        FirebaseFirestore.instance.collection('attendance');
+  Query<Map<String, dynamic>> query =
+      FirebaseFirestore.instance.collection('attendance');
 
-    if (role == 'Student') {
-      query = query.where('studentId', isEqualTo: uid);
-    } else if (role == 'Coach') {
-      final batch = userData['assignedBatch']?.toString().isNotEmpty == true
-          ? userData['assignedBatch'].toString()
-          : userData['batch']?.toString() ?? '';
+  if (role == 'Student') {
+    query = query.where('studentId', isEqualTo: uid);
+  } 
+  
+  else if (role == 'Coach') {
+    final batch = userData['assignedBatch']?.toString().isNotEmpty == true
+        ? userData['assignedBatch'].toString()
+        : userData['batch']?.toString() ?? '';
 
-      if (batch.isNotEmpty) {
-        query = query.where('batch', isEqualTo: batch);
-      }
-    } else if (role == 'Parent') {
-      final linkedChildrenIds = userData['linkedChildrenIds'];
+    if (batch.isNotEmpty) {
+      query = query.where('batch', isEqualTo: batch);
+    } else {
+      query = query.where('studentId', isEqualTo: '__NO_STUDENT__');
+    }
+  } 
+  
+  else if (role == 'Parent') {
+    final ids = <String>{};
 
-      if (linkedChildrenIds is List && linkedChildrenIds.isNotEmpty) {
-        query = query.where(
-          'studentId',
-          whereIn: linkedChildrenIds.take(10).toList(),
-        );
-      } else if (userData['childId'] != null &&
-          userData['childId'].toString().isNotEmpty) {
-        query = query.where(
-          'studentId',
-          isEqualTo: userData['childId'].toString(),
-        );
-      } else if (userData['childName'] != null &&
-          userData['childName'].toString().isNotEmpty) {
-        query = query.where(
-          'studentName',
-          isEqualTo: userData['childName'].toString(),
-        );
+    for (final id in allowedStudentIds) {
+      if (id.trim().isNotEmpty) {
+        ids.add(id.trim());
       }
     }
 
-    return query.orderBy('date', descending: true);
+    final linkedChildrenIds = userData['linkedChildrenIds'];
+
+    if (linkedChildrenIds is List) {
+      for (final id in linkedChildrenIds) {
+        final value = id.toString().trim();
+        if (value.isNotEmpty) {
+          ids.add(value);
+        }
+      }
+    }
+
+    if (userData['childId'] != null &&
+        userData['childId'].toString().trim().isNotEmpty) {
+      ids.add(userData['childId'].toString().trim());
+    }
+
+    if (ids.isNotEmpty) {
+      query = query.where(
+        'studentId',
+        whereIn: ids.take(10).toList(),
+      );
+    } else {
+      query = query.where('studentId', isEqualTo: '__NO_LINKED_CHILD__');
+    }
   }
+
+  return query.orderBy('date', descending: true);
+}
 
   @override
   Widget build(BuildContext context) {
