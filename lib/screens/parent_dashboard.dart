@@ -31,9 +31,11 @@ class ParentDashboard extends StatelessWidget {
 
   String _safeText(Map<String, dynamic> data, String key, String fallback) {
     final value = data[key];
+
     if (value != null && value.toString().trim().isNotEmpty) {
       return value.toString().trim();
     }
+
     return fallback;
   }
 
@@ -43,25 +45,58 @@ class ParentDashboard extends StatelessWidget {
 
   Future<Map<String, dynamic>?> _loadLinkedChild(
     Map<String, dynamic> parentData,
+    String? authEmail,
   ) async {
     final linkedChildrenIds = parentData['linkedChildrenIds'];
 
-    if (linkedChildrenIds is! List || linkedChildrenIds.isEmpty) {
+    // Method 1: Load child using linkedChildrenIds
+    if (linkedChildrenIds is List && linkedChildrenIds.isNotEmpty) {
+      final childId = linkedChildrenIds.first.toString().trim();
+
+      if (childId.isNotEmpty) {
+        final childDoc = await FirebaseFirestore.instance
+            .collection('students')
+            .doc(childId)
+            .get();
+
+        if (childDoc.exists && childDoc.data() != null) {
+          return {
+            'childId': childId,
+            ...childDoc.data()!,
+          };
+        }
+      }
+    }
+
+    // Method 2: Backup search using parent email
+    final parentEmailFromDoc =
+        parentData['email']?.toString().trim().toLowerCase() ?? '';
+
+    final parentEmailFromAuth = authEmail?.trim().toLowerCase() ?? '';
+
+    final parentEmail = parentEmailFromDoc.isNotEmpty
+        ? parentEmailFromDoc
+        : parentEmailFromAuth;
+
+    if (parentEmail.isEmpty) {
       return null;
     }
 
-    final childId = linkedChildrenIds.first.toString();
-
-    final childDoc = await FirebaseFirestore.instance
+    final childQuery = await FirebaseFirestore.instance
         .collection('students')
-        .doc(childId)
+        .where('parentEmail', isEqualTo: parentEmail)
+        .limit(1)
         .get();
 
-    if (!childDoc.exists) return null;
+    if (childQuery.docs.isEmpty) {
+      return null;
+    }
+
+    final childDoc = childQuery.docs.first;
 
     return {
-      'childId': childId,
-      ...childDoc.data()!,
+      'childId': childDoc.id,
+      ...childDoc.data(),
     };
   }
 
@@ -76,9 +111,9 @@ class ParentDashboard extends StatelessWidget {
     }
 
     return Scaffold(
-        drawer: const YgcaDrawer(
-    role: 'Parent',
-  ),
+      drawer: const YgcaDrawer(
+        role: 'Parent',
+      ),
       backgroundColor: bg,
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -106,10 +141,16 @@ class ParentDashboard extends StatelessWidget {
               _safeText(parentData, 'email', currentUser.email ?? '');
 
           return FutureBuilder<Map<String, dynamic>?>(
-            future: _loadLinkedChild(parentData),
+            future: _loadLinkedChild(parentData, currentUser.email),
             builder: (context, childSnapshot) {
               if (childSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
+              }
+
+              if (childSnapshot.hasError) {
+                return Center(
+                  child: Text("Child loading error: ${childSnapshot.error}"),
+                );
               }
 
               final childData = childSnapshot.data;
@@ -145,6 +186,7 @@ class ParentDashboard extends StatelessWidget {
                       useLogoLayout: true,
                       dynamicSubtitle: "Welcome, $parentName",
                     ),
+
                     _childHero(
                       childName: childName,
                       parentName: parentName,
@@ -154,8 +196,11 @@ class ParentDashboard extends StatelessWidget {
                       attendance: attendance,
                       feeStatus: feeStatus,
                     ),
+
                     const SizedBox(height: 18),
+
                     _sectionTitle("OVERVIEW"),
+
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: GridView.count(
@@ -199,8 +244,11 @@ class ParentDashboard extends StatelessWidget {
                         ],
                       ),
                     ),
+
                     const SizedBox(height: 18),
+
                     _sectionTitle("QUICK ACCESS"),
+
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: GridView.count(
@@ -316,14 +364,20 @@ class ParentDashboard extends StatelessWidget {
                         ],
                       ),
                     ),
+
                     const SizedBox(height: 18),
+
                     _sectionTitle("RECENT ACTIVITY"),
+
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _activityCard(),
                     ),
+
                     const SizedBox(height: 22),
+
                     _footer(),
+
                     const SizedBox(height: 26),
                   ],
                 ),
