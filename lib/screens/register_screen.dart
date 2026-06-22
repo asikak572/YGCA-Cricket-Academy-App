@@ -96,9 +96,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         batch.set(studentRef, {
           'uid': uid,
           'name': name,
+          'role': 'Student',
           'email': email,
           'age': age,
           'phone': phone,
+          'emailLower': email.toLowerCase(),
+'parentEmailLower': parentEmail.toLowerCase(),
           'parentName': parentName,
           'parentEmail': parentEmail,
 

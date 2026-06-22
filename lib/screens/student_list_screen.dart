@@ -25,6 +25,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
     return width < 370;
   }
 
+  String _cleanEmail(String value) {
+    return value.trim().toLowerCase();
+  }
+
   int _percentValue(String value) {
     return int.tryParse(value.replaceAll("%", "").trim()) ?? 0;
   }
@@ -47,67 +51,126 @@ class _StudentListScreenState extends State<StudentListScreen> {
     final name = data['name']?.toString().toLowerCase() ?? '';
     final phone = data['phone']?.toString().toLowerCase() ?? '';
     final parentName = data['parentName']?.toString().toLowerCase() ?? '';
+    final parentEmail = data['parentEmail']?.toString().toLowerCase() ?? '';
     final batch = data['batch']?.toString().toLowerCase() ?? '';
     final rollNo = data['rollNo']?.toString().toLowerCase() ?? '';
 
     return name.contains(query) ||
         phone.contains(query) ||
         parentName.contains(query) ||
+        parentEmail.contains(query) ||
         batch.contains(query) ||
         rollNo.contains(query);
   }
+
   Future<String> _generateRollNumber(String studentName) async {
-  final firstLetter = studentName.trim()[0].toUpperCase();
-
-  final snapshot = await FirebaseFirestore.instance
-      .collection('students')
-      .where('approvalStatus', isEqualTo: 'Approved')
-      .get();
-
-  int count = 0;
-
-  for (final doc in snapshot.docs) {
-    final rollNo =
-        doc.data()['rollNo']?.toString().toUpperCase() ?? '';
-
-    if (rollNo.startsWith(firstLetter)) {
-      count++;
+    if (studentName.trim().isEmpty) {
+      return "Y1";
     }
+
+    final firstLetter = studentName.trim()[0].toUpperCase();
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('students')
+        .where('approvalStatus', isEqualTo: 'Approved')
+        .get();
+
+    int count = 0;
+
+    for (final doc in snapshot.docs) {
+      final rollNo = doc.data()['rollNo']?.toString().toUpperCase() ?? '';
+
+      if (rollNo.startsWith(firstLetter)) {
+        count++;
+      }
+    }
+
+    return '$firstLetter${count + 1}';
   }
 
-  return '$firstLetter${count + 1}';
-}
-Future<void> _showApprovalDialog({
-  required BuildContext context,
-  required QueryDocumentSnapshot doc,
-}) async {
-  final data = doc.data() as Map<String, dynamic>;
+  Future<void> _autoLinkParentToStudent({
+    required String studentId,
+    required Map<String, dynamic> studentData,
+  }) async {
+    final rawParentEmail = studentData['parentEmail']?.toString() ?? '';
+    final parentEmail = _cleanEmail(rawParentEmail);
 
-  final batchOptions = [
-    "Friday: 6:00 PM – 8:00 PM",
-    "Saturday: 7:00 AM – 9:00 AM",
-    "Saturday: 4:00 PM – 6:00 PM",
-    "Saturday: 6:00 PM – 8:00 PM",
-  ];
+    if (parentEmail.isEmpty) {
+      return;
+    }
 
-  String selectedBatch =
-      data['batch']?.toString() ?? batchOptions.first;
+    QuerySnapshot<Map<String, dynamic>> parentQuery =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .where('role', isEqualTo: 'Parent')
+            .where('emailLower', isEqualTo: parentEmail)
+            .limit(1)
+            .get();
 
-  if (!batchOptions.contains(selectedBatch)) {
-    selectedBatch = batchOptions.first;
+    if (parentQuery.docs.isEmpty) {
+      parentQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'Parent')
+          .where('email', isEqualTo: rawParentEmail.trim())
+          .limit(1)
+          .get();
+    }
+
+    await FirebaseFirestore.instance.collection('students').doc(studentId).set({
+      'parentEmail': rawParentEmail.trim(),
+      'parentEmailLower': parentEmail,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await FirebaseFirestore.instance.collection('users').doc(studentId).set({
+      'parentEmail': rawParentEmail.trim(),
+      'parentEmailLower': parentEmail,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    if (parentQuery.docs.isEmpty) {
+      return;
+    }
+
+    final parentDoc = parentQuery.docs.first;
+
+    await FirebaseFirestore.instance.collection('users').doc(parentDoc.id).set({
+      'linkedChildrenIds': FieldValue.arrayUnion([studentId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await FirebaseFirestore.instance.collection('students').doc(studentId).set({
+      'parentUid': parentDoc.id,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await FirebaseFirestore.instance.collection('users').doc(studentId).set({
+      'parentUid': parentDoc.id,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
-  final formKey = GlobalKey<FormState>();
-  bool isSaving = false;
+  Future<void> _showApprovalDialog({
+    required BuildContext context,
+    required QueryDocumentSnapshot doc,
+  }) async {
+    final data = doc.data() as Map<String, dynamic>;
 
- 
+    final batchOptions = [
+      "Friday: 6:00 PM – 8:00 PM",
+      "Saturday: 7:00 AM – 9:00 AM",
+      "Saturday: 4:00 PM – 6:00 PM",
+      "Saturday: 6:00 PM – 8:00 PM",
+    ];
 
-                  
- 
-    
+    String selectedBatch = data['batch']?.toString() ?? batchOptions.first;
 
+    if (!batchOptions.contains(selectedBatch)) {
+      selectedBatch = batchOptions.first;
+    }
 
-   
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
 
     await showDialog(
       context: context,
@@ -147,75 +210,77 @@ Future<void> _showApprovalDialog({
                   ),
                 ],
               ),
-              
-  content: Form(
-  key: formKey,
-  child: SingleChildScrollView(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _approvalInfoTile(
-          "Student Name",
-          data['name']?.toString() ?? 'No Name',
-        ),
-        _approvalInfoTile(
-          "Parent",
-          data['parentName']?.toString() ?? 'Not Added',
-        ),
-        _approvalInfoTile(
-          "Phone",
-          data['phone']?.toString() ?? 'Not Added',
-        ),
-
-        const SizedBox(height: 12),
-
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: border),
-          ),
-          child: Text(
-            "Roll No will be generated automatically after approval",
-            style: TextStyle(
-              color: maroon,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        DropdownButtonFormField<String>(
-          value: selectedBatch,
-          decoration: InputDecoration(
-            labelText: "Session Batch",
-            prefixIcon: const Icon(Icons.groups),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          items: batchOptions.map((batch) {
-            return DropdownMenuItem<String>(
-              value: batch,
-              child: Text(batch, style: const TextStyle(fontSize: 12)),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setDialogState(() {
-                selectedBatch = value;
-              });
-            }
-          },
-        ),
-      ],
-    ),
-  ),
-),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _approvalInfoTile(
+                        "Student Name",
+                        data['name']?.toString() ?? 'No Name',
+                      ),
+                      _approvalInfoTile(
+                        "Parent",
+                        data['parentName']?.toString() ?? 'Not Added',
+                      ),
+                      _approvalInfoTile(
+                        "Parent Email",
+                        data['parentEmail']?.toString() ?? 'Not Added',
+                      ),
+                      _approvalInfoTile(
+                        "Phone",
+                        data['phone']?.toString() ?? 'Not Added',
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: border),
+                        ),
+                        child: Text(
+                          "Roll No will be generated automatically after approval",
+                          style: TextStyle(
+                            color: maroon,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedBatch,
+                        decoration: InputDecoration(
+                          labelText: "Session Batch",
+                          prefixIcon: const Icon(Icons.groups),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        items: batchOptions.map((batch) {
+                          return DropdownMenuItem<String>(
+                            value: batch,
+                            child: Text(
+                              batch,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setDialogState(() {
+                              selectedBatch = value;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               actions: [
                 TextButton(
                   onPressed: isSaving
@@ -247,65 +312,57 @@ Future<void> _showApprovalDialog({
                           });
 
                           try {
-  final studentName = data['name']?.toString().trim() ?? '';
-  final generatedRollNo = await _generateRollNumber(studentName);
+                            final studentName =
+                                data['name']?.toString().trim() ?? '';
+                            final generatedRollNo =
+                                await _generateRollNumber(studentName);
 
-  await FirebaseFirestore.instance
-      .collection('students')
-      .doc(doc.id)
-      .update({
-    'batch': selectedBatch,
-    'rollNo': generatedRollNo,
-    'approvalStatus': 'Approved',
-    'status': 'Active',
-    'isApproved': true,
-    'approvedAt': FieldValue.serverTimestamp(),
-    'updatedAt': FieldValue.serverTimestamp(),
-    'attendance': data['attendance'] ?? '0%',
-    'feeStatus': data['feeStatus'] ?? 'Pending',
-  });
+                            final parentEmail =
+                                data['parentEmail']?.toString().trim() ?? '';
+                            final parentEmailLower = _cleanEmail(parentEmail);
 
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(doc.id)
-      .set({
-    'approvalStatus': 'Approved',
-    'status': 'Active',
-    'rollNo': generatedRollNo,
-    'batch': selectedBatch,
-    'isApproved': true,
-    'updatedAt': FieldValue.serverTimestamp(),
-  }, SetOptions(merge: true));
+                            await FirebaseFirestore.instance
+                                .collection('students')
+                                .doc(doc.id)
+                                .set({
+                              'uid': doc.id,
+                              'role': 'Student',
+                              'batch': selectedBatch,
+                              'rollNo': generatedRollNo,
+                              'approvalStatus': 'Approved',
+                              'status': 'Active',
+                              'isApproved': true,
+                              'approvedAt': FieldValue.serverTimestamp(),
+                              'updatedAt': FieldValue.serverTimestamp(),
+                              'attendance': data['attendance'] ?? '0%',
+                              'feeStatus': data['feeStatus'] ?? 'Pending',
+                              'parentEmail': parentEmail,
+                              'parentEmailLower': parentEmailLower,
+                            }, SetOptions(merge: true));
 
-  final parentEmail = data['parentEmail']?.toString().trim() ?? '';
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(doc.id)
+                                .set({
+                              'uid': doc.id,
+                              'role': 'Student',
+                              'approvalStatus': 'Approved',
+                              'status': 'Active',
+                              'rollNo': generatedRollNo,
+                              'batch': selectedBatch,
+                              'isApproved': true,
+                              'parentEmail': parentEmail,
+                              'parentEmailLower': parentEmailLower,
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            }, SetOptions(merge: true));
 
-if (parentEmail.isNotEmpty) {
-  final parentQuery = await FirebaseFirestore.instance
-      .collection('users')
-      .where('role', isEqualTo: 'Parent')
-      .where('email', isEqualTo: parentEmail)
-      .limit(1)
-      .get();
-
-  if (parentQuery.docs.isNotEmpty) {
-    final parentDoc = parentQuery.docs.first;
-
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(parentDoc.id)
-        .set({
-      'linkedChildrenIds': FieldValue.arrayUnion([doc.id]),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    await FirebaseFirestore.instance
-        .collection('students')
-        .doc(doc.id)
-        .set({
-      'parentUid': parentDoc.id,
-    }, SetOptions(merge: true));
-  }
-}
+                            await _autoLinkParentToStudent(
+                              studentId: doc.id,
+                              studentData: {
+                                ...data,
+                                'parentEmail': parentEmail,
+                              },
+                            );
 
                             if (!mounted) return;
 
@@ -313,7 +370,9 @@ if (parentEmail.isNotEmpty) {
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text("Student approved successfully"),
+                                content: Text(
+                                  "Student approved and parent linked if parent account exists",
+                                ),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -356,10 +415,6 @@ if (parentEmail.isNotEmpty) {
         );
       },
     );
-
-    // IMPORTANT:
-    // Do not dispose   and rollNoController here.
-    // Flutter may still rebuild the dialog during closing animation.
   }
 
   Future<void> _rejectStudent({
@@ -410,15 +465,19 @@ if (parentEmail.isNotEmpty) {
     if (confirm != true) return;
 
     try {
-      await FirebaseFirestore.instance
-          .collection('students')
-          .doc(doc.id)
-          .update({
-            'approvalStatus': 'Rejected',
-            'status': 'Rejected',
-            'isApproved': false,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      await FirebaseFirestore.instance.collection('students').doc(doc.id).set({
+        'approvalStatus': 'Rejected',
+        'status': 'Rejected',
+        'isApproved': false,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      await FirebaseFirestore.instance.collection('users').doc(doc.id).set({
+        'approvalStatus': 'Rejected',
+        'status': 'Rejected',
+        'isApproved': false,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       if (!mounted) return;
 
@@ -547,13 +606,11 @@ if (parentEmail.isNotEmpty) {
                     pendingApprovals: pendingStudents.length,
                   ),
                   SizedBox(height: small ? 14 : 18),
-
                   _sectionTitle(
                     title: "STUDENT OVERVIEW",
                     leftIcon: Icons.dashboard_rounded,
                     rightIcon: Icons.insights_rounded,
                   ),
-
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
                     child: GridView.count(
@@ -595,28 +652,22 @@ if (parentEmail.isNotEmpty) {
                       ],
                     ),
                   ),
-
                   SizedBox(height: small ? 14 : 18),
-
                   _sectionTitle(
                     title: "SEARCH STUDENT",
                     leftIcon: Icons.search_rounded,
                     rightIcon: Icons.tune_rounded,
                   ),
-
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
                     child: _searchBox(),
                   ),
-
                   SizedBox(height: small ? 14 : 18),
-
                   _sectionTitle(
                     title: "PENDING APPROVAL",
                     leftIcon: Icons.pending_actions_rounded,
                     rightIcon: Icons.verified_user_outlined,
                   ),
-
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
                     child: pendingStudents.isEmpty
@@ -637,22 +688,19 @@ if (parentEmail.isNotEmpty) {
                                 age: data['age']?.toString() ?? '',
                                 parentName:
                                     data['parentName']?.toString() ??
-                                    'Not Added',
+                                        'Not Added',
                                 phone: data['phone']?.toString() ?? 'Not Added',
                                 registeredAt: data['createdAt'],
                               );
                             }).toList(),
                           ),
                   ),
-
                   SizedBox(height: small ? 14 : 18),
-
                   _sectionTitle(
                     title: "APPROVED STUDENTS",
                     leftIcon: Icons.people_alt_rounded,
                     rightIcon: Icons.arrow_forward_rounded,
                   ),
-
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
                     child: approvedStudents.isEmpty
@@ -673,7 +721,8 @@ if (parentEmail.isNotEmpty) {
                                   data['batch']?.toString() ?? 'No Batch';
                               final phone = data['phone']?.toString() ?? '';
                               final parentName =
-                                  data['parentName']?.toString() ?? 'Not Added';
+                                  data['parentName']?.toString() ??
+                                      'Not Added';
                               final rollNo =
                                   data['rollNo']?.toString() ?? '#YGCA';
                               final attendance =
@@ -696,7 +745,6 @@ if (parentEmail.isNotEmpty) {
                             }).toList(),
                           ),
                   ),
-
                   const SizedBox(height: 95),
                 ],
               ),
@@ -928,16 +976,6 @@ if (parentEmail.isNotEmpty) {
               ),
             ),
           ),
-          // const SizedBox(width: 8),
-          // Expanded(
-          //   child: Container(
-          //     height: 1.4,
-          //     decoration: BoxDecoration(
-          //       color: gold.withOpacity(0.85),
-          //       borderRadius: BorderRadius.circular(10),
-          //     ),
-          //   ),
-          // ),
           const SizedBox(width: 8),
           Icon(rightIcon, color: gold, size: small ? 17 : 19),
         ],

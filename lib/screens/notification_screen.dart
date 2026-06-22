@@ -18,6 +18,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   String role = '';
   String uid = '';
+  String email = '';
+  bool isUserLoaded = false;
+
   List<String> linkedChildrenIds = [];
 
   @override
@@ -26,41 +29,124 @@ class _NotificationScreenState extends State<NotificationScreen> {
     _loadUserRole();
   }
 
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
   Future<void> _loadUserRole() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     uid = user.uid;
+    email = user.email ?? '';
 
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-    if (!userDoc.exists) return;
+    if (!userDoc.exists) {
+      if (!mounted) return;
+      setState(() {
+        isUserLoaded = true;
+      });
+      return;
+    }
 
     final data = userDoc.data() ?? {};
+    final loadedRole = _text(data['role']);
+    final loadedEmail =
+        _text(data['email']).isNotEmpty ? _text(data['email']) : email;
+
+    final ids = <String>{};
+
+    final linked = data['linkedChildrenIds'];
+    if (linked is List) {
+      for (final id in linked) {
+        final value = _text(id);
+        if (value.isNotEmpty) ids.add(value);
+      }
+    }
+
+    final childId = _text(data['childId']);
+    if (childId.isNotEmpty) ids.add(childId);
+
+    final studentId = _text(data['studentId']);
+    if (studentId.isNotEmpty) ids.add(studentId);
+
+    // Fallback auto-link support: find student docs by parentEmail
+    if (loadedRole == 'Parent' && loadedEmail.isNotEmpty) {
+      final studentSnapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmail', isEqualTo: loadedEmail)
+          .get();
+
+      for (final doc in studentSnapshot.docs) {
+        ids.add(doc.id);
+      }
+    }
 
     if (!mounted) return;
 
     setState(() {
-  role = data['role']?.toString() ?? '';
-  linkedChildrenIds =
-      List<String>.from(data['linkedChildrenIds'] ?? []);
-});
+      role = loadedRole;
+      email = loadedEmail;
+      linkedChildrenIds = ids.toList();
+      isUserLoaded = true;
+    });
   }
 
-
   Query _notificationQuery() {
-    Query query = FirebaseFirestore.instance.collection('notifications');
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .orderBy('createdAt', descending: true);
+  }
 
-    if (role == 'Student') {
-      query = query.where('targetRole', whereIn: ['All', 'Student']);
-    } else if (role == 'Parent') {
-      query = query.where('targetRole', whereIn: ['All', 'Parent']);
-    } else if (role == 'Coach') {
-      query = query.where('targetRole', whereIn: ['All', 'Coach']);
+  bool _canShowNotification(Map<String, dynamic> data) {
+    final targetRole = _text(data['targetRole']).isEmpty
+        ? 'All'
+        : _text(data['targetRole']);
+
+    final studentId = _text(data['studentId']);
+    final type = _text(data['type']).isEmpty ? 'General' : _text(data['type']);
+    final targetEmail = _text(data['targetEmail']);
+    final parentEmail = _text(data['parentEmail']);
+
+    if (role == 'Admin') return true;
+
+    if (role == 'Coach') {
+      return targetRole == 'All' || targetRole == 'Coach';
     }
 
-    return query.orderBy('createdAt', descending: true);
+    if (role == 'Student') {
+      if (targetRole == 'All' || targetRole == 'Student') {
+        if (studentId.isEmpty) return true;
+        return studentId == uid;
+      }
+      return false;
+    }
+
+    if (role == 'Parent') {
+      // Admin announcements / academy announcements
+      if (targetRole == 'All') return true;
+
+      if (targetRole == 'Parent' &&
+          (type == 'General' || type == 'Announcement')) {
+        return true;
+      }
+
+      // Parent-specific by email
+      if (targetEmail.isNotEmpty && targetEmail == email) return true;
+      if (parentEmail.isNotEmpty && parentEmail == email) return true;
+
+      // Child-specific notification
+      if (studentId.isNotEmpty && linkedChildrenIds.contains(studentId)) {
+        return true;
+      }
+
+      return false;
+    }
+
+    return targetRole == 'All';
   }
 
   Future<void> _addNotificationDialog(BuildContext context) async {
@@ -69,7 +155,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     String selectedTarget = "All";
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (_) {
         return StatefulBuilder(
@@ -135,6 +221,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       'title': titleController.text.trim(),
                       'message': messageController.text.trim(),
                       'targetRole': selectedTarget,
+                      'type': 'Announcement',
                       'createdBy': uid,
                       'createdAt': FieldValue.serverTimestamp(),
                     });
@@ -154,6 +241,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         );
       },
     );
+
+    titleController.dispose();
+    messageController.dispose();
   }
 
   static Widget _field(
@@ -166,10 +256,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
       child: TextField(
         controller: controller,
         maxLines: maxLines,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+        ).copyWith(labelText: label),
       ),
     );
   }
@@ -280,6 +369,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!isUserLoaded) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: bg,
       body: StreamBuilder<QuerySnapshot>(
@@ -294,44 +389,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
           }
 
           final notifications = snapshot.data?.docs ?? [];
+
           final filteredNotifications = notifications.where((doc) {
-  final data = doc.data() as Map<String, dynamic>;
+            final data = doc.data() as Map<String, dynamic>;
+            return _canShowNotification(data);
+          }).toList();
 
-  final targetRole =
-      data['targetRole']?.toString() ?? 'All';
-
-  final studentId =
-      data['studentId']?.toString() ?? '';
-
-  final type =
-      data['type']?.toString() ?? 'General';
-
-  if (role != 'Parent') {
-    return true;
-  }
-
-  if (targetRole == 'All') {
-    return true;
-  }
-
-  if (targetRole == 'Parent' &&
-      (type == 'General' ||
-       type == 'Announcement')) {
-    return true;
-  }
-
-  return studentId.isNotEmpty &&
-      linkedChildrenIds.contains(studentId);
-}).toList();
-         final todayCount = _todayCount(filteredNotifications);
+          final todayCount = _todayCount(filteredNotifications);
 
           return SingleChildScrollView(
             child: Column(
               children: [
                 _topHeader(context),
                 _heroBanner(
-                total: filteredNotifications.length,
-                today: todayCount,
+                  total: filteredNotifications.length,
+                  today: todayCount,
                 ),
                 const SizedBox(height: 18),
                 _sectionTitle("NOTIFICATION LIST"),
@@ -574,7 +646,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 4),
-          Text("No updates available for your role"),
+          Text("No updates available for your account"),
         ],
       ),
     );
