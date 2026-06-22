@@ -13,6 +13,11 @@ class LeaveRequestScreen extends StatelessWidget {
   final Color bg = const Color(0xFFF8FAFC);
   final Color border = const Color(0xFFE2E8F0);
 
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
   Future<Map<String, dynamic>> _getUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return {};
@@ -28,9 +33,110 @@ class LeaveRequestScreen extends StatelessWidget {
     };
   }
 
+  Future<Map<String, dynamic>?> _getStudentDoc(String studentId) async {
+    final studentDoc = await FirebaseFirestore.instance
+        .collection('students')
+        .doc(studentId)
+        .get();
+
+    if (studentDoc.exists) {
+      return {
+        'studentId': studentId,
+        ...studentDoc.data()!,
+      };
+    }
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(studentId).get();
+
+    if (userDoc.exists) {
+      return {
+        'studentId': studentId,
+        ...userDoc.data()!,
+      };
+    }
+
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> _getLinkedChildren(
+    Map<String, dynamic> userData,
+  ) async {
+    final role = _text(userData['role']);
+    final uid = _text(userData['uid']);
+
+    if (role == 'Student') {
+      return [
+        {
+          'studentId': uid,
+          'name': _text(userData['name']),
+          'batch': _text(userData['batch']),
+        }
+      ];
+    }
+
+    if (role != 'Parent') return [];
+
+    final linkedChildrenIds = userData['linkedChildrenIds'];
+    final ids = <String>{};
+
+    if (linkedChildrenIds is List) {
+      for (final id in linkedChildrenIds) {
+        final value = _text(id);
+        if (value.isNotEmpty) ids.add(value);
+      }
+    }
+
+    final childId = _text(userData['childId']);
+    if (childId.isNotEmpty) ids.add(childId);
+
+    final studentId = _text(userData['studentId']);
+    if (studentId.isNotEmpty) ids.add(studentId);
+
+    final children = <Map<String, dynamic>>[];
+
+    for (final id in ids) {
+      final childData = await _getStudentDoc(id);
+
+      if (childData != null) {
+        children.add(childData);
+      }
+    }
+
+    return children;
+  }
+
+  Map<String, dynamic>? _findChildByName(
+    List<Map<String, dynamic>> children,
+    String typedName,
+  ) {
+    final search = typedName.trim().toLowerCase();
+    if (search.isEmpty) return null;
+
+    for (final child in children) {
+      final name = _text(child['name']).toLowerCase();
+      final studentName = _text(child['studentName']).toLowerCase();
+
+      if (name == search || studentName == search) {
+        return child;
+      }
+    }
+
+    for (final child in children) {
+      final name = _text(child['name']).toLowerCase();
+      final studentName = _text(child['studentName']).toLowerCase();
+
+      if (name.startsWith(search) || studentName.startsWith(search)) {
+        return child;
+      }
+    }
+
+    return null;
+  }
+
   Query<Map<String, dynamic>> _leaveQuery(Map<String, dynamic> userData) {
-    final role = userData['role']?.toString() ?? '';
-    final uid = userData['uid']?.toString() ?? '';
+    final role = _text(userData['role']);
+    final uid = _text(userData['uid']);
 
     Query<Map<String, dynamic>> query =
         FirebaseFirestore.instance.collection('leave_requests');
@@ -41,17 +147,20 @@ class LeaveRequestScreen extends StatelessWidget {
       final linkedChildrenIds = userData['linkedChildrenIds'];
 
       if (linkedChildrenIds is List && linkedChildrenIds.isNotEmpty) {
-        query = query.where(
-          'studentId',
-          whereIn: linkedChildrenIds.take(10).toList(),
-        );
+        final ids = linkedChildrenIds
+            .map((e) => e.toString())
+            .where((e) => e.trim().isNotEmpty)
+            .take(10)
+            .toList();
+
+        query = query.where('studentId', whereIn: ids);
       } else {
         query = query.where('parentId', isEqualTo: uid);
       }
     } else if (role == 'Coach') {
-      final batch = userData['assignedBatch']?.toString().isNotEmpty == true
-          ? userData['assignedBatch'].toString()
-          : userData['batch']?.toString() ?? '';
+      final batch = _text(userData['assignedBatch']).isNotEmpty
+          ? _text(userData['assignedBatch'])
+          : _text(userData['batch']);
 
       if (batch.isNotEmpty) {
         query = query.where('batch', isEqualTo: batch);
@@ -73,10 +182,11 @@ class LeaveRequestScreen extends StatelessWidget {
       'status': status,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
     await NotificationService.leaveStatus(
-  studentName: name,
-  status: status,
-);
+      studentName: name,
+      status: status,
+    );
   }
 
   Future<void> _deleteLeave(BuildContext context, String docId) async {
@@ -121,131 +231,233 @@ class LeaveRequestScreen extends StatelessWidget {
     );
   }
 
-  void _showLeaveForm(
-  BuildContext context,
-  Map<String, dynamic> userData,
-) {
-  final role = userData['role']?.toString() ?? '';
-  final uid = userData['uid']?.toString() ?? '';
+  Future<void> _showLeaveForm(
+    BuildContext context,
+    Map<String, dynamic> userData,
+  ) async {
+    final role = _text(userData['role']);
+    final uid = _text(userData['uid']);
 
-  String name = userData['name']?.toString() ?? '';
-  String batch = userData['batch']?.toString() ??
-      userData['childBatch']?.toString() ??
-      '';
-  String leaveDate = '';
-  String reason = '';
+    final linkedChildren = await _getLinkedChildren(userData);
 
-  showDialog(
-    context: context,
-    builder: (_) {
-      return AlertDialog(
-        title: const Text("New Leave Request"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              _input(
-                "Student Name",
-                initialValue: name,
-                onChanged: (value) => name = value,
-              ),
-              _input(
-                "Batch",
-                initialValue: batch,
-                onChanged: (value) => batch = value,
-              ),
-              _input(
-                "Leave Date",
-                onChanged: (value) => leaveDate = value,
-              ),
-              _input(
-                "Reason",
-                maxLines: 3,
-                onChanged: (value) => reason = value,
-              ),
-            ],
-          ),
+    if (!context.mounted) return;
+
+    if (role == 'Parent' && linkedChildren.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No linked student found for this parent"),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
-              foregroundColor: gold,
-            ),
-            onPressed: () async {
-              if (name.trim().isEmpty ||
-                  batch.trim().isEmpty ||
-                  leaveDate.trim().isEmpty ||
-                  reason.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please fill all fields")),
-                );
-                return;
-              }
-
-              String studentId = uid;
-
-              if (role == 'Parent') {
-                final linkedChildrenIds = userData['linkedChildrenIds'];
-
-                if (linkedChildrenIds is List && linkedChildrenIds.isNotEmpty) {
-                  studentId = linkedChildrenIds.first.toString();
-                } else if (userData['childId'] != null) {
-                  studentId = userData['childId'].toString();
-                }
-              }
-
-              await FirebaseFirestore.instance
-                  .collection('leave_requests')
-                  .add({
-                'studentId': studentId,
-                'parentId': role == 'Parent' ? uid : '',
-                'name': name.trim(),
-                'batch': batch.trim(),
-                'date': leaveDate.trim(),
-                'reason': reason.trim(),
-                'status': 'Pending',
-                'requestedBy': role,
-                'createdAt': FieldValue.serverTimestamp(),
-              });
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Leave request submitted")),
-                );
-              }
-            },
-            child: const Text("Submit"),
-          ),
-        ],
       );
-    },
-  );
-}
+      return;
+    }
 
-Widget _input(
-  String label, {
-  String initialValue = '',
-  required Function(String) onChanged,
-  int maxLines = 1,
-}) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: TextFormField(
-      initialValue: initialValue,
-      maxLines: maxLines,
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-    ),
-  );
-}
+    Map<String, dynamic>? selectedChild;
+
+    final nameController = TextEditingController();
+    final batchController = TextEditingController();
+    final leaveDateController = TextEditingController();
+    final reasonController = TextEditingController();
+
+    if (role == 'Student') {
+      nameController.text = _text(userData['name']);
+      batchController.text = _text(userData['batch']);
+    }
+
+    if (role == 'Parent' && linkedChildren.length == 1) {
+      selectedChild = linkedChildren.first;
+      nameController.text = _text(
+        selectedChild['name'] ?? selectedChild['studentName'],
+      );
+      batchController.text = _text(selectedChild['batch']);
+    }
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text("New Leave Request"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (role == 'Parent' && linkedChildren.length > 1)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: gold.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: gold.withOpacity(0.45)),
+                        ),
+                        child: Text(
+                          "Linked Students: ${linkedChildren.map((child) {
+                            return _text(child['name'] ?? child['studentName']);
+                          }).where((name) => name.isNotEmpty).join(', ')}",
+                          style: TextStyle(
+                            color: maroon,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+
+                    TextField(
+                      controller: nameController,
+                      readOnly: role == 'Student',
+                      decoration: const InputDecoration(
+                        labelText: "Student Name",
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        if (role != 'Parent') return;
+
+                        final matchedChild =
+                            _findChildByName(linkedChildren, value);
+
+                        setDialogState(() {
+                          selectedChild = matchedChild;
+
+                          if (matchedChild != null) {
+                            batchController.text = _text(matchedChild['batch']);
+                          } else {
+                            batchController.clear();
+                          }
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    TextField(
+                      controller: batchController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: "Batch",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    TextField(
+                      controller: leaveDateController,
+                      decoration: const InputDecoration(
+                        labelText: "Leave Date",
+                        hintText: "Example: 22-06-2026",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    TextField(
+                      controller: reasonController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: "Reason",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: maroon,
+                    foregroundColor: gold,
+                  ),
+                  onPressed: () async {
+                    final name = nameController.text.trim();
+                    final batch = batchController.text.trim();
+                    final leaveDate = leaveDateController.text.trim();
+                    final reason = reasonController.text.trim();
+
+                    if (name.isEmpty ||
+                        batch.isEmpty ||
+                        leaveDate.isEmpty ||
+                        reason.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please fill all fields"),
+                        ),
+                      );
+                      return;
+                    }
+
+                    String studentId = uid;
+
+                    if (role == 'Parent') {
+                      selectedChild ??= _findChildByName(
+                        linkedChildren,
+                        name,
+                      );
+
+                      if (selectedChild == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Please enter a valid linked student name",
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      studentId = _text(selectedChild!['studentId']);
+
+                      if (studentId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Student ID not found"),
+                          ),
+                        );
+                        return;
+                      }
+                    }
+
+                    await FirebaseFirestore.instance
+                        .collection('leave_requests')
+                        .add({
+                      'studentId': studentId,
+                      'parentId': role == 'Parent' ? uid : '',
+                      'name': name,
+                      'studentName': name,
+                      'batch': batch,
+                      'date': leaveDate,
+                      'reason': reason,
+                      'status': 'Pending',
+                      'requestedBy': role,
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+
+                    if (context.mounted) {
+                      Navigator.pop(dialogContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Leave request submitted"),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text("Submit"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    
+  }
 
   Color _getStatusColor(String status) {
     if (status == "Approved") return Colors.green;
@@ -323,7 +535,7 @@ Widget _input(
           }
 
           final userData = userSnapshot.data!;
-          final role = userData['role']?.toString() ?? '';
+          final role = _text(userData['role']);
 
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: _leaveQuery(userData).snapshots(),
@@ -349,13 +561,16 @@ Widget _input(
                   final doc = requests[index];
                   final data = doc.data();
 
-                  final name = data['name']?.toString() ?? '';
-                  final batch = data['batch']?.toString() ?? '';
-                  final date = data['date']?.toString() ?? '';
-                  final reason = data['reason']?.toString() ?? '';
-                  final status = data['status']?.toString() ?? 'Pending';
-                  final requestedBy =
-                      data['requestedBy']?.toString() ?? 'Unknown';
+                  final name = _text(data['name'] ?? data['studentName']);
+                  final batch = _text(data['batch']);
+                  final date = _text(data['date']);
+                  final reason = _text(data['reason']);
+                  final status = _text(data['status']).isEmpty
+                      ? 'Pending'
+                      : _text(data['status']);
+                  final requestedBy = _text(data['requestedBy']).isEmpty
+                      ? 'Unknown'
+                      : _text(data['requestedBy']);
 
                   final statusColor = _getStatusColor(status);
 
@@ -491,7 +706,7 @@ Widget _input(
             return const SizedBox.shrink();
           }
 
-          final role = snapshot.data!['role']?.toString() ?? '';
+          final role = _text(snapshot.data!['role']);
 
           if (!_canCreate(role)) {
             return const SizedBox.shrink();

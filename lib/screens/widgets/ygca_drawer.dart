@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../notification_screen.dart';
+import '../leave_request_screen.dart';
+import '../parent_attendance_module_screen.dart';
+import '../parent_fee_module_screen.dart';
+import '../parent_schedule_module_screen.dart';
+import '../parent_performance_module_screen.dart';
+import '../edit_profile_screen.dart';
+
 class YgcaNavItem {
   const YgcaNavItem({
     required this.icon,
@@ -37,9 +45,37 @@ class YgcaDrawer extends StatelessWidget {
     final name = username ?? role;
     final parts = name.trim().split(' ').where((e) => e.isNotEmpty).toList();
 
-    if (parts.isEmpty) return role.isNotEmpty ? role[0].toUpperCase() : "U";
+    if (parts.isEmpty) {
+      return role.isNotEmpty ? role[0].toUpperCase() : "U";
+    }
 
     return parts.map((e) => e[0].toUpperCase()).take(2).join();
+  }
+
+  void _closeDrawer(BuildContext context) {
+    Navigator.of(context).pop();
+  }
+
+  void _openScreen(BuildContext context, Widget screen) {
+    final navigator = Navigator.of(context);
+
+    navigator.pop();
+
+    Future.delayed(const Duration(milliseconds: 180), () {
+      navigator.push(
+        MaterialPageRoute(builder: (_) => screen),
+      );
+    });
+  }
+
+  void _openNamedRoute(BuildContext context, String routeName) {
+    final navigator = Navigator.of(context);
+
+    navigator.pop();
+
+    Future.delayed(const Duration(milliseconds: 180), () {
+      navigator.pushNamed(routeName);
+    });
   }
 
   List<YgcaNavItem> _defaultItems(BuildContext context) {
@@ -49,41 +85,78 @@ class YgcaDrawer extends StatelessWidget {
           YgcaNavItem(
             icon: Icons.dashboard,
             label: 'Dashboard',
-            onTap: () {},
+            onTap: () {
+              _closeDrawer(context);
+            },
           ),
           YgcaNavItem(
             icon: Icons.fact_check,
             label: 'Attendance',
             onTap: () {
-              Navigator.pushNamed(context, '/parent-attendance');
+              _openScreen(
+                context,
+                const ParentAttendanceModuleScreen(),
+              );
             },
           ),
           YgcaNavItem(
             icon: Icons.bar_chart,
             label: 'Performance',
             onTap: () {
-              Navigator.pushNamed(context, '/parent-performance');
+              _openScreen(
+                context,
+                const ParentPerformanceModuleScreen(),
+              );
             },
           ),
           YgcaNavItem(
             icon: Icons.receipt_long,
             label: 'Payment History',
             onTap: () {
-              Navigator.pushNamed(context, '/parent-fees');
+              _openScreen(
+                context,
+                const ParentFeeModuleScreen(),
+              );
             },
           ),
           YgcaNavItem(
             icon: Icons.calendar_month,
             label: 'Match Schedule',
             onTap: () {
-              Navigator.pushNamed(context, '/parent-schedule');
+              _openScreen(
+                context,
+                const ParentScheduleModuleScreen(),
+              );
+            },
+          ),
+          YgcaNavItem(
+            icon: Icons.event_note,
+            label: 'Apply Leave',
+            onTap: () {
+              _openScreen(
+                context,
+                const LeaveRequestScreen(),
+              );
             },
           ),
           YgcaNavItem(
             icon: Icons.notifications,
             label: 'Notifications',
             onTap: () {
-              Navigator.pushNamed(context, '/notifications');
+              _openScreen(
+                context,
+                const NotificationScreen(),
+              );
+            },
+          ),
+          YgcaNavItem(
+            icon: Icons.person,
+            label: 'Edit Profile',
+            onTap: () {
+              _openScreen(
+                context,
+                const EditProfileScreen(),
+              );
             },
           ),
         ];
@@ -93,34 +166,36 @@ class YgcaDrawer extends StatelessWidget {
           YgcaNavItem(
             icon: Icons.dashboard,
             label: 'Dashboard',
-            onTap: () {},
+            onTap: () {
+              _closeDrawer(context);
+            },
           ),
           YgcaNavItem(
             icon: Icons.fact_check,
             label: 'Attendance',
             onTap: () {
-              Navigator.pushNamed(context, '/attendance');
+              _openNamedRoute(context, '/attendance');
             },
           ),
           YgcaNavItem(
             icon: Icons.bar_chart,
             label: 'Performance',
             onTap: () {
-              Navigator.pushNamed(context, '/performance');
+              _openNamedRoute(context, '/performance');
             },
           ),
           YgcaNavItem(
             icon: Icons.receipt_long,
             label: 'Fees',
             onTap: () {
-              Navigator.pushNamed(context, '/fees');
+              _openNamedRoute(context, '/fees');
             },
           ),
           YgcaNavItem(
             icon: Icons.notifications,
             label: 'Notifications',
             onTap: () {
-              Navigator.pushNamed(context, '/notifications');
+              _openNamedRoute(context, '/notifications');
             },
           ),
         ];
@@ -130,27 +205,29 @@ class YgcaDrawer extends StatelessWidget {
           YgcaNavItem(
             icon: Icons.dashboard,
             label: 'Dashboard',
-            onTap: () {},
+            onTap: () {
+              _closeDrawer(context);
+            },
           ),
           YgcaNavItem(
             icon: Icons.people,
             label: 'Students',
             onTap: () {
-              Navigator.pushNamed(context, '/student-list');
+              _openNamedRoute(context, '/student-list');
             },
           ),
           YgcaNavItem(
             icon: Icons.fact_check,
             label: 'Mark Attendance',
             onTap: () {
-              Navigator.pushNamed(context, '/attendance');
+              _openNamedRoute(context, '/attendance');
             },
           ),
           YgcaNavItem(
             icon: Icons.bar_chart,
             label: 'Performance',
             onTap: () {
-              Navigator.pushNamed(context, '/performance');
+              _openNamedRoute(context, '/performance');
             },
           ),
         ];
@@ -160,34 +237,36 @@ class YgcaDrawer extends StatelessWidget {
           YgcaNavItem(
             icon: Icons.dashboard,
             label: 'Dashboard',
-            onTap: () {},
+            onTap: () {
+              _closeDrawer(context);
+            },
           ),
           YgcaNavItem(
             icon: Icons.people,
             label: 'Students',
             onTap: () {
-              Navigator.pushNamed(context, '/student-list');
+              _openNamedRoute(context, '/student-list');
             },
           ),
           YgcaNavItem(
             icon: Icons.fact_check,
             label: 'Attendance',
             onTap: () {
-              Navigator.pushNamed(context, '/attendance');
+              _openNamedRoute(context, '/attendance');
             },
           ),
           YgcaNavItem(
             icon: Icons.payments,
             label: 'Fees',
             onTap: () {
-              Navigator.pushNamed(context, '/fees');
+              _openNamedRoute(context, '/fees');
             },
           ),
           YgcaNavItem(
             icon: Icons.notifications,
             label: 'Notifications',
             onTap: () {
-              Navigator.pushNamed(context, '/notifications');
+              _openNamedRoute(context, '/notifications');
             },
           ),
         ];
@@ -197,7 +276,9 @@ class YgcaDrawer extends StatelessWidget {
           YgcaNavItem(
             icon: Icons.dashboard,
             label: 'Dashboard',
-            onTap: () {},
+            onTap: () {
+              _closeDrawer(context);
+            },
           ),
         ];
     }
@@ -323,7 +404,6 @@ class YgcaDrawer extends StatelessWidget {
               ],
             ),
           ),
-
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -350,16 +430,12 @@ class YgcaDrawer extends StatelessWidget {
                       size: 18,
                       color: Colors.grey,
                     ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      item.onTap();
-                    },
+                    onTap: item.onTap,
                   ),
                 );
               },
             ),
           ),
-
           if (onLogout != null) ...[
             const Divider(height: 1),
             ListTile(
@@ -372,12 +448,15 @@ class YgcaDrawer extends StatelessWidget {
                 ),
               ),
               onTap: () {
-                Navigator.pop(context);
-                onLogout!();
+                final navigator = Navigator.of(context);
+                navigator.pop();
+
+                Future.delayed(const Duration(milliseconds: 180), () {
+                  onLogout!();
+                });
               },
             ),
           ],
-
           SizedBox(height: MediaQuery.of(context).padding.bottom + 12),
         ],
       ),
