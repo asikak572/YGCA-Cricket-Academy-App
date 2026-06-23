@@ -100,58 +100,64 @@ class _LoginScreenState extends State<LoginScreen> {
     final h = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: bg,
       body: SafeArea(
-        child: SizedBox(
-          height: h,
-          child: Column(
-            children: [
-              _hero(h),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
-                  child: Column(
-                    children: [
-                      _field(
-                        label: "Email Address",
-                        controller: emailController,
-                        icon: Icons.mail_outline,
-                        hint: "Enter email",
-                        obscure: false,
-                      ),
-                      const SizedBox(height: 10),
-                      _field(
-                        label: "Password",
-                        controller: passwordController,
-                        icon: Icons.lock_outline,
-                        hint: "Enter password",
-                        obscure: obscurePassword,
-                        suffix: IconButton(
-                          icon: Icon(
-                            obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.grey,
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: h),
+            child: IntrinsicHeight(
+              child: Column(
+                children: [
+                  _hero(h),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
+                      child: Column(
+                        children: [
+                          _field(
+                            label: "Email Address",
+                            controller: emailController,
+                            icon: Icons.mail_outline,
+                            hint: "Enter email",
+                            obscure: false,
+                            keyboardType: TextInputType.emailAddress,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              obscurePassword = !obscurePassword;
-                            });
-                          },
-                        ),
+                          const SizedBox(height: 14),
+                          _field(
+                            label: "Password",
+                            controller: passwordController,
+                            icon: Icons.lock_outline,
+                            hint: "Enter password",
+                            obscure: obscurePassword,
+                            suffix: IconButton(
+                              icon: Icon(
+                                obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  obscurePassword = !obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _loginButton(),
+                          const SizedBox(height: 14),
+                          _registerCard(),
+                          const Spacer(),
+                          _footerMini(),
+                          const SizedBox(height: 10),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      _loginButton(),
-                      const SizedBox(height: 10),
-                      _registerCard(),
-                      const Spacer(),
-                      _footerMini(),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -254,6 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     required String hint,
     required bool obscure,
+    TextInputType keyboardType = TextInputType.text,
     Widget? suffix,
   }) {
     return Column(
@@ -261,33 +268,48 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: maroon,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 7),
         TextField(
           controller: controller,
           obscureText: obscure,
+          keyboardType: keyboardType,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+          cursorColor: maroon,
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: const TextStyle(
+              color: Colors.black38,
+              fontWeight: FontWeight.w500,
+            ),
             prefixIcon: Icon(icon, color: maroon),
             suffixIcon: suffix,
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
-              vertical: 13,
+              vertical: 14,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: border),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: border),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(13),
-              borderSide: BorderSide(color: gold, width: 1.3),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: gold, width: 1.5),
             ),
           ),
         ),
@@ -298,7 +320,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _loginButton() {
     return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: 52,
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFFC247),
@@ -340,7 +362,11 @@ class _LoginScreenState extends State<LoginScreen> {
           const Expanded(
             child: Text(
               "New to YGCA?",
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+              ),
             ),
           ),
           ElevatedButton(

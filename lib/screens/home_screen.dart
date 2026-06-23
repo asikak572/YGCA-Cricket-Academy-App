@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+
 import 'login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+  static const Color bg = Color(0xFFFAFAFA);
+  static const Color border = Color(0xFFE2E8F0);
 
-  void _goLogin(BuildContext context) {
+  void _goToLogin(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -19,67 +20,95 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       backgroundColor: bg,
       body: SafeArea(
-        child: SizedBox(
-          height: h,
-          child: Column(
-            children: [
-              _hero(context, h),
-              const SizedBox(height: 8),
-              _sectionTitle("WHAT WE OFFER"),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 1.15,
-                  children: [
-                    _feature(Icons.calendar_month, "5 Days"),
-                    _feature(Icons.wb_sunny, "Weekend"),
-                    _feature(Icons.fitness_center, "Fitness"),
-                    _feature(Icons.videocam, "Analysis"),
-                    _feature(Icons.person, "Focus"),
-                    _feature(Icons.sports_cricket, "Matches"),
-                  ],
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = constraints.maxHeight;
+            final screenWidth = constraints.maxWidth;
+
+            return SizedBox(
+              width: screenWidth,
+              height: screenHeight,
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: screenHeight * 0.36,
+                    child: _hero(context),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+                      child: Column(
+                        children: [
+                          _sectionTitle("WHAT WE OFFER"),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            flex: 6,
+                            child: GridView.count(
+                              crossAxisCount: 3,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 1.05,
+                              children: const [
+                                _OfferCard(
+                                  icon: Icons.calendar_month_rounded,
+                                  title: "Sessions",
+                                ),
+                                _OfferCard(
+                                  icon: Icons.wb_sunny_rounded,
+                                  title: "Practice",
+                                ),
+                                _OfferCard(
+                                  icon: Icons.fitness_center_rounded,
+                                  title: "Fitness",
+                                ),
+                                _OfferCard(
+                                  icon: Icons.videocam_rounded,
+                                  title: "Video",
+                                ),
+                                _OfferCard(
+                                  icon: Icons.person_rounded,
+                                  title: "Profile",
+                                ),
+                                _OfferCard(
+                                  icon: Icons.sports_cricket_rounded,
+                                  title: "Skills",
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _sectionTitle("SESSION"),
+                          const SizedBox(height: 8),
+                          _sessionCard(),
+                          const SizedBox(height: 8),
+                          _contactCard(),
+                        ],
+                      ),
+                    ),
+                  ),
+                  _footer(),
+                ],
               ),
-              const SizedBox(height: 8),
-              _sectionTitle("SESSION"),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: _scheduleCompact(),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: _contactCard(),
-              ),
-              const Spacer(),
-              _footer(),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _hero(BuildContext context, double h) {
+  Widget _hero(BuildContext context) {
     return Container(
-      height: h * 0.36,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+          bottomLeft: Radius.circular(34),
+          bottomRight: Radius.circular(34),
         ),
       ),
       child: Stack(
@@ -96,8 +125,8 @@ class HomeScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.75),
-                    Colors.black.withOpacity(0.45),
+                    maroon.withOpacity(0.82),
+                    Colors.black.withOpacity(0.44),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -106,52 +135,70 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+            padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Image.asset(
                   'assets/images/ygca_logo.jpg',
-                  height: 68,
-                  width: 68,
+                  height: 62,
+                  width: 62,
                   fit: BoxFit.contain,
                 ),
                 const Spacer(),
-                const Text(
-                  "YOUNG GEN",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
+                const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "YOUNG GEN",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      height: 0.95,
+                    ),
                   ),
                 ),
-                Text(
-                  "CRICKET ACADEMY",
-                  style: TextStyle(
-                    color: gold,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    height: 1.1,
+                const SizedBox(height: 2),
+                const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "CRICKET ACADEMY",
+                    style: TextStyle(
+                      color: gold,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 const Text(
                   "Build your Cricket Career with us",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: const [
-                    Icon(Icons.location_on, color: Color(0xFFD4AF37), size: 16),
-                    SizedBox(width: 5),
+                const SizedBox(height: 7),
+                const Row(
+                  children: [
+                    Icon(Icons.location_on_rounded, color: gold, size: 18),
+                    SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         "Valasaravakkam, Chennai",
-                        style: TextStyle(color: Colors.white, fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -159,23 +206,27 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
-                  height: 42,
+                  height: 44,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD978),
+                      backgroundColor: const Color(0xFFFFD977),
                       foregroundColor: maroon,
-                      elevation: 5,
+                      elevation: 6,
+                      shadowColor: gold.withOpacity(0.30),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
-                    onPressed: () => _goLogin(context),
-                    icon: const Icon(Icons.login, size: 18),
-                    label: const Text(
-                      "LOGIN TO CONTINUE",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
+                    onPressed: () => _goToLogin(context),
+                    icon: const Icon(Icons.login_rounded, size: 21),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "LOGIN TO CONTINUE",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                   ),
@@ -189,32 +240,40 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+    return SizedBox(
+      height: 25,
       child: Row(
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               color: maroon,
-              fontSize: 14,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
+              letterSpacing: 0.8,
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(child: Container(height: 1, color: gold)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              height: 1.2,
+              color: gold,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _feature(IconData icon, String title) {
+  Widget _sessionCard() {
     return Container(
+      width: double.infinity,
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.035),
@@ -223,102 +282,45 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Icon(icon, color: maroon, size: 24),
-          const SizedBox(height: 5),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 11,
-            ),
-          ),
+          _DayChip(day: "FRI"),
+          _DayChip(day: "SAT"),
+          _DayChip(day: "SUN"),
         ],
-      ),
-    );
-  }
-
-  Widget _scheduleCompact() {
-    return Container(
-      height: 58,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
-      ),
-      child: Row(
-        children: [
-          _dayChip("FRI"),
-          const SizedBox(width: 7),
-          _timeText("4-6 PM"),
-          const Spacer(),
-          _dayChip("SAT"),
-          const SizedBox(width: 7),
-          _timeText("7-9 AM"),
-          const Spacer(),
-          _dayChip("SUN"),
-          const SizedBox(width: 7),
-          _timeText("7-9 AM"),
-        ],
-      ),
-    );
-  }
-
-  Widget _dayChip(String day) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-      decoration: BoxDecoration(
-        color: maroon,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        day,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 10,
-        ),
-      ),
-    );
-  }
-
-  Widget _timeText(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontWeight: FontWeight.w800,
-        fontSize: 10,
       ),
     );
   }
 
   Widget _contactCard() {
     return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      width: double.infinity,
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBF2),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFFDE68A)),
       ),
-      child: Row(
+      child: const Row(
         children: [
           CircleAvatar(
-            radius: 18,
+            radius: 22,
             backgroundColor: maroon,
-            child: Icon(Icons.phone, color: gold, size: 18),
+            child: Icon(Icons.phone_rounded, color: gold, size: 21),
           ),
-          const SizedBox(width: 10),
-          const Expanded(
+          SizedBox(width: 11),
+          Expanded(
             child: Text(
-              "9941411006 / 8939299555",
+              "Contact Academy for admission and session details",
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontWeight: FontWeight.w900,
+                color: maroon,
                 fontSize: 12,
+                fontWeight: FontWeight.w900,
+                height: 1.25,
               ),
             ),
           ),
@@ -330,18 +332,109 @@ class HomeScreen extends StatelessWidget {
   Widget _footer() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
+      height: 48,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
         color: maroon,
-        border: Border(top: BorderSide(color: gold, width: 2)),
+        border: Border(
+          top: BorderSide(color: gold, width: 1.2),
+        ),
+      ),
+      child: const FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          "❤️ Passion  •  ★ Discipline  •  🏆 Success",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: gold,
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OfferCard extends StatelessWidget {
+  const _OfferCard({
+    required this.icon,
+    required this.title,
+  });
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: HomeScreen.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 7,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 75,
+          height: 75,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: HomeScreen.maroon,
+                size: 27,
+              ),
+              const SizedBox(height: 7),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayChip extends StatelessWidget {
+  const _DayChip({required this.day});
+
+  final String day;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 34,
+      width: 72,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: HomeScreen.maroon,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Text(
-        "♥ Passion  •  ★ Discipline  •  🏆 Success",
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: gold,
-          fontWeight: FontWeight.bold,
-          fontSize: 11,
+        day,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );

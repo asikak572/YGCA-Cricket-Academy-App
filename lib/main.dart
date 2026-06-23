@@ -3,6 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
 
+import 'theme/app_theme.dart';
+import 'theme/theme_controller.dart';
+
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin_dashboard.dart';
@@ -18,7 +21,9 @@ import 'screens/notification_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const MyApp());
 }
@@ -28,24 +33,32 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'YGCA Management System',
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'YGCA Management System',
 
-      // App starts from Home Screen
-      home: const HomeScreen(),
+          theme: YGCATheme.lightTheme,
+          darkTheme: YGCATheme.darkTheme,
+          themeMode: themeMode,
 
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/admin': (context) => const AdminDashboard(),
-        '/coach': (context) => const CoachDashboard(),
-        '/parent': (context) => const ParentDashboard(),
-        '/student': (context) => const StudentDashboard(),
-        '/student-list': (context) => const StudentListScreen(),
-        '/add-student': (context) => const AddStudentScreen(),
-        '/attendance': (context) => const AttendanceScreen(),
-        '/fees': (context) => const FeeManagementScreen(),
-        '/notifications': (context) => const NotificationScreen(),
+          home: const HomeScreen(),
+
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/admin': (context) => const AdminDashboard(),
+            '/coach': (context) => const CoachDashboard(),
+            '/parent': (context) => const ParentDashboard(),
+            '/student': (context) => const StudentDashboard(),
+            '/student-list': (context) => const StudentListScreen(),
+            '/add-student': (context) => const AddStudentScreen(),
+            '/attendance': (context) => const AttendanceScreen(),
+            '/fees': (context) => const FeeManagementScreen(),
+            '/notifications': (context) => const NotificationScreen(),
+          },
+        );
       },
     );
   }
