@@ -18,6 +18,10 @@ class LeaveRequestScreen extends StatelessWidget {
     return value.toString().trim();
   }
 
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
+
   Future<Map<String, dynamic>> _getUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return {};
@@ -29,6 +33,7 @@ class LeaveRequestScreen extends StatelessWidget {
 
     return {
       'uid': user.uid,
+      'authEmail': user.email ?? '',
       ...doc.data()!,
     };
   }
@@ -58,58 +63,68 @@ class LeaveRequestScreen extends StatelessWidget {
 
     return null;
   }
-Future<List<Map<String, dynamic>>> _getLinkedChildren(
-  Map<String, dynamic> userData,
-) async {
-  final role = _text(userData['role']);
-  final uid = _text(userData['uid']);
 
-  if (role == 'Student') {
-    return [
-      {
-        'studentId': uid,
-        'name': _text(userData['name']),
-        'batch': _text(userData['batch']),
+  Future<List<Map<String, dynamic>>> _getLinkedChildren(
+    Map<String, dynamic> userData,
+  ) async {
+    final role = _text(userData['role']);
+    final uid = _text(userData['uid']);
+
+    if (role == 'Student') {
+      final studentData = await _getStudentDoc(uid);
+
+      if (studentData != null) {
+        return [studentData];
       }
-    ];
-  }
 
-  if (role != 'Parent') return [];
-
-  final children = <Map<String, dynamic>>[];
-  final ids = <String>{};
-
-  final linkedChildrenIds = userData['linkedChildrenIds'];
-
-  if (linkedChildrenIds is List) {
-    for (final id in linkedChildrenIds) {
-      final value = _text(id);
-      if (value.isNotEmpty) ids.add(value);
+      return [
+        {
+          'studentId': uid,
+          'name': _text(userData['name']),
+          'batch': _text(userData['batch']),
+          'parentUid': _text(userData['parentUid']),
+        }
+      ];
     }
-  }
 
-  final childId = _text(userData['childId']);
-  if (childId.isNotEmpty) ids.add(childId);
+    if (role != 'Parent') return [];
 
-  final studentId = _text(userData['studentId']);
-  if (studentId.isNotEmpty) ids.add(studentId);
+    final children = <Map<String, dynamic>>[];
+    final ids = <String>{};
 
-  for (final id in ids) {
-    final childData = await _getStudentDoc(id);
+    final linkedChildrenIds = userData['linkedChildrenIds'];
 
-    if (childData != null) {
-      children.add(childData);
+    if (linkedChildrenIds is List) {
+      for (final id in linkedChildrenIds) {
+        final value = _text(id);
+        if (value.isNotEmpty) ids.add(value);
+      }
     }
-  }
 
-  // Auto fallback: find students by parent email
-  if (children.isEmpty) {
-    final parentEmail = _text(userData['email']);
+    final childId = _text(userData['childId']);
+    if (childId.isNotEmpty) ids.add(childId);
+
+    final studentId = _text(userData['studentId']);
+    if (studentId.isNotEmpty) ids.add(studentId);
+
+    for (final id in ids) {
+      final childData = await _getStudentDoc(id);
+
+      if (childData != null) {
+        children.add(childData);
+      }
+    }
+
+    final parentEmail = _lower(
+      _text(userData['email']).isNotEmpty
+          ? _text(userData['email'])
+          : _text(userData['authEmail']),
+    );
 
     if (parentEmail.isNotEmpty) {
       final studentSnapshot = await FirebaseFirestore.instance
           .collection('students')
-          .where('parentEmail', isEqualTo: parentEmail)
+          .where('parentEmailLower', isEqualTo: parentEmail)
           .get();
 
       for (final doc in studentSnapshot.docs) {
@@ -119,10 +134,24 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
         });
       }
     }
+
+    return _dedupeChildren(children);
   }
 
-  return children;
-}
+  List<Map<String, dynamic>> _dedupeChildren(List<Map<String, dynamic>> input) {
+    final ids = <String>{};
+    final result = <Map<String, dynamic>>[];
+
+    for (final child in input) {
+      final id = _text(child['studentId']);
+      if (id.isNotEmpty && !ids.contains(id)) {
+        ids.add(id);
+        result.add(child);
+      }
+    }
+
+    return result;
+  }
 
   Map<String, dynamic>? _findChildByName(
     List<Map<String, dynamic>> children,
@@ -152,6 +181,19 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
     return null;
   }
 
+  List<String> _stringList(dynamic value) {
+    final result = <String>[];
+
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) result.add(text);
+      }
+    }
+
+    return result;
+  }
+
   Query<Map<String, dynamic>> _leaveQuery(Map<String, dynamic> userData) {
     final role = _text(userData['role']);
     final uid = _text(userData['uid']);
@@ -162,49 +204,190 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
     if (role == 'Student') {
       query = query.where('studentId', isEqualTo: uid);
     } else if (role == 'Parent') {
-      final linkedChildrenIds = userData['linkedChildrenIds'];
+      final linkedChildrenIds = _stringList(userData['linkedChildrenIds']);
 
-      if (linkedChildrenIds is List && linkedChildrenIds.isNotEmpty) {
-        final ids = linkedChildrenIds
-            .map((e) => e.toString())
-            .where((e) => e.trim().isNotEmpty)
-            .take(10)
-            .toList();
-
-        query = query.where('studentId', whereIn: ids);
+      if (linkedChildrenIds.isNotEmpty) {
+        query = query.where(
+          'studentId',
+          whereIn: linkedChildrenIds.take(10).toList(),
+        );
       } else {
         query = query.where('parentId', isEqualTo: uid);
       }
     } else if (role == 'Coach') {
-      final batch = _text(userData['assignedBatch']).isNotEmpty
+      final assignedBatches = _stringList(userData['assignedBatches']);
+
+      final singleBatch = _text(userData['assignedBatch']).isNotEmpty
           ? _text(userData['assignedBatch'])
           : _text(userData['batch']);
 
-      if (batch.isNotEmpty) {
-        query = query.where('batch', isEqualTo: batch);
+      if (singleBatch.isNotEmpty && !assignedBatches.contains(singleBatch)) {
+        assignedBatches.add(singleBatch);
+      }
+
+      if (assignedBatches.isNotEmpty) {
+        query = query.where(
+          'batch',
+          whereIn: assignedBatches.take(10).toList(),
+        );
+      } else {
+        query = query.where('batch', isEqualTo: '__NO_ASSIGNED_BATCH__');
       }
     }
 
     return query.orderBy('createdAt', descending: true);
   }
 
-  Future<void> _updateStatus(
-    String docId,
-    String status,
-    String name,
-  ) async {
-    await FirebaseFirestore.instance
-        .collection('leave_requests')
-        .doc(docId)
-        .update({
-      'status': status,
+  String _autoMakeupBatch(String originalBatch) {
+    final batch = originalBatch.trim();
+    final lower = batch.toLowerCase();
+
+    String day = '';
+    if (batch.contains(':')) {
+      day = batch.split(':').first.trim();
+    }
+
+    String prefix = day.isNotEmpty ? '$day: ' : '';
+
+    if (lower.contains('morning') || lower.contains('am')) {
+      return '${prefix}4:00 PM – 6:00 PM';
+    }
+
+    if (lower.contains('evening') || lower.contains('pm')) {
+      return '${prefix}7:00 AM – 9:00 AM';
+    }
+
+    return '${prefix}Alternate Makeup Batch';
+  }
+
+  Future<void> _createMakeupSessionForLeave({
+    required String leaveRequestId,
+    required Map<String, dynamic> leaveData,
+    required Map<String, dynamic> userData,
+  }) async {
+    final makeupCollection =
+        FirebaseFirestore.instance.collection('makeup_sessions');
+
+    final existing = await makeupCollection
+        .where('leaveRequestId', isEqualTo: leaveRequestId)
+        .limit(1)
+        .get();
+
+    if (existing.docs.isNotEmpty) {
+      return;
+    }
+
+    final studentId = _text(leaveData['studentId']);
+    final studentName = _text(
+      _text(leaveData['studentName']).isNotEmpty
+          ? leaveData['studentName']
+          : leaveData['name'],
+    );
+    final originalBatch = _text(leaveData['batch']);
+    final leaveDate = _text(
+      _text(leaveData['date']).isNotEmpty ? leaveData['date'] : leaveData['leaveDate'],
+    );
+    final reason = _text(leaveData['reason']);
+
+    String parentUid = _text(
+      _text(leaveData['parentId']).isNotEmpty
+          ? leaveData['parentId']
+          : leaveData['parentUid'],
+    );
+
+    if (studentId.isNotEmpty) {
+      final studentData = await _getStudentDoc(studentId);
+
+      if (studentData != null) {
+        if (parentUid.isEmpty) {
+          parentUid = _text(studentData['parentUid']);
+        }
+      }
+    }
+
+    final makeupBatch = _autoMakeupBatch(originalBatch);
+
+    final makeupDoc = await makeupCollection.add({
+      'leaveRequestId': leaveRequestId,
+      'studentId': studentId,
+      'studentName': studentName,
+      'parentUid': parentUid,
+      'batch': originalBatch,
+      'originalBatch': originalBatch,
+      'makeupBatch': makeupBatch,
+      'leaveDate': leaveDate,
+      'cancelledDate': leaveDate,
+      'reason': reason,
+      'status': 'Pending',
+      'createdFrom': 'Leave Request',
+      'approvedBy': _text(userData['uid']),
+      'approvedByRole': _text(userData['role']),
+      'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    await NotificationService.leaveStatus(
-      studentName: name,
-      status: status,
-    );
+    await FirebaseFirestore.instance
+        .collection('leave_requests')
+        .doc(leaveRequestId)
+        .set({
+      'makeupSessionCreated': true,
+      'makeupSessionId': makeupDoc.id,
+      'makeupBatch': makeupBatch,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> _updateStatus({
+    required BuildContext context,
+    required String docId,
+    required String status,
+    required Map<String, dynamic> leaveData,
+    required Map<String, dynamic> userData,
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('leave_requests')
+          .doc(docId)
+          .set({
+        'status': status,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (status == "Approved") {
+        await _createMakeupSessionForLeave(
+          leaveRequestId: docId,
+          leaveData: leaveData,
+          userData: userData,
+        );
+      }
+
+      await NotificationService.leaveStatus(
+        studentName: _text(
+          _text(leaveData['studentName']).isNotEmpty
+              ? leaveData['studentName']
+              : leaveData['name'],
+        ),
+        status: status,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              status == "Approved"
+                  ? "Leave approved and makeup session created"
+                  : "Leave rejected",
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Update failed: $e")),
+        );
+      }
+    }
   }
 
   Future<void> _deleteLeave(BuildContext context, String docId) async {
@@ -277,8 +460,14 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
     final reasonController = TextEditingController();
 
     if (role == 'Student') {
-      nameController.text = _text(userData['name']);
-      batchController.text = _text(userData['batch']);
+      final studentData =
+          linkedChildren.isNotEmpty ? linkedChildren.first : userData;
+      nameController.text = _text(
+        _text(studentData['name']).isNotEmpty
+            ? studentData['name']
+            : studentData['studentName'],
+      );
+      batchController.text = _text(studentData['batch']);
     }
 
     if (role == 'Parent' && linkedChildren.length == 1) {
@@ -321,7 +510,6 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                           ),
                         ),
                       ),
-
                     TextField(
                       controller: nameController,
                       readOnly: role == 'Student',
@@ -346,9 +534,7 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                         });
                       },
                     ),
-
                     const SizedBox(height: 10),
-
                     TextField(
                       controller: batchController,
                       readOnly: true,
@@ -357,9 +543,7 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                         border: OutlineInputBorder(),
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     TextField(
                       controller: leaveDateController,
                       decoration: const InputDecoration(
@@ -368,9 +552,7 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                         border: OutlineInputBorder(),
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     TextField(
                       controller: reasonController,
                       maxLines: 3,
@@ -411,6 +593,7 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                     }
 
                     String studentId = uid;
+                    String parentUid = '';
 
                     if (role == 'Parent') {
                       selectedChild ??= _findChildByName(
@@ -430,6 +613,7 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                       }
 
                       studentId = _text(selectedChild!['studentId']);
+                      parentUid = uid;
 
                       if (studentId.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -439,6 +623,10 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                         );
                         return;
                       }
+                    } else if (role == 'Student') {
+                      final studentData =
+                          linkedChildren.isNotEmpty ? linkedChildren.first : {};
+                      parentUid = _text(studentData['parentUid']);
                     }
 
                     await FirebaseFirestore.instance
@@ -446,14 +634,18 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                         .add({
                       'studentId': studentId,
                       'parentId': role == 'Parent' ? uid : '',
+                      'parentUid': parentUid,
                       'name': name,
                       'studentName': name,
                       'batch': batch,
                       'date': leaveDate,
+                      'leaveDate': leaveDate,
                       'reason': reason,
                       'status': 'Pending',
                       'requestedBy': role,
+                      'makeupSessionCreated': false,
                       'createdAt': FieldValue.serverTimestamp(),
+                      'updatedAt': FieldValue.serverTimestamp(),
                     });
 
                     if (context.mounted) {
@@ -473,8 +665,6 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
         );
       },
     );
-
-    
   }
 
   Color _getStatusColor(String status) {
@@ -536,6 +726,11 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
     return role == 'Student' || role == 'Parent' || role == 'Admin';
   }
 
+  bool _showMakeupInfo(Map<String, dynamic> data) {
+    return _text(data['makeupBatch']).isNotEmpty ||
+        data['makeupSessionCreated'] == true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -559,7 +754,15 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
             stream: _leaveQuery(userData).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                return Center(child: Text("Error: ${snapshot.error}"));
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      "Error: ${snapshot.error}",
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
               }
 
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -581,7 +784,9 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
 
                   final name = _text(data['name'] ?? data['studentName']);
                   final batch = _text(data['batch']);
-                  final date = _text(data['date']);
+                  final date = _text(
+                    _text(data['date']).isNotEmpty ? data['date'] : data['leaveDate'],
+                  );
                   final reason = _text(data['reason']);
                   final status = _text(data['status']).isEmpty
                       ? 'Pending'
@@ -651,6 +856,13 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                           _row("Leave Date", date),
                           _row("Reason", reason),
                           _row("Requested By", requestedBy),
+                          if (_showMakeupInfo(data))
+                            _row(
+                              "Makeup Batch",
+                              _text(data['makeupBatch']).isEmpty
+                                  ? "Created"
+                                  : _text(data['makeupBatch']),
+                            ),
                           if (status == "Pending" && _canApprove(role)) ...[
                             const SizedBox(height: 12),
                             Row(
@@ -659,19 +871,12 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                                   child: OutlinedButton.icon(
                                     onPressed: () async {
                                       await _updateStatus(
-                                        doc.id,
-                                        "Rejected",
-                                        name,
+                                        context: context,
+                                        docId: doc.id,
+                                        status: "Rejected",
+                                        leaveData: data,
+                                        userData: userData,
                                       );
-
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text("Leave rejected"),
-                                          ),
-                                        );
-                                      }
                                     },
                                     icon: const Icon(Icons.close),
                                     label: const Text("Reject"),
@@ -686,19 +891,12 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
                                     ),
                                     onPressed: () async {
                                       await _updateStatus(
-                                        doc.id,
-                                        "Approved",
-                                        name,
+                                        context: context,
+                                        docId: doc.id,
+                                        status: "Approved",
+                                        leaveData: data,
+                                        userData: userData,
                                       );
-
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text("Leave approved"),
-                                          ),
-                                        );
-                                      }
                                     },
                                     icon: const Icon(Icons.check),
                                     label: const Text("Approve"),
@@ -717,28 +915,35 @@ Future<List<Map<String, dynamic>>> _getLinkedChildren(
           );
         },
       ),
-      floatingActionButton: FutureBuilder<Map<String, dynamic>>(
-        future: _getUserData(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const SizedBox.shrink();
-          }
+      floatingActionButton: FloatingActionButton.extended(
+  backgroundColor: maroon,
+  foregroundColor: gold,
+  onPressed: () async {
+    final data = await _getUserData();
 
-          final role = _text(snapshot.data!['role']);
+    if (!context.mounted) return;
 
-          if (!_canCreate(role)) {
-            return const SizedBox.shrink();
-          }
+    if (data.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User data not found")),
+      );
+      return;
+    }
 
-          return FloatingActionButton.extended(
-            backgroundColor: maroon,
-            foregroundColor: gold,
-            onPressed: () => _showLeaveForm(context, snapshot.data!),
-            icon: const Icon(Icons.add),
-            label: const Text("New Leave"),
-          );
-        },
-      ),
+    final role = _text(data['role']);
+
+    if (!_canCreate(role)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You cannot create leave request")),
+      );
+      return;
+    }
+
+    await _showLeaveForm(context, data);
+  },
+  icon: const Icon(Icons.add),
+  label: const Text("New Leave"),
+),
     );
   }
 }

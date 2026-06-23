@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class AttendanceHistoryScreen extends StatelessWidget {
+class AttendanceHistoryScreen extends StatefulWidget {
   final List<String> allowedStudentIds;
 
   const AttendanceHistoryScreen({
@@ -10,234 +10,659 @@ class AttendanceHistoryScreen extends StatelessWidget {
     this.allowedStudentIds = const [],
   });
 
+  @override
+  State<AttendanceHistoryScreen> createState() =>
+      _AttendanceHistoryScreenState();
+}
+
+class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   final Color maroon = const Color(0xFF7F0000);
   final Color darkMaroon = const Color(0xFF3B0000);
   final Color gold = const Color(0xFFD4AF37);
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
-  Future<Map<String, dynamic>> _getUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
+  bool isLoading = true;
 
-    if (user == null) {
-      return {};
-    }
+  String uid = '';
+  String role = '';
+  String email = '';
 
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+  List<String> assignedBatches = [];
+  List<String> linkedChildrenIds = [];
 
-    if (!doc.exists) {
-      return {};
-    }
+  List<Map<String, dynamic>> students = [];
+  Map<String, dynamic>? selectedStudent;
 
-    return {
-      'uid': user.uid,
-      ...doc.data()!,
-    };
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
   }
 
- Query<Map<String, dynamic>> _attendanceQuery(Map<String, dynamic> userData) {
-  final role = userData['role']?.toString() ?? '';
-  final uid = userData['uid']?.toString() ?? '';
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
 
-  Query<Map<String, dynamic>> query =
-      FirebaseFirestore.instance.collection('attendance');
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
 
-  if (role == 'Student') {
-    query = query.where('studentId', isEqualTo: uid);
-  } 
-  
-  else if (role == 'Coach') {
-    final batch = userData['assignedBatch']?.toString().isNotEmpty == true
-        ? userData['assignedBatch'].toString()
-        : userData['batch']?.toString() ?? '';
+  List<String> _listFromDynamic(dynamic value) {
+    final result = <String>[];
 
-    if (batch.isNotEmpty) {
-      query = query.where('batch', isEqualTo: batch);
-    } else {
-      query = query.where('studentId', isEqualTo: '__NO_STUDENT__');
-    }
-  } 
-  
-  else if (role == 'Parent') {
-    final ids = <String>{};
-
-    for (final id in allowedStudentIds) {
-      if (id.trim().isNotEmpty) {
-        ids.add(id.trim());
-      }
-    }
-
-    final linkedChildrenIds = userData['linkedChildrenIds'];
-
-    if (linkedChildrenIds is List) {
-      for (final id in linkedChildrenIds) {
-        final value = id.toString().trim();
-        if (value.isNotEmpty) {
-          ids.add(value);
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) {
+          result.add(text);
         }
       }
     }
 
-    if (userData['childId'] != null &&
-        userData['childId'].toString().trim().isNotEmpty) {
-      ids.add(userData['childId'].toString().trim());
+    return result;
+  }
+
+  List<List<String>> _chunks(List<String> values, int size) {
+    final chunks = <List<String>>[];
+
+    for (int i = 0; i < values.length; i += size) {
+      final end = i + size > values.length ? values.length : i + size;
+      chunks.add(values.sublist(i, end));
     }
 
-    if (ids.isNotEmpty) {
-      query = query.where(
-        'studentId',
-        whereIn: ids.take(10).toList(),
+    return chunks;
+  }
+
+  Future<void> _loadInitialData() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    uid = user.uid;
+    email = _lower(user.email ?? '');
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (!userDoc.exists) {
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    final userData = userDoc.data() ?? {};
+    role = _text(userData['role']);
+
+    assignedBatches = _listFromDynamic(userData['assignedBatches']);
+
+    final singleAssignedBatch = _text(userData['assignedBatch']).isNotEmpty
+        ? _text(userData['assignedBatch'])
+        : _text(userData['batch']);
+
+    if (singleAssignedBatch.isNotEmpty &&
+        !assignedBatches.contains(singleAssignedBatch)) {
+      assignedBatches.add(singleAssignedBatch);
+    }
+
+    linkedChildrenIds = _listFromDynamic(userData['linkedChildrenIds']);
+
+    for (final id in widget.allowedStudentIds) {
+      final value = _text(id);
+      if (value.isNotEmpty && !linkedChildrenIds.contains(value)) {
+        linkedChildrenIds.add(value);
+      }
+    }
+
+    final childId = _text(userData['childId']);
+    if (childId.isNotEmpty && !linkedChildrenIds.contains(childId)) {
+      linkedChildrenIds.add(childId);
+    }
+
+    final loadedStudents = await _loadStudentsForRole(userData);
+
+    if (!mounted) return;
+
+    setState(() {
+      students = loadedStudents;
+      selectedStudent = loadedStudents.isNotEmpty ? loadedStudents.first : null;
+      isLoading = false;
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _loadStudentsForRole(
+    Map<String, dynamic> userData,
+  ) async {
+    if (role == 'Admin') {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('isApproved', isEqualTo: true)
+          .get();
+
+      return _studentsFromSnapshot(snapshot);
+    }
+
+    if (role == 'Coach') {
+      if (assignedBatches.isEmpty) {
+        return [];
+      }
+
+      final allStudents = <Map<String, dynamic>>[];
+
+      for (final batchChunk in _chunks(assignedBatches, 10)) {
+        final snapshot = await FirebaseFirestore.instance
+            .collection('students')
+            .where('batch', whereIn: batchChunk)
+            .where('isApproved', isEqualTo: true)
+            .get();
+
+        allStudents.addAll(_studentsFromSnapshot(snapshot));
+      }
+
+      return _dedupeStudents(allStudents);
+    }
+
+    if (role == 'Parent') {
+      final allStudents = <Map<String, dynamic>>[];
+
+      for (final childId in linkedChildrenIds) {
+        final doc = await FirebaseFirestore.instance
+            .collection('students')
+            .doc(childId)
+            .get();
+
+        if (doc.exists) {
+          allStudents.add({
+            'studentId': doc.id,
+            ...doc.data()!,
+          });
+        }
+      }
+
+      final parentUidSnapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentUid', isEqualTo: uid)
+          .get();
+
+      allStudents.addAll(_studentsFromSnapshot(parentUidSnapshot));
+
+      final parentEmail = _lower(
+        _text(userData['email']).isNotEmpty ? _text(userData['email']) : email,
       );
-    } else {
-      query = query.where('studentId', isEqualTo: '__NO_LINKED_CHILD__');
+
+      if (parentEmail.isNotEmpty) {
+        final parentEmailSnapshot = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmailLower', isEqualTo: parentEmail)
+            .get();
+
+        allStudents.addAll(_studentsFromSnapshot(parentEmailSnapshot));
+      }
+
+      return _dedupeStudents(allStudents);
+    }
+
+    if (role == 'Student') {
+      final doc =
+          await FirebaseFirestore.instance.collection('students').doc(uid).get();
+
+      if (doc.exists) {
+        return [
+          {
+            'studentId': doc.id,
+            ...doc.data()!,
+          }
+        ];
+      }
+
+      return [
+        {
+          'studentId': uid,
+          'name': _text(userData['name']),
+          'batch': _text(userData['batch']),
+          'rollNo': _text(userData['rollNo']),
+          'attendance': _text(userData['attendance']),
+        }
+      ];
+    }
+
+    return [];
+  }
+
+  List<Map<String, dynamic>> _studentsFromSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    return snapshot.docs.map((doc) {
+      return {
+        'studentId': doc.id,
+        ...doc.data(),
+      };
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _dedupeStudents(List<Map<String, dynamic>> input) {
+    final ids = <String>{};
+    final result = <Map<String, dynamic>>[];
+
+    for (final student in input) {
+      final id = _text(student['studentId']);
+      if (id.isNotEmpty && !ids.contains(id)) {
+        ids.add(id);
+        result.add(student);
+      }
+    }
+
+    result.sort((a, b) {
+      final aName = _text(a['name']).toLowerCase();
+      final bName = _text(b['name']).toLowerCase();
+      return aName.compareTo(bName);
+    });
+
+    return result;
+  }
+
+  Query<Map<String, dynamic>> _attendanceQuery() {
+    final selectedId = _text(selectedStudent?['studentId']);
+
+    if (selectedId.isEmpty) {
+      return FirebaseFirestore.instance
+          .collection('attendance')
+          .where('studentId', isEqualTo: '__NO_STUDENT_SELECTED__');
+    }
+
+    return FirebaseFirestore.instance
+        .collection('attendance')
+        .where('studentId', isEqualTo: selectedId);
+  }
+
+  DateTime? _parseAttendanceDate(dynamic value) {
+    if (value == null) return null;
+
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    final raw = value.toString().trim();
+    if (raw.isEmpty) return null;
+
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {
+      return null;
     }
   }
 
-  return query.orderBy('date', descending: true);
-}
+  String _dateKey(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  String _formatDate(dynamic value) {
+    final date = _parseAttendanceDate(value);
+    if (date == null) {
+      return _text(value).isEmpty ? "No Date" : _text(value);
+    }
+
+    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+  }
+
+  bool _isPresent(String status) {
+    return status.toLowerCase().trim() == 'present';
+  }
+
+  bool _isLeave(String status) {
+    final s = status.toLowerCase().trim();
+    return s == 'leave' || s == 'leave approved' || s == 'approved leave';
+  }
+
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortRecords(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> records,
+  ) {
+    final sorted = [...records];
+
+    sorted.sort((a, b) {
+      final aDate = _parseAttendanceDate(a.data()['date']);
+      final bDate = _parseAttendanceDate(b.data()['date']);
+
+      if (aDate != null && bDate != null) {
+        return bDate.compareTo(aDate);
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: bg,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: bg,
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _getUserData(),
-        builder: (context, userSnapshot) {
-          if (userSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (!userSnapshot.hasData || userSnapshot.data!.isEmpty) {
-            return const Center(child: Text("User data not found"));
-          }
-
-          final userData = userSnapshot.data!;
-          final role = userData['role']?.toString() ?? 'User';
-
-          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _attendanceQuery(userData).snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Center(child: Text("Error: ${snapshot.error}"));
-              }
-
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final records = snapshot.data?.docs ?? [];
-
-              int present = 0;
-              int absent = 0;
-              int leave = 0;
-
-              for (final doc in records) {
-                final data = doc.data();
-                final status = data['status']?.toString() ?? 'Absent';
-
-                if (status == "Present") {
-                  present++;
-                } else if (status == "Leave") {
-                  leave++;
-                } else {
-                  absent++;
-                }
-              }
-
-              final total = records.length;
-              final percentage =
-                  total == 0 ? 0 : ((present / total) * 100).round();
-
-              return SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _topHeader(context),
-                    _heroBanner(
-                      role: role,
-                      total: total,
-                      present: present,
-                      absent: absent,
-                      leave: leave,
-                      percentage: percentage,
-                    ),
-                    const SizedBox(height: 18),
-                    _sectionTitle("ATTENDANCE SUMMARY"),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 1.15,
-                        children: [
-                          _summaryCard(
-                            Icons.calendar_month,
-                            "TOTAL DAYS",
-                            total.toString(),
-                            Colors.blue,
-                          ),
-                          _summaryCard(
-                            Icons.check_circle,
-                            "PRESENT",
-                            present.toString(),
-                            Colors.green,
-                          ),
-                          _summaryCard(
-                            Icons.cancel,
-                            "ABSENT",
-                            absent.toString(),
-                            Colors.red,
-                          ),
-                          _summaryCard(
-                            Icons.percent,
-                            "ATTENDANCE",
-                            "$percentage%",
-                            Colors.orange,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    _sectionTitle("ATTENDANCE CALENDAR"),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _calendarGraph(records),
-                    ),
-                    const SizedBox(height: 18),
-                    _sectionTitle("RECENT RECORDS"),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: records.isEmpty
-                          ? _emptyCard()
-                          : Column(
-                              children: records.map((doc) {
-                                final data = doc.data();
-
-                                return _historyCard(
-                                  studentName:
-                                      data['studentName']?.toString() ??
-                                          'Unknown Student',
-                                  batch: data['batch']?.toString() ??
-                                      'Unknown Batch',
-                                  date: data['date']?.toString() ?? 'No Date',
-                                  status:
-                                      data['status']?.toString() ?? 'Absent',
-                                );
-                              }).toList(),
+      body: students.isEmpty
+          ? Column(
+              children: [
+                _topHeader(context),
+                Expanded(child: _noStudentView()),
+              ],
+            )
+          : Column(
+              children: [
+                _topHeader(context),
+                if (role == 'Admin' || role == 'Coach' || role == 'Parent')
+                  _studentDropdown(),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _attendanceQuery().snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              "Error: ${snapshot.error}",
+                              textAlign: TextAlign.center,
                             ),
-                    ),
-                    const SizedBox(height: 26),
-                  ],
+                          ),
+                        );
+                      }
+
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final records = _sortRecords(snapshot.data?.docs ?? []);
+
+                      int present = 0;
+                      int absent = 0;
+                      int leave = 0;
+
+                      for (final doc in records) {
+                        final data = doc.data();
+                        final status = _text(data['status']);
+
+                        if (_isPresent(status)) {
+                          present++;
+                        } else if (_isLeave(status)) {
+                          leave++;
+                        } else {
+                          absent++;
+                        }
+                      }
+
+                      final total = records.length;
+                      final percentage =
+                          total == 0 ? 0 : ((present / total) * 100).round();
+
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _heroBanner(
+                              role: role,
+                              total: total,
+                              present: present,
+                              absent: absent,
+                              leave: leave,
+                              percentage: percentage,
+                            ),
+                            const SizedBox(height: 18),
+                            _selectedStudentInfo(),
+                            const SizedBox(height: 18),
+                            _sectionTitle("ATTENDANCE SUMMARY"),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: GridView.count(
+                                crossAxisCount: 2,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                                childAspectRatio: 1.15,
+                                children: [
+                                  _summaryCard(
+                                    Icons.calendar_month,
+                                    "TOTAL DAYS",
+                                    total.toString(),
+                                    Colors.blue,
+                                  ),
+                                  _summaryCard(
+                                    Icons.check_circle,
+                                    "PRESENT",
+                                    present.toString(),
+                                    Colors.green,
+                                  ),
+                                  _summaryCard(
+                                    Icons.cancel,
+                                    "ABSENT",
+                                    absent.toString(),
+                                    Colors.red,
+                                  ),
+                                  _summaryCard(
+                                    Icons.percent,
+                                    "ATTENDANCE",
+                                    "$percentage%",
+                                    Colors.orange,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("ATTENDANCE CALENDAR"),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: _calendarGraph(records),
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("RECENT RECORDS"),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: records.isEmpty
+                                  ? _emptyCard()
+                                  : Column(
+                                      children: records.map((doc) {
+                                        final data = doc.data();
+
+                                        return _historyCard(
+                                          studentName: _text(
+                                                  data['studentName'])
+                                              .isNotEmpty
+                                              ? _text(data['studentName'])
+                                              : _text(selectedStudent?['name'])
+                                                      .isNotEmpty
+                                                  ? _text(
+                                                      selectedStudent?['name'])
+                                                  : 'Unknown Student',
+                                          batch: _text(data['batch']).isNotEmpty
+                                              ? _text(data['batch'])
+                                              : _text(selectedStudent?['batch'])
+                                                      .isNotEmpty
+                                                  ? _text(
+                                                      selectedStudent?['batch'])
+                                                  : 'Unknown Batch',
+                                          date: _formatDate(data['date']),
+                                          status:
+                                              _text(data['status']).isEmpty
+                                                  ? 'Absent'
+                                                  : _text(data['status']),
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
+                            const SizedBox(height: 26),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
-          );
-        },
+              ],
+            ),
+    );
+  }
+
+  Widget _noStudentView() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: border),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.person_off, size: 42, color: Colors.grey),
+            SizedBox(height: 10),
+            Text(
+              "No students found",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 5),
+            Text(
+              "No approved or assigned students are available for this account.",
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _studentDropdown() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _text(selectedStudent?['studentId']).isEmpty
+              ? null
+              : _text(selectedStudent?['studentId']),
+          isExpanded: true,
+          icon: Icon(Icons.keyboard_arrow_down, color: maroon),
+          hint: const Text("Select Student"),
+          items: students.map((student) {
+            final id = _text(student['studentId']);
+            final studentName = _text(student['name']).isEmpty
+                ? "Unnamed Student"
+                : _text(student['name']);
+            final studentBatch = _text(student['batch']);
+
+            return DropdownMenuItem<String>(
+              value: id,
+              child: Text(
+                studentBatch.isEmpty
+                    ? studentName
+                    : "$studentName • $studentBatch",
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value == null) return;
+
+            final selected = students.firstWhere(
+              (student) => _text(student['studentId']) == value,
+              orElse: () => students.first,
+            );
+
+            setState(() {
+              selectedStudent = selected;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _selectedStudentInfo() {
+    final studentName = _text(selectedStudent?['name']).isEmpty
+        ? "Student"
+        : _text(selectedStudent?['name']);
+
+    final studentBatch = _text(selectedStudent?['batch']).isEmpty
+        ? "No Batch"
+        : _text(selectedStudent?['batch']);
+
+    final studentRollNo = _text(selectedStudent?['rollNo']).isEmpty
+        ? "-"
+        : _text(selectedStudent?['rollNo']);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: border),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: maroon,
+              child: Text(
+                studentName.isNotEmpty ? studentName[0].toUpperCase() : "?",
+                style: TextStyle(color: gold, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    studentName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "$studentBatch • Roll No: $studentRollNo",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -494,11 +919,13 @@ class AttendanceHistoryScreen extends StatelessWidget {
 
     for (final doc in records) {
       final data = doc.data();
-      final date = data['date']?.toString() ?? '';
-      final status = data['status']?.toString() ?? 'Absent';
+      final parsedDate = _parseAttendanceDate(data['date']);
+      final status = _text(data['status']).isEmpty
+          ? 'Absent'
+          : _text(data['status']);
 
-      if (date.isNotEmpty) {
-        statusByDate[date] = status;
+      if (parsedDate != null) {
+        statusByDate[_dateKey(parsedDate)] = status;
       }
     }
 
@@ -522,15 +949,13 @@ class AttendanceHistoryScreen extends StatelessWidget {
             spacing: 6,
             runSpacing: 6,
             children: days.map((day) {
-              final dateId =
-                  "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
-
+              final dateId = _dateKey(day);
               final status = statusByDate[dateId] ?? 'No Record';
 
               Color color;
-              if (status == "Present") {
+              if (_isPresent(status)) {
                 color = Colors.green;
-              } else if (status == "Leave") {
+              } else if (_isLeave(status)) {
                 color = Colors.orange;
               } else if (status == "Absent") {
                 color = Colors.red;
@@ -600,10 +1025,10 @@ class AttendanceHistoryScreen extends StatelessWidget {
     Color statusColor;
     IconData icon;
 
-    if (status == "Present") {
+    if (_isPresent(status)) {
       statusColor = Colors.green;
       icon = Icons.check_circle;
-    } else if (status == "Leave") {
+    } else if (_isLeave(status)) {
       statusColor = Colors.orange;
       icon = Icons.event_note;
     } else {

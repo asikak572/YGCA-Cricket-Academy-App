@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'widgets/ygca_app_bar.dart';
 
 import 'match_schedule_screen.dart';
-import 'training_schedule_screen.dart';
 import 'makeup_session_screen.dart';
 
 class CoachScheduleModuleScreen extends StatelessWidget {
@@ -11,7 +10,6 @@ class CoachScheduleModuleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FC),
       appBar: const YgcaAppBar(title: "Schedule Module"),
@@ -33,20 +31,6 @@ class CoachScheduleModuleScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const MatchScheduleScreen(),
-                  ),
-                );
-              },
-            ),
-            _moduleCard(
-              context,
-              Icons.calendar_month,
-              "Training Schedule",
-              Colors.indigo,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TrainingScheduleScreen(),
                   ),
                 );
               },
