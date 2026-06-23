@@ -143,90 +143,29 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
 
     return sorted;
   }
-
-  Future<void> _scheduleMakeup(
-    BuildContext context,
-    String docId,
-  ) async {
-    final dateController = TextEditingController();
-    final timeController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Schedule Makeup Session"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _input("Makeup Date", dateController),
-            _input("Makeup Time", timeController),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
-              foregroundColor: gold,
-            ),
-            onPressed: () async {
-              final date = dateController.text.trim();
-              final time = timeController.text.trim();
-
-              if (date.isEmpty || time.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please fill date and time")),
-                );
-                return;
-              }
-
-              try {
-                await FirebaseFirestore.instance
-                    .collection('makeup_sessions')
-                    .doc(docId)
-                    .set({
-                  'makeupDate': date,
-                  'makeupTime': time,
-                  'status': 'Scheduled',
-                  'updatedAt': FieldValue.serverTimestamp(),
-                }, SetOptions(merge: true));
-
-                await FirebaseFirestore.instance.collection('notifications').add({
-                  'title': 'Makeup Session Scheduled',
-                  'message': 'Makeup session scheduled on $date at $time',
-                  'targetRole': 'All',
-                  'type': 'Announcement',
-                  'createdBy': uid,
-                  'createdAt': FieldValue.serverTimestamp(),
-                });
-
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Makeup session scheduled")),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Schedule failed: $e")),
-                  );
-                }
-              }
-            },
-            child: const Text("Save"),
-          ),
-        ],
+Future<void> _scheduleMakeup(
+  BuildContext context,
+  String docId,
+) async {
+  final scheduled = await Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ScheduleMakeupSessionScreen(
+        docId: docId,
+        uid: uid,
       ),
+    ),
+  );
+
+  if (!mounted) return;
+
+  if (scheduled == true) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Makeup session scheduled")),
     );
-
-    dateController.dispose();
-    timeController.dispose();
   }
-
+}
+  
   Future<void> _markCompleted(BuildContext context, String docId) async {
     try {
       await FirebaseFirestore.instance
@@ -1000,6 +939,194 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+}
+class ScheduleMakeupSessionScreen extends StatefulWidget {
+  final String docId;
+  final String uid;
+
+  const ScheduleMakeupSessionScreen({
+    super.key,
+    required this.docId,
+    required this.uid,
+  });
+
+  @override
+  State<ScheduleMakeupSessionScreen> createState() =>
+      _ScheduleMakeupSessionScreenState();
+}
+
+class _ScheduleMakeupSessionScreenState
+    extends State<ScheduleMakeupSessionScreen> {
+  final Color maroon = const Color(0xFF7F0000);
+  final Color gold = const Color(0xFFD4AF37);
+  final Color bg = const Color(0xFFF8FAFC);
+  final Color border = const Color(0xFFE2E8F0);
+
+  final TextEditingController dateController = TextEditingController();
+  final TextEditingController timeController = TextEditingController();
+
+  bool saving = false;
+
+  @override
+  void dispose() {
+    dateController.dispose();
+    timeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveSchedule() async {
+    final date = dateController.text.trim();
+    final time = timeController.text.trim();
+
+    if (date.isEmpty || time.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill date and time")),
+      );
+      return;
+    }
+
+    setState(() {
+      saving = true;
+    });
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('makeup_sessions')
+          .doc(widget.docId)
+          .set({
+        'makeupDate': date,
+        'makeupTime': time,
+        'status': 'Scheduled',
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      try {
+  await FirebaseFirestore.instance.collection('notifications').add({
+    'title': 'Makeup Session Scheduled',
+    'message': 'Makeup session scheduled on $date at $time',
+    'targetRole': 'All',
+    'type': 'Announcement',
+    'createdBy': widget.uid,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+} catch (_) {
+  // Notification failed, but makeup session scheduling should still continue.
+}
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Schedule failed: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          saving = false;
+        });
+      }
+    }
+  }
+
+  Widget _input({
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: border),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: bg,
+      appBar: AppBar(
+        title: const Text("Schedule Makeup Session"),
+        backgroundColor: maroon,
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBF2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: gold),
+              ),
+              child: Text(
+                "Add makeup session date and time.",
+                style: TextStyle(
+                  color: maroon,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            _input(
+              label: "Makeup Date",
+              controller: dateController,
+              hint: "Example: 27-06-2026",
+            ),
+            const SizedBox(height: 14),
+            _input(
+              label: "Makeup Time",
+              controller: timeController,
+              hint: "Example: 4:00 PM - 6:00 PM",
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: maroon,
+                  foregroundColor: gold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: saving ? null : _saveSchedule,
+                icon: saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save),
+                label: Text(
+                  saving ? "Saving..." : "Save Schedule",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
