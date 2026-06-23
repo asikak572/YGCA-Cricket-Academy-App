@@ -11,13 +11,40 @@ import 'student_dashboard.dart';
 class AuthChecker extends StatelessWidget {
   const AuthChecker({super.key});
 
+  String _safeText(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
   bool _isApproved(Map<String, dynamic> data) {
     final approvalStatus =
-        data['approvalStatus']?.toString().toLowerCase().trim() ?? '';
-    final status = data['status']?.toString().toLowerCase().trim() ?? '';
+        _safeText(data['approvalStatus']).toLowerCase();
+    final status = _safeText(data['status']).toLowerCase();
     final isApproved = data['isApproved'] == true;
 
-    return approvalStatus == 'approved' || status == 'active' || isApproved;
+    return approvalStatus == 'approved' &&
+        status == 'active' &&
+        isApproved == true;
+  }
+
+  bool _hasAssignedBatch(Map<String, dynamic> data) {
+    final rawBatches = data['assignedBatches'];
+
+    if (rawBatches is List) {
+      final validBatches = rawBatches
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      if (validBatches.isNotEmpty) {
+        return true;
+      }
+    }
+
+    final batch = _safeText(data['batch']);
+    final assignedBatch = _safeText(data['assignedBatch']);
+
+    return batch.isNotEmpty || assignedBatch.isNotEmpty;
   }
 
   Future<Map<String, dynamic>?> _getStudentData(String uid) async {
@@ -63,13 +90,24 @@ class AuthChecker extends StatelessWidget {
     }
 
     final userData = userDoc.data() ?? {};
-    final role = userData['role']?.toString().trim();
+    final role = _safeText(userData['role']);
 
     switch (role) {
       case 'Admin':
         return const AdminDashboard();
 
       case 'Coach':
+        final coachApproved = _isApproved(userData);
+        final hasBatch = _hasAssignedBatch(userData);
+
+        if (!coachApproved || !hasBatch) {
+          return const PendingApprovalScreen(
+            title: "Waiting for Admin Approval",
+            message:
+                "Your coach account is registered successfully. Admin must approve your account and assign batch before you can enter the dashboard.",
+          );
+        }
+
         return const CoachDashboard();
 
       case 'Parent':
@@ -132,7 +170,11 @@ class SplashLoadingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: Color(0xFFFAFAFA),
-      body: Center(child: CircularProgressIndicator(color: Color(0xFF7F0000))),
+      body: Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF7F0000),
+        ),
+      ),
     );
   }
 }
@@ -151,7 +193,11 @@ class PendingApprovalScreen extends StatelessWidget {
     await FirebaseAuth.instance.signOut();
 
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -170,7 +216,7 @@ class PendingApprovalScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Color(0xFFE2E8F0)),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.06),
@@ -250,7 +296,11 @@ class ErrorScreen extends StatelessWidget {
     await FirebaseAuth.instance.signOut();
 
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -267,7 +317,11 @@ class ErrorScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 46),
+                const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 46,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   message,

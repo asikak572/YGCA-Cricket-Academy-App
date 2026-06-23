@@ -26,12 +26,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final parentEmailController = TextEditingController();
 
   String selectedRole = "Student";
+  String selectedSpecialization = "Batting Coach";
   bool isLoading = false;
   bool obscurePassword = true;
+
+  final List<String> specializations = const [
+    "Batting Coach",
+    "Bowling Coach",
+    "Fielding Coach",
+    "Fitness Coach",
+    "Head Coach",
+    "Assistant Coach",
+  ];
 
   Future<void> registerUser() async {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
+    final emailLower = email.toLowerCase();
     final password = passwordController.text.trim();
     final age = ageController.text.trim();
     final phone = phoneController.text.trim();
@@ -53,11 +64,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (selectedRole == "Student") {
-      if (age.isEmpty || phone.isEmpty || parentName.isEmpty || parentEmail.isEmpty){
+      if (age.isEmpty ||
+          phone.isEmpty ||
+          parentName.isEmpty ||
+          parentEmail.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Please fill student age, phone and parent name"),
+            content: Text(
+              "Please fill student age, phone, parent name and parent email",
+            ),
           ),
+        );
+        return;
+      }
+    }
+
+    if (selectedRole == "Coach") {
+      if (phone.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please fill coach phone number")),
         );
         return;
       }
@@ -73,22 +98,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final firestore = FirebaseFirestore.instance;
       final batch = firestore.batch();
 
+      final isPendingRole = selectedRole == "Student" || selectedRole == "Coach";
+
       final userRef = firestore.collection('users').doc(uid);
 
-      batch.set(userRef, {
+      final userData = <String, dynamic>{
         'uid': uid,
         'name': name,
         'email': email,
+        'emailLower': emailLower,
         'role': selectedRole,
-
-        // Student should wait for admin approval
-        'approvalStatus': selectedRole == "Student" ? 'Pending' : 'Approved',
-        'status': selectedRole == "Student" ? 'Pending' : 'Active',
-        'isApproved': selectedRole == "Student" ? false : true,
-
+        'approvalStatus': isPendingRole ? 'Pending' : 'Approved',
+        'status': isPendingRole ? 'Pending' : 'Active',
+        'isApproved': isPendingRole ? false : true,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      };
+
+      if (selectedRole == "Student" || selectedRole == "Coach") {
+        userData['phone'] = phone;
+      }
+
+      if (selectedRole == "Coach") {
+        userData['specialization'] = selectedSpecialization;
+      }
+
+      batch.set(userRef, userData);
 
       if (selectedRole == "Student") {
         final studentRef = firestore.collection('students').doc(uid);
@@ -98,26 +133,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'name': name,
           'role': 'Student',
           'email': email,
+          'emailLower': emailLower,
           'age': age,
           'phone': phone,
-          'emailLower': email.toLowerCase(),
-'parentEmailLower': parentEmail.toLowerCase(),
           'parentName': parentName,
           'parentEmail': parentEmail,
-
-          // Important approval fields
+          'parentEmailLower': parentEmail.toLowerCase(),
           'approvalStatus': 'Pending',
           'status': 'Pending',
           'isApproved': false,
-
-          // Admin will assign these later from Student Center
           'batch': '',
           'rollNo': '',
-
-          // Default student values
           'attendance': '0%',
           'feeStatus': 'Pending',
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
 
+      if (selectedRole == "Coach") {
+        final coachRef = firestore.collection('coaches').doc(uid);
+
+        batch.set(coachRef, {
+          'uid': uid,
+          'name': name,
+          'role': 'Coach',
+          'email': email,
+          'emailLower': emailLower,
+          'phone': phone,
+          'specialization': selectedSpecialization,
+          'approvalStatus': 'Pending',
+          'status': 'Pending',
+          'isApproved': false,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -129,11 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            selectedRole == "Student"
-                ? "Student registered. Waiting for admin approval."
-                : "Account registered successfully.",
-          ),
+          content: Text(_successMessage()),
           backgroundColor: Colors.green,
         ),
       );
@@ -167,6 +210,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  String _successMessage() {
+    if (selectedRole == "Student") {
+      return "Student registered. Waiting for admin approval.";
+    }
+
+    if (selectedRole == "Coach") {
+      return "Coach registered. Waiting for admin approval and batch assignment.";
+    }
+
+    return "Account registered successfully.";
   }
 
   @override
@@ -255,7 +310,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         label: "Parent Name",
                         controller: parentNameController,
                       ),
-
                       const SizedBox(height: 10),
                       _input(
                         icon: Icons.email_outlined,
@@ -263,6 +317,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: parentEmailController,
                         keyboardType: TextInputType.emailAddress,
                       ),
+                    ],
+
+                    if (selectedRole == "Coach") ...[
+                      const SizedBox(height: 14),
+                      _coachNoteCard(),
+                      const SizedBox(height: 10),
+                      _input(
+                        icon: Icons.phone_outlined,
+                        label: "Coach Phone Number",
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 10),
+                      _specializationDropdown(),
                     ],
 
                     const SizedBox(height: 14),
@@ -448,7 +516,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         items: const [
-          DropdownMenuItem(value: "Admin", child: Text("Admin")),
           DropdownMenuItem(value: "Coach", child: Text("Coach")),
           DropdownMenuItem(value: "Parent", child: Text("Parent")),
           DropdownMenuItem(value: "Student", child: Text("Student")),
@@ -456,6 +523,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
         onChanged: (value) {
           if (value == null) return;
           setState(() => selectedRole = value);
+        },
+      ),
+    );
+  }
+
+  Widget _specializationDropdown() {
+    return SizedBox(
+      height: 58,
+      child: DropdownButtonFormField<String>(
+        value: selectedSpecialization,
+        decoration: InputDecoration(
+          labelText: "Specialization",
+          prefixIcon: Icon(Icons.sports_cricket_outlined, color: maroon),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: border),
+          ),
+        ),
+        items: specializations.map((item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+        onChanged: (value) {
+          if (value == null) return;
+          setState(() => selectedSpecialization = value);
         },
       ),
     );
@@ -477,6 +581,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Expanded(
             child: Text(
               "Student accounts will be sent to admin approval. Admin will assign batch and roll number.",
+              style: TextStyle(
+                color: Color(0xFF92400E),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _coachNoteCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange.withOpacity(0.35)),
+      ),
+      child: Row(
+        children: const [
+          Icon(Icons.pending_actions, color: Colors.orange),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Coach accounts will be sent to admin approval. Admin will assign batches before dashboard access.",
               style: TextStyle(
                 color: Color(0xFF92400E),
                 fontSize: 12,
@@ -557,4 +689,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-  

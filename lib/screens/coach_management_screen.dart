@@ -7,11 +7,11 @@ class CoachManagementScreen extends StatelessWidget {
   const CoachManagementScreen({super.key});
 
   static const List<String> academyBatches = [
-  "Friday: 6:00 PM – 8:00 PM",
-  "Saturday: 7:00 AM – 9:00 AM",
-  "Saturday: 4:00 PM – 6:00 PM",
-  "Saturday: 6:00 PM – 8:00 PM",
-];
+    "Friday: 6:00 PM – 8:00 PM",
+    "Saturday: 7:00 AM – 9:00 AM",
+    "Saturday: 4:00 PM – 6:00 PM",
+    "Saturday: 6:00 PM – 8:00 PM",
+  ];
 
   final Color maroon = const Color(0xFF7F0000);
   final Color darkMaroon = const Color(0xFF3B0000);
@@ -20,6 +20,20 @@ class CoachManagementScreen extends StatelessWidget {
   final Color border = const Color(0xFFE2E8F0);
 
   String _cleanEmail(String value) => value.trim().toLowerCase();
+
+  bool _isPendingStatus(String status) {
+    final value = status.toLowerCase().trim();
+    return value == 'pending' || value == 'waiting' || value == 'inactive';
+  }
+
+  bool _isApproved(Map<String, dynamic> data) {
+    final approvalStatus =
+        data['approvalStatus']?.toString().toLowerCase().trim() ?? '';
+    final status = data['status']?.toString().toLowerCase().trim() ?? '';
+    final isApproved = data['isApproved'] == true;
+
+    return approvalStatus == 'approved' || status == 'active' || isApproved;
+  }
 
   List<String> _batchesFromData(Map<String, dynamic> data) {
     final assignedBatches = data['assignedBatches'];
@@ -214,7 +228,9 @@ class CoachManagementScreen extends StatelessWidget {
                         'assignedBatches': batches,
                         'batch': batches.first,
                         'batchText': batches.join(', '),
+                        'approvalStatus': 'Approved',
                         'status': 'Active',
+                        'isApproved': true,
                         'createdAt': FieldValue.serverTimestamp(),
                         'updatedAt': FieldValue.serverTimestamp(),
                       };
@@ -235,7 +251,9 @@ class CoachManagementScreen extends StatelessWidget {
                           'assignedBatches': batches,
                           'batch': batches.first,
                           'batchText': batches.join(', '),
+                          'approvalStatus': 'Approved',
                           'status': 'Active',
+                          'isApproved': true,
                           'updatedAt': FieldValue.serverTimestamp(),
                         },
                       );
@@ -257,6 +275,160 @@ class CoachManagementScreen extends StatelessWidget {
                     }
                   },
                   child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+  }
+
+  Future<void> _approveCoachDialog({
+    required BuildContext context,
+    required String coachId,
+    required Map<String, dynamic> data,
+  }) async {
+    final selectedBatches = <String>{..._batchesFromData(data)};
+
+    await showDialog(
+      context: context,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Approve Coach"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data['name']?.toString() ?? 'Coach',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(data['email']?.toString() ?? ''),
+                    const SizedBox(height: 14),
+                    Text(
+                      "Assign Batches",
+                      style: TextStyle(
+                        color: maroon,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: academyBatches.map((batch) {
+                        final selected = selectedBatches.contains(batch);
+                        return FilterChip(
+                          label: Text(
+                            batch,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: selected ? gold : Colors.black87,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          selected: selected,
+                          selectedColor: maroon,
+                          checkmarkColor: gold,
+                          onSelected: (value) {
+                            setDialogState(() {
+                              if (value) {
+                                selectedBatches.add(batch);
+                              } else {
+                                selectedBatches.remove(batch);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: maroon,
+                    foregroundColor: gold,
+                  ),
+                  onPressed: () async {
+                    final batches = selectedBatches.toList();
+
+                    if (batches.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Please select batch")),
+                      );
+                      return;
+                    }
+
+                    try {
+                      final email = data['email']?.toString() ?? '';
+                      final emailLower = _cleanEmail(email);
+
+                      final approveData = {
+                        'role': 'Coach',
+                        'emailLower': emailLower,
+                        'assignedBatches': batches,
+                        'batch': batches.first,
+                        'batchText': batches.join(', '),
+                        'approvalStatus': 'Approved',
+                        'status': 'Active',
+                        'isApproved': true,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      };
+
+                      await FirebaseFirestore.instance
+                          .collection('coaches')
+                          .doc(coachId)
+                          .set(approveData, SetOptions(merge: true));
+
+                      final userRef = FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(coachId);
+                      final userDoc = await userRef.get();
+
+                      if (userDoc.exists) {
+                        await userRef.set(approveData, SetOptions(merge: true));
+                      } else {
+                        await _syncCoachUserByEmail(
+                          email: email,
+                          data: approveData,
+                        );
+                      }
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Coach approved and batch assigned"),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Approve failed: $e")),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text("Approve"),
                 ),
               ],
             );
@@ -348,6 +520,7 @@ class CoachManagementScreen extends StatelessWidget {
   Color _statusColor(String status) {
     if (status == "Active") return Colors.green;
     if (status == "Inactive") return Colors.red;
+    if (status == "Pending") return Colors.orange;
     return Colors.orange;
   }
 
@@ -371,14 +544,16 @@ class CoachManagementScreen extends StatelessWidget {
 
           final coaches = snapshot.data?.docs ?? [];
           int active = 0;
+          int pending = 0;
           final Set<String> specializations = {};
 
           for (final doc in coaches) {
             final data = doc.data() as Map<String, dynamic>;
-            final status = data['status']?.toString() ?? 'Active';
+            final status = data['status']?.toString() ?? 'Pending';
             final specialization = data['specialization']?.toString() ?? '';
 
-            if (status == "Active") active++;
+            if (_isApproved(data)) active++;
+            if (_isPendingStatus(status) || !_isApproved(data)) pending++;
             if (specialization.isNotEmpty) specializations.add(specialization);
           }
 
@@ -389,7 +564,7 @@ class CoachManagementScreen extends StatelessWidget {
                 _heroBanner(
                   total: coaches.length,
                   active: active,
-                  batches: specializations.length,
+                  pending: pending,
                 ),
                 const SizedBox(height: 18),
                 _sectionTitle("COACH OVERVIEW"),
@@ -406,11 +581,11 @@ class CoachManagementScreen extends StatelessWidget {
                       _statCard(Icons.sports, "COACHES",
                           coaches.length.toString(), "Total", Colors.blue),
                       _statCard(Icons.verified, "ACTIVE", active.toString(),
-                          "Working", Colors.green),
+                          "Approved", Colors.green),
+                      _statCard(Icons.pending_actions, "PENDING",
+                          pending.toString(), "Approval", Colors.orange),
                       _statCard(Icons.category, "SPECIAL",
-                          specializations.length.toString(), "Types", Colors.orange),
-                      _statCard(Icons.phone, "CONTACTS",
-                          coaches.length.toString(), "Available", Colors.purple),
+                          specializations.length.toString(), "Types", Colors.purple),
                     ],
                   ),
                 ),
@@ -428,11 +603,12 @@ class CoachManagementScreen extends StatelessWidget {
                             final role = data['role']?.toString() ?? 'Coach';
                             final phone = data['phone']?.toString() ?? 'No Phone';
                             final batch = _batchesText(data);
-                            final status = data['status']?.toString() ?? 'Active';
+                            final status = data['status']?.toString() ?? 'Pending';
 
                             return _coachCard(
                               context: context,
                               coachId: doc.id,
+                              data: data,
                               name: name,
                               role: role,
                               phone: phone,
@@ -492,7 +668,7 @@ class CoachManagementScreen extends StatelessWidget {
   Widget _heroBanner({
     required int total,
     required int active,
-    required int batches,
+    required int pending,
   }) {
     return Container(
       height: 190,
@@ -558,7 +734,7 @@ class CoachManagementScreen extends StatelessWidget {
                         children: [
                           _heroChip("Total: $total"),
                           _heroChip("Active: $active"),
-                          _heroChip("Types: $batches"),
+                          _heroChip("Pending: $pending"),
                         ],
                       ),
                     ],
@@ -664,6 +840,7 @@ class CoachManagementScreen extends StatelessWidget {
   Widget _coachCard({
     required BuildContext context,
     required String coachId,
+    required Map<String, dynamic> data,
     required String name,
     required String role,
     required String phone,
@@ -671,6 +848,7 @@ class CoachManagementScreen extends StatelessWidget {
     required String status,
   }) {
     final color = _statusColor(status);
+    final needsApproval = !_isApproved(data) || _batchesFromData(data).isEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -692,58 +870,87 @@ class CoachManagementScreen extends StatelessWidget {
             status: status,
           );
         },
-        child: Row(
+        child: Column(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: maroon,
-              child: Icon(Icons.sports, color: gold),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "$role • $batch",
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: maroon,
+                  child: Icon(Icons.sports, color: gold),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _chip(Icons.phone, phone, Colors.blue),
-                      _chip(Icons.verified, status, color),
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "$role • $batch",
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          _chip(Icons.phone, phone, Colors.blue),
+                          _chip(Icons.verified, status, color),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _confirmDelete(context, coachId, name),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+            if (needsApproval) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: maroon,
+                    foregroundColor: gold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => _approveCoachDialog(
+                    context: context,
+                    coachId: coachId,
+                    data: data,
+                  ),
+                  icon: const Icon(Icons.verified_user),
+                  label: const Text(
+                    "Approve & Assign Batch",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _confirmDelete(context, coachId, name),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey,
-            ),
+            ],
           ],
         ),
       ),

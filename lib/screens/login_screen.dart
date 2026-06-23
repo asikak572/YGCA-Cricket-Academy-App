@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'register_screen.dart';
+import 'auth_checker.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,107 +40,39 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await FirebaseAuth.instance.signOut();
 
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      final uid = credential.user!.uid;
-
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
-
-      if (!userDoc.exists) {
-        await FirebaseAuth.instance.signOut();
-        throw Exception("User role not found");
-      }
-
-      final userData = userDoc.data() as Map<String, dynamic>;
-      final role = userData['role']?.toString().trim();
-
       if (!mounted) return;
 
-      if (role == "Admin") {
-        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
-      } else if (role == "Coach") {
-        Navigator.pushNamedAndRemoveUntil(context, '/coach', (route) => false);
-      } else if (role == "Parent") {
-        Navigator.pushNamedAndRemoveUntil(context, '/parent', (route) => false);
-      } else if (role == "Student") {
-        final studentDoc = await FirebaseFirestore.instance
-            .collection('students')
-            .doc(uid)
-            .get();
-
-        if (!studentDoc.exists) {
-          await FirebaseAuth.instance.signOut();
-
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Student profile not found. Contact admin."),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
-        }
-
-        final studentData = studentDoc.data() as Map<String, dynamic>;
-
-        final approvalStatus =
-            studentData['approvalStatus']?.toString().toLowerCase().trim() ??
-            '';
-        final status =
-            studentData['status']?.toString().toLowerCase().trim() ?? '';
-        final isApproved = studentData['isApproved'] == true;
-
-        final canLogin =
-            approvalStatus == 'approved' || status == 'active' || isApproved;
-
-        if (!canLogin) {
-          await FirebaseAuth.instance.signOut();
-
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                "Your account is waiting for admin approval. Please try after approval.",
-              ),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          return;
-        }
-
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/student',
-          (route) => false,
-        );
-      } else {
-        await FirebaseAuth.instance.signOut();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Invalid user role")));
-      }
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthChecker()),
+        (route) => false,
+      );
     } on FirebaseAuthException catch (e) {
       String message = "Login failed";
 
-      if (e.code == 'user-not-found') message = "No user found";
-      if (e.code == 'wrong-password') message = "Wrong password";
-      if (e.code == 'invalid-email') message = "Invalid email";
-      if (e.code == 'invalid-credential') {
+      if (e.code == 'user-not-found') {
+        message = "No user found";
+      } else if (e.code == 'wrong-password') {
+        message = "Wrong password";
+      } else if (e.code == 'invalid-email') {
+        message = "Invalid email";
+      } else if (e.code == 'invalid-credential') {
         message = "Invalid email or password";
       }
 
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Login error: $e"), backgroundColor: Colors.red),
       );
