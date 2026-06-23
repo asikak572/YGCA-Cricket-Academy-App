@@ -22,27 +22,10 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
 
   String role = '';
   String uid = '';
+  bool userLoaded = false;
+
   List<String> linkedChildrenIds = [];
-
-  Query _performanceQuery() {
-    Query query =
-        FirebaseFirestore.instance.collection('performance_reports');
-
-    if (role == 'Student') {
-      query = query.where('studentId', isEqualTo: uid);
-    } else if (role == 'Parent') {
-      if (linkedChildrenIds.isNotEmpty) {
-        query = query.where(
-          'studentId',
-          whereIn: linkedChildrenIds.take(10).toList(),
-        );
-      } else {
-        query = query.where('studentId', isEqualTo: 'NO_CHILD');
-      }
-    }
-
-    return query.orderBy('createdAt', descending: true);
-  }
+  List<String> assignedBatches = [];
 
   @override
   void initState() {
@@ -52,7 +35,14 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
 
   Future<void> _loadUserRole() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() {
+        userLoaded = true;
+      });
+      return;
+    }
 
     uid = user.uid;
 
@@ -61,16 +51,114 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
         .doc(uid)
         .get();
 
-    if (!userDoc.exists) return;
+    if (!userDoc.exists) {
+      if (!mounted) return;
+      setState(() {
+        userLoaded = true;
+      });
+      return;
+    }
 
     final data = userDoc.data() ?? {};
+
+    final rawAssignedBatches = data['assignedBatches'];
+    final List<String> coachBatches = [];
+
+    if (rawAssignedBatches is List) {
+      coachBatches.addAll(
+        rawAssignedBatches
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty),
+      );
+    }
+
+    final oldBatch = data['batch']?.toString().trim() ?? '';
+
+    if (coachBatches.isEmpty && oldBatch.isNotEmpty) {
+      coachBatches.add(oldBatch);
+    }
+
+    final rawLinkedChildren = data['linkedChildrenIds'];
+    final List<String> children = [];
+
+    if (rawLinkedChildren is List) {
+      children.addAll(
+        rawLinkedChildren
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty),
+      );
+    }
 
     if (!mounted) return;
 
     setState(() {
       role = data['role']?.toString() ?? '';
-      linkedChildrenIds = List<String>.from(data['linkedChildrenIds'] ?? []);
+      linkedChildrenIds = children;
+      assignedBatches = coachBatches;
+      userLoaded = true;
     });
+  }
+
+  Query _performanceQuery() {
+    Query query = FirebaseFirestore.instance.collection('performance_reports');
+
+    if (role == 'Admin') {
+      return query;
+    }
+
+    if (role == 'Coach') {
+      final batches = assignedBatches.take(10).toList();
+
+      if (batches.isEmpty) {
+        return query.where('batch', isEqualTo: 'NO_BATCH');
+      }
+
+      if (batches.length == 1) {
+        return query.where('batch', isEqualTo: batches.first);
+      }
+
+      return query.where('batch', whereIn: batches);
+    }
+
+    if (role == 'Student') {
+      return query.where('studentId', isEqualTo: uid);
+    }
+
+    if (role == 'Parent') {
+      final children = linkedChildrenIds.take(10).toList();
+
+      if (children.isEmpty) {
+        return query.where('studentId', isEqualTo: 'NO_CHILD');
+      }
+
+      if (children.length == 1) {
+        return query.where('studentId', isEqualTo: children.first);
+      }
+
+      return query.where('studentId', whereIn: children);
+    }
+
+    return query.where('studentId', isEqualTo: 'NO_ACCESS');
+  }
+
+  Stream<QuerySnapshot> _studentSelectionStream() {
+    Query query = FirebaseFirestore.instance.collection('students');
+
+    if (role == 'Coach') {
+      final batches = assignedBatches.take(10).toList();
+
+      if (batches.isEmpty) {
+        return query.where('batch', isEqualTo: 'NO_BATCH').snapshots();
+      }
+
+      if (batches.length == 1) {
+        return query.where('batch', isEqualTo: batches.first).snapshots();
+      }
+
+      return query.where('batch', whereIn: batches).snapshots();
+    }
+
+    return query.snapshots();
   }
 
   int _toInt(dynamic value) {
@@ -109,141 +197,168 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _performanceQuery().snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                snapshot.error.toString(),
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          }
-
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final reports = snapshot.data?.docs ?? [];
-
-          int excellent = 0;
-          int average = 0;
-
-          for (final doc in reports) {
-            final data = doc.data() as Map<String, dynamic>;
-            final batting = _toInt(data['batting']);
-            final bowling = _toInt(data['bowling']);
-            final fielding = _toInt(data['fielding']);
-            final fitness = _toInt(data['fitness']);
-
-            final rating = _ratingText(batting, bowling, fielding, fitness);
-
-            if (rating == "ELITE" || rating == "EXCELLENT") {
-              excellent++;
-            } else if (rating == "GOOD") {
-              average++;
-            }
-          }
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _heroBanner(
-                  totalReports: reports.length,
-                  excellent: excellent,
-                  average: average,
-                ),
-
-                const SizedBox(height: 12),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: maroon,
-                        foregroundColor: gold,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+      body: !userLoaded
+          ? const Center(child: CircularProgressIndicator())
+          : role == 'Coach' && assignedBatches.isEmpty
+              ? const Center(
+                  child: Text("No batch assigned to this coach"),
+                )
+              : StreamBuilder<QuerySnapshot>(
+                  stream: _performanceQuery().snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Text(
+                            snapshot.error.toString(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.red),
+                          ),
                         ),
+                      );
+                    }
+
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final reports = (snapshot.data?.docs ?? []).toList();
+
+                    reports.sort((a, b) {
+                      final aData = a.data() as Map<String, dynamic>;
+                      final bData = b.data() as Map<String, dynamic>;
+
+                      final aTime = aData['createdAt'];
+                      final bTime = bData['createdAt'];
+
+                      if (aTime is Timestamp && bTime is Timestamp) {
+                        return bTime.compareTo(aTime);
+                      }
+
+                      return 0;
+                    });
+
+                    int excellent = 0;
+                    int average = 0;
+
+                    for (final doc in reports) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final batting = _toInt(data['batting']);
+                      final bowling = _toInt(data['bowling']);
+                      final fielding = _toInt(data['fielding']);
+                      final fitness = _toInt(data['fitness']);
+
+                      final rating =
+                          _ratingText(batting, bowling, fielding, fitness);
+
+                      if (rating == "ELITE" || rating == "EXCELLENT") {
+                        excellent++;
+                      } else if (rating == "GOOD") {
+                        average++;
+                      }
+                    }
+
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          _topHeader(context),
+                          _heroBanner(
+                            totalReports: reports.length,
+                            excellent: excellent,
+                            average: average,
+                          ),
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: maroon,
+                                  foregroundColor: gold,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                onPressed: () => _openAnalytics(context),
+                                icon: const Icon(Icons.analytics),
+                                label: const Text(
+                                  "View Performance Analytics",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          _sectionTitle("PERFORMANCE REPORTS"),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: reports.isEmpty
+                                ? _emptyCard()
+                                : Column(
+                                    children: reports.map((doc) {
+                                      final data =
+                                          doc.data() as Map<String, dynamic>;
+
+                                      final name =
+                                          data['studentName']?.toString() ??
+                                              data['name']?.toString() ??
+                                              'Unknown Student';
+
+                                      final batch =
+                                          data['batch']?.toString() ?? '';
+
+                                      final batting = _toInt(data['batting']);
+                                      final bowling = _toInt(data['bowling']);
+                                      final fielding = _toInt(data['fielding']);
+                                      final fitness = _toInt(data['fitness']);
+
+                                      final remarks =
+                                          data['remarks']?.toString() ?? '';
+
+                                      final rating = _ratingText(
+                                        batting,
+                                        bowling,
+                                        fielding,
+                                        fitness,
+                                      );
+
+                                      final ratingColor = _ratingColor(rating);
+
+                                      return _performanceCard(
+                                        name: name,
+                                        batch: batch,
+                                        batting: batting,
+                                        bowling: bowling,
+                                        fielding: fielding,
+                                        fitness: fitness,
+                                        remarks: remarks,
+                                        rating: rating,
+                                        ratingColor: ratingColor,
+                                      );
+                                    }).toList(),
+                                  ),
+                          ),
+                          const SizedBox(height: 90),
+                        ],
                       ),
-                      onPressed: () => _openAnalytics(context),
-                      icon: const Icon(Icons.analytics),
-                      label: const Text(
-                        "View Performance Analytics",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
-
-                const SizedBox(height: 18),
-                _sectionTitle("PERFORMANCE REPORTS"),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: reports.isEmpty
-                      ? _emptyCard()
-                      : Column(
-                          children: reports.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-
-                            final name =
-                                data['studentName']?.toString() ??
-                                    data['name']?.toString() ??
-                                    'Unknown Student';
-
-                            final batch = data['batch']?.toString() ?? '';
-
-                            final batting = _toInt(data['batting']);
-                            final bowling = _toInt(data['bowling']);
-                            final fielding = _toInt(data['fielding']);
-                            final fitness = _toInt(data['fitness']);
-
-                            final remarks = data['remarks']?.toString() ?? '';
-                            final rating = _ratingText(
-                              batting,
-                              bowling,
-                              fielding,
-                              fitness,
-                            );
-                            final ratingColor = _ratingColor(rating);
-
-                            return _performanceCard(
-                              name: name,
-                              batch: batch,
-                              batting: batting,
-                              bowling: bowling,
-                              fielding: fielding,
-                              fitness: fitness,
-                              remarks: remarks,
-                              rating: rating,
-                              ratingColor: ratingColor,
-                            );
-                          }).toList(),
-                        ),
-                ),
-                const SizedBox(height: 90),
-              ],
-            ),
-          );
-        },
-      ),
-      floatingActionButton: role == 'Admin' 
-          ? FloatingActionButton.extended(
-              backgroundColor: maroon,
-              foregroundColor: gold,
-              onPressed: () {
-                _showAddDialog(context);
-              },
-              icon: const Icon(Icons.add),
-              label: const Text("Add Report"),
-            )
-          : null,
+      floatingActionButton:
+          role == 'Admin' || (role == 'Coach' && assignedBatches.isNotEmpty)
+              ? FloatingActionButton.extended(
+                  backgroundColor: maroon,
+                  foregroundColor: gold,
+                  onPressed: () {
+                    _showAddDialog(context);
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text("Add Report"),
+                )
+              : null,
     );
   }
 
@@ -564,10 +679,7 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                 child: Column(
                   children: [
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('students')
-                          .orderBy('name')
-                          .snapshots(),
+                      stream: _studentSelectionStream(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -577,14 +689,35 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                           );
                         }
 
+                        if (snapshot.hasError) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              "Error: ${snapshot.error}",
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          );
+                        }
+
                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                           return const Text("No students found");
                         }
 
-                        final students = snapshot.data!.docs;
+                        final students = snapshot.data!.docs.toList();
+
+                        students.sort((a, b) {
+                          final aData = a.data() as Map<String, dynamic>;
+                          final bData = b.data() as Map<String, dynamic>;
+
+                          final aName = aData['name']?.toString() ?? '';
+                          final bName = bData['name']?.toString() ?? '';
+
+                          return aName.compareTo(bName);
+                        });
 
                         return DropdownButtonFormField<String>(
                           value: selectedStudentId,
+                          isExpanded: true,
                           decoration: const InputDecoration(
                             labelText: "Select Student",
                             border: OutlineInputBorder(),
@@ -597,7 +730,10 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
 
                             return DropdownMenuItem(
                               value: doc.id,
-                              child: Text("$name - $batch"),
+                              child: Text(
+                                "$name - $batch",
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -674,47 +810,58 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                     final fitness =
                         int.tryParse(fitnessController.text.trim()) ?? 0;
 
-                    await FirebaseFirestore.instance
-                        .collection('performance_reports')
-                        .add({
-                      'studentId': selectedStudentId,
-                      'studentName': selectedStudentName,
-                      'batch': selectedBatch,
-                      'batting': batting,
-                      'bowling': bowling,
-                      'fielding': fielding,
-                      'fitness': fitness,
-                      'remarks': remarksController.text.trim(),
-                      'createdAt': FieldValue.serverTimestamp(),
-                    });
+                    try {
+                      await FirebaseFirestore.instance
+                          .collection('performance_reports')
+                          .add({
+                        'studentId': selectedStudentId,
+                        'studentName': selectedStudentName,
+                        'batch': selectedBatch,
+                        'batting': batting,
+                        'bowling': bowling,
+                        'fielding': fielding,
+                        'fitness': fitness,
+                        'remarks': remarksController.text.trim(),
+                        'createdBy': uid,
+                        'createdByRole': role,
+                        'createdAt': FieldValue.serverTimestamp(),
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
 
-                    await FirebaseFirestore.instance
-                        .collection('students')
-                        .doc(selectedStudentId)
-                        .update({
-                      'latestBatting': batting,
-                      'latestBowling': bowling,
-                      'latestFielding': fielding,
-                      'latestFitness': fitness,
-                      'latestPerformanceRemarks':
-                          remarksController.text.trim(),
-                      'latestPerformanceUpdatedAt':
-                          FieldValue.serverTimestamp(),
-                    });
+                      await FirebaseFirestore.instance
+                          .collection('students')
+                          .doc(selectedStudentId)
+                          .update({
+                        'latestBatting': batting,
+                        'latestBowling': bowling,
+                        'latestFielding': fielding,
+                        'latestFitness': fitness,
+                        'latestPerformanceRemarks':
+                            remarksController.text.trim(),
+                        'latestPerformanceUpdatedAt':
+                            FieldValue.serverTimestamp(),
+                      });
 
-                    await NotificationService.performanceUpdate(
-  studentName: selectedStudentName,
-  studentId: selectedStudentId!,
-  batch: selectedBatch,
-);
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Performance report saved"),
-                        ),
+                      await NotificationService.performanceUpdate(
+                        studentName: selectedStudentName,
+                        studentId: selectedStudentId!,
+                        batch: selectedBatch,
                       );
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Performance report saved"),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error: $e")),
+                        );
+                      }
                     }
                   },
                   child: const Text("Save"),

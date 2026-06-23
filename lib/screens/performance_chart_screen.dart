@@ -1,14 +1,141 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-class PerformanceChartScreen extends StatelessWidget {
+class PerformanceChartScreen extends StatefulWidget {
   const PerformanceChartScreen({super.key});
 
+  @override
+  State<PerformanceChartScreen> createState() => _PerformanceChartScreenState();
+}
+
+class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
   final Color maroon = const Color(0xFF7F0000);
   final Color gold = const Color(0xFFD4AF37);
   final Color bg = const Color(0xFFF8FAFC);
   final Color border = const Color(0xFFE2E8F0);
+
+  String role = '';
+  String uid = '';
+  bool userLoaded = false;
+
+  List<String> assignedBatches = [];
+  List<String> linkedChildrenIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() {
+        userLoaded = true;
+      });
+      return;
+    }
+
+    uid = user.uid;
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    if (!userDoc.exists) {
+      if (!mounted) return;
+      setState(() {
+        userLoaded = true;
+      });
+      return;
+    }
+
+    final data = userDoc.data() ?? {};
+
+    final List<String> coachBatches = [];
+    final rawAssignedBatches = data['assignedBatches'];
+
+    if (rawAssignedBatches is List) {
+      coachBatches.addAll(
+        rawAssignedBatches
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty),
+      );
+    }
+
+    final oldBatch = data['batch']?.toString().trim() ?? '';
+
+    if (coachBatches.isEmpty && oldBatch.isNotEmpty) {
+      coachBatches.add(oldBatch);
+    }
+
+    final List<String> children = [];
+    final rawChildren = data['linkedChildrenIds'];
+
+    if (rawChildren is List) {
+      children.addAll(
+        rawChildren
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty),
+      );
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      role = data['role']?.toString() ?? '';
+      assignedBatches = coachBatches;
+      linkedChildrenIds = children;
+      userLoaded = true;
+    });
+  }
+
+  Query _performanceQuery() {
+    Query query = FirebaseFirestore.instance.collection('performance_reports');
+
+    if (role == 'Admin') {
+      return query;
+    }
+
+    if (role == 'Coach') {
+      final batches = assignedBatches.take(10).toList();
+
+      if (batches.isEmpty) {
+        return query.where('batch', isEqualTo: 'NO_BATCH');
+      }
+
+      if (batches.length == 1) {
+        return query.where('batch', isEqualTo: batches.first);
+      }
+
+      return query.where('batch', whereIn: batches);
+    }
+
+    if (role == 'Student') {
+      return query.where('studentId', isEqualTo: uid);
+    }
+
+    if (role == 'Parent') {
+      final children = linkedChildrenIds.take(10).toList();
+
+      if (children.isEmpty) {
+        return query.where('studentId', isEqualTo: 'NO_CHILD');
+      }
+
+      if (children.length == 1) {
+        return query.where('studentId', isEqualTo: children.first);
+      }
+
+      return query.where('studentId', whereIn: children);
+    }
+
+    return query.where('studentId', isEqualTo: 'NO_ACCESS');
+  }
 
   int _toInt(dynamic value) {
     if (value == null) return 0;
@@ -48,14 +175,62 @@ class PerformanceChartScreen extends StatelessWidget {
 
       if (avg > topScore) {
         topScore = avg;
-        topName =
-            data['studentName']?.toString() ??
+        topName = data['studentName']?.toString() ??
             data['name']?.toString() ??
             'Unknown';
       }
     }
 
     return topName;
+  }
+
+  List<QueryDocumentSnapshot> _sortedDocs(List<QueryDocumentSnapshot> docs) {
+    final sorted = docs.toList();
+
+    sorted.sort((a, b) {
+      final aData = a.data() as Map<String, dynamic>;
+      final bData = b.data() as Map<String, dynamic>;
+
+      final aTime = aData['createdAt'];
+      final bTime = bData['createdAt'];
+
+      if (aTime is Timestamp && bTime is Timestamp) {
+        return bTime.compareTo(aTime);
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }
+
+  List<QueryDocumentSnapshot> _topFivePlayers(List<QueryDocumentSnapshot> docs) {
+    final sorted = docs.toList();
+
+    sorted.sort((a, b) {
+      final aData = a.data() as Map<String, dynamic>;
+      final bData = b.data() as Map<String, dynamic>;
+
+      final aAvg = (
+            _toInt(aData['batting']) +
+            _toInt(aData['bowling']) +
+            _toInt(aData['fielding']) +
+            _toInt(aData['fitness'])
+          ) /
+          4;
+
+      final bAvg = (
+            _toInt(bData['batting']) +
+            _toInt(bData['bowling']) +
+            _toInt(bData['fielding']) +
+            _toInt(bData['fitness'])
+          ) /
+          4;
+
+      return bAvg.compareTo(aAvg);
+    });
+
+    return sorted.take(5).toList();
   }
 
   @override
@@ -67,81 +242,96 @@ class PerformanceChartScreen extends StatelessWidget {
         backgroundColor: maroon,
         foregroundColor: Colors.white,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('performance_reports')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
+      body: !userLoaded
+          ? const Center(child: CircularProgressIndicator())
+          : role == 'Coach' && assignedBatches.isEmpty
+              ? const Center(
+                  child: Text("No batch assigned to this coach"),
+                )
+              : StreamBuilder<QuerySnapshot>(
+                  stream: _performanceQuery().snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Text(
+                            "Error: ${snapshot.error}",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      );
+                    }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-          final docs = snapshot.data?.docs ?? [];
+                    final docs = _sortedDocs(snapshot.data?.docs ?? []);
 
-          final battingAvg = _average(docs, 'batting');
-          final bowlingAvg = _average(docs, 'bowling');
-          final fieldingAvg = _average(docs, 'fielding');
-          final fitnessAvg = _average(docs, 'fitness');
-          final topPlayer = _topPerformer(docs);
+                    final battingAvg = _average(docs, 'batting');
+                    final bowlingAvg = _average(docs, 'bowling');
+                    final fieldingAvg = _average(docs, 'fielding');
+                    final fitnessAvg = _average(docs, 'fitness');
+                    final topPlayer = _topPerformer(docs);
+                    final topDocs = _topFivePlayers(docs);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _heroCard(
-                  totalReports: docs.length,
-                  topPlayer: topPlayer,
-                ),
-                const SizedBox(height: 16),
-                _summaryGrid(
-                  battingAvg,
-                  bowlingAvg,
-                  fieldingAvg,
-                  fitnessAvg,
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("Skill Average Chart"),
-                _barChart(
-                  battingAvg,
-                  bowlingAvg,
-                  fieldingAvg,
-                  fitnessAvg,
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("Top Performers"),
-                if (docs.isEmpty)
-                  _emptyCard()
-                else
-                  ...docs.take(5).map((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    final name =
-                        data['studentName']?.toString() ??
-                        data['name']?.toString() ??
-                        'Unknown';
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _heroCard(
+                            totalReports: docs.length,
+                            topPlayer: topPlayer,
+                          ),
+                          const SizedBox(height: 16),
+                          _summaryGrid(
+                            battingAvg,
+                            bowlingAvg,
+                            fieldingAvg,
+                            fitnessAvg,
+                          ),
+                          const SizedBox(height: 18),
+                          _sectionTitle("Skill Average Chart"),
+                          _barChart(
+                            battingAvg,
+                            bowlingAvg,
+                            fieldingAvg,
+                            fitnessAvg,
+                          ),
+                          const SizedBox(height: 18),
+                          _sectionTitle("Top Performers"),
+                          if (docs.isEmpty)
+                            _emptyCard()
+                          else
+                            ...topDocs.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final name = data['studentName']?.toString() ??
+                                  data['name']?.toString() ??
+                                  'Unknown';
 
-                    final batting = _toInt(data['batting']);
-                    final bowling = _toInt(data['bowling']);
-                    final fielding = _toInt(data['fielding']);
-                    final fitness = _toInt(data['fitness']);
-                    final avg =
-                        ((batting + bowling + fielding + fitness) / 4).round();
+                              final batting = _toInt(data['batting']);
+                              final bowling = _toInt(data['bowling']);
+                              final fielding = _toInt(data['fielding']);
+                              final fitness = _toInt(data['fitness']);
 
-                    return _topPlayerTile(
-                      name: name,
-                      avg: avg,
-                      batch: data['batch']?.toString() ?? '',
+                              final avg =
+                                  ((batting + bowling + fielding + fitness) /
+                                          4)
+                                      .round();
+
+                              return _topPlayerTile(
+                                name: name,
+                                avg: avg,
+                                batch: data['batch']?.toString() ?? '',
+                              );
+                            }),
+                        ],
+                      ),
                     );
-                  }),
-              ],
-            ),
-          );
-        },
-      ),
+                  },
+                ),
     );
   }
 
@@ -220,10 +410,30 @@ class PerformanceChartScreen extends StatelessWidget {
       mainAxisSpacing: 10,
       childAspectRatio: 1.35,
       children: [
-        _statCard("Batting Avg", batting.round().toString(), Icons.sports_cricket, Colors.green),
-        _statCard("Bowling Avg", bowling.round().toString(), Icons.sports_baseball, Colors.blue),
-        _statCard("Fielding Avg", fielding.round().toString(), Icons.sports_handball, Colors.orange),
-        _statCard("Fitness Avg", fitness.round().toString(), Icons.fitness_center, Colors.purple),
+        _statCard(
+          "Batting Avg",
+          batting.round().toString(),
+          Icons.sports_cricket,
+          Colors.green,
+        ),
+        _statCard(
+          "Bowling Avg",
+          bowling.round().toString(),
+          Icons.sports_baseball,
+          Colors.blue,
+        ),
+        _statCard(
+          "Fielding Avg",
+          fielding.round().toString(),
+          Icons.sports_handball,
+          Colors.orange,
+        ),
+        _statCard(
+          "Fitness Avg",
+          fitness.round().toString(),
+          Icons.fitness_center,
+          Colors.purple,
+        ),
       ],
     );
   }
@@ -361,7 +571,10 @@ class PerformanceChartScreen extends StatelessWidget {
             style: TextStyle(color: gold, fontWeight: FontWeight.bold),
           ),
         ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(batch.isEmpty ? "No batch" : batch),
         trailing: Text(
           "$avg%",
