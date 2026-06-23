@@ -32,6 +32,77 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
   final Color bg = const Color(0xFFFAFAFA);
   final Color border = const Color(0xFFE2E8F0);
 
+  static const List<String> academyBatches = [
+    "Monday: 6:00 AM – 8:00 AM",
+    "Monday: 4:00 PM – 6:00 PM",
+    "Tuesday: 6:00 AM – 8:00 AM",
+    "Tuesday: 4:00 PM – 6:00 PM",
+    "Wednesday: 6:00 AM – 8:00 AM",
+    "Wednesday: 4:00 PM – 6:00 PM",
+    "Thursday: 6:00 AM – 8:00 AM",
+    "Thursday: 4:00 PM – 6:00 PM",
+    "Friday: 6:00 AM – 8:00 AM",
+    "Friday: 6:00 PM – 8:00 PM",
+    "Saturday: 7:00 AM – 9:00 AM",
+    "Saturday: 4:00 PM – 6:00 PM",
+    "Sunday: 7:00 AM – 9:00 AM",
+    "Sunday: 4:00 PM – 6:00 PM",
+  ];
+
+  String _cleanEmail(String value) => value.trim().toLowerCase();
+
+  List<String> _assignedBatches(Map<String, dynamic> data) {
+    final raw = data['assignedBatches'];
+
+    if (raw is List && raw.isNotEmpty) {
+      return raw
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+
+    final oldBatch = data['batch']?.toString().trim() ?? widget.batch.trim();
+    if (oldBatch.isNotEmpty && oldBatch != 'No Batch Assigned') {
+      return [oldBatch];
+    }
+
+    return [];
+  }
+
+  String _batchesText(List<String> batches) {
+    if (batches.isEmpty) return "No Batch Assigned";
+    return batches.join(', ');
+  }
+
+  Future<void> _syncCoachUserByEmail({
+    required String email,
+    required Map<String, dynamic> data,
+  }) async {
+    final emailLower = _cleanEmail(email);
+    if (emailLower.isEmpty) return;
+
+    QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('emailLower', isEqualTo: emailLower)
+        .limit(1)
+        .get();
+
+    if (userSnapshot.docs.isEmpty) {
+      userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+    }
+
+    if (userSnapshot.docs.isEmpty) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userSnapshot.docs.first.id)
+        .set(data, SetOptions(merge: true));
+  }
+
   Future<void> _deleteCoach() async {
     await FirebaseFirestore.instance
         .collection('coaches')
@@ -47,30 +118,56 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
 
   Future<void> _updateCoach({
     required String name,
+    required String email,
     required String role,
     required String phone,
-    required String batch,
+    required List<String> assignedBatches,
     required String status,
     required String experience,
     required String specialization,
   }) async {
-    await FirebaseFirestore.instance
-        .collection('coaches')
-        .doc(widget.coachId)
-        .update({
+    final emailLower = _cleanEmail(email);
+
+    final updateData = {
       'name': name.trim(),
+      'email': email.trim(),
+      'emailLower': emailLower,
       'role': role.trim(),
       'phone': phone.trim(),
-      'batch': batch.trim(),
+      'assignedBatches': assignedBatches,
+      'batch': assignedBatches.isEmpty ? '' : assignedBatches.first,
+      'batchText': assignedBatches.join(', '),
       'status': status.trim(),
       'experience': experience.trim(),
       'specialization': specialization.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+
+    await FirebaseFirestore.instance
+        .collection('coaches')
+        .doc(widget.coachId)
+        .set(updateData, SetOptions(merge: true));
+
+    await _syncCoachUserByEmail(
+      email: email,
+      data: {
+        'name': name.trim(),
+        'email': email.trim(),
+        'emailLower': emailLower,
+        'role': 'Coach',
+        'phone': phone.trim(),
+        'assignedBatches': assignedBatches,
+        'batch': assignedBatches.isEmpty ? '' : assignedBatches.first,
+        'batchText': assignedBatches.join(', '),
+        'status': status.trim(),
+        'specialization': specialization.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+    );
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Coach updated successfully")),
+      const SnackBar(content: Text("Coach updated and batch assigned")),
     );
     Navigator.pop(context);
   }
@@ -106,14 +203,14 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     final nameController = TextEditingController(
       text: data['name']?.toString() ?? widget.name,
     );
+    final emailController = TextEditingController(
+      text: data['email']?.toString() ?? '',
+    );
     final roleController = TextEditingController(
       text: data['role']?.toString() ?? widget.role,
     );
     final phoneController = TextEditingController(
       text: data['phone']?.toString() ?? widget.phone,
-    );
-    final batchController = TextEditingController(
-      text: data['batch']?.toString() ?? widget.batch,
     );
     final statusController = TextEditingController(
       text: data['status']?.toString() ?? widget.status,
@@ -121,74 +218,169 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     final experienceController = TextEditingController(
       text: data['experience']?.toString() ?? '5 Years',
     );
-    final specializationController = TextEditingController(
-      text: data['specialization']?.toString() ?? 'Batting Coach',
-    );
+
+    String selectedSpecialization =
+        data['specialization']?.toString() ?? 'Batting Coach';
+    final selectedBatches = _assignedBatches(data).toSet();
+
+    final specializations = [
+      "Batting Coach",
+      "Bowling Coach",
+      "Fielding Coach",
+      "Fitness Coach",
+      "Head Coach",
+      "Assistant Coach",
+    ];
+
+    final statusOptions = ["Active", "Inactive"];
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Edit Coach"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              _editField("Coach Name", nameController),
-              _editField("Role", roleController),
-              _editField(
-                "Phone Number",
-                phoneController,
-                keyboardType: TextInputType.phone,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text("Edit Coach"),
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _editField("Coach Name", nameController),
+                  _editField(
+                    "Coach Email",
+                    emailController,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  _editField("Role", roleController),
+                  _editField(
+                    "Phone Number",
+                    phoneController,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  _editField("Experience", experienceController),
+                  DropdownButtonFormField<String>(
+                    value: selectedSpecialization,
+                    decoration: const InputDecoration(
+                      labelText: "Specialization",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: specializations.map((item) {
+                      return DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(item),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => selectedSpecialization = value);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: statusOptions.contains(statusController.text)
+                        ? statusController.text
+                        : "Active",
+                    decoration: const InputDecoration(
+                      labelText: "Status",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: statusOptions.map((item) {
+                      return DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(item),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => statusController.text = value);
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Assigned Batches",
+                      style: TextStyle(
+                        color: maroon,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: academyBatches.map((batch) {
+                      final selected = selectedBatches.contains(batch);
+
+                      return FilterChip(
+                        label: Text(
+                          batch,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: selected ? gold : Colors.black87,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        selected: selected,
+                        selectedColor: maroon,
+                        checkmarkColor: gold,
+                        onSelected: (value) {
+                          setDialogState(() {
+                            if (value) {
+                              selectedBatches.add(batch);
+                            } else {
+                              selectedBatches.remove(batch);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
-              _editField("Assigned Batch", batchController),
-              _editField("Experience", experienceController),
-              _editField("Specialization", specializationController),
-              _editField("Status", statusController),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              nameController.dispose();
-              roleController.dispose();
-              phoneController.dispose();
-              batchController.dispose();
-              statusController.dispose();
-              experienceController.dispose();
-              specializationController.dispose();
-              Navigator.pop(context);
-            },
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
-              foregroundColor: gold,
             ),
-            onPressed: () async {
-              await _updateCoach(
-                name: nameController.text,
-                role: roleController.text,
-                phone: phoneController.text,
-                batch: batchController.text,
-                status: statusController.text,
-                experience: experienceController.text,
-                specialization: specializationController.text,
-              );
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: maroon,
+                  foregroundColor: gold,
+                ),
+                onPressed: () async {
+                  final name = nameController.text.trim();
+                  final email = emailController.text.trim();
+                  final phone = phoneController.text.trim();
+                  final batches = selectedBatches.toList();
 
-              nameController.dispose();
-              roleController.dispose();
-              phoneController.dispose();
-              batchController.dispose();
-              statusController.dispose();
-              experienceController.dispose();
-              specializationController.dispose();
+                  if (name.isEmpty || email.isEmpty || phone.isEmpty || batches.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please fill name, email, phone and batches"),
+                      ),
+                    );
+                    return;
+                  }
 
-              if (mounted) Navigator.pop(context);
-            },
-            child: const Text("Update"),
-          ),
-        ],
+                  await _updateCoach(
+                    name: name,
+                    email: email,
+                    role: roleController.text,
+                    phone: phone,
+                    assignedBatches: batches,
+                    status: statusController.text,
+                    experience: experienceController.text,
+                    specialization: selectedSpecialization,
+                  );
+
+                  if (mounted) Navigator.pop(context);
+                },
+                child: const Text("Update"),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -212,11 +404,11 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
         final name = _text(data, 'name', widget.name);
         final role = _text(data, 'role', widget.role);
         final phone = _text(data, 'phone', widget.phone);
-        final batch = _text(data, 'batch', widget.batch);
         final status = _text(data, 'status', widget.status);
         final experience = _text(data, 'experience', '5 Years');
-        final specialization =
-            _text(data, 'specialization', 'Batting Coach');
+        final specialization = _text(data, 'specialization', 'Batting Coach');
+        final batches = _assignedBatches(data);
+        final batchText = _batchesText(batches);
 
         final initial = name.isNotEmpty ? name[0].toUpperCase() : "?";
         final isActive = status.toLowerCase() == "active";
@@ -229,7 +421,6 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                 _topHeader(context),
                 _profileHero(initial, name, role, status),
                 const SizedBox(height: 18),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: GridView.count(
@@ -240,34 +431,31 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     mainAxisSpacing: 10,
                     childAspectRatio: 1.25,
                     children: [
-                      _statCard(Icons.groups, "BATCH", batch, "Assigned", Colors.blue),
+                      _statCard(Icons.groups, "BATCHES", batches.length.toString(), "Assigned", Colors.blue),
                       _statCard(Icons.verified, "STATUS", status, isActive ? "Working" : "Inactive", Colors.green),
                       _statCard(Icons.work_history, "EXPERIENCE", experience, "Coaching", Colors.orange),
                       _statCard(Icons.sports_cricket, "SPECIALITY", specialization, "Skill Area", Colors.purple),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _infoCard(
                     title: "COACH INFORMATION",
                     children: [
                       _infoRow("Coach Name", name),
+                      _infoRow("Email", _text(data, 'email', 'No Email')),
                       _infoRow("Role", role),
                       _infoRow("Phone Number", phone),
-                      _infoRow("Assigned Batch", batch),
+                      _infoRow("Assigned Batches", batchText),
                       _infoRow("Experience", experience),
                       _infoRow("Specialization", specialization),
                       _infoRow("Status", status),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: _infoCard(
@@ -311,36 +499,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 18),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBF2),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFFDE68A)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: gold),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text(
-                            "Coach details are managed by Admin. Assigned batch is used for attendance and student monitoring.",
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
                 const SizedBox(height: 20),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -379,7 +538,6 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 30),
               ],
             ),
@@ -575,9 +733,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     required List<Widget> children,
   }) {
     return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -611,6 +767,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
             child: Text(
               value,
               textAlign: TextAlign.right,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
