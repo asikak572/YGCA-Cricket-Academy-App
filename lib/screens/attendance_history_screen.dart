@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 class AttendanceHistoryScreen extends StatefulWidget {
   final List<String> allowedStudentIds;
 
@@ -16,11 +18,10 @@ class AttendanceHistoryScreen extends StatefulWidget {
 }
 
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   bool isLoading = true;
 
@@ -80,9 +81,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     if (user == null) {
       if (!mounted) return;
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
       return;
     }
 
@@ -94,9 +93,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     if (!userDoc.exists) {
       if (!mounted) return;
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
       return;
     }
 
@@ -152,9 +149,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     }
 
     if (role == 'Coach') {
-      if (assignedBatches.isEmpty) {
-        return [];
-      }
+      if (assignedBatches.isEmpty) return [];
 
       final allStudents = <Map<String, dynamic>>[];
 
@@ -180,7 +175,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             .doc(childId)
             .get();
 
-        if (doc.exists) {
+        if (doc.exists && doc.data() != null) {
           allStudents.add({
             'studentId': doc.id,
             ...doc.data()!,
@@ -215,7 +210,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       final doc =
           await FirebaseFirestore.instance.collection('students').doc(uid).get();
 
-      if (doc.exists) {
+      if (doc.exists && doc.data() != null) {
         return [
           {
             'studentId': doc.id,
@@ -287,13 +282,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   DateTime? _parseAttendanceDate(dynamic value) {
     if (value == null) return null;
 
-    if (value is Timestamp) {
-      return value.toDate();
-    }
-
-    if (value is DateTime) {
-      return value;
-    }
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
 
     final raw = value.toString().trim();
     if (raw.isEmpty) return null;
@@ -311,9 +301,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   String _formatDate(dynamic value) {
     final date = _parseAttendanceDate(value);
-    if (date == null) {
-      return _text(value).isEmpty ? "No Date" : _text(value);
-    }
+    if (date == null) return _text(value).isEmpty ? "No Date" : _text(value);
 
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
   }
@@ -346,204 +334,262 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     return sorted;
   }
 
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        backgroundColor: bg,
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: students.isEmpty
-          ? Column(
-              children: [
-                _topHeader(context),
-                Expanded(child: _noStudentView()),
-              ],
-            )
-          : Column(
-              children: [
-                _topHeader(context),
-                if (role == 'Admin' || role == 'Coach' || role == 'Parent')
-                  _studentDropdown(),
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: _attendanceQuery().snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              "Error: ${snapshot.error}",
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        );
-                      }
+        if (isLoading) {
+          return Scaffold(
+            backgroundColor: _bg(isDark),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
 
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: students.isEmpty
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      Expanded(child: _noStudentView(isDark)),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      if (role == 'Admin' || role == 'Coach' || role == 'Parent')
+                        _studentDropdown(isDark),
+                      Expanded(
+                        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                          stream: _attendanceQuery().snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError) {
+                              return Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Text(
+                                    "Error: ${snapshot.error}",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _primaryText(isDark),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
 
-                      final records = _sortRecords(snapshot.data?.docs ?? []);
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
 
-                      int present = 0;
-                      int absent = 0;
-                      int leave = 0;
+                            final records = _sortRecords(snapshot.data?.docs ?? []);
 
-                      for (final doc in records) {
-                        final data = doc.data();
-                        final status = _text(data['status']);
+                            int present = 0;
+                            int absent = 0;
+                            int leave = 0;
 
-                        if (_isPresent(status)) {
-                          present++;
-                        } else if (_isLeave(status)) {
-                          leave++;
-                        } else {
-                          absent++;
-                        }
-                      }
+                            for (final doc in records) {
+                              final data = doc.data();
+                              final status = _text(data['status']);
 
-                      final total = records.length;
-                      final percentage =
-                          total == 0 ? 0 : ((present / total) * 100).round();
+                              if (_isPresent(status)) {
+                                present++;
+                              } else if (_isLeave(status)) {
+                                leave++;
+                              } else {
+                                absent++;
+                              }
+                            }
 
-                      return SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            _heroBanner(
-                              role: role,
-                              total: total,
-                              present: present,
-                              absent: absent,
-                              leave: leave,
-                              percentage: percentage,
-                            ),
-                            const SizedBox(height: 18),
-                            _selectedStudentInfo(),
-                            const SizedBox(height: 18),
-                            _sectionTitle("ATTENDANCE SUMMARY"),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: GridView.count(
-                                crossAxisCount: 2,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
-                                childAspectRatio: 1.15,
+                            final total = records.length;
+                            final percentage = total == 0
+                                ? 0
+                                : ((present / total) * 100).round();
+
+                            return SingleChildScrollView(
+                              child: Column(
                                 children: [
-                                  _summaryCard(
-                                    Icons.calendar_month,
-                                    "TOTAL DAYS",
-                                    total.toString(),
-                                    Colors.blue,
+                                  _heroBanner(
+                                    isDark: isDark,
+                                    role: role,
+                                    total: total,
+                                    present: present,
+                                    absent: absent,
+                                    leave: leave,
+                                    percentage: percentage,
                                   ),
-                                  _summaryCard(
-                                    Icons.check_circle,
-                                    "PRESENT",
-                                    present.toString(),
-                                    Colors.green,
+                                  const SizedBox(height: 18),
+                                  _selectedStudentInfo(isDark),
+                                  const SizedBox(height: 18),
+                                  _sectionTitle("ATTENDANCE SUMMARY", isDark),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: GridView.count(
+                                      crossAxisCount: 2,
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 1.12,
+                                      children: [
+                                        _summaryCard(
+                                          isDark: isDark,
+                                          icon: Icons.calendar_month_rounded,
+                                          title: "TOTAL DAYS",
+                                          value: total.toString(),
+                                          color: Colors.blueAccent,
+                                        ),
+                                        _summaryCard(
+                                          isDark: isDark,
+                                          icon: Icons.check_circle_rounded,
+                                          title: "PRESENT",
+                                          value: present.toString(),
+                                          color: Colors.green,
+                                        ),
+                                        _summaryCard(
+                                          isDark: isDark,
+                                          icon: Icons.cancel_rounded,
+                                          title: "ABSENT",
+                                          value: absent.toString(),
+                                          color: Colors.redAccent,
+                                        ),
+                                        _summaryCard(
+                                          isDark: isDark,
+                                          icon: Icons.percent_rounded,
+                                          title: "ATTENDANCE",
+                                          value: "$percentage%",
+                                          color: Colors.orange,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  _summaryCard(
-                                    Icons.cancel,
-                                    "ABSENT",
-                                    absent.toString(),
-                                    Colors.red,
+                                  const SizedBox(height: 18),
+                                  _sectionTitle("ATTENDANCE CALENDAR", isDark),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: _calendarGraph(records, isDark),
                                   ),
-                                  _summaryCard(
-                                    Icons.percent,
-                                    "ATTENDANCE",
-                                    "$percentage%",
-                                    Colors.orange,
+                                  const SizedBox(height: 18),
+                                  _sectionTitle("RECENT RECORDS", isDark),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: records.isEmpty
+                                        ? _emptyCard(isDark)
+                                        : Column(
+                                            children: records.map((doc) {
+                                              final data = doc.data();
+
+                                              return _historyCard(
+                                                isDark: isDark,
+                                                studentName: _text(data[
+                                                            'studentName'])
+                                                        .isNotEmpty
+                                                    ? _text(data['studentName'])
+                                                    : _text(selectedStudent?[
+                                                                'name'])
+                                                            .isNotEmpty
+                                                        ? _text(selectedStudent?[
+                                                            'name'])
+                                                        : 'Unknown Student',
+                                                batch: _text(data['batch'])
+                                                        .isNotEmpty
+                                                    ? _text(data['batch'])
+                                                    : _text(selectedStudent?[
+                                                                'batch'])
+                                                            .isNotEmpty
+                                                        ? _text(selectedStudent?[
+                                                            'batch'])
+                                                        : 'Unknown Batch',
+                                                date: _formatDate(data['date']),
+                                                status:
+                                                    _text(data['status']).isEmpty
+                                                        ? 'Absent'
+                                                        : _text(data['status']),
+                                              );
+                                            }).toList(),
+                                          ),
                                   ),
+                                  const SizedBox(height: 26),
                                 ],
                               ),
-                            ),
-                            const SizedBox(height: 18),
-                            _sectionTitle("ATTENDANCE CALENDAR"),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: _calendarGraph(records),
-                            ),
-                            const SizedBox(height: 18),
-                            _sectionTitle("RECENT RECORDS"),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: records.isEmpty
-                                  ? _emptyCard()
-                                  : Column(
-                                      children: records.map((doc) {
-                                        final data = doc.data();
-
-                                        return _historyCard(
-                                          studentName: _text(
-                                                  data['studentName'])
-                                              .isNotEmpty
-                                              ? _text(data['studentName'])
-                                              : _text(selectedStudent?['name'])
-                                                      .isNotEmpty
-                                                  ? _text(
-                                                      selectedStudent?['name'])
-                                                  : 'Unknown Student',
-                                          batch: _text(data['batch']).isNotEmpty
-                                              ? _text(data['batch'])
-                                              : _text(selectedStudent?['batch'])
-                                                      .isNotEmpty
-                                                  ? _text(
-                                                      selectedStudent?['batch'])
-                                                  : 'Unknown Batch',
-                                          date: _formatDate(data['date']),
-                                          status:
-                                              _text(data['status']).isEmpty
-                                                  ? 'Absent'
-                                                  : _text(data['status']),
-                                        );
-                                      }).toList(),
-                                    ),
-                            ),
-                            const SizedBox(height: 26),
-                          ],
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _noStudentView() {
+  Widget _noStudentView(bool isDark) {
     return Center(
       child: Container(
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: border),
-          borderRadius: BorderRadius.circular(16),
+          color: _card(isDark),
+          border: Border.all(color: _border(isDark)),
+          borderRadius: BorderRadius.circular(18),
         ),
-        child: const Column(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.person_off, size: 42, color: Colors.grey),
-            SizedBox(height: 10),
+            Icon(
+              Icons.person_off_rounded,
+              size: 42,
+              color: _secondaryText(isDark),
+            ),
+            const SizedBox(height: 10),
             Text(
               "No students found",
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(
               "No approved or assigned students are available for this account.",
               textAlign: TextAlign.center,
+              style: TextStyle(color: _secondaryText(isDark)),
             ),
           ],
         ),
@@ -551,14 +597,14 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _studentDropdown() {
+  Widget _studentDropdown(bool isDark) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(14),
+        color: _card(isDark),
+        border: Border.all(color: _border(isDark)),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -566,8 +612,16 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               ? null
               : _text(selectedStudent?['studentId']),
           isExpanded: true,
-          icon: Icon(Icons.keyboard_arrow_down, color: maroon),
-          hint: const Text("Select Student"),
+          dropdownColor: _card(isDark),
+          icon: Icon(Icons.keyboard_arrow_down, color: isDark ? gold : maroon),
+          hint: Text(
+            "Select Student",
+            style: TextStyle(color: _secondaryText(isDark)),
+          ),
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w700,
+          ),
           items: students.map((student) {
             final id = _text(student['studentId']);
             final studentName = _text(student['name']).isEmpty
@@ -578,9 +632,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             return DropdownMenuItem<String>(
               value: id,
               child: Text(
-                studentBatch.isEmpty
-                    ? studentName
-                    : "$studentName • $studentBatch",
+                studentBatch.isEmpty ? studentName : "$studentName • $studentBatch",
                 overflow: TextOverflow.ellipsis,
               ),
             );
@@ -602,7 +654,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _selectedStudentInfo() {
+  Widget _selectedStudentInfo(bool isDark) {
     final studentName = _text(selectedStudent?['name']).isEmpty
         ? "Student"
         : _text(selectedStudent?['name']);
@@ -620,9 +672,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: border),
-          borderRadius: BorderRadius.circular(16),
+          color: _card(isDark),
+          border: Border.all(color: _border(isDark)),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           children: [
@@ -631,7 +683,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               backgroundColor: maroon,
               child: Text(
                 studentName.isNotEmpty ? studentName[0].toUpperCase() : "?",
-                style: TextStyle(color: gold, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: gold,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -643,7 +698,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     studentName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
+                      color: _primaryText(isDark),
                       fontWeight: FontWeight.w900,
                       fontSize: 15,
                     ),
@@ -653,8 +709,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     "$studentBatch • Roll No: $studentRollNo",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
                       fontSize: 12,
                     ),
                   ),
@@ -667,41 +723,96 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 58,
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
           const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "ATTENDANCE DASHBOARD",
-              style: TextStyle(
-                color: gold,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "ATTENDANCE",
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "History & Calendar Dashboard",
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.history, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+              return _circleButton(
+                isDark: isDark,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: isDark ? Colors.white : maroon, size: 21),
+      ),
+    );
+  }
+
   Widget _heroBanner({
+    required bool isDark,
     required String role,
     required int total,
     required int present,
@@ -710,37 +821,55 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     required int percentage,
   }) {
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 225,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/home_hero_bg.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/home_hero_bg.png', fit: BoxFit.cover),
           ),
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.70),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Icon(
+              Icons.fact_check_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -748,55 +877,62 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.fact_check, color: maroon, size: 42),
+                  child: Icon(Icons.fact_check_rounded, color: maroon, size: 42),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        role.toUpperCase(),
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        "ATTENDANCE",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 29,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "DASHBOARD",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 25,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _heroChip("Total: $total"),
-                          _heroChip("Present: $present"),
-                          _heroChip("Absent: $absent"),
-                          _heroChip("Leave: $leave"),
-                          _heroChip("Attendance: $percentage%"),
+                          Text(
+                            role.toUpperCase(),
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "ATTENDANCE",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "DASHBOARD",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Total: $total"),
+                              _heroChip("Present: $present"),
+                              _heroChip("Absent: $absent"),
+                              _heroChip("Leave: $leave"),
+                              _heroChip("Attendance: $percentage%"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -809,56 +945,45 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 150),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Expanded(
-            child: Container(
-              height: 2,
-              decoration: BoxDecoration(
-                color: gold,
-                borderRadius: BorderRadius.circular(10),
-              ),
+          Text(
+            title,
+            style: TextStyle(
+              color: isDark ? gold : maroon,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              title,
-              style: TextStyle(
-                color: maroon,
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Container(
-              height: 2,
-              decoration: BoxDecoration(
-                color: gold,
-                borderRadius: BorderRadius.circular(10),
-              ),
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
             ),
           ),
         ],
@@ -866,63 +991,75 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _summaryCard(
-    IconData icon,
-    String title,
-    String value,
-    Color color,
-  ) {
+  Widget _summaryCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.045),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF151515), const Color(0xFF1A0808), color.withOpacity(0.16)]
+              : [Colors.white, const Color(0xFFFFFBF2), color.withOpacity(0.08)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 30),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-            ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 130,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _calendarGraph(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> records,
+    bool isDark,
   ) {
     final Map<String, String> statusByDate = {};
 
     for (final doc in records) {
       final data = doc.data();
       final parsedDate = _parseAttendanceDate(data['date']);
-      final status = _text(data['status']).isEmpty
-          ? 'Absent'
-          : _text(data['status']);
+      final status = _text(data['status']).isEmpty ? 'Absent' : _text(data['status']);
 
       if (parsedDate != null) {
         statusByDate[_dateKey(parsedDate)] = status;
@@ -939,8 +1076,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(color: _border(isDark)),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -960,7 +1097,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               } else if (status == "Absent") {
                 color = Colors.red;
               } else {
-                color = Colors.grey.shade300;
+                color = isDark ? Colors.white12 : Colors.grey.shade300;
               }
 
               return Tooltip(
@@ -981,10 +1118,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             spacing: 12,
             runSpacing: 8,
             children: [
-              _legend("Present", Colors.green),
-              _legend("Absent", Colors.red),
-              _legend("Leave", Colors.orange),
-              _legend("No Record", Colors.grey.shade300),
+              _legend("Present", Colors.green, isDark),
+              _legend("Absent", Colors.red, isDark),
+              _legend("Leave", Colors.orange, isDark),
+              _legend("No Record", isDark ? Colors.white12 : Colors.grey.shade300, isDark),
             ],
           ),
         ],
@@ -992,7 +1129,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _legend(String title, Color color) {
+  Widget _legend(String title, Color color, bool isDark) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1007,7 +1144,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         const SizedBox(width: 5),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
+            color: _secondaryText(isDark),
             fontSize: 11,
             fontWeight: FontWeight.bold,
           ),
@@ -1017,6 +1155,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   Widget _historyCard({
+    required bool isDark,
     required String studentName,
     required String batch,
     required String date,
@@ -1027,29 +1166,22 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     if (_isPresent(status)) {
       statusColor = Colors.green;
-      icon = Icons.check_circle;
+      icon = Icons.check_circle_rounded;
     } else if (_isLeave(status)) {
       statusColor = Colors.orange;
-      icon = Icons.event_note;
+      icon = Icons.event_note_rounded;
     } else {
-      statusColor = Colors.red;
-      icon = Icons.cancel;
+      statusColor = Colors.redAccent;
+      icon = Icons.cancel_rounded;
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(color: _border(isDark)),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.045),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -1058,7 +1190,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             backgroundColor: maroon,
             child: Text(
               studentName.isNotEmpty ? studentName[0].toUpperCase() : "?",
-              style: TextStyle(color: gold, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: gold, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 12),
@@ -1070,7 +1202,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   studentName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
@@ -1078,8 +1211,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 const SizedBox(height: 4),
                 Text(
                   "$batch • $date",
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
                     fontSize: 12,
                   ),
                 ),
@@ -1093,6 +1228,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, color: statusColor, size: 14),
                 const SizedBox(width: 4),
@@ -1112,22 +1248,25 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.history, size: 38, color: Colors.grey),
-          SizedBox(height: 10),
+          Icon(Icons.history_rounded, size: 38, color: _secondaryText(isDark)),
+          const SizedBox(height: 10),
           Text(
             "No attendance records found",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
