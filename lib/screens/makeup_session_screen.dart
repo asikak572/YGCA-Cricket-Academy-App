@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 class MakeupSessionScreen extends StatefulWidget {
   const MakeupSessionScreen({super.key});
 
@@ -10,15 +12,16 @@ class MakeupSessionScreen extends StatefulWidget {
 }
 
 class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   bool isLoadingUser = true;
   String uid = '';
+  String email = '';
   String role = '';
+
   List<String> assignedBatches = [];
   List<String> linkedChildrenIds = [];
 
@@ -33,61 +36,133 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
     return value.toString().trim();
   }
 
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  List<String> _listFromDynamic(dynamic value) {
+    final result = <String>[];
+
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) result.add(text);
+      }
+    }
+
+    return result;
+  }
+
   Future<void> _loadCurrentUser() async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
       if (!mounted) return;
-      setState(() {
-        isLoadingUser = false;
-      });
+      setState(() => isLoadingUser = false);
       return;
     }
 
     uid = user.uid;
+    email = _lower(user.email ?? '');
 
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-    if (!mounted) return;
-
-    if (!userDoc.exists) {
-      setState(() {
-        isLoadingUser = false;
-      });
+    if (!userDoc.exists || userDoc.data() == null) {
+      if (!mounted) return;
+      setState(() => isLoadingUser = false);
       return;
     }
 
     final data = userDoc.data() ?? {};
+    final loadedRole = _text(data['role']);
 
-    final batches = <String>[];
-    final rawBatches = data['assignedBatches'];
+    final batches = _listFromDynamic(data['assignedBatches']);
 
-    if (rawBatches is List) {
-      for (final batch in rawBatches) {
-        final value = _text(batch);
-        if (value.isNotEmpty) {
-          batches.add(value);
+    final assignedBatch = _text(data['assignedBatch']);
+    final batch = _text(data['batch']);
+
+    if (assignedBatch.isNotEmpty && !batches.contains(assignedBatch)) {
+      batches.add(assignedBatch);
+    }
+
+    if (batch.isNotEmpty && !batches.contains(batch)) {
+      batches.add(batch);
+    }
+
+    final children = <String>{};
+
+    for (final id in _listFromDynamic(data['linkedChildrenIds'])) {
+      children.add(id);
+    }
+
+    final childId = _text(data['childId']);
+    if (childId.isNotEmpty) children.add(childId);
+
+    final studentId = _text(data['studentId']);
+    if (studentId.isNotEmpty) children.add(studentId);
+
+    final parentEmail = _lower(
+      _text(data['email']).isNotEmpty ? _text(data['email']) : email,
+    );
+
+    if (loadedRole == 'Parent') {
+      if (parentEmail.isNotEmpty) {
+        final byParentEmailLower = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmailLower', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byParentEmailLower.docs) {
+          children.add(doc.id);
         }
+
+        final byParentEmail = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmail', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byParentEmail.docs) {
+          children.add(doc.id);
+        }
+      }
+
+      final byParentUid = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentUid', isEqualTo: uid)
+          .get();
+
+      for (final doc in byParentUid.docs) {
+        children.add(doc.id);
       }
     }
 
-    final childIds = <String>[];
-    final rawChildren = data['linkedChildrenIds'];
-
-    if (rawChildren is List) {
-      for (final childId in rawChildren) {
-        final value = _text(childId);
-        if (value.isNotEmpty) {
-          childIds.add(value);
-        }
-      }
-    }
+    if (!mounted) return;
 
     setState(() {
-      role = _text(data['role']);
+      role = loadedRole;
       assignedBatches = batches;
-      linkedChildrenIds = childIds;
+      linkedChildrenIds = children.toList();
       isLoadingUser = false;
     });
   }
@@ -105,6 +180,10 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
         return collection.where('batch', isEqualTo: '__NO_ASSIGNED_BATCH__');
       }
 
+      if (assignedBatches.length == 1) {
+        return collection.where('batch', isEqualTo: assignedBatches.first);
+      }
+
       return collection.where(
         'batch',
         whereIn: assignedBatches.take(10).toList(),
@@ -112,7 +191,18 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
     }
 
     if (role == 'Parent') {
-      return collection.where('parentUid', isEqualTo: uid);
+      if (linkedChildrenIds.isEmpty) {
+        return collection.where('parentUid', isEqualTo: uid);
+      }
+
+      if (linkedChildrenIds.length == 1) {
+        return collection.where('studentId', isEqualTo: linkedChildrenIds.first);
+      }
+
+      return collection.where(
+        'studentId',
+        whereIn: linkedChildrenIds.take(10).toList(),
+      );
     }
 
     if (role == 'Student') {
@@ -128,11 +218,8 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
     final sorted = [...sessions];
 
     sorted.sort((a, b) {
-      final aData = a.data();
-      final bData = b.data();
-
-      final aTime = aData['createdAt'];
-      final bTime = bData['createdAt'];
+      final aTime = a.data()['createdAt'];
+      final bTime = b.data()['createdAt'];
 
       if (aTime is Timestamp && bTime is Timestamp) {
         return bTime.compareTo(aTime);
@@ -143,29 +230,33 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
 
     return sorted;
   }
-Future<void> _scheduleMakeup(
-  BuildContext context,
-  String docId,
-) async {
-  final scheduled = await Navigator.push<bool>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ScheduleMakeupSessionScreen(
-        docId: docId,
-        uid: uid,
+
+  Future<void> _scheduleMakeup(
+    BuildContext context,
+    String docId,
+  ) async {
+    final scheduled = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ScheduleMakeupSessionScreen(
+          docId: docId,
+          uid: uid,
+        ),
       ),
-    ),
-  );
-
-  if (!mounted) return;
-
-  if (scheduled == true) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Makeup session scheduled")),
     );
+
+    if (!mounted) return;
+
+    if (scheduled == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Makeup session scheduled"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
-}
-  
+
   Future<void> _markCompleted(BuildContext context, String docId) async {
     try {
       await FirebaseFirestore.instance
@@ -179,13 +270,19 @@ Future<void> _scheduleMakeup(
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Makeup session marked as completed")),
+          const SnackBar(
+            content: Text("Makeup session marked as completed"),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Update failed: $e")),
+          SnackBar(
+            content: Text("Update failed: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -200,28 +297,47 @@ Future<void> _scheduleMakeup(
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Makeup session deleted")),
+          const SnackBar(
+            content: Text("Makeup session deleted"),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Delete failed: $e")),
+          SnackBar(
+            content: Text("Delete failed: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
 
-  void _confirmDelete(BuildContext context, String docId) {
+  void _confirmDelete(BuildContext context, String docId, bool isDark) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Delete Makeup Session"),
-        content: const Text("Are you sure you want to delete this session?"),
+        backgroundColor: isDark ? const Color(0xFF111111) : Colors.white,
+        title: Text(
+          "Delete Makeup Session",
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
+          "Are you sure you want to delete this session?",
+          style: TextStyle(color: _secondaryText(isDark)),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: isDark ? Colors.white70 : maroon),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -239,28 +355,18 @@ Future<void> _scheduleMakeup(
     );
   }
 
-  Widget _input(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ).copyWith(labelText: label),
-      ),
-    );
-  }
-
   Color _statusColor(String status) {
-    if (status == "Completed") return Colors.blue;
+    if (status == "Completed") return Colors.blueAccent;
     if (status == "Pending") return Colors.orange;
-    return Colors.green;
+    if (status == "Scheduled") return Colors.green;
+    return Colors.purpleAccent;
   }
 
   IconData _statusIcon(String status) {
-    if (status == "Completed") return Icons.check_circle;
-    if (status == "Pending") return Icons.pending_actions;
-    return Icons.calendar_month;
+    if (status == "Completed") return Icons.check_circle_rounded;
+    if (status == "Pending") return Icons.pending_actions_rounded;
+    if (status == "Scheduled") return Icons.calendar_month_rounded;
+    return Icons.event_repeat_rounded;
   }
 
   bool get _canManage {
@@ -271,203 +377,245 @@ Future<void> _scheduleMakeup(
     return role == 'Admin';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (isLoadingUser) {
-      return Scaffold(
-        backgroundColor: bg,
-        body: const Center(child: CircularProgressIndicator()),
-      );
+  int _countStatus(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    String status,
+  ) {
+    int count = 0;
+
+    for (final doc in docs) {
+      final current =
+          _text(doc.data()['status']).isEmpty ? 'Pending' : _text(doc.data()['status']);
+
+      if (current == status) count++;
     }
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _makeupQuery().snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return _errorView(context, snapshot.error.toString());
-          }
+    return count;
+  }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-          final sessions = _sortSessions(snapshot.data?.docs ?? []);
-
-          int scheduled = 0;
-          int completed = 0;
-          int pending = 0;
-
-          for (final doc in sessions) {
-            final data = doc.data();
-            final status = data['status']?.toString() ?? 'Pending';
-
-            if (status == "Completed") {
-              completed++;
-            } else if (status == "Pending") {
-              pending++;
-            } else {
-              scheduled++;
-            }
-          }
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _heroBanner(
-                  total: sessions.length,
-                  scheduled: scheduled,
-                  completed: completed,
-                  pending: pending,
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("MAKEUP OVERVIEW"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.25,
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: isLoadingUser
+                ? Column(
                     children: [
-                      _statCard(
-                        Icons.event_repeat,
-                        "TOTAL",
-                        sessions.length.toString(),
-                        "Sessions",
-                        Colors.blue,
-                      ),
-                      _statCard(
-                        Icons.calendar_month,
-                        "SCHEDULED",
-                        scheduled.toString(),
-                        "Planned",
-                        Colors.green,
-                      ),
-                      _statCard(
-                        Icons.pending_actions,
-                        "PENDING",
-                        pending.toString(),
-                        "Waiting",
-                        Colors.orange,
-                      ),
-                      _statCard(
-                        Icons.check_circle,
-                        "COMPLETED",
-                        completed.toString(),
-                        "Done",
-                        Colors.purple,
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _infoBanner(),
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("MAKEUP SESSION LIST"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: sessions.isEmpty
-                      ? _emptyCard()
-                      : Column(
-                          children: sessions.map((doc) {
-                            final data = doc.data();
+                  )
+                : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _makeupQuery().snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return _errorView(
+                          context,
+                          snapshot.error.toString(),
+                          isDark,
+                        );
+                      }
 
-                            final studentName =
-                                _text(data['studentName']).isNotEmpty
-                                    ? _text(data['studentName'])
-                                    : _text(data['name']);
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            const Expanded(
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ],
+                        );
+                      }
 
-                            final batch = _text(data['batch']).isNotEmpty
-                                ? _text(data['batch'])
-                                : _text(data['originalBatch']);
+                      final sessions = _sortSessions(snapshot.data?.docs ?? []);
 
-                            final originalBatch =
-                                _text(data['originalBatch']).isNotEmpty
-                                    ? _text(data['originalBatch'])
-                                    : batch;
+                      final scheduled = _countStatus(sessions, "Scheduled");
+                      final completed = _countStatus(sessions, "Completed");
+                      final pending = _countStatus(sessions, "Pending");
 
-                            final cancelledDate =
-                                _text(data['cancelledDate']).isNotEmpty
-                                    ? _text(data['cancelledDate'])
-                                    : _text(data['leaveDate']);
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            _heroBanner(
+                              isDark: isDark,
+                              total: sessions.length,
+                              scheduled: scheduled,
+                              completed: completed,
+                              pending: pending,
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("MAKEUP OVERVIEW", isDark),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: GridView.count(
+                                crossAxisCount: 2,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.18,
+                                children: [
+                                  _statCard(
+                                    isDark: isDark,
+                                    icon: Icons.event_repeat_rounded,
+                                    title: "TOTAL",
+                                    value: sessions.length.toString(),
+                                    subtitle: "Sessions",
+                                    color: Colors.blueAccent,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    icon: Icons.calendar_month_rounded,
+                                    title: "SCHEDULED",
+                                    value: scheduled.toString(),
+                                    subtitle: "Planned",
+                                    color: Colors.green,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    icon: Icons.pending_actions_rounded,
+                                    title: "PENDING",
+                                    value: pending.toString(),
+                                    subtitle: "Waiting",
+                                    color: Colors.orange,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    icon: Icons.check_circle_rounded,
+                                    title: "COMPLETED",
+                                    value: completed.toString(),
+                                    subtitle: "Done",
+                                    color: Colors.purpleAccent,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: _infoBanner(isDark),
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("MAKEUP SESSION LIST", isDark),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: sessions.isEmpty
+                                  ? _emptyCard(isDark)
+                                  : Column(
+                                      children: sessions.map((doc) {
+                                        final data = doc.data();
 
-                            final cancelledTime =
-                                _text(data['cancelledTime']).isNotEmpty
-                                    ? _text(data['cancelledTime'])
-                                    : _text(data['leaveTime']);
+                                        final studentName =
+                                            _text(data['studentName']).isNotEmpty
+                                                ? _text(data['studentName'])
+                                                : _text(data['name']);
 
-                            final reason = _text(data['reason']);
-                            final makeupDate = _text(data['makeupDate']);
-                            final makeupTime = _text(data['makeupTime']);
-                            final makeupBatch = _text(data['makeupBatch']);
-                            final status = _text(data['status']).isEmpty
-                                ? 'Pending'
-                                : _text(data['status']);
+                                        final batch = _text(data['batch']).isNotEmpty
+                                            ? _text(data['batch'])
+                                            : _text(data['originalBatch']);
 
-                            return _makeupCard(
-                              context: context,
-                              docId: doc.id,
-                              studentName: studentName,
-                              batch: batch,
-                              originalBatch: originalBatch,
-                              cancelledDate: cancelledDate,
-                              cancelledTime: cancelledTime,
-                              reason: reason,
-                              makeupDate: makeupDate,
-                              makeupTime: makeupTime,
-                              makeupBatch: makeupBatch,
-                              status: status,
-                              statusColor: _statusColor(status),
-                              icon: _statusIcon(status),
-                            );
-                          }).toList(),
+                                        final originalBatch =
+                                            _text(data['originalBatch']).isNotEmpty
+                                                ? _text(data['originalBatch'])
+                                                : batch;
+
+                                        final cancelledDate =
+                                            _text(data['cancelledDate']).isNotEmpty
+                                                ? _text(data['cancelledDate'])
+                                                : _text(data['leaveDate']);
+
+                                        final cancelledTime =
+                                            _text(data['cancelledTime']).isNotEmpty
+                                                ? _text(data['cancelledTime'])
+                                                : _text(data['leaveTime']);
+
+                                        final reason = _text(data['reason']);
+                                        final makeupDate = _text(data['makeupDate']);
+                                        final makeupTime = _text(data['makeupTime']);
+                                        final makeupBatch = _text(data['makeupBatch']);
+
+                                        final status = _text(data['status']).isEmpty
+                                            ? 'Pending'
+                                            : _text(data['status']);
+
+                                        return _makeupCard(
+                                          context: context,
+                                          isDark: isDark,
+                                          docId: doc.id,
+                                          studentName: studentName,
+                                          batch: batch,
+                                          originalBatch: originalBatch,
+                                          cancelledDate: cancelledDate,
+                                          cancelledTime: cancelledTime,
+                                          reason: reason,
+                                          makeupDate: makeupDate,
+                                          makeupTime: makeupTime,
+                                          makeupBatch: makeupBatch,
+                                          status: status,
+                                          statusColor: _statusColor(status),
+                                          icon: _statusIcon(status),
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
                         ),
-                ),
-                const SizedBox(height: 30),
-              ],
-            ),
-          );
-        },
-      ),
+                      );
+                    },
+                  ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _errorView(BuildContext context, String error) {
+  Widget _errorView(BuildContext context, String error, bool isDark) {
     return Column(
       children: [
-        _topHeader(context),
+        _topHeader(context, isDark),
         Expanded(
           child: Center(
             child: Container(
               margin: const EdgeInsets.all(18),
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: _card(isDark),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: border),
+                border: Border.all(color: _border(isDark)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.redAccent,
+                    size: 40,
+                  ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     "Unable to load makeup sessions",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: _primaryText(isDark),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     error,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _secondaryText(isDark),
+                    ),
                   ),
                 ],
               ),
@@ -478,53 +626,126 @@ Future<void> _scheduleMakeup(
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
-          Image.asset('assets/images/ygca_logo.jpg', width: 58),
           const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "MAKEUP SESSIONS",
-              style: TextStyle(
-                color: gold,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "MAKEUP SESSIONS",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Schedule & completion center",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.event_repeat, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
   Widget _heroBanner({
+    required bool isDark,
     required int total,
     required int scheduled,
     required int completed,
     required int pending,
   }) {
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 220,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -538,15 +759,30 @@ Future<void> _scheduleMakeup(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -25,
+            bottom: -25,
+            child: Icon(
+              Icons.event_repeat_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -554,54 +790,65 @@ Future<void> _scheduleMakeup(
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.event_repeat, color: maroon, size: 42),
+                  child: Icon(
+                    Icons.event_repeat_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "ACADEMY",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        "MAKEUP",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 31,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "SESSIONS",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 25,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _heroChip("Total: $total"),
-                          _heroChip("Scheduled: $scheduled"),
-                          _heroChip("Pending: $pending"),
-                          _heroChip("Completed: $completed"),
+                          Text(
+                            "ACADEMY",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "MAKEUP",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "SESSIONS",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Total: $total"),
+                              _heroChip("Scheduled: $scheduled"),
+                              _heroChip("Pending: $pending"),
+                              _heroChip("Completed: $completed"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -614,24 +861,27 @@ Future<void> _scheduleMakeup(
 
   Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 160),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -639,90 +889,125 @@ Future<void> _scheduleMakeup(
           Text(
             title,
             style: TextStyle(
-              color: maroon,
-              fontSize: 18,
+              color: isDark ? gold : maroon,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
           const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _statCard(
-    IconData icon,
-    String title,
-    String value,
-    String subtitle,
-    Color color,
-  ) {
+  Widget _statCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color color,
+  }) {
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  const Color(0xFF151515),
+                  const Color(0xFF1A0808),
+                  color.withOpacity(0.16),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFFBF2),
+                  color.withOpacity(0.08),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 130,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                title,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
-          ),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 10,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _infoBanner() {
+  Widget _infoBanner(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF7ED),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFDE68A)),
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? gold.withOpacity(0.45) : gold.withOpacity(0.75),
+        ),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, color: Colors.orange),
-          SizedBox(width: 10),
+          Icon(
+            Icons.info_outline_rounded,
+            color: isDark ? gold : maroon,
+            size: 26,
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Makeup sessions are created from approved leave requests or cancelled sessions. Coaches can schedule and complete makeup sessions for their assigned batches.",
-              style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+              "Makeup sessions are created from approved leave requests. Coaches can schedule and complete sessions for their assigned batches.",
+              style: TextStyle(
+                fontSize: 12,
+                color: _secondaryText(isDark),
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
             ),
           ),
         ],
@@ -732,6 +1017,7 @@ Future<void> _scheduleMakeup(
 
   Widget _makeupCard({
     required BuildContext context,
+    required bool isDark,
     required String docId,
     required String studentName,
     required String batch,
@@ -765,12 +1051,16 @@ Future<void> _scheduleMakeup(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
+            color: isDark
+                ? Colors.black.withOpacity(0.28)
+                : Colors.black.withOpacity(0.045),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -791,7 +1081,8 @@ Future<void> _scheduleMakeup(
                   titleText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
@@ -801,13 +1092,13 @@ Future<void> _scheduleMakeup(
             ],
           ),
           const SizedBox(height: 14),
-          if (studentName.isNotEmpty) _detailRow("Student", studentName),
-          _detailRow("Original Batch", originalBatch),
-          if (makeupBatch.isNotEmpty) _detailRow("Makeup Batch", makeupBatch),
-          _detailRow("Leave / Cancelled Date", cancelledDate),
-          if (cancelledTime.isNotEmpty) _detailRow("Time", cancelledTime),
-          _detailRow("Reason", reason),
-          _detailRow("Makeup Date", makeupText),
+          if (studentName.isNotEmpty) _detailRow(isDark, "Student", studentName),
+          _detailRow(isDark, "Original Batch", originalBatch),
+          if (makeupBatch.isNotEmpty) _detailRow(isDark, "Makeup Batch", makeupBatch),
+          _detailRow(isDark, "Leave / Cancelled Date", cancelledDate),
+          if (cancelledTime.isNotEmpty) _detailRow(isDark, "Time", cancelledTime),
+          _detailRow(isDark, "Reason", reason),
+          _detailRow(isDark, "Makeup Date", makeupText),
           if (_canManage) ...[
             const SizedBox(height: 12),
             Row(
@@ -816,24 +1107,36 @@ Future<void> _scheduleMakeup(
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: maroon,
-                        foregroundColor: gold,
+                        backgroundColor: isDark ? red : maroon,
+                        foregroundColor: isDark ? Colors.white : gold,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       onPressed: () => _scheduleMakeup(context, docId),
-                      icon: const Icon(Icons.calendar_month, size: 16),
-                      label: const Text("Schedule"),
+                      icon: const Icon(Icons.calendar_month_rounded, size: 16),
+                      label: const Text(
+                        "Schedule",
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
                     ),
                   )
                 else if (canComplete)
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Colors.blueAccent,
                         foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       onPressed: () => _markCompleted(context, docId),
-                      icon: const Icon(Icons.check_circle, size: 16),
-                      label: const Text("Complete"),
+                      icon: const Icon(Icons.check_circle_rounded, size: 16),
+                      label: const Text(
+                        "Complete",
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
                     ),
                   )
                 else
@@ -842,15 +1145,18 @@ Future<void> _scheduleMakeup(
                       "Completed",
                       style: TextStyle(
                         color: Colors.green,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
                 if (_canDelete) ...[
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _confirmDelete(context, docId),
+                    icon: const Icon(
+                      Icons.delete_rounded,
+                      color: Colors.redAccent,
+                    ),
+                    onPressed: () => _confirmDelete(context, docId, isDark),
                   ),
                 ],
               ],
@@ -861,22 +1167,22 @@ Future<void> _scheduleMakeup(
     );
   }
 
-  Widget _detailRow(String label, String value) {
+  Widget _detailRow(bool isDark, String label, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: isDark ? const Color(0xFF0B0B0B) : const Color(0xFFFAFAFA),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
+              style: TextStyle(
+                color: _secondaryText(isDark),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -887,7 +1193,8 @@ Future<void> _scheduleMakeup(
               value.isEmpty ? "Not added" : value,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
+                color: _primaryText(isDark),
                 fontWeight: FontWeight.w900,
                 fontSize: 12,
               ),
@@ -904,45 +1211,55 @@ Future<void> _scheduleMakeup(
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: color,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.event_repeat, size: 40, color: Colors.grey),
-          SizedBox(height: 10),
+          Icon(
+            Icons.event_repeat_rounded,
+            size: 40,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
           Text(
             "No Makeup Sessions Found",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             "Approved leave requests will automatically create makeup sessions.",
             textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText(isDark)),
           ),
         ],
       ),
     );
   }
 }
+
 class ScheduleMakeupSessionScreen extends StatefulWidget {
   final String docId;
   final String uid;
@@ -960,10 +1277,9 @@ class ScheduleMakeupSessionScreen extends StatefulWidget {
 
 class _ScheduleMakeupSessionScreenState
     extends State<ScheduleMakeupSessionScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   final TextEditingController dateController = TextEditingController();
   final TextEditingController timeController = TextEditingController();
@@ -977,20 +1293,70 @@ class _ScheduleMakeupSessionScreenState
     super.dispose();
   }
 
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 2),
+    );
+
+    if (picked == null) return;
+
+    dateController.text =
+        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (picked == null) return;
+
+    if (!mounted) return;
+
+    timeController.text = picked.format(context);
+  }
+
   Future<void> _saveSchedule() async {
     final date = dateController.text.trim();
     final time = timeController.text.trim();
 
     if (date.isEmpty || time.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill date and time")),
+        const SnackBar(
+          content: Text("Please fill date and time"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
-    setState(() {
-      saving = true;
-    });
+    setState(() => saving = true);
 
     try {
       await FirebaseFirestore.instance
@@ -1004,17 +1370,15 @@ class _ScheduleMakeupSessionScreenState
       }, SetOptions(merge: true));
 
       try {
-  await FirebaseFirestore.instance.collection('notifications').add({
-    'title': 'Makeup Session Scheduled',
-    'message': 'Makeup session scheduled on $date at $time',
-    'targetRole': 'All',
-    'type': 'Announcement',
-    'createdBy': widget.uid,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-} catch (_) {
-  // Notification failed, but makeup session scheduling should still continue.
-}
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'title': 'Makeup Session Scheduled',
+          'message': 'Makeup session scheduled on $date at $time',
+          'targetRole': 'All',
+          'type': 'Announcement',
+          'createdBy': widget.uid,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } catch (_) {}
 
       if (!mounted) return;
 
@@ -1023,109 +1387,249 @@ class _ScheduleMakeupSessionScreenState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Schedule failed: $e")),
+        SnackBar(
+          content: Text("Schedule failed: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          saving = false;
-        });
-      }
+      if (mounted) setState(() => saving = false);
     }
   }
 
-  Widget _input({
-    required String label,
-    required TextEditingController controller,
-    required String hint,
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: Column(
+                children: [
+                  _topHeader(context, isDark),
+                  _infoCard(isDark),
+                  const SizedBox(height: 18),
+                  _input(
+                    isDark: isDark,
+                    label: "Makeup Date",
+                    controller: dateController,
+                    hint: "Select date",
+                    icon: Icons.calendar_month_rounded,
+                    onTap: _pickDate,
+                  ),
+                  const SizedBox(height: 14),
+                  _input(
+                    isDark: isDark,
+                    label: "Makeup Time",
+                    controller: timeController,
+                    hint: "Select time",
+                    icon: Icons.access_time_rounded,
+                    onTap: _pickTime,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? red : maroon,
+                        foregroundColor: isDark ? Colors.white : gold,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: saving ? null : _saveSchedule,
+                      icon: saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.save_rounded),
+                      label: Text(
+                        saving ? "Saving..." : "Save Schedule",
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+      child: Row(
+        children: [
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "SCHEDULE MAKEUP",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Add date and time",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
   }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: border),
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: border),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Schedule Makeup Session"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
+  Widget _infoCard(bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? gold.withOpacity(0.45) : gold.withOpacity(0.75),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFBF2),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: gold),
-              ),
-              child: Text(
-                "Add makeup session date and time.",
-                style: TextStyle(
-                  color: maroon,
-                  fontWeight: FontWeight.bold,
-                ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            color: isDark ? gold : maroon,
+            size: 26,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Select makeup session date and time. Parents and students will receive the schedule notification.",
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
               ),
             ),
-            const SizedBox(height: 18),
-            _input(
-              label: "Makeup Date",
-              controller: dateController,
-              hint: "Example: 27-06-2026",
-            ),
-            const SizedBox(height: 14),
-            _input(
-              label: "Makeup Time",
-              controller: timeController,
-              hint: "Example: 4:00 PM - 6:00 PM",
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: maroon,
-                  foregroundColor: gold,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                onPressed: saving ? null : _saveSchedule,
-                icon: saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(
-                  saving ? "Saving..." : "Save Schedule",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _input({
+    required bool isDark,
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return TextField(
+      controller: controller,
+      readOnly: true,
+      onTap: onTap,
+      style: TextStyle(
+        color: _primaryText(isDark),
+        fontWeight: FontWeight.w700,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: TextStyle(color: _secondaryText(isDark)),
+        hintStyle: TextStyle(color: _secondaryText(isDark)),
+        suffixIcon: Icon(
+          icon,
+          color: isDark ? gold : maroon,
+        ),
+        filled: true,
+        fillColor: _card(isDark),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border(isDark)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border(isDark)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: isDark ? red : maroon),
         ),
       ),
     );
