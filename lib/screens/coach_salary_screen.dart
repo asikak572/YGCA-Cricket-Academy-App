@@ -1,18 +1,154 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class CoachSalaryScreen extends StatelessWidget {
+import '../theme/theme_controller.dart';
+
+class CoachSalaryScreen extends StatefulWidget {
   const CoachSalaryScreen({super.key});
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  @override
+  State<CoachSalaryScreen> createState() => _CoachSalaryScreenState();
+}
+
+class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  bool loadingUser = true;
+
+  String uid = '';
+  String role = '';
+  String email = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
 
   int _toInt(dynamic value) {
     if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
     return int.tryParse(value.toString()) ?? 0;
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  bool get _isAdmin => role == 'Admin';
+
+  Future<void> _loadCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    uid = user.uid;
+    email = _lower(user.email ?? '');
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (!userDoc.exists || userDoc.data() == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    final data = userDoc.data() ?? {};
+
+    if (!mounted) return;
+
+    setState(() {
+      role = _text(data['role']);
+      loadingUser = false;
+    });
+  }
+
+  Query<Map<String, dynamic>> _salaryQuery() {
+    final query = FirebaseFirestore.instance.collection('coach_salaries');
+
+    if (role == 'Admin') {
+      return query;
+    }
+
+    if (role == 'Coach') {
+      return query.where('coachUid', isEqualTo: uid);
+    }
+
+    return query.where('coachUid', isEqualTo: '__NO_ACCESS__');
+  }
+
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortSalaryDocs(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    final sorted = docs.toList();
+
+    sorted.sort((a, b) {
+      final aTime = a.data()['createdAt'];
+      final bTime = b.data()['createdAt'];
+
+      if (aTime is Timestamp && bTime is Timestamp) {
+        return bTime.compareTo(aTime);
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }
+
+  String _formatDate(dynamic timestamp) {
+    if (timestamp == null) return "No Date";
+
+    try {
+      if (timestamp is Timestamp) {
+        final date = timestamp.toDate();
+
+        return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+      }
+
+      if (timestamp is DateTime) {
+        return "${timestamp.day.toString().padLeft(2, '0')}/${timestamp.month.toString().padLeft(2, '0')}/${timestamp.year}";
+      }
+
+      return timestamp.toString();
+    } catch (_) {
+      return "No Date";
+    }
   }
 
   Color _statusColor(String status) {
@@ -24,46 +160,85 @@ class CoachSalaryScreen extends StatelessWidget {
     String docId,
     String status,
   ) async {
-    await FirebaseFirestore.instance
-        .collection('coach_salaries')
-        .doc(docId)
-        .update({
-      'status': status,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await FirebaseFirestore.instance
+          .collection('coach_salaries')
+          .doc(docId)
+          .set({
+        'status': status,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Salary marked as $status")),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Salary marked as $status"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Update failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _deleteSalary(BuildContext context, String docId) async {
-    await FirebaseFirestore.instance
-        .collection('coach_salaries')
-        .doc(docId)
-        .delete();
+    try {
+      await FirebaseFirestore.instance
+          .collection('coach_salaries')
+          .doc(docId)
+          .delete();
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Salary record deleted")),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Salary record deleted"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Delete failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void _confirmDelete(BuildContext context, String docId) {
+  void _confirmDelete(BuildContext context, String docId, bool isDark) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Delete Salary Record"),
-        content: const Text(
+        backgroundColor: _card(isDark),
+        title: Text(
+          "Delete Salary Record",
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
           "Are you sure you want to delete this salary record?",
+          style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: isDark ? Colors.white70 : maroon),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -81,34 +256,171 @@ class CoachSalaryScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _addSalaryDialog(BuildContext context) async {
+  Future<void> _addSalaryDialog(BuildContext context, bool isDark) async {
     final coachNameController = TextEditingController();
     final roleController = TextEditingController();
     final salaryController = TextEditingController();
 
     String status = "Pending";
+    String selectedCoachUid = '';
+    String selectedCoachEmail = '';
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text("Add Coach Salary"),
+            backgroundColor: _card(isDark),
+            title: Text(
+              "Add Coach Salary",
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             content: SingleChildScrollView(
               child: Column(
                 children: [
-                  _dialogField("Coach Name", coachNameController),
-                  _dialogField("Role", roleController),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .where('role', isEqualTo: 'Coach')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: LinearProgressIndicator(),
+                        );
+                      }
+
+                      final coaches = snapshot.data?.docs ?? [];
+
+                      if (coaches.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            "No coach users found. You can enter manually.",
+                            style: TextStyle(
+                              color: _secondaryText(isDark),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: DropdownButtonFormField<String>(
+                          value:
+                              selectedCoachUid.isEmpty ? null : selectedCoachUid,
+                          isExpanded: true,
+                          dropdownColor:
+                              isDark ? const Color(0xFF111111) : Colors.white,
+                          style: TextStyle(
+                            color: _primaryText(isDark),
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: "Select Coach",
+                            labelStyle: TextStyle(
+                              color: _secondaryText(isDark),
+                            ),
+                            border: const OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: _border(isDark)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: isDark ? red : maroon),
+                            ),
+                          ),
+                          items: coaches.map((doc) {
+                            final data = doc.data();
+
+                            final coachName = _text(data['name']).isNotEmpty
+                                ? _text(data['name'])
+                                : _text(data['coachName']).isNotEmpty
+                                    ? _text(data['coachName'])
+                                    : _text(data['email']).isNotEmpty
+                                        ? _text(data['email'])
+                                        : 'Coach';
+
+                            final coachEmail = _text(data['email']);
+
+                            return DropdownMenuItem<String>(
+                              value: doc.id,
+                              child: Text(
+                                coachEmail.isEmpty
+                                    ? coachName
+                                    : "$coachName - $coachEmail",
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+
+                            final selectedDoc = coaches.firstWhere(
+                              (doc) => doc.id == value,
+                            );
+
+                            final data = selectedDoc.data();
+
+                            final coachName = _text(data['name']).isNotEmpty
+                                ? _text(data['name'])
+                                : _text(data['coachName']).isNotEmpty
+                                    ? _text(data['coachName'])
+                                    : _text(data['email']);
+
+                            final coachEmail = _lower(_text(data['email']));
+
+                            setDialogState(() {
+                              selectedCoachUid = selectedDoc.id;
+                              selectedCoachEmail = coachEmail;
+                              coachNameController.text = coachName;
+                              roleController.text = "Coach";
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  ),
                   _dialogField(
-                    "Salary Amount",
-                    salaryController,
+                    isDark: isDark,
+                    label: "Coach Name",
+                    controller: coachNameController,
+                  ),
+                  _dialogField(
+                    isDark: isDark,
+                    label: "Role",
+                    controller: roleController,
+                  ),
+                  _dialogField(
+                    isDark: isDark,
+                    label: "Salary Amount",
+                    controller: salaryController,
                     keyboardType: TextInputType.number,
                   ),
                   DropdownButtonFormField<String>(
                     value: status,
-                    decoration: const InputDecoration(
+                    dropdownColor:
+                        isDark ? const Color(0xFF111111) : Colors.white,
+                    style: TextStyle(
+                      color: _primaryText(isDark),
+                      fontWeight: FontWeight.w700,
+                    ),
+                    decoration: InputDecoration(
                       labelText: "Status",
-                      border: OutlineInputBorder(),
+                      labelStyle: TextStyle(color: _secondaryText(isDark)),
+                      border: const OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: _border(isDark)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: isDark ? red : maroon),
+                      ),
                     ),
                     items: const [
                       DropdownMenuItem(value: "Paid", child: Text("Paid")),
@@ -127,51 +439,80 @@ class CoachSalaryScreen extends StatelessWidget {
             ),
             actions: [
               TextButton(
-                onPressed: () {
-                  coachNameController.dispose();
-                  roleController.dispose();
-                  salaryController.dispose();
-                  Navigator.pop(context);
-                },
-                child: const Text("Cancel"),
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "Cancel",
+                  style: TextStyle(color: isDark ? Colors.white70 : maroon),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: maroon,
-                  foregroundColor: gold,
+                  backgroundColor: isDark ? red : maroon,
+                  foregroundColor: isDark ? Colors.white : gold,
                 ),
                 onPressed: () async {
-                  if (coachNameController.text.trim().isEmpty ||
-                      roleController.text.trim().isEmpty ||
-                      salaryController.text.trim().isEmpty) {
+                  final coachName = coachNameController.text.trim();
+                  final coachRole = roleController.text.trim();
+                  final salaryText = salaryController.text.trim();
+
+                  if (coachName.isEmpty ||
+                      coachRole.isEmpty ||
+                      salaryText.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Please fill all fields")),
+                      const SnackBar(
+                        content: Text("Please fill all fields"),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                     return;
                   }
 
-                  final salary =
-                      int.tryParse(salaryController.text.trim()) ?? 0;
+                  final salary = int.tryParse(salaryText) ?? 0;
 
-                  await FirebaseFirestore.instance
-                      .collection('coach_salaries')
-                      .add({
-                    'coachName': coachNameController.text.trim(),
-                    'role': roleController.text.trim(),
-                    'salary': salary,
-                    'status': status,
-                    'createdAt': FieldValue.serverTimestamp(),
-                  });
-
-                  coachNameController.dispose();
-                  roleController.dispose();
-                  salaryController.dispose();
-
-                  if (context.mounted) {
-                    Navigator.pop(context);
+                  if (salary <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Coach salary saved")),
+                      const SnackBar(
+                        content: Text("Please enter valid salary amount"),
+                        backgroundColor: Colors.red,
+                      ),
                     );
+                    return;
+                  }
+
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('coach_salaries')
+                        .add({
+                      'coachUid': selectedCoachUid,
+                      'coachEmail': selectedCoachEmail,
+                      'coachEmailLower': selectedCoachEmail,
+                      'coachName': coachName,
+                      'role': coachRole,
+                      'salary': salary,
+                      'status': status,
+                      'createdBy': uid,
+                      'createdAt': FieldValue.serverTimestamp(),
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Coach salary saved"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Save failed: $e"),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 },
                 child: const Text("Save"),
@@ -181,11 +522,16 @@ class CoachSalaryScreen extends StatelessWidget {
         },
       ),
     );
+
+    coachNameController.dispose();
+    roleController.dispose();
+    salaryController.dispose();
   }
 
-  static Widget _dialogField(
-    String label,
-    TextEditingController controller, {
+  Widget _dialogField({
+    required bool isDark,
+    required String label,
+    required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return Padding(
@@ -193,9 +539,20 @@ class CoachSalaryScreen extends StatelessWidget {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
+        ),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(color: _secondaryText(isDark)),
           border: const OutlineInputBorder(),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: isDark ? red : maroon),
+          ),
         ),
       ),
     );
@@ -203,188 +560,335 @@ class CoachSalaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('coach_salaries')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final salaryDocs = snapshot.data?.docs ?? [];
-
-          int totalBudget = 0;
-          int paidBudget = 0;
-          int pendingBudget = 0;
-
-          for (final doc in salaryDocs) {
-            final data = doc.data() as Map<String, dynamic>;
-            final salary = _toInt(data['salary']);
-            final status = data['status']?.toString() ?? 'Pending';
-
-            totalBudget += salary;
-
-            if (status == "Paid") {
-              paidBudget += salary;
-            } else {
-              pendingBudget += salary;
-            }
-          }
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _heroBanner(
-                  totalBudget: totalBudget,
-                  paidBudget: paidBudget,
-                  pendingBudget: pendingBudget,
-                  records: salaryDocs.length,
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("SALARY OVERVIEW"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.25,
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          floatingActionButton: _isAdmin
+              ? FloatingActionButton.extended(
+                  backgroundColor: isDark ? red : maroon,
+                  foregroundColor: isDark ? Colors.white : gold,
+                  onPressed: () => _addSalaryDialog(context, isDark),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text(
+                    "Add Salary",
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                )
+              : null,
+          body: SafeArea(
+            child: loadingUser
+                ? Column(
                     children: [
-                      _statCard(
-                        Icons.account_balance_wallet,
-                        "TOTAL",
-                        "₹$totalBudget",
-                        "Budget",
-                        Colors.blue,
-                      ),
-                      _statCard(
-                        Icons.verified,
-                        "PAID",
-                        "₹$paidBudget",
-                        "Completed",
-                        Colors.green,
-                      ),
-                      _statCard(
-                        Icons.pending_actions,
-                        "PENDING",
-                        "₹$pendingBudget",
-                        "Remaining",
-                        Colors.orange,
-                      ),
-                      _statCard(
-                        Icons.receipt_long,
-                        "RECORDS",
-                        salaryDocs.length.toString(),
-                        "Entries",
-                        Colors.purple,
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("SALARY RECORDS"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: salaryDocs.isEmpty
-                      ? _emptyCard()
-                      : Column(
-                          children: salaryDocs.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
+                  )
+                : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _salaryQuery().snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            Expanded(
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18),
+                                  child: Text(
+                                    "Error: ${snapshot.error}",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.redAccent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
 
-                            final name =
-                                data['coachName']?.toString() ??
-                                    'Unknown Coach';
-                            final role =
-                                data['role']?.toString() ?? 'No Role';
-                            final salary = _toInt(data['salary']);
-                            final status =
-                                data['status']?.toString() ?? 'Pending';
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            const Expanded(
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ],
+                        );
+                      }
 
-                            return _salaryCard(
-                              context: context,
-                              docId: doc.id,
-                              name: name,
-                              role: role,
-                              salary: salary,
-                              status: status,
-                            );
-                          }).toList(),
+                      final salaryDocs =
+                          _sortSalaryDocs(snapshot.data?.docs ?? []);
+
+                      int totalBudget = 0;
+                      int paidBudget = 0;
+                      int pendingBudget = 0;
+
+                      for (final doc in salaryDocs) {
+                        final data = doc.data();
+                        final salary = _toInt(data['salary']);
+                        final salaryStatus =
+                            _text(data['status']).isEmpty
+                                ? 'Pending'
+                                : _text(data['status']);
+
+                        totalBudget += salary;
+
+                        if (salaryStatus == "Paid") {
+                          paidBudget += salary;
+                        } else {
+                          pendingBudget += salary;
+                        }
+                      }
+
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            _heroBanner(
+                              isDark: isDark,
+                              totalBudget: totalBudget,
+                              paidBudget: paidBudget,
+                              pendingBudget: pendingBudget,
+                              records: salaryDocs.length,
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("SALARY OVERVIEW", isDark),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: GridView.count(
+                                crossAxisCount: 2,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.18,
+                                children: [
+                                  _statCard(
+                                    isDark: isDark,
+                                    icon: Icons.account_balance_wallet_rounded,
+                                    title: "TOTAL",
+                                    value: "₹$totalBudget",
+                                    subtitle: "Budget",
+                                    color: Colors.blueAccent,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    icon: Icons.verified_rounded,
+                                    title: "PAID",
+                                    value: "₹$paidBudget",
+                                    subtitle: "Completed",
+                                    color: Colors.green,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    icon: Icons.pending_actions_rounded,
+                                    title: "PENDING",
+                                    value: "₹$pendingBudget",
+                                    subtitle: "Remaining",
+                                    color: Colors.orange,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    icon: Icons.receipt_long_rounded,
+                                    title: "RECORDS",
+                                    value: salaryDocs.length.toString(),
+                                    subtitle: "Entries",
+                                    color: Colors.purpleAccent,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("SALARY RECORDS", isDark),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: salaryDocs.isEmpty
+                                  ? _emptyCard(isDark)
+                                  : Column(
+                                      children: salaryDocs.map((doc) {
+                                        final data = doc.data();
+
+                                        final name =
+                                            _text(data['coachName']).isEmpty
+                                                ? 'Unknown Coach'
+                                                : _text(data['coachName']);
+
+                                        final coachRole =
+                                            _text(data['role']).isEmpty
+                                                ? 'Coach'
+                                                : _text(data['role']);
+
+                                        final salary = _toInt(data['salary']);
+
+                                        final salaryStatus =
+                                            _text(data['status']).isEmpty
+                                                ? 'Pending'
+                                                : _text(data['status']);
+
+                                        final date =
+                                            _formatDate(data['createdAt']);
+
+                                        return _salaryCard(
+                                          context: context,
+                                          isDark: isDark,
+                                          docId: doc.id,
+                                          name: name,
+                                          coachRole: coachRole,
+                                          salary: salary,
+                                          status: salaryStatus,
+                                          date: date,
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
+                            const SizedBox(height: 90),
+                          ],
                         ),
-                ),
-                const SizedBox(height: 90),
-              ],
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        onPressed: () => _addSalaryDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text("Add Salary"),
-      ),
+                      );
+                    },
+                  ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
-          Image.asset('assets/images/ygca_logo.jpg', width: 58),
           const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "COACH SALARY",
-              style: TextStyle(
-                color: gold,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "COACH SALARY",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  _isAdmin
+                      ? "Manage coach monthly salary"
+                      : "View your salary records",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.account_balance_wallet, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
   Widget _heroBanner({
+    required bool isDark,
     required int totalBudget,
     required int paidBudget,
     required int pendingBudget,
     required int records,
   }) {
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 220,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -398,15 +902,30 @@ class CoachSalaryScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -25,
+            bottom: -25,
+            child: Icon(
+              Icons.account_balance_wallet_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -414,54 +933,65 @@ class CoachSalaryScreen extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.currency_rupee, color: maroon, size: 42),
+                  child: Icon(
+                    Icons.currency_rupee_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "MONTHLY",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        "SALARY",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 31,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "CENTER",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 235,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _heroChip("Total: ₹$totalBudget"),
-                          _heroChip("Paid: ₹$paidBudget"),
-                          _heroChip("Pending: ₹$pendingBudget"),
-                          _heroChip("Records: $records"),
+                          Text(
+                            "MONTHLY",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "SALARY",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "CENTER",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Total: ₹$totalBudget"),
+                              _heroChip("Paid: ₹$paidBudget"),
+                              _heroChip("Pending: ₹$pendingBudget"),
+                              _heroChip("Records: $records"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -471,26 +1001,30 @@ class CoachSalaryScreen extends StatelessWidget {
       ),
     );
   }
-    Widget _heroChip(String text) {
+
+  Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 165),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -498,80 +1032,120 @@ class CoachSalaryScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: maroon,
-              fontSize: 18,
+              color: isDark ? gold : maroon,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
           const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _statCard(
-    IconData icon,
-    String title,
-    String value,
-    String subtitle,
-    Color color,
-  ) {
+  Widget _statCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color color,
+  }) {
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  const Color(0xFF151515),
+                  const Color(0xFF1A0808),
+                  color.withOpacity(0.16),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFFBF2),
+                  color.withOpacity(0.08),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: isDark
+                ? color.withOpacity(0.10)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 135,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
-          ),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 10,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _salaryCard({
     required BuildContext context,
+    required bool isDark,
     required String docId,
     required String name,
-    required String role,
+    required String coachRole,
     required int salary,
     required String status,
+    required String date,
   }) {
     final statusColor = _statusColor(status);
 
@@ -579,12 +1153,16 @@ class CoachSalaryScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
+            color: isDark
+                ? Colors.black.withOpacity(0.28)
+                : Colors.black.withOpacity(0.045),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -597,16 +1175,14 @@ class CoachSalaryScreen extends StatelessWidget {
             backgroundColor: maroon,
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : "?",
-              style: TextStyle(
+              style: const TextStyle(
                 color: gold,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
                 fontSize: 18,
               ),
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,91 +1191,109 @@ class CoachSalaryScreen extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
-                  role,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
+                  "$coachRole • $date",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Wrap(
                   spacing: 8,
                   runSpacing: 6,
                   children: [
                     _chip(
-                      Icons.currency_rupee,
-                      "₹$salary",
-                      Colors.blue,
+                      isDark: isDark,
+                      icon: Icons.currency_rupee_rounded,
+                      text: "₹$salary",
+                      color: Colors.blueAccent,
                     ),
                     _chip(
-                      Icons.verified,
-                      status,
-                      statusColor,
+                      isDark: isDark,
+                      icon: Icons.verified_rounded,
+                      text: status,
+                      color: statusColor,
                     ),
                   ],
                 ),
               ],
             ),
           ),
+          if (_isAdmin)
+            PopupMenuButton<String>(
+              color: _card(isDark),
+              iconColor: isDark ? Colors.white : maroon,
+              onSelected: (value) async {
+                if (value == "Paid" || value == "Pending") {
+                  await _updateSalaryStatus(
+                    context,
+                    docId,
+                    value,
+                  );
+                }
 
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == "Paid" || value == "Pending") {
-                await _updateSalaryStatus(
-                  context,
-                  docId,
-                  value,
-                );
-              }
-
-              if (value == "Delete") {
-                _confirmDelete(context, docId);
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: "Paid",
-                child: Text("Mark Paid"),
-              ),
-              PopupMenuItem(
-                value: "Pending",
-                child: Text("Mark Pending"),
-              ),
-              PopupMenuItem(
-                value: "Delete",
-                child: Text("Delete"),
-              ),
-            ],
-          ),
+                if (value == "Delete") {
+                  _confirmDelete(context, docId, isDark);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: "Paid",
+                  child: Text(
+                    "Mark Paid",
+                    style: TextStyle(color: _primaryText(isDark)),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: "Pending",
+                  child: Text(
+                    "Mark Pending",
+                    style: TextStyle(color: _primaryText(isDark)),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: "Delete",
+                  child: Text(
+                    "Delete",
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
   }
 
-  Widget _chip(
-    IconData icon,
-    String text,
-    Color color,
-  ) {
+  Widget _chip({
+    required bool isDark,
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 8,
         vertical: 5,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withOpacity(isDark ? 0.13 : 0.10),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -710,7 +1304,7 @@ class CoachSalaryScreen extends StatelessWidget {
             text,
             style: TextStyle(
               color: color,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w900,
               fontSize: 11,
             ),
           ),
@@ -719,28 +1313,37 @@ class CoachSalaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Icon(
             Icons.account_balance_wallet_outlined,
             size: 40,
-            color: Colors.grey,
+            color: _secondaryText(isDark),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
             "No Salary Records Found",
             style: TextStyle(
+              color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
             ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _isAdmin
+                ? "Click Add Salary to create one"
+                : "No salary record available for your account",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText(isDark)),
           ),
         ],
       ),

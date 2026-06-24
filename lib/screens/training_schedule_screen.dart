@@ -1,95 +1,374 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class TrainingScheduleScreen extends StatelessWidget {
+import '../theme/theme_controller.dart';
+
+class TrainingScheduleScreen extends StatefulWidget {
   const TrainingScheduleScreen({super.key});
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  @override
+  State<TrainingScheduleScreen> createState() => _TrainingScheduleScreenState();
+}
+
+class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  bool loadingUser = true;
+
+  String uid = '';
+  String role = '';
+  String email = '';
+
+  List<String> allowedBatches = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  bool get _canManageTraining {
+    return role == 'Admin' || role == 'Coach';
+  }
+
+  List<String> _listFromDynamic(dynamic value) {
+    final result = <String>[];
+
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) result.add(text);
+      }
+    }
+
+    return result;
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    uid = user.uid;
+    email = _lower(user.email ?? '');
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (!userDoc.exists || userDoc.data() == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    final data = userDoc.data() ?? {};
+    final loadedRole = _text(data['role']);
+
+    final batches = <String>{};
+
+    for (final batch in _listFromDynamic(data['assignedBatches'])) {
+      batches.add(batch);
+    }
+
+    final assignedBatch = _text(data['assignedBatch']);
+    if (assignedBatch.isNotEmpty) batches.add(assignedBatch);
+
+    final userBatch = _text(data['batch']);
+    if (userBatch.isNotEmpty) batches.add(userBatch);
+
+    if (loadedRole == 'Student') {
+      final studentDoc =
+          await FirebaseFirestore.instance.collection('students').doc(uid).get();
+
+      if (studentDoc.exists && studentDoc.data() != null) {
+        final studentBatch = _text(studentDoc.data()?['batch']);
+        if (studentBatch.isNotEmpty) batches.add(studentBatch);
+      }
+    }
+
+    if (loadedRole == 'Parent') {
+      final childIds = <String>{};
+
+      for (final id in _listFromDynamic(data['linkedChildrenIds'])) {
+        childIds.add(id);
+      }
+
+      final childId = _text(data['childId']);
+      if (childId.isNotEmpty) childIds.add(childId);
+
+      final studentId = _text(data['studentId']);
+      if (studentId.isNotEmpty) childIds.add(studentId);
+
+      final parentEmail = _lower(
+        _text(data['email']).isNotEmpty ? _text(data['email']) : email,
+      );
+
+      if (parentEmail.isNotEmpty) {
+        final byParentEmailLower = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmailLower', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byParentEmailLower.docs) {
+          childIds.add(doc.id);
+          final childBatch = _text(doc.data()['batch']);
+          if (childBatch.isNotEmpty) batches.add(childBatch);
+        }
+
+        final byParentEmail = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmail', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byParentEmail.docs) {
+          childIds.add(doc.id);
+          final childBatch = _text(doc.data()['batch']);
+          if (childBatch.isNotEmpty) batches.add(childBatch);
+        }
+      }
+
+      final byParentUid = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentUid', isEqualTo: uid)
+          .get();
+
+      for (final doc in byParentUid.docs) {
+        childIds.add(doc.id);
+        final childBatch = _text(doc.data()['batch']);
+        if (childBatch.isNotEmpty) batches.add(childBatch);
+      }
+
+      for (final childId in childIds) {
+        final childDoc = await FirebaseFirestore.instance
+            .collection('students')
+            .doc(childId)
+            .get();
+
+        if (childDoc.exists && childDoc.data() != null) {
+          final childBatch = _text(childDoc.data()?['batch']);
+          if (childBatch.isNotEmpty) batches.add(childBatch);
+        }
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      role = loadedRole;
+      allowedBatches = batches.toList();
+      loadingUser = false;
+    });
+  }
+
+  Query<Map<String, dynamic>> _trainingQuery() {
+    final query = FirebaseFirestore.instance.collection('training_schedules');
+
+    if (role == 'Admin') {
+      return query;
+    }
+
+    if (role == 'Coach' || role == 'Student' || role == 'Parent') {
+      if (allowedBatches.isEmpty) {
+        return query.where('batch', isEqualTo: '__NO_ASSIGNED_BATCH__');
+      }
+
+      if (allowedBatches.length == 1) {
+        return query.where('batch', isEqualTo: allowedBatches.first);
+      }
+
+      return query.where('batch', whereIn: allowedBatches.take(10).toList());
+    }
+
+    return query.where('batch', isEqualTo: '__NO_ACCESS__');
+  }
+
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortSchedules(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    final sorted = docs.toList();
+
+    sorted.sort((a, b) {
+      final aTime = a.data()['createdAt'];
+      final bTime = b.data()['createdAt'];
+
+      if (aTime is Timestamp && bTime is Timestamp) {
+        return bTime.compareTo(aTime);
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }
 
   Future<void> _deleteTraining(BuildContext context, String docId) async {
-    await FirebaseFirestore.instance
-        .collection('training_schedules')
-        .doc(docId)
-        .delete();
+    try {
+      await FirebaseFirestore.instance
+          .collection('training_schedules')
+          .doc(docId)
+          .delete();
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Training schedule deleted")),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Training schedule deleted"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Delete failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void _showAddTrainingDialog(BuildContext context) {
+  Future<void> _showAddTrainingDialog(BuildContext context, bool isDark) async {
     final dayController = TextEditingController();
     final timeController = TextEditingController();
     final batchController = TextEditingController();
     final typeController = TextEditingController();
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Add Training"),
+        backgroundColor: _card(isDark),
+        title: Text(
+          "Add Training",
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             children: [
-              _input("Day", dayController),
-              _input("Time", timeController),
-              _input("Batch", batchController),
-              _input("Training Type", typeController),
+              _input(
+                isDark: isDark,
+                label: "Day",
+                controller: dayController,
+              ),
+              _input(
+                isDark: isDark,
+                label: "Time",
+                controller: timeController,
+              ),
+              _input(
+                isDark: isDark,
+                label: "Batch",
+                controller: batchController,
+              ),
+              _input(
+                isDark: isDark,
+                label: "Training Type",
+                controller: typeController,
+              ),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              dayController.dispose();
-              timeController.dispose();
-              batchController.dispose();
-              typeController.dispose();
-              Navigator.pop(context);
-            },
-            child: const Text("Cancel"),
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: isDark ? Colors.white70 : maroon),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
-              foregroundColor: gold,
+              backgroundColor: isDark ? red : maroon,
+              foregroundColor: isDark ? Colors.white : gold,
             ),
             onPressed: () async {
-              if (dayController.text.trim().isEmpty ||
-                  timeController.text.trim().isEmpty ||
-                  batchController.text.trim().isEmpty ||
-                  typeController.text.trim().isEmpty) {
+              final day = dayController.text.trim();
+              final time = timeController.text.trim();
+              final batch = batchController.text.trim();
+              final type = typeController.text.trim();
+
+              if (day.isEmpty || time.isEmpty || batch.isEmpty || type.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please fill all fields")),
+                  const SnackBar(
+                    content: Text("Please fill all fields"),
+                    backgroundColor: Colors.red,
+                  ),
                 );
                 return;
               }
 
-              await FirebaseFirestore.instance
-                  .collection('training_schedules')
-                  .add({
-                'day': dayController.text.trim(),
-                'time': timeController.text.trim(),
-                'batch': batchController.text.trim(),
-                'type': typeController.text.trim(),
-                'createdAt': FieldValue.serverTimestamp(),
-              });
+              try {
+                await FirebaseFirestore.instance
+                    .collection('training_schedules')
+                    .add({
+                  'day': day,
+                  'time': time,
+                  'batch': batch,
+                  'type': type,
+                  'createdBy': uid,
+                  'createdByRole': role,
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
 
-              dayController.dispose();
-              timeController.dispose();
-              batchController.dispose();
-              typeController.dispose();
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Training schedule added")),
-                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Training schedule added"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Save failed: $e"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             child: const Text("Save"),
@@ -97,33 +376,64 @@ class TrainingScheduleScreen extends StatelessWidget {
         ],
       ),
     );
+
+    dayController.dispose();
+    timeController.dispose();
+    batchController.dispose();
+    typeController.dispose();
   }
 
-  Widget _input(String label, TextEditingController controller) {
+  Widget _input({
+    required bool isDark,
+    required String label,
+    required TextEditingController controller,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: controller,
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
+        ),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(color: _secondaryText(isDark)),
           border: const OutlineInputBorder(),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: isDark ? red : maroon),
+          ),
         ),
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context, String docId) {
+  void _confirmDelete(BuildContext context, String docId, bool isDark) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Delete Training"),
-        content: const Text(
+        backgroundColor: _card(isDark),
+        title: Text(
+          "Delete Training",
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
           "Are you sure you want to delete this training schedule?",
+          style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: isDark ? Colors.white70 : maroon),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -144,12 +454,12 @@ class TrainingScheduleScreen extends StatelessWidget {
   IconData _typeIcon(String type) {
     final lower = type.toLowerCase();
 
-    if (lower.contains("fitness")) return Icons.fitness_center;
-    if (lower.contains("bat")) return Icons.sports_cricket;
-    if (lower.contains("bowl")) return Icons.sports_baseball;
-    if (lower.contains("field")) return Icons.sports_handball;
+    if (lower.contains("fitness")) return Icons.fitness_center_rounded;
+    if (lower.contains("bat")) return Icons.sports_cricket_rounded;
+    if (lower.contains("bowl")) return Icons.sports_baseball_rounded;
+    if (lower.contains("field")) return Icons.sports_handball_rounded;
 
-    return Icons.calendar_month;
+    return Icons.calendar_month_rounded;
   }
 
   Color _typeColor(String type) {
@@ -157,123 +467,283 @@ class TrainingScheduleScreen extends StatelessWidget {
 
     if (lower.contains("fitness")) return Colors.green;
     if (lower.contains("bat")) return Colors.orange;
-    if (lower.contains("bowl")) return Colors.blue;
-    if (lower.contains("field")) return Colors.purple;
+    if (lower.contains("bowl")) return Colors.blueAccent;
+    if (lower.contains("field")) return Colors.purpleAccent;
 
     return Colors.teal;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('training_schedules')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text("Something went wrong"));
-          }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          floatingActionButton: _canManageTraining
+              ? FloatingActionButton.extended(
+                  backgroundColor: isDark ? red : maroon,
+                  foregroundColor: isDark ? Colors.white : gold,
+                  onPressed: () => _showAddTrainingDialog(context, isDark),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text(
+                    "Add Training",
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                )
+              : null,
+          body: SafeArea(
+            child: loadingUser
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  )
+                : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _trainingQuery().snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            Expanded(
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18),
+                                  child: Text(
+                                    "Error: ${snapshot.error}",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.redAccent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
 
-          final schedules = snapshot.data?.docs ?? [];
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            const Expanded(
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ],
+                        );
+                      }
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _heroBanner(total: schedules.length),
-                const SizedBox(height: 18),
-                _sectionTitle("TRAINING SCHEDULES"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: schedules.isEmpty
-                      ? _emptyCard()
-                      : Column(
-                          children: schedules.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
+                      final schedules = _sortSchedules(snapshot.data?.docs ?? []);
 
-                            final day = data['day']?.toString() ?? '';
-                            final time = data['time']?.toString() ?? '';
-                            final batch = data['batch']?.toString() ?? '';
-                            final type = data['type']?.toString() ?? '';
+                      int fitnessCount = 0;
+                      int skillCount = 0;
 
-                            return _trainingCard(
-                              day: day,
-                              time: time,
-                              batch: batch,
-                              type: type,
-                              onDelete: () => _confirmDelete(context, doc.id),
-                            );
-                          }).toList(),
+                      for (final doc in schedules) {
+                        final type = _text(doc.data()['type']).toLowerCase();
+
+                        if (type.contains('fitness')) {
+                          fitnessCount++;
+                        } else {
+                          skillCount++;
+                        }
+                      }
+
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            _heroBanner(
+                              isDark: isDark,
+                              total: schedules.length,
+                              fitnessCount: fitnessCount,
+                              skillCount: skillCount,
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("TRAINING SCHEDULES", isDark),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: schedules.isEmpty
+                                  ? _emptyCard(isDark)
+                                  : Column(
+                                      children: schedules.map((doc) {
+                                        final data = doc.data();
+
+                                        final day = _text(data['day']).isEmpty
+                                            ? 'No Day'
+                                            : _text(data['day']);
+
+                                        final time = _text(data['time']).isEmpty
+                                            ? 'No Time'
+                                            : _text(data['time']);
+
+                                        final batch = _text(data['batch']).isEmpty
+                                            ? 'No Batch'
+                                            : _text(data['batch']);
+
+                                        final type = _text(data['type']).isEmpty
+                                            ? 'Training'
+                                            : _text(data['type']);
+
+                                        return _trainingCard(
+                                          isDark: isDark,
+                                          day: day,
+                                          time: time,
+                                          batch: batch,
+                                          type: type,
+                                          onDelete: () => _confirmDelete(
+                                            context,
+                                            doc.id,
+                                            isDark,
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
+                            const SizedBox(height: 90),
+                          ],
                         ),
-                ),
-                const SizedBox(height: 90),
-              ],
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        onPressed: () => _showAddTrainingDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text("Add Training"),
-      ),
+                      );
+                    },
+                  ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 58,
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
           const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "TRAINING SCHEDULE",
-              style: TextStyle(
-                color: gold,
-                fontSize: 19,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "TRAINING SCHEDULE",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  _canManageTraining
+                      ? "Manage academy training sessions"
+                      : "View your assigned training sessions",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.calendar_month, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _heroBanner({required int total}) {
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
+  Widget _heroBanner({
+    required bool isDark,
+    required int total,
+    required int fitnessCount,
+    required int skillCount,
+  }) {
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 220,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -287,15 +757,30 @@ class TrainingScheduleScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -25,
+            bottom: -25,
+            child: Icon(
+              Icons.fitness_center_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -303,52 +788,64 @@ class TrainingScheduleScreen extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.fitness_center, color: maroon, size: 42),
+                  child: Icon(
+                    Icons.fitness_center_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "YGCA",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        "TRAINING",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 31,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "CENTER",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 235,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _heroChip("Schedules: $total"),
-                          _heroChip("Cricket • Fitness • Skills"),
+                          Text(
+                            "YGCA",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "TRAINING",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "CENTER",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Schedules: $total"),
+                              _heroChip("Fitness: $fitnessCount"),
+                              _heroChip("Skills: $skillCount"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -361,24 +858,27 @@ class TrainingScheduleScreen extends StatelessWidget {
 
   Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 165),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -386,20 +886,26 @@ class TrainingScheduleScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: maroon,
-              fontSize: 18,
+              color: isDark ? gold : maroon,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
           const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _trainingCard({
+    required bool isDark,
     required String day,
     required String time,
     required String batch,
@@ -413,12 +919,16 @@ class TrainingScheduleScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
+            color: isDark
+                ? Colors.black.withOpacity(0.28)
+                : Colors.black.withOpacity(0.045),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -440,7 +950,8 @@ class TrainingScheduleScreen extends StatelessWidget {
                   day,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
@@ -448,62 +959,86 @@ class TrainingScheduleScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   "$time • $batch",
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 6),
-                _typeChip(type, color),
+                const SizedBox(height: 7),
+                _typeChip(isDark: isDark, type: type, color: color),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: onDelete,
-          ),
+          if (_canManageTraining)
+            IconButton(
+              icon: const Icon(Icons.delete_rounded, color: Colors.redAccent),
+              onPressed: onDelete,
+            ),
         ],
       ),
     );
   }
 
-  Widget _typeChip(String type, Color color) {
+  Widget _typeChip({
+    required bool isDark,
+    required String type,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withOpacity(isDark ? 0.13 : 0.10),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.22)),
       ),
       child: Text(
         type,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: color,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
           fontSize: 11,
         ),
       ),
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.calendar_month, size: 38, color: Colors.grey),
-          SizedBox(height: 10),
+          Icon(
+            Icons.calendar_month_rounded,
+            size: 38,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
           Text(
             "No training schedule found",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          SizedBox(height: 4),
-          Text("Click Add Training to create one"),
+          const SizedBox(height: 4),
+          Text(
+            _canManageTraining
+                ? "Click Add Training to create one"
+                : "No training schedule available for your batch",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText(isDark)),
+          ),
         ],
       ),
     );

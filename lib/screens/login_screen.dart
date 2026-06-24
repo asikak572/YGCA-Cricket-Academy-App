@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../theme/theme_controller.dart';
 import 'register_screen.dart';
 import 'auth_checker.dart';
 
@@ -12,25 +13,46 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   bool isLoading = false;
   bool obscurePassword = true;
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
 
   Future<void> _login() async {
+    FocusScope.of(context).unfocus();
+
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter email and password")),
+        const SnackBar(content: Text('Please enter email and password')),
       );
       return;
     }
@@ -53,16 +75,20 @@ class _LoginScreenState extends State<LoginScreen> {
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
-      String message = "Login failed";
+      String message = 'Login failed';
 
       if (e.code == 'user-not-found') {
-        message = "No user found";
+        message = 'No user found';
       } else if (e.code == 'wrong-password') {
-        message = "Wrong password";
+        message = 'Wrong password';
       } else if (e.code == 'invalid-email') {
-        message = "Invalid email";
+        message = 'Invalid email';
       } else if (e.code == 'invalid-credential') {
-        message = "Invalid email or password";
+        message = 'Invalid email or password';
+      } else if (e.code == 'network-request-failed') {
+        message = 'Network error. Please check internet';
+      } else if (e.message != null && e.message!.trim().isNotEmpty) {
+        message = e.message!;
       }
 
       if (!mounted) return;
@@ -74,7 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login error: $e"), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Login error: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -97,76 +126,66 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final h = MediaQuery.of(context).size.height;
+    final size = MediaQuery.of(context).size;
+    final isSmall = size.width < 370;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: h),
-            child: IntrinsicHeight(
-              child: Column(
-                children: [
-                  _hero(h),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
-                      child: Column(
-                        children: [
-                          _field(
-                            label: "Email Address",
-                            controller: emailController,
-                            icon: Icons.mail_outline,
-                            hint: "Enter email",
-                            obscure: false,
-                            keyboardType: TextInputType.emailAddress,
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+
+        return Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: size.height - MediaQuery.of(context).padding.top,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      _hero(isDark: isDark, height: size.height, isSmall: isSmall),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            isSmall ? 16 : 22,
+                            18,
+                            isSmall ? 16 : 22,
+                            8,
                           ),
-                          const SizedBox(height: 14),
-                          _field(
-                            label: "Password",
-                            controller: passwordController,
-                            icon: Icons.lock_outline,
-                            hint: "Enter password",
-                            obscure: obscurePassword,
-                            suffix: IconButton(
-                              icon: Icon(
-                                obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  obscurePassword = !obscurePassword;
-                                });
-                              },
-                            ),
+                          child: Column(
+                            children: [
+                              _loginPanel(isDark: isDark),
+                              const SizedBox(height: 14),
+                              _registerCard(isDark: isDark),
+                              const Spacer(),
+                              _footerMini(isDark),
+                              const SizedBox(height: 10),
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                          _loginButton(),
-                          const SizedBox(height: 14),
-                          _registerCard(),
-                          const Spacer(),
-                          _footerMini(),
-                          const SizedBox(height: 10),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _hero(double h) {
+  Widget _hero({
+    required bool isDark,
+    required double height,
+    required bool isSmall,
+  }) {
     return Container(
-      height: h * 0.36,
+      height: isSmall ? height * 0.34 : height * 0.37,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
@@ -187,63 +206,92 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.72),
-                    Colors.black.withOpacity(0.50),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.95),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.42),
+                        ]
+                      : [
+                          darkMaroon.withOpacity(0.96),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.50),
+                        ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
             ),
           ),
+          Positioned(
+            right: -30,
+            bottom: -32,
+            child: Icon(
+              Icons.sports_cricket_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 170,
+            ),
+          ),
+          Positioned(
+            right: 16,
+            top: 14,
+            child: _themeButton(isDark),
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 14, 24, 18),
+            padding: EdgeInsets.fromLTRB(24, isSmall ? 12 : 16, 24, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset(
-                  'assets/images/ygca_logo.jpg',
-                  height: 78,
-                  width: 78,
+                Container(
+                  width: isSmall ? 68 : 78,
+                  height: isSmall ? 68 : 78,
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.42),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: gold.withOpacity(0.70)),
+                  ),
+                  child: Image.asset(
+                    'assets/images/ygca_logo.jpg',
+                    fit: BoxFit.contain,
+                  ),
                 ),
                 const Spacer(),
                 Text(
-                  "WELCOME BACK",
+                  'WELCOME BACK',
                   style: TextStyle(
                     color: gold,
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.1,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
                   ),
                 ),
                 const SizedBox(height: 5),
-                const Text(
-                  "LOGIN",
+                Text(
+                  'LOGIN',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 40,
+                    fontSize: isSmall ? 34 : 40,
                     fontWeight: FontWeight.w900,
                     height: 0.95,
                   ),
                 ),
                 Text(
-                  "TO CONTINUE",
+                  'TO CONTINUE',
                   style: TextStyle(
                     color: gold,
-                    fontSize: 30,
+                    fontSize: isSmall ? 25 : 30,
                     fontWeight: FontWeight.w900,
                     height: 1,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 7),
                 const Text(
-                  "Young Gen Cricket Academy",
+                  'Young Gen Cricket Academy',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -254,7 +302,122 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _themeButton(bool isDark) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(50),
+      onTap: ThemeController.toggleTheme,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.22)),
+        ),
+        child: Icon(
+          isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+          color: Colors.white,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
+  Widget _loginPanel({required bool isDark}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.28) : gold.withOpacity(0.55),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.35)
+                : Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: red.withOpacity(0.14),
+                child: Icon(Icons.lock_open_rounded, color: isDark ? gold : maroon),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Account Login',
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      'Admin • Coach • Parent • Student',
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _field(
+            isDark: isDark,
+            label: 'Email Address',
+            controller: emailController,
+            icon: Icons.mail_outline_rounded,
+            hint: 'Enter email',
+            obscure: false,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 14),
+          _field(
+            isDark: isDark,
+            label: 'Password',
+            controller: passwordController,
+            icon: Icons.lock_outline_rounded,
+            hint: 'Enter password',
+            obscure: obscurePassword,
+            suffix: IconButton(
+              icon: Icon(
+                obscurePassword
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded,
+                color: isDark ? Colors.white54 : Colors.grey,
+              ),
+              onPressed: () {
+                setState(() {
+                  obscurePassword = !obscurePassword;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          _loginButton(isDark),
+        ],
+      ),
+    );
+  }
+
   Widget _field({
+    required bool isDark,
     required String label,
     required TextEditingController controller,
     required IconData icon,
@@ -269,7 +432,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           label,
           style: TextStyle(
-            color: maroon,
+            color: isDark ? gold : maroon,
             fontSize: 12,
             fontWeight: FontWeight.w900,
           ),
@@ -279,37 +442,40 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: controller,
           obscureText: obscure,
           keyboardType: keyboardType,
-          style: const TextStyle(
-            color: Colors.black,
+          textInputAction:
+              obscure ? TextInputAction.done : TextInputAction.next,
+          onSubmitted: obscure ? (_) => _login() : null,
+          style: TextStyle(
+            color: _primaryText(isDark),
             fontSize: 15,
             fontWeight: FontWeight.w700,
           ),
-          cursorColor: maroon,
+          cursorColor: isDark ? gold : maroon,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-              color: Colors.black38,
+            hintStyle: TextStyle(
+              color: isDark ? Colors.white38 : Colors.black38,
               fontWeight: FontWeight.w500,
             ),
-            prefixIcon: Icon(icon, color: maroon),
+            prefixIcon: Icon(icon, color: isDark ? gold : maroon),
             suffixIcon: suffix,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 14,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: border),
+              borderSide: BorderSide(color: _border(isDark)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: border),
+              borderSide: BorderSide(color: _border(isDark)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: gold, width: 1.5),
+              borderSide: BorderSide(color: isDark ? red : gold, width: 1.5),
             ),
           ),
         ),
@@ -317,26 +483,33 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _loginButton() {
+  Widget _loginButton(bool isDark) {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFFC247),
-          foregroundColor: maroon,
+          backgroundColor: isDark ? red : const Color(0xFFFFC247),
+          foregroundColor: isDark ? Colors.white : maroon,
           elevation: 8,
-          shadowColor: gold.withOpacity(0.45),
+          shadowColor: red.withOpacity(0.30),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
         ),
         onPressed: isLoading ? null : _login,
-        icon: isLoading ? const SizedBox() : const Icon(Icons.login),
+        icon: isLoading ? const SizedBox() : const Icon(Icons.login_rounded),
         label: isLoading
-            ? CircularProgressIndicator(color: maroon, strokeWidth: 2)
+            ? SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  color: isDark ? Colors.white : maroon,
+                  strokeWidth: 2,
+                ),
+              )
             : const Text(
-                "LOGIN",
+                'LOGIN',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 15,
@@ -347,23 +520,25 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _registerCard() {
+  Widget _registerCard({required bool isDark}) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF2),
+        color: isDark ? const Color(0xFF111111) : const Color(0xFFFFFBF2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFDE68A)),
+        border: Border.all(
+          color: isDark ? gold.withOpacity(0.55) : const Color(0xFFFDE68A),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.verified_user_outlined, color: maroon, size: 28),
+          Icon(Icons.verified_user_outlined, color: isDark ? gold : maroon, size: 28),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
-              "New to YGCA?",
+              'New to YGCA?',
               style: TextStyle(
-                color: Colors.black87,
+                color: _primaryText(isDark),
                 fontWeight: FontWeight.w900,
                 fontSize: 13,
               ),
@@ -371,7 +546,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
+              backgroundColor: isDark ? red : maroon,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -381,7 +556,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             onPressed: _goToRegister,
             child: const Text(
-              "REGISTER",
+              'REGISTER',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ),
@@ -390,14 +565,14 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _footerMini() {
+  Widget _footerMini(bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
-        "♥ Passion  •  ★ Discipline  •  🏆 Success",
+        '♥ Passion  •  ★ Discipline  •  🏆 Success',
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: maroon,
+          color: isDark ? gold : maroon,
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),

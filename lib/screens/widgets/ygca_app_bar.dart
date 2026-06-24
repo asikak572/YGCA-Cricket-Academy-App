@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 /// subtle drop shadow for depth, white status bar icons.
 ///
 /// Usage:
-/// ```dart
+/// 
 /// appBar: const YgcaAppBar(title: "Attendance Module"),
 /// ```
 class YgcaAppBar extends StatelessWidget implements PreferredSizeWidget {

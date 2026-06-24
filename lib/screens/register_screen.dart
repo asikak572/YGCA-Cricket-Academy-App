@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -10,16 +12,14 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
   final ageController = TextEditingController();
   final phoneController = TextEditingController();
   final parentNameController = TextEditingController();
@@ -29,9 +29,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool isLoading = false;
   bool obscurePassword = true;
 
-  bool get _needsApproval {
-    return selectedRole == "Student" || selectedRole == "Coach";
-  }
+  bool get _needsApproval => selectedRole == "Student" || selectedRole == "Coach";
+
+  Color _bg(bool isDark) => isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  Color _card(bool isDark) => isDark ? const Color(0xFF111111) : Colors.white;
+  Color _border(bool isDark) => isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  Color _primaryText(bool isDark) => isDark ? Colors.white : const Color(0xFF111827);
+  Color _secondaryText(bool isDark) => isDark ? Colors.white60 : const Color(0xFF64748B);
 
   Future<void> registerUser() async {
     final name = nameController.text.trim();
@@ -59,34 +63,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (selectedRole == "Student") {
-      if (age.isEmpty ||
-          phone.isEmpty ||
-          parentName.isEmpty ||
-          parentEmail.isEmpty) {
+      if (age.isEmpty || phone.isEmpty || parentName.isEmpty || parentEmail.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please fill student age, phone and parent details"),
-          ),
+          const SnackBar(content: Text("Please fill student age, phone and parent details")),
         );
         return;
       }
     }
 
+    if (selectedRole == "Coach" && phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill coach phone number")),
+      );
+      return;
+    }
+
     setState(() => isLoading = true);
 
     try {
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
       final uid = credential.user!.uid;
       final firestore = FirebaseFirestore.instance;
       final batch = firestore.batch();
-
       final isPending = selectedRole == "Student" || selectedRole == "Coach";
 
       final userRef = firestore.collection('users').doc(uid);
 
-      batch.set(userRef, {
+      final userData = <String, dynamic>{
         'uid': uid,
         'name': name,
         'email': email,
@@ -94,10 +101,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'role': selectedRole,
         'approvalStatus': isPending ? 'Pending' : 'Approved',
         'status': isPending ? 'Pending' : 'Active',
-        'isApproved': isPending ? false : true,
+        'isApproved': !isPending,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      };
+
+      if (phone.isNotEmpty) {
+        userData['phone'] = phone;
+      }
+
+      batch.set(userRef, userData, SetOptions(merge: true));
 
       if (selectedRole == "Student") {
         final studentRef = firestore.collection('students').doc(uid);
@@ -120,9 +133,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'rollNo': '',
           'attendance': '0%',
           'feeStatus': 'Pending',
+          'presentCount': 0,
+          'totalAttendanceCount': 0,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
-        });
+        }, SetOptions(merge: true));
       }
 
       if (selectedRole == "Coach") {
@@ -142,12 +157,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'assignedBatches': [],
           'batch': '',
           'batchText': '',
+          'assignedStudents': '0',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
-        });
+        }, SetOptions(merge: true));
+
+        batch.set(userRef, {
+          'assignedBatches': [],
+          'batch': '',
+          'batchText': '',
+          'assignedStudents': '0',
+          'phone': phone,
+        }, SetOptions(merge: true));
       }
 
       await batch.commit();
+      await FirebaseAuth.instance.signOut();
 
       if (!mounted) return;
 
@@ -158,7 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ? "Student registered. Waiting for admin approval."
                 : selectedRole == "Coach"
                     ? "Coach registered. Waiting for admin approval."
-                    : "Account registered successfully.",
+                    : "Parent account registered successfully.",
           ),
           backgroundColor: Colors.green,
         ),
@@ -185,10 +210,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Something went wrong: $e"),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text("Something went wrong: $e"), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -209,120 +231,129 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final h = MediaQuery.of(context).size.height;
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+        final h = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _hero(context, h),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
-                child: Column(
-                  children: [
-                    _input(
-                      icon: Icons.person_outline,
-                      label: "Full Name",
-                      controller: nameController,
-                    ),
-                    const SizedBox(height: 12),
-                    _input(
-                      icon: Icons.mail_outline,
-                      label: "Email Address",
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 12),
-                    _input(
-                      icon: Icons.lock_outline,
-                      label: "Password",
-                      controller: passwordController,
-                      obscureText: obscurePassword,
-                      suffix: IconButton(
-                        icon: Icon(
-                          obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey,
+        return Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Column(
+                children: [
+                  _hero(context, h, isDark),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
+                    child: Column(
+                      children: [
+                        _input(
+                          isDark: isDark,
+                          icon: Icons.person_outline,
+                          label: "Full Name",
+                          controller: nameController,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            obscurePassword = !obscurePassword;
-                          });
-                        },
-                      ),
+                        const SizedBox(height: 12),
+                        _input(
+                          isDark: isDark,
+                          icon: Icons.mail_outline,
+                          label: "Email Address",
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 12),
+                        _input(
+                          isDark: isDark,
+                          icon: Icons.lock_outline,
+                          label: "Password",
+                          controller: passwordController,
+                          obscureText: obscurePassword,
+                          suffix: IconButton(
+                            icon: Icon(
+                              obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              color: _secondaryText(isDark),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                obscurePassword = !obscurePassword;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _roleDropdown(isDark),
+                        if (_needsApproval) ...[
+                          const SizedBox(height: 14),
+                          _approvalNoteCard(isDark),
+                        ],
+                        if (selectedRole == "Student") ...[
+                          const SizedBox(height: 12),
+                          _input(
+                            isDark: isDark,
+                            icon: Icons.cake_outlined,
+                            label: "Student Age",
+                            controller: ageController,
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 12),
+                          _input(
+                            isDark: isDark,
+                            icon: Icons.phone_outlined,
+                            label: "Phone Number",
+                            controller: phoneController,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 12),
+                          _input(
+                            isDark: isDark,
+                            icon: Icons.family_restroom,
+                            label: "Parent Name",
+                            controller: parentNameController,
+                          ),
+                          const SizedBox(height: 12),
+                          _input(
+                            isDark: isDark,
+                            icon: Icons.email_outlined,
+                            label: "Parent Email",
+                            controller: parentEmailController,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                        ],
+                        if (selectedRole == "Coach") ...[
+                          const SizedBox(height: 12),
+                          _input(
+                            isDark: isDark,
+                            icon: Icons.phone_outlined,
+                            label: "Phone Number",
+                            controller: phoneController,
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        _registerButton(isDark),
+                        const SizedBox(height: 12),
+                        _loginText(isDark),
+                        const SizedBox(height: 20),
+                        _footerMini(isDark),
+                        const SizedBox(height: 12),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    _roleDropdown(),
-
-                    if (_needsApproval) ...[
-                      const SizedBox(height: 14),
-                      _approvalNoteCard(),
-                    ],
-
-                    if (selectedRole == "Student") ...[
-                      const SizedBox(height: 12),
-                      _input(
-                        icon: Icons.cake_outlined,
-                        label: "Student Age",
-                        controller: ageController,
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 12),
-                      _input(
-                        icon: Icons.phone_outlined,
-                        label: "Phone Number",
-                        controller: phoneController,
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 12),
-                      _input(
-                        icon: Icons.family_restroom,
-                        label: "Parent Name",
-                        controller: parentNameController,
-                      ),
-                      const SizedBox(height: 12),
-                      _input(
-                        icon: Icons.email_outlined,
-                        label: "Parent Email",
-                        controller: parentEmailController,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                    ],
-
-                    if (selectedRole == "Coach") ...[
-                      const SizedBox(height: 12),
-                      _input(
-                        icon: Icons.phone_outlined,
-                        label: "Phone Number",
-                        controller: phoneController,
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ],
-
-                    const SizedBox(height: 16),
-                    _registerButton(),
-                    const SizedBox(height: 12),
-                    _loginText(),
-                    const SizedBox(height: 20),
-                    _footerMini(),
-                    const SizedBox(height: 12),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _hero(BuildContext context, double h) {
+  Widget _hero(BuildContext context, double h, bool isDark) {
     return Container(
-      height: h * 0.30,
+      height: h * 0.31,
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
@@ -343,11 +374,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.72),
-                    Colors.black.withOpacity(0.50),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.95),
+                          darkMaroon.withOpacity(0.82),
+                          red.withOpacity(0.45),
+                        ]
+                      : [
+                          darkMaroon.withOpacity(0.96),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.50),
+                        ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -373,6 +410,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const Spacer(),
+                    CircleAvatar(
+                      radius: 23,
+                      backgroundColor: Colors.black.withOpacity(0.35),
+                      child: IconButton(
+                        onPressed: ThemeController.toggleTheme,
+                        icon: Icon(
+                          isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const Spacer(),
@@ -422,6 +471,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _input({
+    required bool isDark,
     required IconData icon,
     required String label,
     required TextEditingController controller,
@@ -433,71 +483,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(
-        color: Colors.black,
+      style: TextStyle(
+        color: _primaryText(isDark),
         fontSize: 15,
         fontWeight: FontWeight.w700,
       ),
-      cursorColor: Color(0xFF7F0000),
+      cursorColor: isDark ? gold : maroon,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
-          color: Colors.black54,
+        labelStyle: TextStyle(
+          color: _secondaryText(isDark),
           fontWeight: FontWeight.w700,
         ),
-        hintStyle: const TextStyle(color: Colors.black38),
-        prefixIcon: Icon(icon, color: maroon),
+        prefixIcon: Icon(icon, color: isDark ? gold : maroon),
         suffixIcon: suffix,
         filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 15,
-        ),
+        fillColor: _card(isDark),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide(color: _border(isDark)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide(color: _border(isDark)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: gold, width: 1.5),
+          borderSide: BorderSide(color: isDark ? red : gold, width: 1.5),
         ),
       ),
     );
   }
 
-  Widget _roleDropdown() {
+  Widget _roleDropdown(bool isDark) {
     return DropdownButtonFormField<String>(
       value: selectedRole,
-      dropdownColor: Colors.white,
-      style: const TextStyle(
-        color: Colors.black,
+      dropdownColor: _card(isDark),
+      style: TextStyle(
+        color: _primaryText(isDark),
         fontWeight: FontWeight.w700,
       ),
       decoration: InputDecoration(
         labelText: "Select Role",
-        labelStyle: const TextStyle(
-          color: Colors.black54,
+        labelStyle: TextStyle(
+          color: _secondaryText(isDark),
           fontWeight: FontWeight.w700,
         ),
-        prefixIcon: Icon(Icons.shield_outlined, color: maroon),
+        prefixIcon: Icon(Icons.shield_outlined, color: isDark ? gold : maroon),
         filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 15,
-        ),
+        fillColor: _card(isDark),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide(color: _border(isDark)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide(color: _border(isDark)),
         ),
       ),
       items: const [
@@ -505,23 +548,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
         DropdownMenuItem(value: "Coach", child: Text("Coach")),
         DropdownMenuItem(value: "Parent", child: Text("Parent")),
       ],
-      onChanged: (value) {
-        if (value == null) return;
-        setState(() => selectedRole = value);
-      },
+      onChanged: isLoading
+          ? null
+          : (value) {
+              if (value == null) return;
+              setState(() => selectedRole = value);
+            },
     );
   }
 
-  Widget _approvalNoteCard() {
+  Widget _approvalNoteCard(bool isDark) {
     final message = selectedRole == "Coach"
-        ? "Coach accounts will be sent to admin approval. Admin will assign batch before dashboard access."
-        : "Student accounts will be sent to admin approval. Admin will assign batch and roll number.";
+        ? "Coach account will be sent to admin approval. Admin will assign batch before dashboard access."
+        : "Student account will be sent to admin approval. Admin will assign batch and roll number.";
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.10),
+        color: Colors.orange.withOpacity(isDark ? 0.14 : 0.10),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.orange.withOpacity(0.35)),
       ),
@@ -532,8 +577,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: Color(0xFF92400E),
+              style: TextStyle(
+                color: isDark ? Colors.orangeAccent : const Color(0xFF92400E),
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
                 height: 1.35,
@@ -545,24 +590,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _registerButton() {
+  Widget _registerButton(bool isDark) {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
-          backgroundColor: maroon,
-          foregroundColor: gold,
+          backgroundColor: isDark ? red : maroon,
+          foregroundColor: isDark ? Colors.white : gold,
           elevation: 8,
           shadowColor: maroon.withOpacity(0.35),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         onPressed: isLoading ? null : registerUser,
         icon: isLoading ? const SizedBox() : const Icon(Icons.person_add),
         label: isLoading
-            ? CircularProgressIndicator(color: gold, strokeWidth: 2)
+            ? CircularProgressIndicator(color: isDark ? Colors.white : gold, strokeWidth: 2)
             : const Text(
                 "REGISTER ACCOUNT",
                 style: TextStyle(
@@ -575,20 +618,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _loginText() {
+  Widget _loginText(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           "Already have an account? ",
-          style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+          style: TextStyle(color: _secondaryText(isDark), fontSize: 12),
         ),
         GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Text(
             "Login Now",
             style: TextStyle(
-              color: maroon,
+              color: isDark ? gold : maroon,
               fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
@@ -598,14 +641,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _footerMini() {
+  Widget _footerMini(bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         "♥ Passion  •  ★ Discipline  •  🏆 Success",
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: maroon,
+          color: isDark ? gold : maroon,
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),

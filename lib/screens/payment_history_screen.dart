@@ -1,26 +1,259 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class PaymentHistoryScreen extends StatelessWidget {
+import '../theme/theme_controller.dart';
+
+class PaymentHistoryScreen extends StatefulWidget {
   const PaymentHistoryScreen({super.key});
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  @override
+  State<PaymentHistoryScreen> createState() => _PaymentHistoryScreenState();
+}
+
+class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  bool loadingUser = true;
+
+  String uid = '';
+  String role = '';
+  String email = '';
+
+  List<String> assignedBatches = [];
+  List<String> linkedChildrenIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
 
   int _toInt(dynamic value) {
     if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
     return int.tryParse(value.toString()) ?? 0;
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  List<String> _listFromDynamic(dynamic value) {
+    final result = <String>[];
+
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) result.add(text);
+      }
+    }
+
+    return result;
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    uid = user.uid;
+    email = _lower(user.email ?? '');
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (!userDoc.exists || userDoc.data() == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    final data = userDoc.data() ?? {};
+    final loadedRole = _text(data['role']);
+
+    final batches = _listFromDynamic(data['assignedBatches']);
+
+    final assignedBatch = _text(data['assignedBatch']);
+    final batch = _text(data['batch']);
+
+    if (assignedBatch.isNotEmpty && !batches.contains(assignedBatch)) {
+      batches.add(assignedBatch);
+    }
+
+    if (batch.isNotEmpty && !batches.contains(batch)) {
+      batches.add(batch);
+    }
+
+    final children = <String>{};
+
+    for (final id in _listFromDynamic(data['linkedChildrenIds'])) {
+      children.add(id);
+    }
+
+    final childId = _text(data['childId']);
+    if (childId.isNotEmpty) children.add(childId);
+
+    final studentId = _text(data['studentId']);
+    if (studentId.isNotEmpty) children.add(studentId);
+
+    final parentEmail = _lower(
+      _text(data['email']).isNotEmpty ? _text(data['email']) : email,
+    );
+
+    if (loadedRole == 'Parent') {
+      if (parentEmail.isNotEmpty) {
+        final byParentEmailLower = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmailLower', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byParentEmailLower.docs) {
+          children.add(doc.id);
+        }
+
+        final byParentEmail = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmail', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byParentEmail.docs) {
+          children.add(doc.id);
+        }
+      }
+
+      final byParentUid = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentUid', isEqualTo: uid)
+          .get();
+
+      for (final doc in byParentUid.docs) {
+        children.add(doc.id);
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      role = loadedRole;
+      assignedBatches = batches;
+      linkedChildrenIds = children.toList();
+      loadingUser = false;
+    });
+  }
+
+  Query<Map<String, dynamic>> _paymentQuery() {
+    Query<Map<String, dynamic>> query =
+        FirebaseFirestore.instance.collection('fees');
+
+    if (role == 'Admin') {
+      return query;
+    }
+
+    if (role == 'Coach') {
+      if (assignedBatches.isEmpty) {
+        return query.where('batch', isEqualTo: '__NO_ASSIGNED_BATCH__');
+      }
+
+      if (assignedBatches.length == 1) {
+        return query.where('batch', isEqualTo: assignedBatches.first);
+      }
+
+      return query.where(
+        'batch',
+        whereIn: assignedBatches.take(10).toList(),
+      );
+    }
+
+    if (role == 'Student') {
+      return query.where('studentId', isEqualTo: uid);
+    }
+
+    if (role == 'Parent') {
+      if (linkedChildrenIds.isEmpty) {
+        return query.where('parentUid', isEqualTo: uid);
+      }
+
+      if (linkedChildrenIds.length == 1) {
+        return query.where('studentId', isEqualTo: linkedChildrenIds.first);
+      }
+
+      return query.where(
+        'studentId',
+        whereIn: linkedChildrenIds.take(10).toList(),
+      );
+    }
+
+    return query.where('studentId', isEqualTo: '__NO_ACCESS__');
+  }
+
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortPayments(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    final sorted = docs.toList();
+
+    sorted.sort((a, b) {
+      final aTime = a.data()['createdAt'];
+      final bTime = b.data()['createdAt'];
+
+      if (aTime is Timestamp && bTime is Timestamp) {
+        return bTime.compareTo(aTime);
+      }
+
+      return 0;
+    });
+
+    return sorted;
   }
 
   String _formatDate(dynamic timestamp) {
     if (timestamp == null) return "No Date";
 
     try {
-      final date = (timestamp as Timestamp).toDate();
-      return "${date.day}/${date.month}/${date.year}";
+      if (timestamp is Timestamp) {
+        final date = timestamp.toDate();
+
+        return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+      }
+
+      if (timestamp is DateTime) {
+        return "${timestamp.day.toString().padLeft(2, '0')}/${timestamp.month.toString().padLeft(2, '0')}/${timestamp.year}";
+      }
+
+      return timestamp.toString();
     } catch (_) {
       return "No Date";
     }
@@ -32,130 +265,259 @@ class PaymentHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('fees')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: loadingUser
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  )
+                : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _paymentQuery().snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            Expanded(
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18),
+                                  child: Text(
+                                    "Error: ${snapshot.error}",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.redAccent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
 
-          final payments = snapshot.data?.docs ?? [];
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            const Expanded(
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ],
+                        );
+                      }
 
-          int totalPaid = 0;
-          int totalPending = 0;
+                      final payments = _sortPayments(snapshot.data?.docs ?? []);
 
-          for (final doc in payments) {
-            final data = doc.data() as Map<String, dynamic>;
-            totalPaid += _toInt(data['paidAmount']);
-            totalPending += _toInt(data['pendingAmount']);
-          }
+                      int totalPaid = 0;
+                      int totalPending = 0;
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _heroBanner(
-                  totalPaid: totalPaid,
-                  totalPending: totalPending,
-                  records: payments.length,
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("PAYMENT RECORDS"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: payments.isEmpty
-                      ? _emptyCard()
-                      : Column(
-                          children: payments.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
+                      for (final doc in payments) {
+                        final data = doc.data();
+                        totalPaid += _toInt(data['paidAmount']);
+                        totalPending += _toInt(data['pendingAmount']);
+                      }
 
-                            final studentName =
-                                data['studentName']?.toString() ?? 'Unknown';
-                            final batch = data['batch']?.toString() ?? '';
-                            final paidAmount = _toInt(data['paidAmount']);
-                            final pendingAmount = _toInt(data['pendingAmount']);
-                            final status =
-                                data['status']?.toString() ?? 'Pending';
-                            final paymentDate = _formatDate(data['createdAt']);
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            _heroBanner(
+                              isDark: isDark,
+                              totalPaid: totalPaid,
+                              totalPending: totalPending,
+                              records: payments.length,
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("PAYMENT RECORDS", isDark),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: payments.isEmpty
+                                  ? _emptyCard(isDark)
+                                  : Column(
+                                      children: payments.map((doc) {
+                                        final data = doc.data();
 
-                            return _paymentCard(
-                              studentName: studentName,
-                              batch: batch,
-                              paidAmount: paidAmount,
-                              pendingAmount: pendingAmount,
-                              status: status,
-                              paymentDate: paymentDate,
-                            );
-                          }).toList(),
+                                        final studentName =
+                                            _text(data['studentName']).isEmpty
+                                                ? 'Unknown Student'
+                                                : _text(data['studentName']);
+
+                                        final batch = _text(data['batch']);
+
+                                        final paidAmount =
+                                            _toInt(data['paidAmount']);
+
+                                        final pendingAmount =
+                                            _toInt(data['pendingAmount']);
+
+                                        final status =
+                                            _text(data['status']).isEmpty
+                                                ? 'Pending'
+                                                : _text(data['status']);
+
+                                        final paymentDate =
+                                            _formatDate(data['createdAt']);
+
+                                        return _paymentCard(
+                                          isDark: isDark,
+                                          studentName: studentName,
+                                          batch: batch,
+                                          paidAmount: paidAmount,
+                                          pendingAmount: pendingAmount,
+                                          status: status,
+                                          paymentDate: paymentDate,
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
                         ),
-                ),
-                const SizedBox(height: 26),
-              ],
-            ),
-          );
-        },
-      ),
+                      );
+                    },
+                  ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 58,
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
           const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "PAYMENT HISTORY",
-              style: TextStyle(
-                color: gold,
-                fontSize: 19,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "PAYMENT HISTORY",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Fee payment transaction records",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.payments, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
   Widget _heroBanner({
+    required bool isDark,
     required int totalPaid,
     required int totalPending,
     required int records,
   }) {
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 220,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -169,15 +531,30 @@ class PaymentHistoryScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -25,
+            bottom: -25,
+            child: Icon(
+              Icons.payments_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -185,53 +562,64 @@ class PaymentHistoryScreen extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.currency_rupee, color: maroon, size: 42),
+                  child: Icon(
+                    Icons.currency_rupee_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "ACADEMY",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        "PAYMENT",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 31,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "HISTORY",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 235,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _heroChip("Paid: ₹$totalPaid"),
-                          _heroChip("Pending: ₹$totalPending"),
-                          _heroChip("Records: $records"),
+                          Text(
+                            "ACADEMY",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "PAYMENT",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "HISTORY",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Paid: ₹$totalPaid"),
+                              _heroChip("Pending: ₹$totalPending"),
+                              _heroChip("Records: $records"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -244,24 +632,27 @@ class PaymentHistoryScreen extends StatelessWidget {
 
   Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 165),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -269,20 +660,26 @@ class PaymentHistoryScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: maroon,
-              fontSize: 18,
+              color: isDark ? gold : maroon,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
           const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _paymentCard({
+    required bool isDark,
     required String studentName,
     required String batch,
     required int paidAmount,
@@ -296,12 +693,16 @@ class PaymentHistoryScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
+            color: isDark
+                ? Colors.black.withOpacity(0.28)
+                : Colors.black.withOpacity(0.045),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -314,7 +715,10 @@ class PaymentHistoryScreen extends StatelessWidget {
             backgroundColor: maroon,
             child: Text(
               studentName.isNotEmpty ? studentName[0].toUpperCase() : "?",
-              style: TextStyle(color: gold, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: gold,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -326,7 +730,8 @@ class PaymentHistoryScreen extends StatelessWidget {
                   studentName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
@@ -334,18 +739,29 @@ class PaymentHistoryScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   batch.isEmpty ? paymentDate : "$batch • $paymentDate",
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    _amountChip("Paid ₹$paidAmount", Colors.green),
-                    _amountChip("Pending ₹$pendingAmount", Colors.orange),
+                    _amountChip(
+                      isDark: isDark,
+                      text: "Paid ₹$paidAmount",
+                      color: Colors.green,
+                    ),
+                    _amountChip(
+                      isDark: isDark,
+                      text: "Pending ₹$pendingAmount",
+                      color: Colors.orange,
+                    ),
                   ],
                 ),
               ],
@@ -357,18 +773,23 @@ class PaymentHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _amountChip(String text, Color color) {
+  Widget _amountChip({
+    required bool isDark,
+    required String text,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withOpacity(isDark ? 0.13 : 0.10),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.22)),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: color,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
           fontSize: 11,
         ),
       ),
@@ -381,34 +802,48 @@ class PaymentHistoryScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Text(
         status,
         style: TextStyle(
           color: color,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
           fontSize: 11,
         ),
       ),
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.payments, size: 38, color: Colors.grey),
-          SizedBox(height: 10),
+          Icon(
+            Icons.payments_rounded,
+            size: 38,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
           Text(
             "No payment records found",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Payment records will appear here",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText(isDark)),
           ),
         ],
       ),

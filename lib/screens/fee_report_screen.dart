@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../theme/theme_controller.dart';
 import '../services/pdf_service.dart';
 import '../services/excel_service.dart';
 
@@ -13,10 +14,34 @@ class FeeReportScreen extends StatefulWidget {
 }
 
 class _FeeReportScreenState extends State<FeeReportScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  bool loadingUser = true;
+
+  String uid = '';
+  String role = '';
+  String email = '';
+
+  List<String> assignedBatches = [];
+  List<String> linkedChildrenIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
 
   int _toInt(dynamic value) {
     if (value == null) return 0;
@@ -32,9 +57,131 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     return int.tryParse(cleaned) ?? 0;
   }
 
-  String _text(dynamic value) {
-    if (value == null) return '';
-    return value.toString().trim();
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  List<String> _listFromDynamic(dynamic value) {
+    final result = <String>[];
+
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) result.add(text);
+      }
+    }
+
+    return result;
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    uid = user.uid;
+    email = _lower(user.email ?? '');
+
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (!userDoc.exists || userDoc.data() == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    final data = userDoc.data() ?? {};
+    final loadedRole = _text(data['role']);
+
+    final batches = _listFromDynamic(data['assignedBatches']);
+
+    final assignedBatch = _text(data['assignedBatch']);
+    final batch = _text(data['batch']);
+
+    if (assignedBatch.isNotEmpty && !batches.contains(assignedBatch)) {
+      batches.add(assignedBatch);
+    }
+
+    if (batch.isNotEmpty && !batches.contains(batch)) {
+      batches.add(batch);
+    }
+
+    final children = <String>{};
+
+    for (final id in _listFromDynamic(data['linkedChildrenIds'])) {
+      children.add(id);
+    }
+
+    final childId = _text(data['childId']);
+    if (childId.isNotEmpty) children.add(childId);
+
+    final studentId = _text(data['studentId']);
+    if (studentId.isNotEmpty) children.add(studentId);
+
+    final parentEmail = _lower(
+      _text(data['email']).isNotEmpty ? _text(data['email']) : email,
+    );
+
+    if (loadedRole == 'Parent') {
+      if (parentEmail.isNotEmpty) {
+        final byParentEmailLower = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmailLower', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byParentEmailLower.docs) {
+          children.add(doc.id);
+        }
+
+        final byParentEmail = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmail', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byParentEmail.docs) {
+          children.add(doc.id);
+        }
+      }
+
+      final byParentUid = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentUid', isEqualTo: uid)
+          .get();
+
+      for (final doc in byParentUid.docs) {
+        children.add(doc.id);
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      role = loadedRole;
+      assignedBatches = batches;
+      linkedChildrenIds = children.toList();
+      loadingUser = false;
+    });
   }
 
   int _amount(Map<String, dynamic> data, List<String> keys) {
@@ -43,12 +190,17 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
         return _toInt(data[key]);
       }
     }
+
     return 0;
   }
 
   DateTime _createdAt(Map<String, dynamic> data) {
     final value = data['createdAt'];
-    if (value is Timestamp) return value.toDate();
+
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
@@ -113,9 +265,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     final pending = _pendingAmount(data);
 
     final rawStatus = _text(
-      data['paymentStatus'] ??
-          data['feeStatus'] ??
-          data['status'],
+      data['paymentStatus'] ?? data['feeStatus'] ?? data['status'],
     ).toLowerCase();
 
     if (total > 0 && paid >= total) return 'Paid';
@@ -140,455 +290,806 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       case 'partial':
         return Colors.orange;
       case 'unpaid':
-        return Colors.red;
+        return Colors.redAccent;
       case 'pending':
       default:
         return Colors.deepOrange;
     }
   }
 
-  Future<Map<String, dynamic>> _getUserAccess() async {
-    final user = FirebaseAuth.instance.currentUser;
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _queryByChunks({
+    required String field,
+    required List<String> values,
+  }) async {
+    final docs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
 
-    if (user == null) {
-      return {
-        'role': '',
-        'allowedIds': <String>[],
-      };
+    for (int i = 0; i < values.length; i += 10) {
+      final end = i + 10 > values.length ? values.length : i + 10;
+      final chunk = values.sublist(i, end);
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('fees')
+          .where(field, whereIn: chunk)
+          .get();
+
+      docs.addAll(snapshot.docs);
     }
 
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-
-    if (!userDoc.exists) {
-      return {
-        'role': '',
-        'allowedIds': <String>[],
-      };
-    }
-
-    final data = userDoc.data() ?? {};
-    final role = _text(data['role']);
-
-    if (role == 'Admin') {
-      return {
-        'role': role,
-        'allowedIds': <String>['ALL'],
-      };
-    }
-
-    if (role == 'Student') {
-      final ids = <String>{user.uid};
-
-      final studentId = _text(data['studentId']);
-      if (studentId.isNotEmpty) ids.add(studentId);
-
-      return {
-        'role': role,
-        'allowedIds': ids.toList(),
-      };
-    }
-
-    if (role == 'Parent') {
-      final ids = <String>{};
-
-      final linkedChildrenIds = data['linkedChildrenIds'];
-
-      if (linkedChildrenIds is List) {
-        for (final id in linkedChildrenIds) {
-          final value = _text(id);
-          if (value.isNotEmpty) ids.add(value);
-        }
-      }
-
-      final childId = _text(data['childId']);
-      if (childId.isNotEmpty) ids.add(childId);
-
-      final studentId = _text(data['studentId']);
-      if (studentId.isNotEmpty) ids.add(studentId);
-
-      return {
-        'role': role,
-        'allowedIds': ids.toList(),
-      };
-    }
-
-    return {
-      'role': role,
-      'allowedIds': <String>[],
-    };
+    return docs;
   }
 
   Future<List<Map<String, dynamic>>> _getFeeRecords() async {
-    final access = await _getUserAccess();
-    final allowedIds = List<String>.from(access['allowedIds'] ?? []);
+    final docs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
 
-    if (allowedIds.isEmpty) return [];
-
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs = [];
-
-    if (allowedIds.contains('ALL')) {
+    if (role == 'Admin') {
+      final snapshot = await FirebaseFirestore.instance.collection('fees').get();
+      docs.addAll(snapshot.docs);
+    } else if (role == 'Coach') {
+      if (assignedBatches.isNotEmpty) {
+        docs.addAll(
+          await _queryByChunks(
+            field: 'batch',
+            values: assignedBatches.take(10).toList(),
+          ),
+        );
+      }
+    } else if (role == 'Student') {
       final snapshot = await FirebaseFirestore.instance
           .collection('fees')
+          .where('studentId', isEqualTo: uid)
           .get();
 
-      docs = snapshot.docs;
-    } else {
-      for (int i = 0; i < allowedIds.length; i += 10) {
-        final end = (i + 10 > allowedIds.length) ? allowedIds.length : i + 10;
-        final chunk = allowedIds.sublist(i, end);
-
-        final snapshot = await FirebaseFirestore.instance
+      docs.addAll(snapshot.docs);
+    } else if (role == 'Parent') {
+      if (linkedChildrenIds.isNotEmpty) {
+        docs.addAll(
+          await _queryByChunks(
+            field: 'studentId',
+            values: linkedChildrenIds.take(10).toList(),
+          ),
+        );
+      } else {
+        final byParentUid = await FirebaseFirestore.instance
             .collection('fees')
-            .where('studentId', whereIn: chunk)
+            .where('parentUid', isEqualTo: uid)
             .get();
 
-        docs.addAll(snapshot.docs);
+        docs.addAll(byParentUid.docs);
+
+        if (email.isNotEmpty) {
+          final byParentEmailLower = await FirebaseFirestore.instance
+              .collection('fees')
+              .where('parentEmailLower', isEqualTo: email)
+              .get();
+
+          docs.addAll(byParentEmailLower.docs);
+
+          final byParentEmail = await FirebaseFirestore.instance
+              .collection('fees')
+              .where('parentEmail', isEqualTo: email)
+              .get();
+
+          docs.addAll(byParentEmail.docs);
+        }
       }
     }
 
-    final records = docs.map((doc) {
-      return {
+    final unique = <String, Map<String, dynamic>>{};
+
+    for (final doc in docs) {
+      unique[doc.id] = {
         'docId': doc.id,
         ...doc.data(),
       };
-    }).toList();
+    }
+
+    final records = unique.values.toList();
 
     records.sort((a, b) => _createdAt(b).compareTo(_createdAt(a)));
 
     return records;
   }
 
-  Future<void> _generatePdf() async {
-    final records = await _getFeeRecords();
+  Future<void> _generatePdf(BuildContext context) async {
+    try {
+      final records = await _getFeeRecords();
 
-    int totalFee = 0;
-    int collected = 0;
-    int pending = 0;
-    int paidRecords = 0;
+      int totalFee = 0;
+      int collected = 0;
+      int pending = 0;
+      int paidRecords = 0;
 
-    for (final data in records) {
-      final total = _totalFee(data);
-      final paid = _paidAmount(data);
-      final pendingAmount = _pendingAmount(data);
-      final status = _paymentStatus(data);
+      for (final data in records) {
+        final total = _totalFee(data);
+        final paid = _paidAmount(data);
+        final pendingAmount = _pendingAmount(data);
+        final status = _paymentStatus(data);
 
-      totalFee += total;
-      collected += paid;
-      pending += pendingAmount;
+        totalFee += total;
+        collected += paid;
+        pending += pendingAmount;
 
-      if (status == 'Paid') {
-        paidRecords++;
+        if (status == 'Paid') {
+          paidRecords++;
+        }
+      }
+
+      await PdfService.generateFeeReportPdf(
+        totalFee: totalFee,
+        collected: collected,
+        pending: pending,
+        paidStudents: paidRecords,
+        feeRecords: records,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("PDF report generated"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("PDF failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
-
-    await PdfService.generateFeeReportPdf(
-      totalFee: totalFee,
-      collected: collected,
-      pending: pending,
-      paidStudents: paidRecords,
-      feeRecords: records,
-    );
   }
 
-  Future<void> _generateExcel() async {
-    final records = await _getFeeRecords();
+  Future<void> _generateExcel(BuildContext context) async {
+    try {
+      final records = await _getFeeRecords();
 
-    await ExcelService.generateFeeReportExcel(
-      feeRecords: records,
-    );
+      await ExcelService.generateFeeReportExcel(
+        feeRecords: records,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Excel report generated"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Excel failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text(
-          "Fee Reports",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            tooltip: "Export PDF",
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed: _generatePdf,
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: loadingUser
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  )
+                : FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _getFeeRecords(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            const Expanded(
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ],
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            Expanded(
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18),
+                                  child: Text(
+                                    "Error: ${snapshot.error}",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.redAccent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+
+                      final feeRecords = snapshot.data ?? [];
+
+                      int totalFee = 0;
+                      int collected = 0;
+                      int pending = 0;
+                      int paidRecords = 0;
+                      int partialRecords = 0;
+                      int pendingRecords = 0;
+
+                      for (final data in feeRecords) {
+                        final total = _totalFee(data);
+                        final paid = _paidAmount(data);
+                        final pendingAmount = _pendingAmount(data);
+                        final status = _paymentStatus(data);
+
+                        totalFee += total;
+                        collected += paid;
+                        pending += pendingAmount;
+
+                        if (status == 'Paid') {
+                          paidRecords++;
+                        } else if (status == 'Partial') {
+                          partialRecords++;
+                        } else {
+                          pendingRecords++;
+                        }
+                      }
+
+                      final collectionPercent = totalFee == 0
+                          ? 0
+                          : ((collected / totalFee) * 100).round();
+
+                      final pendingFeeRecords = feeRecords.where((data) {
+                        final status = _paymentStatus(data);
+                        final pendingAmount = _pendingAmount(data);
+
+                        return status != 'Paid' || pendingAmount > 0;
+                      }).toList();
+
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _topHeader(context, isDark),
+                            _heroCard(
+                              isDark: isDark,
+                              collectionPercent: collectionPercent,
+                              collected: collected,
+                              totalFee: totalFee,
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("FEE REPORT SUMMARY", isDark),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: GridView.count(
+                                crossAxisCount: 2,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.18,
+                                children: [
+                                  _statCard(
+                                    isDark: isDark,
+                                    title: "Total Fee",
+                                    value: "₹$totalFee",
+                                    icon: Icons.account_balance_wallet_rounded,
+                                    color: gold,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    title: "Collected",
+                                    value: "₹$collected",
+                                    icon: Icons.check_circle_rounded,
+                                    color: Colors.green,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    title: "Pending",
+                                    value: "₹$pending",
+                                    icon: Icons.warning_amber_rounded,
+                                    color: Colors.orange,
+                                  ),
+                                  _statCard(
+                                    isDark: isDark,
+                                    title: "Paid Records",
+                                    value: paidRecords.toString(),
+                                    icon: Icons.verified_rounded,
+                                    color: Colors.blueAccent,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _smallStatusCard(
+                                      isDark: isDark,
+                                      title: "Partial",
+                                      value: partialRecords.toString(),
+                                      color: Colors.orange,
+                                      icon: Icons.timelapse_rounded,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _smallStatusCard(
+                                      isDark: isDark,
+                                      title: "Pending",
+                                      value: pendingRecords.toString(),
+                                      color: Colors.redAccent,
+                                      icon: Icons.pending_actions_rounded,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("PAYMENT RECORDS", isDark),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: feeRecords.isEmpty
+                                  ? _emptyCard(
+                                      isDark,
+                                      "No fee records found",
+                                      "No fee record available for this user",
+                                      Icons.receipt_long_rounded,
+                                    )
+                                  : Column(
+                                      children: feeRecords.map((data) {
+                                        final name = _studentName(data);
+                                        final studentId = _studentId(data);
+                                        final total = _totalFee(data);
+                                        final paid = _paidAmount(data);
+                                        final pendingAmount =
+                                            _pendingAmount(data);
+
+                                        final status = _paymentStatus(data);
+                                        final color = _statusColor(status);
+
+                                        final progress = total == 0
+                                            ? 0.0
+                                            : (paid / total).clamp(0.0, 1.0);
+
+                                        return _collectionTile(
+                                          isDark: isDark,
+                                          title: name,
+                                          subtitle: studentId.isEmpty
+                                              ? "Student ID not found"
+                                              : "ID: $studentId",
+                                          status: status,
+                                          amount: "₹$paid / ₹$total",
+                                          progress: progress,
+                                          pending: status == 'Paid'
+                                              ? "Fully Paid"
+                                              : "Pending ₹$pendingAmount",
+                                          statusColor: color,
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionTitle("PENDING FEE RECORDS", isDark),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: pendingFeeRecords.isEmpty
+                                  ? _emptyCard(
+                                      isDark,
+                                      "No pending fees",
+                                      "All fee records are completed",
+                                      Icons.check_circle_rounded,
+                                    )
+                                  : Column(
+                                      children: pendingFeeRecords.map((data) {
+                                        final status = _paymentStatus(data);
+                                        final color = _statusColor(status);
+
+                                        return _pendingStudentCard(
+                                          isDark: isDark,
+                                          name: _studentName(data),
+                                          batch: _studentId(data).isEmpty
+                                              ? "Student ID not found"
+                                              : "ID: ${_studentId(data)}",
+                                          amount:
+                                              "₹${_pendingAmount(data)}",
+                                          status: status,
+                                          color: color,
+                                        );
+                                      }).toList(),
+                                    ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
           ),
-          IconButton(
-            tooltip: "Export Excel",
-            icon: const Icon(Icons.table_chart),
-            onPressed: _generateExcel,
+        );
+      },
+    );
+  }
+
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      child: Row(
+        children: [
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
-        ],
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _getFeeRecords(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text("Error: ${snapshot.error}"),
-            );
-          }
-
-          final feeRecords = snapshot.data ?? [];
-
-          int totalFee = 0;
-          int collected = 0;
-          int pending = 0;
-          int paidRecords = 0;
-          int partialRecords = 0;
-          int pendingRecords = 0;
-
-          for (final data in feeRecords) {
-            final total = _totalFee(data);
-            final paid = _paidAmount(data);
-            final pendingAmount = _pendingAmount(data);
-            final status = _paymentStatus(data);
-
-            totalFee += total;
-            collected += paid;
-            pending += pendingAmount;
-
-            if (status == 'Paid') {
-              paidRecords++;
-            } else if (status == 'Partial') {
-              partialRecords++;
-            } else {
-              pendingRecords++;
-            }
-          }
-
-          final collectionPercent =
-              totalFee == 0 ? 0 : ((collected / totalFee) * 100).round();
-
-          final pendingFeeRecords = feeRecords.where((data) {
-            final status = _paymentStatus(data);
-            final pendingAmount = _pendingAmount(data);
-
-            return status != 'Paid' || pendingAmount > 0;
-          }).toList();
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _heroCard(collectionPercent),
-                const SizedBox(height: 16),
-
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.35,
-                  children: [
-                    _statCard(
-                      "Total Fee",
-                      "₹$totalFee",
-                      Icons.account_balance_wallet,
-                      gold,
-                    ),
-                    _statCard(
-                      "Collected",
-                      "₹$collected",
-                      Icons.check_circle,
-                      Colors.green,
-                    ),
-                    _statCard(
-                      "Pending",
-                      "₹$pending",
-                      Icons.warning,
-                      Colors.orange,
-                    ),
-                    _statCard(
-                      "Paid Records",
-                      paidRecords.toString(),
-                      Icons.verified,
-                      Colors.blue,
-                    ),
-                  ],
+                Text(
+                  "FEE REPORTS",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
                 ),
-
-                const SizedBox(height: 14),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _smallStatusCard(
-                        title: "Partial",
-                        value: partialRecords.toString(),
-                        color: Colors.orange,
-                        icon: Icons.timelapse,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _smallStatusCard(
-                        title: "Pending",
-                        value: pendingRecords.toString(),
-                        color: Colors.red,
-                        icon: Icons.pending_actions,
-                      ),
-                    ),
-                  ],
+                Text(
+                  "Collection summary and exports",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("Payment Records"),
-
-                if (feeRecords.isEmpty)
-                  const Card(
-                    child: ListTile(
-                      title: Text("No fee records found"),
-                      subtitle: Text("No fee record available for this user"),
-                    ),
-                  )
-                else
-                  ...feeRecords.map((data) {
-                    final name = _studentName(data);
-                    final studentId = _studentId(data);
-                    final total = _totalFee(data);
-                    final paid = _paidAmount(data);
-                    final pendingAmount = _pendingAmount(data);
-                    final status = _paymentStatus(data);
-                    final color = _statusColor(status);
-
-                    final progress =
-                        total == 0 ? 0.0 : (paid / total).clamp(0.0, 1.0);
-
-                    return _collectionTile(
-                      title: name,
-                      subtitle: studentId.isEmpty ? "Student ID not found" : "ID: $studentId",
-                      status: status,
-                      amount: "₹$paid / ₹$total",
-                      progress: progress,
-                      pending: status == 'Paid'
-                          ? "Fully Paid"
-                          : "Pending ₹$pendingAmount",
-                      statusColor: color,
-                    );
-                  }),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("Pending Fee Records"),
-
-                if (pendingFeeRecords.isEmpty)
-                  const Card(
-                    child: ListTile(
-                      leading: Icon(Icons.check_circle, color: Colors.green),
-                      title: Text("No pending fees"),
-                      subtitle: Text("All fee records are completed"),
-                    ),
-                  )
-                else
-                  ...pendingFeeRecords.map((data) {
-                    final status = _paymentStatus(data);
-                    final color = _statusColor(status);
-
-                    return _pendingStudentCard(
-                      name: _studentName(data),
-                      batch: _studentId(data).isEmpty
-                          ? "Student ID not found"
-                          : "ID: ${_studentId(data)}",
-                      amount: "₹${_pendingAmount(data)}",
-                      status: status,
-                      color: color,
-                    );
-                  }),
-
-                const SizedBox(height: 18),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.picture_as_pdf_rounded,
+            onTap: () => _generatePdf(context),
+          ),
+          const SizedBox(width: 8),
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.table_chart_rounded,
+            onTap: () => _generateExcel(context),
+          ),
+          const SizedBox(width: 8),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
 
-  Widget _heroCard(int collectionPercent) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: maroon,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          Text(
-            "Firebase Fee Report",
-            style: TextStyle(
-              color: gold,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            "Academy fee collection summary",
-            style: TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: (collectionPercent / 100).clamp(0.0, 1.0),
-            backgroundColor: Colors.white24,
-            color: gold,
-            minHeight: 7,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "$collectionPercent% fee collection completed",
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+              return _circleButton(
+                isDark: isDark,
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _statCard(String title, String value, IconData icon, Color iconColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(16),
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
       ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    );
+  }
+
+  Widget _heroCard({
+    required bool isDark,
+    required int collectionPercent,
+    required int collected,
+    required int totalFee,
+  }) {
+    final progress = (collectionPercent / 100).clamp(0.0, 1.0);
+
+    return Container(
+      height: 220,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(18),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
         children: [
-          Icon(icon, color: iconColor, size: 30),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
             ),
           ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -25,
+            bottom: -25,
+            child: Icon(
+              Icons.analytics_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
+            ),
+          ),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 46,
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.analytics_rounded,
+                  color: maroon,
+                  size: 42,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 235,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "FEE COLLECTION",
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        Text(
+                          "$collectionPercent%",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
+                          ),
+                        ),
+                        Text(
+                          "Completed",
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 7,
+                            backgroundColor: Colors.white24,
+                            valueColor: AlwaysStoppedAnimation<Color>(gold),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "₹$collected collected from ₹$totalFee",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
           Text(
             title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
+            style: TextStyle(
+              color: isDark ? gold : maroon,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _statCard({
+    required bool isDark,
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  const Color(0xFF151515),
+                  const Color(0xFF1A0808),
+                  color.withOpacity(0.16),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFFBF2),
+                  color.withOpacity(0.08),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
+        ),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 135,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _smallStatusCard({
+    required bool isDark,
     required String title,
     required String value,
     required Color color,
@@ -597,8 +1098,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(color: _border(isDark)),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -612,10 +1113,10 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Colors.black54,
-                fontWeight: FontWeight.w600,
+                color: _secondaryText(isDark),
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -632,23 +1133,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _collectionTile({
+    required bool isDark,
     required String title,
     required String subtitle,
     required String status,
@@ -657,135 +1143,205 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     required String pending,
     required Color statusColor,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: border),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 4),
-
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                subtitle,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              _statusChip(status, statusColor),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              subtitle,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
             ),
-
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    amount,
-                    style: TextStyle(
-                      color: maroon,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Text(
-                  pending,
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  amount,
                   style: TextStyle(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    color: isDark ? gold : maroon,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            LinearProgressIndicator(
+              ),
+              Text(
+                pending,
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: const Color(0xFFE2E8F0),
-              color: statusColor,
+              backgroundColor:
+                  isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
               minHeight: 6,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _pendingStudentCard({
+    required bool isDark,
     required String name,
     required String batch,
     required String amount,
     required String status,
     required Color color,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: border),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
       ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: maroon,
-          child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : "?",
-            style: TextStyle(color: gold, fontWeight: FontWeight.bold),
-          ),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text("$batch\n$status"),
-        isThreeLine: true,
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            amount,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: maroon,
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : "?",
+              style: const TextStyle(
+                color: gold,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "$batch • $status",
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _statusChip(amount, color),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w900,
+          fontSize: 11,
         ),
+      ),
+    );
+  }
+
+  Widget _emptyCard(
+    bool isDark,
+    String title,
+    String subtitle,
+    IconData icon,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border(isDark)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            size: 38,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText(isDark)),
+          ),
+        ],
       ),
     );
   }

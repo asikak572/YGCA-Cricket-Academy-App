@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 class AddStudentScreen extends StatefulWidget {
   const AddStudentScreen({super.key});
 
@@ -9,64 +11,186 @@ class AddStudentScreen extends StatefulWidget {
 }
 
 class _AddStudentScreenState extends State<AddStudentScreen> {
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  final _formKey = GlobalKey<FormState>();
+
   final nameController = TextEditingController();
   final ageController = TextEditingController();
   final phoneController = TextEditingController();
+  final emailController = TextEditingController();
   final parentNameController = TextEditingController();
   final parentPhoneController = TextEditingController();
+  final parentEmailController = TextEditingController();
   final aadhaarController = TextEditingController();
-  final rollNoController = TextEditingController();
   final addressController = TextEditingController();
 
-  String feeStatus = "Pending";
+  String feeStatus = 'Pending';
+  String selectedBatch = 'Friday: 6:00 PM – 8:00 PM';
   bool isLoading = false;
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  final List<String> batchOptions = const [
+    'Friday: 6:00 PM – 8:00 PM',
+    'Saturday: 7:00 AM – 9:00 AM',
+    'Saturday: 4:00 PM – 6:00 PM',
+    'Saturday: 6:00 PM – 8:00 PM',
+  ];
 
-  Future<void> saveStudent() async {
-    if (nameController.text.trim().isEmpty ||
-        ageController.text.trim().isEmpty ||
-        phoneController.text.trim().isEmpty ||
-        rollNoController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill required fields")),
-      );
-      return;
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  String _cleanEmail(String value) {
+    return value.trim().toLowerCase();
+  }
+
+  Future<String> _generateRollNumber(String studentName) async {
+    if (studentName.trim().isEmpty) return 'Y1';
+
+    final firstLetter = studentName.trim()[0].toUpperCase();
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('students')
+        .where('approvalStatus', isEqualTo: 'Approved')
+        .get();
+
+    int count = 0;
+
+    for (final doc in snapshot.docs) {
+      final rollNo = doc.data()['rollNo']?.toString().toUpperCase() ?? '';
+      if (rollNo.startsWith(firstLetter)) count++;
     }
 
+    return '$firstLetter${count + 1}';
+  }
+
+  Future<void> _autoLinkParentToStudent({
+    required String studentId,
+    required String parentEmailRaw,
+  }) async {
+    final parentEmailLower = _cleanEmail(parentEmailRaw);
+    if (parentEmailLower.isEmpty) return;
+
+    QuerySnapshot<Map<String, dynamic>> parentQuery =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .where('role', isEqualTo: 'Parent')
+            .where('emailLower', isEqualTo: parentEmailLower)
+            .limit(1)
+            .get();
+
+    if (parentQuery.docs.isEmpty) {
+      parentQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'Parent')
+          .where('email', isEqualTo: parentEmailRaw.trim())
+          .limit(1)
+          .get();
+    }
+
+    if (parentQuery.docs.isEmpty) return;
+
+    final parentDoc = parentQuery.docs.first;
+
+    await FirebaseFirestore.instance.collection('users').doc(parentDoc.id).set({
+      'linkedChildrenIds': FieldValue.arrayUnion([studentId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await FirebaseFirestore.instance.collection('students').doc(studentId).set({
+      'parentUid': parentDoc.id,
+      'parentId': parentDoc.id,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> saveStudent() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    FocusScope.of(context).unfocus();
     setState(() => isLoading = true);
 
     try {
-      await FirebaseFirestore.instance.collection('students').add({
-        'name': nameController.text.trim(),
+      final name = nameController.text.trim();
+      final parentEmail = parentEmailController.text.trim();
+      final parentEmailLower = _cleanEmail(parentEmail);
+      final studentEmail = emailController.text.trim();
+      final studentEmailLower = _cleanEmail(studentEmail);
+      final generatedRollNo = await _generateRollNumber(name);
+
+      final docRef = await FirebaseFirestore.instance.collection('students').add({
+        'name': name,
         'age': ageController.text.trim(),
         'phone': phoneController.text.trim(),
+        'email': studentEmail,
+        'emailLower': studentEmailLower,
         'parentName': parentNameController.text.trim(),
         'parentPhone': parentPhoneController.text.trim(),
+        'parentEmail': parentEmail,
+        'parentEmailLower': parentEmailLower,
         'aadhaarNumber': aadhaarController.text.trim(),
-        'rollNo': rollNoController.text.trim(),
         'address': addressController.text.trim(),
+        'batch': selectedBatch,
+        'rollNo': generatedRollNo,
         'attendance': '0%',
+        'presentCount': 0,
+        'totalAttendanceCount': 0,
         'feeStatus': feeStatus,
         'role': 'Student',
+        'approvalStatus': 'Approved',
         'status': 'Active',
+        'isApproved': true,
+        'createdBy': 'Admin',
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      await docRef.set({
+        'uid': docRef.id,
+        'studentId': docRef.id,
+      }, SetOptions(merge: true));
+
+      await _autoLinkParentToStudent(
+        studentId: docRef.id,
+        parentEmailRaw: parentEmail,
+      );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Student saved successfully")),
+        SnackBar(
+          content: Text('Student saved successfully. Roll No: $generatedRollNo'),
+          backgroundColor: Colors.green,
+        ),
       );
 
       Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(
+          content: Text('Error saving student: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -78,126 +202,267 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     nameController.dispose();
     ageController.dispose();
     phoneController.dispose();
+    emailController.dispose();
     parentNameController.dispose();
     parentPhoneController.dispose();
+    parentEmailController.dispose();
     aadhaarController.dispose();
-    rollNoController.dispose();
     addressController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _topHeader(context),
-            _heroBanner(),
-            const SizedBox(height: 18),
-            _sectionTitle("STUDENT INFORMATION"),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  _field("Student Name *", nameController, Icons.person),
-                  _field(
-                    "Age *",
-                    ageController,
-                    Icons.cake,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _field(
-                    "Phone Number *",
-                    phoneController,
-                    Icons.phone,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  _field("Roll No *", rollNoController, Icons.tag),
-                ],
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _topHeader(context, isDark),
+                    _heroBanner(isDark),
+                    const SizedBox(height: 18),
+                    _sectionTitle('STUDENT INFORMATION', isDark),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          _field(
+                            isDark: isDark,
+                            label: 'Student Name *',
+                            controller: nameController,
+                            icon: Icons.person_rounded,
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
+                                    ? 'Enter student name'
+                                    : null,
+                          ),
+                          _field(
+                            isDark: isDark,
+                            label: 'Age *',
+                            controller: ageController,
+                            icon: Icons.cake_rounded,
+                            keyboardType: TextInputType.number,
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
+                                    ? 'Enter age'
+                                    : null,
+                          ),
+                          _field(
+                            isDark: isDark,
+                            label: 'Phone Number *',
+                            controller: phoneController,
+                            icon: Icons.phone_rounded,
+                            keyboardType: TextInputType.phone,
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
+                                    ? 'Enter phone number'
+                                    : null,
+                          ),
+                          _field(
+                            isDark: isDark,
+                            label: 'Student Email',
+                            controller: emailController,
+                            icon: Icons.email_rounded,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          _batchDropdown(isDark),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _sectionTitle('PARENT / GUARDIAN', isDark),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          _field(
+                            isDark: isDark,
+                            label: 'Parent Name',
+                            controller: parentNameController,
+                            icon: Icons.family_restroom_rounded,
+                          ),
+                          _field(
+                            isDark: isDark,
+                            label: 'Parent Phone',
+                            controller: parentPhoneController,
+                            icon: Icons.call_rounded,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          _field(
+                            isDark: isDark,
+                            label: 'Parent Email',
+                            controller: parentEmailController,
+                            icon: Icons.alternate_email_rounded,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          _field(
+                            isDark: isDark,
+                            label: 'Aadhaar Number',
+                            controller: aadhaarController,
+                            icon: Icons.badge_rounded,
+                            keyboardType: TextInputType.number,
+                          ),
+                          _field(
+                            isDark: isDark,
+                            label: 'Address',
+                            controller: addressController,
+                            icon: Icons.location_on_rounded,
+                            maxLines: 3,
+                          ),
+                          _feeDropdown(isDark),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    _saveButton(isDark),
+                    const SizedBox(height: 30),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            _sectionTitle("PARENT / GUARDIAN"),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  _field("Parent Name", parentNameController, Icons.family_restroom),
-                  _field(
-                    "Parent Phone",
-                    parentPhoneController,
-                    Icons.call,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  _field(
-                    "Aadhaar Number",
-                    aadhaarController,
-                    Icons.badge,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _field(
-                    "Address",
-                    addressController,
-                    Icons.location_on,
-                    maxLines: 3,
-                  ),
-                  _feeDropdown(),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            _saveButton(),
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
+  Widget _topHeader(BuildContext context, bool isDark) {
     return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  Colors.black,
+                  darkMaroon,
+                  red.withOpacity(0.55),
+                ]
+              : [
+                  maroon,
+                  red.withOpacity(0.78),
+                  darkMaroon,
+                ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.40) : gold.withOpacity(0.8),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.18) : maroon.withOpacity(0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          _circleHeaderButton(
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
-          Image.asset('assets/images/ygca_logo.jpg', width: 58),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "ADD STUDENT",
-              style: TextStyle(
-                color: gold,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 52,
+            height: 52,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ADD STUDENT',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: gold,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Create new academy player profile',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.person_add, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+              return _circleHeaderButton(
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _heroBanner() {
+  Widget _circleHeaderButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(50),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.20)),
+        ),
+        child: Icon(icon, color: Colors.white, size: 21),
+      ),
+    );
+  }
+
+  Widget _heroBanner(bool isDark) {
     return Container(
-      height: 230,
+      height: 220,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -211,15 +476,30 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.70),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -24,
+            bottom: -24,
+            child: Icon(
+              Icons.person_add_alt_1_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -227,47 +507,65 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.person_add_alt_1, color: maroon, size: 42),
+                  child: Icon(
+                    Icons.person_add_alt_1_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "NEW PLAYER",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'NEW PLAYER',
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                          const Text(
+                            'STUDENT',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 31,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            'REGISTRATION',
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 23,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip('Auto Roll No'),
+                              _heroChip('Parent Link'),
+                              _heroChip('Approved Profile'),
+                            ],
+                          ),
+                        ],
                       ),
-                      const Text(
-                        "STUDENT",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 31,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "REGISTRATION",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 23,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _heroChip("Create student profile"),
-                      const SizedBox(height: 6),
-                      _heroChip("Attendance • Fees • Reports"),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -282,22 +580,22 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -305,79 +603,173 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           Text(
             title,
             style: TextStyle(
-              color: maroon,
-              fontSize: 18,
+              color: isDark ? gold : maroon,
+              fontSize: 16,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
           const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _field(
-    String label,
-    TextEditingController controller,
-    IconData icon, {
+  Widget _field({
+    required bool isDark,
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    String? Function(String?)? validator,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
+        validator: validator,
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: maroon),
+          labelStyle: TextStyle(color: _secondaryText(isDark), fontSize: 12),
+          prefixIcon: Icon(icon, color: isDark ? gold : maroon),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: isDark ? const Color(0xFF111111) : Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: isDark ? red : maroon),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Colors.red),
           ),
         ),
       ),
     );
   }
 
-  Widget _feeDropdown() {
+  Widget _batchDropdown(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String>(
+        value: selectedBatch,
+        dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
+        decoration: InputDecoration(
+          labelText: 'Session Batch',
+          labelStyle: TextStyle(color: _secondaryText(isDark), fontSize: 12),
+          prefixIcon: Icon(
+            Icons.groups_rounded,
+            color: isDark ? gold : maroon,
+          ),
+          filled: true,
+          fillColor: isDark ? const Color(0xFF111111) : Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: isDark ? red : maroon),
+          ),
+        ),
+        items: batchOptions.map((batch) {
+          return DropdownMenuItem<String>(
+            value: batch,
+            child: Text(
+              batch,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12),
+            ),
+          );
+        }).toList(),
+        onChanged: isLoading
+            ? null
+            : (value) {
+                if (value == null) return;
+                setState(() => selectedBatch = value);
+              },
+      ),
+    );
+  }
+
+  Widget _feeDropdown(bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
         value: feeStatus,
+        dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
         decoration: InputDecoration(
-          labelText: "Fee Status",
-          prefixIcon: Icon(Icons.payments, color: maroon),
+          labelText: 'Fee Status',
+          labelStyle: TextStyle(color: _secondaryText(isDark), fontSize: 12),
+          prefixIcon: Icon(Icons.payments_rounded, color: isDark ? gold : maroon),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: isDark ? const Color(0xFF111111) : Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: isDark ? red : maroon),
           ),
         ),
         items: const [
-          DropdownMenuItem(value: "Pending", child: Text("Pending")),
-          DropdownMenuItem(value: "Paid", child: Text("Paid")),
-          DropdownMenuItem(value: "Partial", child: Text("Partial")),
+          DropdownMenuItem(value: 'Pending', child: Text('Pending')),
+          DropdownMenuItem(value: 'Paid', child: Text('Paid')),
+          DropdownMenuItem(value: 'Partial', child: Text('Partial')),
         ],
-        onChanged: (value) {
-          if (value == null) return;
-          setState(() => feeStatus = value);
-        },
+        onChanged: isLoading
+            ? null
+            : (value) {
+                if (value == null) return;
+                setState(() => feeStatus = value);
+              },
       ),
     );
   }
 
-  Widget _saveButton() {
+  Widget _saveButton(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SizedBox(
@@ -385,8 +777,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         height: 55,
         child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: maroon,
-            foregroundColor: gold,
+            backgroundColor: isDark ? red : maroon,
+            foregroundColor: isDark ? Colors.white : gold,
+            elevation: 8,
+            shadowColor: red.withOpacity(0.25),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -394,11 +788,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           onPressed: isLoading ? null : saveStudent,
           icon: isLoading
               ? const SizedBox()
-              : const Icon(Icons.save_alt, size: 22),
+              : const Icon(Icons.save_alt_rounded, size: 22),
           label: isLoading
-              ? CircularProgressIndicator(color: gold, strokeWidth: 2)
+              ? CircularProgressIndicator(
+                  color: isDark ? Colors.white : gold,
+                  strokeWidth: 2,
+                )
               : const Text(
-                  "SAVE STUDENT",
+                  'SAVE STUDENT',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,

@@ -36,10 +36,11 @@ class YgcaDrawer extends StatelessWidget {
   final List<YgcaNavItem> navItems;
   final VoidCallback? onLogout;
 
+  static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
   static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color deepBlack = Color(0xFF070707);
   static const Color gold = Color(0xFFD4AF37);
-  static const Color bg = Color(0xFFFAFAFA);
 
   String get initials {
     final name = username ?? role;
@@ -58,19 +59,15 @@ class YgcaDrawer extends StatelessWidget {
 
   void _openScreen(BuildContext context, Widget screen) {
     final navigator = Navigator.of(context);
-
     navigator.pop();
 
     Future.delayed(const Duration(milliseconds: 180), () {
-      navigator.push(
-        MaterialPageRoute(builder: (_) => screen),
-      );
+      navigator.push(MaterialPageRoute(builder: (_) => screen));
     });
   }
 
   void _openNamedRoute(BuildContext context, String routeName) {
     final navigator = Navigator.of(context);
-
     navigator.pop();
 
     Future.delayed(const Duration(milliseconds: 180), () {
@@ -83,202 +80,156 @@ class YgcaDrawer extends StatelessWidget {
       case 'Parent':
         return [
           YgcaNavItem(
-            icon: Icons.dashboard,
+            icon: Icons.dashboard_rounded,
             label: 'Dashboard',
-            onTap: () {
-              _closeDrawer(context);
-            },
+            onTap: () => _closeDrawer(context),
           ),
           YgcaNavItem(
-            icon: Icons.fact_check,
+            icon: Icons.fact_check_rounded,
             label: 'Attendance',
-            onTap: () {
-              _openScreen(
-                context,
-                const ParentAttendanceModuleScreen(),
-              );
-            },
+            onTap: () => _openScreen(
+              context,
+              const ParentAttendanceModuleScreen(),
+            ),
           ),
           YgcaNavItem(
-            icon: Icons.bar_chart,
+            icon: Icons.bar_chart_rounded,
             label: 'Performance',
-            onTap: () {
-              _openScreen(
-                context,
-                const ParentPerformanceModuleScreen(),
-              );
-            },
+            onTap: () => _openScreen(
+              context,
+              const ParentPerformanceModuleScreen(),
+            ),
           ),
           YgcaNavItem(
-            icon: Icons.receipt_long,
+            icon: Icons.receipt_long_rounded,
             label: 'Payment History',
-            onTap: () {
-              _openScreen(
-                context,
-                const ParentFeeModuleScreen(),
-              );
-            },
+            onTap: () => _openScreen(
+              context,
+              const ParentFeeModuleScreen(),
+            ),
           ),
           YgcaNavItem(
-            icon: Icons.calendar_month,
+            icon: Icons.calendar_month_rounded,
             label: 'Match Schedule',
-            onTap: () {
-              _openScreen(
-                context,
-                const ParentScheduleModuleScreen(),
-              );
-            },
+            onTap: () => _openScreen(
+              context,
+              const ParentScheduleModuleScreen(),
+            ),
           ),
           YgcaNavItem(
-            icon: Icons.event_note,
+            icon: Icons.event_note_rounded,
             label: 'Apply Leave',
-            onTap: () {
-              _openScreen(
-                context,
-                const LeaveRequestScreen(),
-              );
-            },
+            onTap: () => _openScreen(
+              context,
+              const LeaveRequestScreen(),
+            ),
           ),
           YgcaNavItem(
-            icon: Icons.notifications,
+            icon: Icons.notifications_rounded,
             label: 'Notifications',
-            onTap: () {
-              _openScreen(
-                context,
-                const NotificationScreen(),
-              );
-            },
+            onTap: () => _openScreen(
+              context,
+              const NotificationScreen(),
+            ),
           ),
           YgcaNavItem(
-            icon: Icons.person,
+            icon: Icons.person_rounded,
             label: 'Edit Profile',
-            onTap: () {
-              _openScreen(
-                context,
-                const EditProfileScreen(),
-              );
-            },
+            onTap: () => _openScreen(
+              context,
+              const EditProfileScreen(),
+            ),
           ),
         ];
 
       case 'Student':
         return [
           YgcaNavItem(
-            icon: Icons.dashboard,
+            icon: Icons.dashboard_rounded,
             label: 'Dashboard',
-            onTap: () {
-              _closeDrawer(context);
-            },
+            onTap: () => _closeDrawer(context),
           ),
           YgcaNavItem(
-            icon: Icons.fact_check,
+            icon: Icons.fact_check_rounded,
             label: 'Attendance',
-            onTap: () {
-              _openNamedRoute(context, '/attendance');
-            },
+            onTap: () => _openNamedRoute(context, '/attendance'),
           ),
           YgcaNavItem(
-            icon: Icons.bar_chart,
+            icon: Icons.bar_chart_rounded,
             label: 'Performance',
-            onTap: () {
-              _openNamedRoute(context, '/performance');
-            },
+            onTap: () => _openNamedRoute(context, '/performance'),
           ),
           YgcaNavItem(
-            icon: Icons.receipt_long,
+            icon: Icons.receipt_long_rounded,
             label: 'Fees',
-            onTap: () {
-              _openNamedRoute(context, '/fees');
-            },
+            onTap: () => _openNamedRoute(context, '/fees'),
           ),
           YgcaNavItem(
-            icon: Icons.notifications,
+            icon: Icons.notifications_rounded,
             label: 'Notifications',
-            onTap: () {
-              _openNamedRoute(context, '/notifications');
-            },
+            onTap: () => _openNamedRoute(context, '/notifications'),
           ),
         ];
 
       case 'Coach':
         return [
           YgcaNavItem(
-            icon: Icons.dashboard,
+            icon: Icons.dashboard_rounded,
             label: 'Dashboard',
-            onTap: () {
-              _closeDrawer(context);
-            },
+            onTap: () => _closeDrawer(context),
           ),
           YgcaNavItem(
-            icon: Icons.people,
+            icon: Icons.people_rounded,
             label: 'Students',
-            onTap: () {
-              _openNamedRoute(context, '/student-list');
-            },
+            onTap: () => _openNamedRoute(context, '/student-list'),
           ),
           YgcaNavItem(
-            icon: Icons.fact_check,
+            icon: Icons.fact_check_rounded,
             label: 'Mark Attendance',
-            onTap: () {
-              _openNamedRoute(context, '/attendance');
-            },
+            onTap: () => _openNamedRoute(context, '/attendance'),
           ),
           YgcaNavItem(
-            icon: Icons.bar_chart,
+            icon: Icons.bar_chart_rounded,
             label: 'Performance',
-            onTap: () {
-              _openNamedRoute(context, '/performance');
-            },
+            onTap: () => _openNamedRoute(context, '/performance'),
           ),
         ];
 
       case 'Admin':
         return [
           YgcaNavItem(
-            icon: Icons.dashboard,
+            icon: Icons.dashboard_rounded,
             label: 'Dashboard',
-            onTap: () {
-              _closeDrawer(context);
-            },
+            onTap: () => _closeDrawer(context),
           ),
           YgcaNavItem(
-            icon: Icons.people,
+            icon: Icons.people_rounded,
             label: 'Students',
-            onTap: () {
-              _openNamedRoute(context, '/student-list');
-            },
+            onTap: () => _openNamedRoute(context, '/student-list'),
           ),
           YgcaNavItem(
-            icon: Icons.fact_check,
+            icon: Icons.fact_check_rounded,
             label: 'Attendance',
-            onTap: () {
-              _openNamedRoute(context, '/attendance');
-            },
+            onTap: () => _openNamedRoute(context, '/attendance'),
           ),
           YgcaNavItem(
-            icon: Icons.payments,
+            icon: Icons.payments_rounded,
             label: 'Fees',
-            onTap: () {
-              _openNamedRoute(context, '/fees');
-            },
+            onTap: () => _openNamedRoute(context, '/fees'),
           ),
           YgcaNavItem(
-            icon: Icons.notifications,
+            icon: Icons.notifications_rounded,
             label: 'Notifications',
-            onTap: () {
-              _openNamedRoute(context, '/notifications');
-            },
+            onTap: () => _openNamedRoute(context, '/notifications'),
           ),
         ];
 
       default:
         return [
           YgcaNavItem(
-            icon: Icons.dashboard,
+            icon: Icons.dashboard_rounded,
             label: 'Dashboard',
-            onTap: () {
-              _closeDrawer(context);
-            },
+            onTap: () => _closeDrawer(context),
           ),
         ];
     }
@@ -287,178 +238,329 @@ class YgcaDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = navItems.isNotEmpty ? navItems : _defaultItems(context);
+    final drawerWidth = MediaQuery.of(context).size.width < 360 ? 288.0 : 315.0;
 
     return Drawer(
-      backgroundColor: bg,
-      width: MediaQuery.of(context).size.width < 360 ? 280 : 300,
+      width: drawerWidth,
+      backgroundColor: deepBlack,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF050505),
+              Color(0xFF160202),
+              Color(0xFF320000),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _premiumHeader(),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 9),
+                  itemBuilder: (context, index) {
+                    return _premiumTile(items[index]);
+                  },
+                ),
+              ),
+              if (onLogout != null) _logoutTile(context),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _premiumHeader() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            maroon,
+            darkMaroon,
+            Colors.black.withOpacity(0.95),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: gold.withOpacity(0.75), width: 1.1),
+        boxShadow: [
+          BoxShadow(
+            color: red.withOpacity(0.20),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         children: [
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 22,
-              left: 20,
-              right: 20,
-              bottom: 22,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [darkMaroon, maroon],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: gold.withOpacity(0.55)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/ygca_logo.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        'assets/images/ygca_logo.jpg',
-                        width: 42,
-                        height: 42,
-                        fit: BoxFit.cover,
+                    Text(
+                      'YGCA',
+                      style: TextStyle(
+                        color: gold,
+                        fontSize: 27,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'YGCA',
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.5,
-                        ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Young Gen Cricket Academy',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: gold,
-                      child: Text(
-                        initials,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.28),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.10)),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: gold,
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      color: maroon,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        username ?? "$role User",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: maroon,
-                          fontSize: 16,
+                          color: Colors.white,
                           fontWeight: FontWeight.w900,
+                          fontSize: 15,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            username ?? "$role User",
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
+                      if (email != null) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          email!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white60,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
-                          if (email != null)
-                            Text(
-                              email!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                              ),
-                            ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: gold.withOpacity(0.16),
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(color: gold.withOpacity(0.5)),
-                            ),
-                            child: Text(
-                              role.toUpperCase(),
-                              style: const TextStyle(
-                                color: gold,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                        ),
+                      ],
+                      const SizedBox(height: 7),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: gold.withOpacity(0.16),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: gold.withOpacity(0.65)),
+                        ),
+                        child: Text(
+                          role.toUpperCase(),
+                          style: const TextStyle(
+                            color: gold,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.6,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
+        ],
+      ),
+    );
+  }
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    leading: Icon(item.icon, color: maroon),
-                    title: Text(
-                      item.label,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      size: 18,
-                      color: Colors.grey,
-                    ),
-                    onTap: item.onTap,
-                  ),
-                );
-              },
+  Widget _premiumTile(YgcaNavItem item) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: item.onTap,
+        borderRadius: BorderRadius.circular(20),
+        splashColor: gold.withOpacity(0.15),
+        highlightColor: red.withOpacity(0.10),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 62),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.075),
+                Colors.white.withOpacity(0.030),
+              ],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
             ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.22),
+                blurRadius: 12,
+                offset: const Offset(0, 5),
+              ),
+            ],
           ),
-          if (onLogout != null) ...[
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: red.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: red.withOpacity(0.35)),
+                ),
+                child: Icon(item.icon, color: gold, size: 23),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14.5,
+                    letterSpacing: 0.1,
+                  ),
                 ),
               ),
-              onTap: () {
-                final navigator = Navigator.of(context);
-                navigator.pop();
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.055),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 19,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                Future.delayed(const Duration(milliseconds: 180), () {
-                  onLogout!();
-                });
-              },
+  Widget _logoutTile(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 4, 14, 0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          final navigator = Navigator.of(context);
+          navigator.pop();
+
+          Future.delayed(const Duration(milliseconds: 180), () {
+            onLogout!();
+          });
+        },
+        child: Container(
+          height: 58,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                red.withOpacity(0.22),
+                Colors.red.withOpacity(0.10),
+              ],
             ),
-          ],
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 12),
-        ],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: red.withOpacity(0.40)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.logout_rounded, color: Colors.redAccent, size: 26),
+              SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  'Logout',
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.redAccent,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

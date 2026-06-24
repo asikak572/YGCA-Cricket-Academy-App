@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../theme/theme_controller.dart';
+
 import 'attendance_calendar_screen.dart';
 import 'attendance_history_screen.dart';
 import 'digital_id_card_screen.dart';
@@ -38,12 +40,13 @@ class StudentDetailsScreen extends StatefulWidget {
 }
 
 class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   bool uploading = false;
+  bool deleting = false;
 
   String _text(Map<String, dynamic> data, String key, String fallback) {
     final value = data[key];
@@ -55,20 +58,50 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     return int.tryParse(value.replaceAll("%", "").trim()) ?? 0;
   }
 
+  int _amount(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    return int.tryParse(value.toString().replaceAll(',', '').trim()) ?? 0;
+  }
+
   String _feeAmount(Map<String, dynamic> data) {
     final pendingAmount = data['pendingAmount'];
     final totalFee = data['totalFee'];
     final paidAmount = data['paidAmount'];
 
-    if (pendingAmount != null) return "₹$pendingAmount";
+    if (pendingAmount != null) {
+      return "₹${_amount(pendingAmount)}";
+    }
 
     if (totalFee != null && paidAmount != null) {
-      final total = int.tryParse(totalFee.toString()) ?? 0;
-      final paid = int.tryParse(paidAmount.toString()) ?? 0;
-      return "₹${total - paid}";
+      final total = _amount(totalFee);
+      final paid = _amount(paidAmount);
+      final pending = total - paid;
+      return "₹${pending < 0 ? 0 : pending}";
     }
 
     return "₹0";
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
   Future<void> _uploadPhoto() async {
@@ -96,21 +129,32 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       await FirebaseFirestore.instance
           .collection('students')
           .doc(widget.studentId)
-          .update({
+          .set({
         'photoUrl': url,
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
+
+      await FirebaseFirestore.instance.collection('users').doc(widget.studentId).set({
+        'photoUrl': url,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Student photo uploaded")),
+        const SnackBar(
+          content: Text("Student photo uploaded"),
+          backgroundColor: Colors.green,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Photo upload failed: $e")),
+        SnackBar(
+          content: Text("Photo upload failed: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => uploading = false);
@@ -118,18 +162,39 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
   }
 
   Future<void> _deleteStudent() async {
-    await FirebaseFirestore.instance
-        .collection('students')
-        .doc(widget.studentId)
-        .delete();
+    setState(() => deleting = true);
 
-    if (!mounted) return;
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final batch = firestore.batch();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Student deleted successfully")),
-    );
+      batch.delete(firestore.collection('students').doc(widget.studentId));
+      batch.delete(firestore.collection('users').doc(widget.studentId));
 
-    Navigator.pop(context);
+      await batch.commit();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Student deleted successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Delete failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => deleting = false);
+    }
   }
 
   Future<void> _updateStudent({
@@ -141,10 +206,9 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     required String rollNo,
     required String feeStatus,
   }) async {
-    await FirebaseFirestore.instance
-        .collection('students')
-        .doc(widget.studentId)
-        .update({
+    final firestore = FirebaseFirestore.instance;
+
+    final updateData = {
       'name': name.trim(),
       'age': age.trim(),
       'batch': batch.trim(),
@@ -153,43 +217,76 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       'rollNo': rollNo.trim(),
       'feeStatus': feeStatus.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+
+    await firestore.collection('students').doc(widget.studentId).set(
+          updateData,
+          SetOptions(merge: true),
+        );
+
+    await firestore.collection('users').doc(widget.studentId).set(
+      {
+        'name': name.trim(),
+        'batch': batch.trim(),
+        'rollNo': rollNo.trim(),
+        'feeStatus': feeStatus.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Student updated successfully")),
+      const SnackBar(
+        content: Text("Student updated successfully"),
+        backgroundColor: Colors.green,
+      ),
     );
   }
 
-  void _confirmDelete(String name) {
+  void _confirmDelete(String name, bool isDark) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Delete Student"),
-        content: Text("Are you sure you want to delete $name?"),
+        backgroundColor: _card(isDark),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          "Delete Student",
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
+          "Are you sure you want to delete $name?",
+          style: TextStyle(color: _secondaryText(isDark)),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: deleting ? null : () => Navigator.pop(context),
             child: const Text("Cancel"),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deleteStudent();
-            },
-            child: const Text("Delete"),
+            onPressed: deleting
+                ? null
+                : () async {
+                    Navigator.pop(context);
+                    await _deleteStudent();
+                  },
+            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            label: const Text("Delete"),
           ),
         ],
       ),
     );
   }
 
-  void _showEditDialog(Map<String, dynamic> data) {
+  Future<void> _showEditDialog(Map<String, dynamic> data, bool isDark) async {
     final nameController =
         TextEditingController(text: data['name']?.toString() ?? '');
     final ageController =
@@ -202,288 +299,542 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
         TextEditingController(text: data['phone']?.toString() ?? '');
     final rollNoController =
         TextEditingController(text: data['rollNo']?.toString() ?? '');
-    final feeStatusController =
-        TextEditingController(text: data['feeStatus']?.toString() ?? 'Pending');
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Edit Student"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              _editField("Student Name", nameController),
-              _editField("Age", ageController,
-                  keyboardType: TextInputType.number),
-              _editField("Batch", batchController),
-              _editField("Parent Name", parentNameController),
-              _editField("Phone Number", phoneController,
-                  keyboardType: TextInputType.phone),
-              _editField("Roll No", rollNoController),
-              _editField("Fee Status", feeStatusController),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-  onPressed: () {
-    Navigator.pop(context);
-  },
-  child: const Text("Cancel"),
-),
-          ElevatedButton(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: maroon,
-    foregroundColor: gold,
-  ),
-  onPressed: () async {
-    await _updateStudent(
-      name: nameController.text,
-      age: ageController.text,
-      batch: batchController.text,
-      parentName: parentNameController.text,
-      phone: phoneController.text,
-      rollNo: rollNoController.text,
-      feeStatus: feeStatusController.text,
-    );
-
-    if (mounted) {
-      Navigator.pop(context);
+    String feeStatus = data['feeStatus']?.toString() ?? 'Pending';
+    if (!['Pending', 'Paid', 'Partial'].contains(feeStatus)) {
+      feeStatus = 'Pending';
     }
-  },
-  child: const Text("Update"),
-),
-        ],
-      ),
+
+    bool isSaving = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+              backgroundColor: _card(isDark),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: red.withOpacity(0.16),
+                    child: Icon(Icons.edit_rounded, color: isDark ? gold : maroon),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      "Edit Student",
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _editField(
+                      isDark,
+                      "Student Name",
+                      nameController,
+                      Icons.person_rounded,
+                    ),
+                    _editField(
+                      isDark,
+                      "Age",
+                      ageController,
+                      Icons.cake_rounded,
+                      keyboardType: TextInputType.number,
+                    ),
+                    _editField(
+                      isDark,
+                      "Batch",
+                      batchController,
+                      Icons.groups_rounded,
+                    ),
+                    _editField(
+                      isDark,
+                      "Parent Name",
+                      parentNameController,
+                      Icons.family_restroom_rounded,
+                    ),
+                    _editField(
+                      isDark,
+                      "Phone Number",
+                      phoneController,
+                      Icons.phone_rounded,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    _editField(
+                      isDark,
+                      "Roll No",
+                      rollNoController,
+                      Icons.tag_rounded,
+                    ),
+                    DropdownButtonFormField<String>(
+                      value: feeStatus,
+                      dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w700,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: "Fee Status",
+                        labelStyle: TextStyle(color: _secondaryText(isDark)),
+                        prefixIcon: Icon(Icons.payments_rounded, color: isDark ? gold : maroon),
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: _border(isDark)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: _border(isDark)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: isDark ? red : maroon),
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "Pending", child: Text("Pending")),
+                        DropdownMenuItem(value: "Paid", child: Text("Paid")),
+                        DropdownMenuItem(value: "Partial", child: Text("Partial")),
+                      ],
+                      onChanged: isSaving
+                          ? null
+                          : (value) {
+                              if (value == null) return;
+                              setDialogState(() => feeStatus = value);
+                            },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark ? red : maroon,
+                    foregroundColor: isDark ? Colors.white : gold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          setDialogState(() => isSaving = true);
+
+                          try {
+                            await _updateStudent(
+                              name: nameController.text,
+                              age: ageController.text,
+                              batch: batchController.text,
+                              parentName: parentNameController.text,
+                              phone: phoneController.text,
+                              rollNo: rollNoController.text,
+                              feeStatus: feeStatus,
+                            );
+
+                            if (mounted) Navigator.pop(dialogContext);
+                          } catch (e) {
+                            if (!mounted) return;
+
+                            setDialogState(() => isSaving = false);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Update failed: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  icon: isSaving
+                      ? const SizedBox(
+                          width: 15,
+                          height: 15,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.save_rounded, size: 18),
+                  label: Text(isSaving ? "Saving..." : "Update"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
+
+    nameController.dispose();
+    ageController.dispose();
+    batchController.dispose();
+    parentNameController.dispose();
+    phoneController.dispose();
+    rollNoController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('students')
-          .doc(widget.studentId)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Scaffold(
-            body: Center(child: Text("Something went wrong")),
-          );
-        }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Scaffold(
-            body: Center(child: Text("Student not found")),
-          );
-        }
-
-        final data = snapshot.data!.data() as Map<String, dynamic>;
-
-        final name = _text(data, 'name', 'No Name');
-        final age = _text(data, 'age', '0');
-        final batch = _text(data, 'batch', 'No Batch');
-        final rollNo = _text(data, 'rollNo', '#YGCA');
-        final parentName = _text(data, 'parentName', 'Not Added');
-        final phone = _text(data, 'phone', '');
-        final attendance = _text(data, 'attendance', '0%');
-        final feeStatus = _text(data, 'feeStatus', 'Pending');
-        final photoUrl = _text(data, 'photoUrl', '');
-        final feeAmount = _feeAmount(data);
-        final attendanceValue = _percent(attendance);
-
-        final initials = name
-            .split(" ")
-            .where((e) => e.isNotEmpty)
-            .map((e) => e[0])
-            .take(2)
-            .join()
-            .toUpperCase();
-
-        return Scaffold(
-          backgroundColor: bg,
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _profileCard(
-                  initials: initials,
-                  name: name,
-                  batch: batch,
-                  rollNo: rollNo,
-                  photoUrl: photoUrl,
-                ),
-                const SizedBox(height: 8),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _summaryCard(
-                    attendance: "$attendanceValue%",
-                    fee: feeStatus == "Paid" ? "Paid" : feeAmount,
-                    batch: batch,
-                    rollNo: rollNo,
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('students')
+              .doc(widget.studentId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Scaffold(
+                backgroundColor: _bg(isDark),
+                body: Center(
+                  child: Text(
+                    "Something went wrong",
+                    style: TextStyle(color: _primaryText(isDark)),
                   ),
                 ),
+              );
+            }
 
-                const SizedBox(height: 10),
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Scaffold(
+                backgroundColor: _bg(isDark),
+                body: const Center(child: CircularProgressIndicator()),
+              );
+            }
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _infoCard(
-                    title: "STUDENT INFORMATION",
-                    children: [
-                      _infoRow("Full Name", name),
-                      _infoRow("Age", "$age Years"),
-                      _infoRow("Parent", parentName),
-                      _infoRow("Phone", phone.isEmpty ? "Not Added" : phone),
-                    ],
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return Scaffold(
+                backgroundColor: _bg(isDark),
+                body: Center(
+                  child: Text(
+                    "Student not found",
+                    style: TextStyle(color: _primaryText(isDark)),
                   ),
                 ),
+              );
+            }
 
-                const SizedBox(height: 10),
+            final data = snapshot.data!.data() ?? {};
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _infoCard(
-                    title: "QUICK ACTIONS",
+            final name = _text(data, 'name', widget.name);
+            final age = _text(data, 'age', widget.age);
+            final batch = _text(data, 'batch', widget.batch);
+            final rollNo = _text(data, 'rollNo', widget.rollNo);
+            final parentName = _text(data, 'parentName', widget.parentName);
+            final phone = _text(data, 'phone', widget.phone);
+            final attendance = _text(data, 'attendance', widget.attendance);
+            final feeStatus = _text(data, 'feeStatus', widget.feeStatus);
+            final photoUrl = _text(data, 'photoUrl', '');
+            final feeAmount = _feeAmount(data);
+            final attendanceValue = _percent(attendance);
+
+            final initials = name
+                .split(" ")
+                .where((e) => e.isNotEmpty)
+                .map((e) => e[0])
+                .take(2)
+                .join()
+                .toUpperCase();
+
+            return Scaffold(
+              backgroundColor: _bg(isDark),
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  child: Column(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _actionCard(
-                              Icons.calendar_month,
-                              "Attendance",
-                              Colors.orange,
-                              () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => AttendanceCalendarScreen(
-                                      studentId: widget.studentId,
-                                      name: name,
-                                      batch: batch,
-                                      rollNo: rollNo,
-                                      attendance: attendance,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _actionCard(
-                              Icons.history,
-                              "History",
-                              Colors.red,
-                              () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const AttendanceHistoryScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _actionCard(
-                              Icons.edit,
-                              "Edit",
-                              Colors.blue,
-                              () => _showEditDialog(data),
-                            ),
-                          ),
-
-
-                          const SizedBox(width: 8),
-
-Expanded(
-  child: _actionCard(
-    Icons.badge,
-    "ID Card",
-    Colors.green,
-    () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DigitalIdCardScreen(
-            name: name,
-            rollNo: rollNo,
-            batch: batch,
-            parentName: parentName,
-            phone: phone,
-            photoUrl: photoUrl,
-          ),
-        ),
-      );
-    },
-  ),
-),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _actionCard(
-                              Icons.delete,
-                              "Delete",
-                              Colors.red,
-                              () => _confirmDelete(name),
-                            ),
-                          ),
-                        ],
+                      _topHeader(context, isDark),
+                      _profileCard(
+                        isDark: isDark,
+                        initials: initials,
+                        name: name,
+                        batch: batch,
+                        rollNo: rollNo,
+                        photoUrl: photoUrl,
                       ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _summaryCard(
+                          isDark: isDark,
+                          attendance: "$attendanceValue%",
+                          fee: feeStatus == "Paid" ? "Paid" : feeAmount,
+                          batch: batch,
+                          rollNo: rollNo,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _infoCard(
+                          isDark: isDark,
+                          title: "STUDENT INFORMATION",
+                          children: [
+                            _infoRow(isDark, "Full Name", name),
+                            _infoRow(isDark, "Age", "$age Years"),
+                            _infoRow(isDark, "Parent", parentName),
+                            _infoRow(
+                              isDark,
+                              "Phone",
+                              phone.isEmpty ? "Not Added" : phone,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _infoCard(
+                          isDark: isDark,
+                          title: "QUICK ACTIONS",
+                          children: [
+                            GridView.count(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 1.05,
+                              children: [
+                                _actionCard(
+                                  isDark,
+                                  Icons.calendar_month_rounded,
+                                  "Calendar",
+                                  Colors.orange,
+                                  () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AttendanceCalendarScreen(
+                                          studentId: widget.studentId,
+                                          name: name,
+                                          batch: batch,
+                                          rollNo: rollNo,
+                                          attendance: attendance,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _actionCard(
+                                  isDark,
+                                  Icons.history_rounded,
+                                  "History",
+                                  Colors.red,
+                                  () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const AttendanceHistoryScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _actionCard(
+                                  isDark,
+                                  Icons.edit_rounded,
+                                  "Edit",
+                                  Colors.blue,
+                                  () => _showEditDialog(data, isDark),
+                                ),
+                                _actionCard(
+                                  isDark,
+                                  Icons.badge_rounded,
+                                  "ID Card",
+                                  Colors.green,
+                                  () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => DigitalIdCardScreen(
+                                          name: name,
+                                          rollNo: rollNo,
+                                          batch: batch,
+                                          parentName: parentName,
+                                          phone: phone,
+                                          photoUrl: photoUrl,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _actionCard(
+                                  isDark,
+                                  Icons.upload_rounded,
+                                  photoUrl.isEmpty ? "Photo" : "Change",
+                                  Colors.purple,
+                                  uploading ? null : _uploadPhoto,
+                                ),
+                                _actionCard(
+                                  isDark,
+                                  Icons.delete_rounded,
+                                  "Delete",
+                                  Colors.redAccent,
+                                  deleting
+                                      ? null
+                                      : () => _confirmDelete(name, isDark),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _progressCard(
+                        isDark: isDark,
+                        attendanceValue: attendanceValue,
+                        attendance: attendance,
+                        feeStatus: feeStatus,
+                      ),
+                      const SizedBox(height: 22),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
+  Widget _topHeader(BuildContext context, bool isDark) {
     return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(14, 42, 14, 14),
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  Colors.black,
+                  darkMaroon,
+                  red.withOpacity(0.55),
+                ]
+              : [
+                  maroon,
+                  red.withOpacity(0.78),
+                  darkMaroon,
+                ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.40) : gold.withOpacity(0.8),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.18) : maroon.withOpacity(0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          _circleHeaderButton(
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
-          Image.asset('assets/images/ygca_logo.jpg', width: 48),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "STUDENT DETAILS",
-              style: TextStyle(
-                color: gold,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 52,
+            height: 52,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "STUDENT DETAILS",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: gold,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  "Profile • Attendance • ID Card",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.person),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleHeaderButton(
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleHeaderButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(50),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.20)),
+        ),
+        child: Icon(icon, color: Colors.white, size: 21),
+      ),
+    );
+  }
+
   Widget _profileCard({
+    required bool isDark,
     required String initials,
     required String name,
     required String batch,
@@ -491,109 +842,159 @@ Expanded(
     required String photoUrl,
   }) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      padding: const EdgeInsets.all(14),
+      height: 190,
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: maroon,
-        borderRadius: BorderRadius.circular(22),
-        image: const DecorationImage(
-          image: AssetImage('assets/images/home_hero_bg.png'),
-          fit: BoxFit.cover,
-          opacity: 0.28,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.75),
         ),
-      ),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 42,
-                backgroundColor: Colors.white,
-                backgroundImage:
-                    photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                child: photoUrl.isEmpty
-                    ? Text(
-                        initials.isEmpty ? "S" : initials,
-                        style: TextStyle(
-                          color: maroon,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: InkWell(
-                  onTap: uploading ? null : _uploadPhoto,
-                  child: CircleAvatar(
-                    radius: 15,
-                    backgroundColor: gold,
-                    child: uploading
-                        ? SizedBox(
-                            height: 13,
-                            width: 13,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: maroon,
-                            ),
-                          )
-                        : Icon(Icons.camera_alt, color: maroon, size: 15),
-                  ),
-                ),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.14) : maroon.withOpacity(0.14),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.82),
+                          red.withOpacity(0.30),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -24,
+            bottom: -28,
+            child: Icon(
+              Icons.sports_cricket_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 130,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  batch,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: gold,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Roll No: $rollNo",
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 7),
-                GestureDetector(
-                  onTap: uploading ? null : _uploadPhoto,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 11,
-                      vertical: 6,
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 45,
+                      backgroundColor: Colors.white,
+                      backgroundImage:
+                          photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                      child: photoUrl.isEmpty
+                          ? Text(
+                              initials.isEmpty ? "S" : initials,
+                              style: const TextStyle(
+                                color: maroon,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            )
+                          : null,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.14),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: gold),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: InkWell(
+                        onTap: uploading ? null : _uploadPhoto,
+                        borderRadius: BorderRadius.circular(50),
+                        child: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: gold,
+                          child: uploading
+                              ? const SizedBox(
+                                  height: 13,
+                                  width: 13,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: maroon,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.camera_alt_rounded,
+                                  color: maroon,
+                                  size: 16,
+                                ),
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      photoUrl.isEmpty ? "Upload Photo" : "Change Photo",
-                      style: TextStyle(
-                        color: gold,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
+                  ],
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "YGCA STUDENT",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 27,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _heroChip("Roll No: $rollNo"),
+                          const SizedBox(height: 7),
+                          _heroChip("Batch: $batch"),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: uploading ? null : _uploadPhoto,
+                            child: Text(
+                              photoUrl.isEmpty ? "Upload Photo" : "Change Photo",
+                              style: TextStyle(
+                                color: gold,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -606,7 +1007,30 @@ Expanded(
     );
   }
 
+  Widget _heroChip(String text) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 220),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.75)),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
   Widget _summaryCard({
+    required bool isDark,
     required String attendance,
     required String fee,
     required String batch,
@@ -615,9 +1039,18 @@ Expanded(
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : gold.withOpacity(0.65),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.30) : Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -625,16 +1058,18 @@ Expanded(
             children: [
               Expanded(
                 child: _summaryItem(
-                  Icons.verified,
+                  isDark,
+                  Icons.verified_rounded,
                   "Attendance",
                   attendance,
                   Colors.green,
                 ),
               ),
-              _verticalDivider(),
+              _verticalDivider(isDark),
               Expanded(
                 child: _summaryItem(
-                  Icons.currency_rupee,
+                  isDark,
+                  Icons.currency_rupee_rounded,
                   "Fee",
                   fee,
                   Colors.orange,
@@ -647,16 +1082,18 @@ Expanded(
             children: [
               Expanded(
                 child: _summaryItem(
-                  Icons.groups,
+                  isDark,
+                  Icons.groups_rounded,
                   "Batch",
                   batch,
                   Colors.blue,
                 ),
               ),
-              _verticalDivider(),
+              _verticalDivider(isDark),
               Expanded(
                 child: _summaryItem(
-                  Icons.tag,
+                  isDark,
+                  Icons.tag_rounded,
                   "Roll No",
                   rollNo,
                   Colors.purple,
@@ -670,6 +1107,7 @@ Expanded(
   }
 
   Widget _summaryItem(
+    bool isDark,
     IconData icon,
     String label,
     String value,
@@ -679,7 +1117,7 @@ Expanded(
       children: [
         CircleAvatar(
           radius: 18,
-          backgroundColor: color.withOpacity(0.12),
+          backgroundColor: color.withOpacity(0.14),
           child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(width: 8),
@@ -689,6 +1127,8 @@ Expanded(
             children: [
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: color,
                   fontWeight: FontWeight.bold,
@@ -699,9 +1139,10 @@ Expanded(
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
+                  color: _primaryText(isDark),
                   fontWeight: FontWeight.w900,
-                  fontSize: 15,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -711,16 +1152,17 @@ Expanded(
     );
   }
 
-  Widget _verticalDivider() {
+  Widget _verticalDivider(bool isDark) {
     return Container(
       height: 38,
       width: 1,
       margin: const EdgeInsets.symmetric(horizontal: 10),
-      color: border,
+      color: _border(isDark),
     );
   }
 
   Widget _infoCard({
+    required bool isDark,
     required String title,
     required List<Widget> children,
   }) {
@@ -728,41 +1170,68 @@ Expanded(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border(isDark)),
       ),
       child: Column(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              title,
-              style: TextStyle(
-                color: maroon,
-                fontWeight: FontWeight.w900,
+          Row(
+            children: [
+              Icon(Icons.info_outline_rounded, color: isDark ? gold : maroon),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: isDark ? gold : maroon,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           ...children,
         ],
       ),
     );
   }
 
-  Widget _infoRow(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+  Widget _infoRow(bool isDark, String title, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.035) : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade200,
+        ),
+      ),
       child: Row(
         children: [
-          Expanded(child: Text(title)),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+              ),
             ),
           ),
         ],
@@ -771,39 +1240,49 @@ Expanded(
   }
 
   Widget _actionCard(
+    bool isDark,
     IconData icon,
     String title,
     Color color,
-    VoidCallback onTap,
+    VoidCallback? onTap,
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        height: 68,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 5),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 10.5),
-            ),
-          ],
+      borderRadius: BorderRadius.circular(16),
+      child: Opacity(
+        opacity: onTap == null ? 0.55 : 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.035) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withOpacity(0.35)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 7),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _editField(
+    bool isDark,
     String label,
-    TextEditingController controller, {
+    TextEditingController controller,
+    IconData icon, {
     TextInputType keyboardType = TextInputType.text,
   }) {
     return Padding(
@@ -811,10 +1290,117 @@ Expanded(
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        style: TextStyle(color: _primaryText(isDark)),
+        cursorColor: isDark ? gold : maroon,
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
+          labelStyle: TextStyle(color: _secondaryText(isDark)),
+          prefixIcon: Icon(icon, color: isDark ? gold : maroon),
+          filled: true,
+          fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: isDark ? red : maroon),
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _progressCard({
+    required bool isDark,
+    required int attendanceValue,
+    required String attendance,
+    required String feeStatus,
+  }) {
+    final progress = (attendanceValue.clamp(0, 100)) / 100;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  const Color(0xFF180808),
+                  const Color(0xFF0F0F0F),
+                  red.withOpacity(0.18),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFFBF2),
+                  gold.withOpacity(0.18),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.7),
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: red.withOpacity(0.18),
+            child: Icon(Icons.insights_rounded, color: gold, size: 28),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Student Progress",
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  "Attendance $attendance • Fee $feeStatus",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: isDark ? Colors.white12 : Colors.grey.shade200,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      attendanceValue >= 75 ? Colors.green : Colors.orange,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            attendanceValue >= 75 ? "GOOD" : "FOCUS",
+            style: TextStyle(
+              color: attendanceValue >= 75 ? Colors.green : Colors.orange,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
       ),
     );
   }
