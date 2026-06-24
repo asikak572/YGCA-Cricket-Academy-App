@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 import 'performance_chart_screen.dart';
-import 'notification_service.dart';
 
 class PerformanceReportScreen extends StatefulWidget {
   const PerformanceReportScreen({super.key});
@@ -14,14 +15,14 @@ class PerformanceReportScreen extends StatefulWidget {
 }
 
 class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   String role = '';
   String uid = '';
+  String email = '';
   bool userLoaded = false;
 
   List<String> linkedChildrenIds = [];
@@ -33,74 +34,112 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
     _loadUserRole();
   }
 
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
+
+  List<String> _listFromDynamic(dynamic value) {
+    final result = <String>[];
+
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) {
+          result.add(text);
+        }
+      }
+    }
+
+    return result;
+  }
+
   Future<void> _loadUserRole() async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
       if (!mounted) return;
-      setState(() {
-        userLoaded = true;
-      });
+      setState(() => userLoaded = true);
       return;
     }
 
     uid = user.uid;
+    email = _lower(user.email ?? '');
 
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     if (!userDoc.exists) {
       if (!mounted) return;
-      setState(() {
-        userLoaded = true;
-      });
+      setState(() => userLoaded = true);
       return;
     }
 
     final data = userDoc.data() ?? {};
+    final loadedRole = _text(data['role']);
 
-    final rawAssignedBatches = data['assignedBatches'];
-    final List<String> coachBatches = [];
+    final coachBatches = _listFromDynamic(data['assignedBatches']);
 
-    if (rawAssignedBatches is List) {
-      coachBatches.addAll(
-        rawAssignedBatches
-            .map((e) => e.toString().trim())
-            .where((e) => e.isNotEmpty),
-      );
-    }
+    final oldBatch = _text(data['assignedBatch']).isNotEmpty
+        ? _text(data['assignedBatch'])
+        : _text(data['batch']);
 
-    final oldBatch = data['batch']?.toString().trim() ?? '';
-
-    if (coachBatches.isEmpty && oldBatch.isNotEmpty) {
+    if (oldBatch.isNotEmpty && !coachBatches.contains(oldBatch)) {
       coachBatches.add(oldBatch);
     }
 
-    final rawLinkedChildren = data['linkedChildrenIds'];
-    final List<String> children = [];
+    final children = _listFromDynamic(data['linkedChildrenIds']);
 
-    if (rawLinkedChildren is List) {
-      children.addAll(
-        rawLinkedChildren
-            .map((e) => e.toString().trim())
-            .where((e) => e.isNotEmpty),
-      );
+    final childId = _text(data['childId']);
+    if (childId.isNotEmpty && !children.contains(childId)) {
+      children.add(childId);
+    }
+
+    final parentEmail = _lower(
+      _text(data['email']).isNotEmpty ? _text(data['email']) : email,
+    );
+
+    if (loadedRole == 'Parent' && parentEmail.isNotEmpty) {
+      final childByEmailLower = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmailLower', isEqualTo: parentEmail)
+          .get();
+
+      for (final doc in childByEmailLower.docs) {
+        if (!children.contains(doc.id)) {
+          children.add(doc.id);
+        }
+      }
+
+      final childByEmail = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmail', isEqualTo: parentEmail)
+          .get();
+
+      for (final doc in childByEmail.docs) {
+        if (!children.contains(doc.id)) {
+          children.add(doc.id);
+        }
+      }
     }
 
     if (!mounted) return;
 
     setState(() {
-      role = data['role']?.toString() ?? '';
-      linkedChildrenIds = children;
+      role = loadedRole;
       assignedBatches = coachBatches;
+      linkedChildrenIds = children;
       userLoaded = true;
     });
   }
 
-  Query _performanceQuery() {
-    Query query = FirebaseFirestore.instance.collection('performance_reports');
+  Query<Map<String, dynamic>> _performanceQuery() {
+    Query<Map<String, dynamic>> query =
+        FirebaseFirestore.instance.collection('performance_reports');
 
     if (role == 'Admin') {
       return query;
@@ -141,26 +180,6 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
     return query.where('studentId', isEqualTo: 'NO_ACCESS');
   }
 
-  Stream<QuerySnapshot> _studentSelectionStream() {
-    Query query = FirebaseFirestore.instance.collection('students');
-
-    if (role == 'Coach') {
-      final batches = assignedBatches.take(10).toList();
-
-      if (batches.isEmpty) {
-        return query.where('batch', isEqualTo: 'NO_BATCH').snapshots();
-      }
-
-      if (batches.length == 1) {
-        return query.where('batch', isEqualTo: batches.first).snapshots();
-      }
-
-      return query.where('batch', whereIn: batches).snapshots();
-    }
-
-    return query.snapshots();
-  }
-
   int _toInt(dynamic value) {
     if (value == null) return 0;
     return int.tryParse(value.toString()) ?? 0;
@@ -177,240 +196,394 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
   }
 
   Color _ratingColor(String rating) {
-    if (rating == "ELITE") return Colors.purple;
+    if (rating == "ELITE") return Colors.purpleAccent;
     if (rating == "EXCELLENT") return Colors.green;
-    if (rating == "GOOD") return Colors.blue;
+    if (rating == "GOOD") return Colors.blueAccent;
     if (rating == "AVERAGE") return Colors.orange;
-    return Colors.red;
+    return Colors.redAccent;
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
   void _openAnalytics(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const PerformanceChartScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const PerformanceChartScreen()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      body: !userLoaded
-          ? const Center(child: CircularProgressIndicator())
-          : role == 'Coach' && assignedBatches.isEmpty
-              ? const Center(
-                  child: Text("No batch assigned to this coach"),
-                )
-              : StreamBuilder<QuerySnapshot>(
-                  stream: _performanceQuery().snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Text(
-                            snapshot.error.toString(),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      );
-                    }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final reports = (snapshot.data?.docs ?? []).toList();
-
-                    reports.sort((a, b) {
-                      final aData = a.data() as Map<String, dynamic>;
-                      final bData = b.data() as Map<String, dynamic>;
-
-                      final aTime = aData['createdAt'];
-                      final bTime = bData['createdAt'];
-
-                      if (aTime is Timestamp && bTime is Timestamp) {
-                        return bTime.compareTo(aTime);
-                      }
-
-                      return 0;
-                    });
-
-                    int excellent = 0;
-                    int average = 0;
-
-                    for (final doc in reports) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final batting = _toInt(data['batting']);
-                      final bowling = _toInt(data['bowling']);
-                      final fielding = _toInt(data['fielding']);
-                      final fitness = _toInt(data['fitness']);
-
-                      final rating =
-                          _ratingText(batting, bowling, fielding, fitness);
-
-                      if (rating == "ELITE" || rating == "EXCELLENT") {
-                        excellent++;
-                      } else if (rating == "GOOD") {
-                        average++;
-                      }
-                    }
-
-                    return SingleChildScrollView(
-                      child: Column(
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: !userLoaded
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  )
+                : role == 'Coach' && assignedBatches.isEmpty
+                    ? Column(
                         children: [
-                          _topHeader(context),
-                          _heroBanner(
-                            totalReports: reports.length,
-                            excellent: excellent,
-                            average: average,
-                          ),
-                          const SizedBox(height: 12),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 46,
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: maroon,
-                                  foregroundColor: gold,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                onPressed: () => _openAnalytics(context),
-                                icon: const Icon(Icons.analytics),
-                                label: const Text(
-                                  "View Performance Analytics",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                          _topHeader(context, isDark),
+                          Expanded(
+                            child: _messageCard(
+                              isDark,
+                              "No batch assigned to this coach",
+                              Icons.groups_2_outlined,
                             ),
                           ),
-                          const SizedBox(height: 18),
-                          _sectionTitle("PERFORMANCE REPORTS"),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: reports.isEmpty
-                                ? _emptyCard()
-                                : Column(
-                                    children: reports.map((doc) {
-                                      final data =
-                                          doc.data() as Map<String, dynamic>;
-
-                                      final name =
-                                          data['studentName']?.toString() ??
-                                              data['name']?.toString() ??
-                                              'Unknown Student';
-
-                                      final batch =
-                                          data['batch']?.toString() ?? '';
-
-                                      final batting = _toInt(data['batting']);
-                                      final bowling = _toInt(data['bowling']);
-                                      final fielding = _toInt(data['fielding']);
-                                      final fitness = _toInt(data['fitness']);
-
-                                      final remarks =
-                                          data['remarks']?.toString() ?? '';
-
-                                      final rating = _ratingText(
-                                        batting,
-                                        bowling,
-                                        fielding,
-                                        fitness,
-                                      );
-
-                                      final ratingColor = _ratingColor(rating);
-
-                                      return _performanceCard(
-                                        name: name,
-                                        batch: batch,
-                                        batting: batting,
-                                        bowling: bowling,
-                                        fielding: fielding,
-                                        fitness: fitness,
-                                        remarks: remarks,
-                                        rating: rating,
-                                        ratingColor: ratingColor,
-                                      );
-                                    }).toList(),
-                                  ),
-                          ),
-                          const SizedBox(height: 90),
                         ],
+                      )
+                    : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: _performanceQuery().snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Column(
+                              children: [
+                                _topHeader(context, isDark),
+                                Expanded(
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Text(
+                                        snapshot.error.toString(),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.redAccent,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Column(
+                              children: [
+                                _topHeader(context, isDark),
+                                const Expanded(
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          final reports = (snapshot.data?.docs ?? []).toList();
+
+                          reports.sort((a, b) {
+                            final aData = a.data();
+                            final bData = b.data();
+
+                            final aTime = aData['createdAt'];
+                            final bTime = bData['createdAt'];
+
+                            if (aTime is Timestamp && bTime is Timestamp) {
+                              return bTime.compareTo(aTime);
+                            }
+
+                            return 0;
+                          });
+
+                          int excellent = 0;
+                          int good = 0;
+                          int needsWork = 0;
+
+                          for (final doc in reports) {
+                            final data = doc.data();
+
+                            final rating = _ratingText(
+                              _toInt(data['batting']),
+                              _toInt(data['bowling']),
+                              _toInt(data['fielding']),
+                              _toInt(data['fitness']),
+                            );
+
+                            if (rating == "ELITE" ||
+                                rating == "EXCELLENT") {
+                              excellent++;
+                            } else if (rating == "GOOD") {
+                              good++;
+                            } else {
+                              needsWork++;
+                            }
+                          }
+
+                          return SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                _topHeader(context, isDark),
+                                _heroBanner(
+                                  isDark: isDark,
+                                  totalReports: reports.length,
+                                  excellent: excellent,
+                                  good: good,
+                                  needsWork: needsWork,
+                                ),
+                                const SizedBox(height: 14),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            isDark ? red : maroon,
+                                        foregroundColor:
+                                            isDark ? Colors.white : gold,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      onPressed: () => _openAnalytics(context),
+                                      icon: const Icon(
+                                        Icons.analytics_rounded,
+                                      ),
+                                      label: const Text(
+                                        "VIEW PERFORMANCE ANALYTICS",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _cricHeroesInfoCard(isDark),
+                                const SizedBox(height: 18),
+                                _sectionTitle("PERFORMANCE REPORTS", isDark),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: reports.isEmpty
+                                      ? _emptyCard(isDark)
+                                      : Column(
+                                          children: reports.map((doc) {
+                                            final data = doc.data();
+
+                                            final name =
+                                                _text(data['studentName'])
+                                                        .isNotEmpty
+                                                    ? _text(
+                                                        data['studentName'],
+                                                      )
+                                                    : _text(data['name'])
+                                                            .isNotEmpty
+                                                        ? _text(data['name'])
+                                                        : 'Unknown Student';
+
+                                            final batch = _text(data['batch']);
+
+                                            final batting =
+                                                _toInt(data['batting']);
+                                            final bowling =
+                                                _toInt(data['bowling']);
+                                            final fielding =
+                                                _toInt(data['fielding']);
+                                            final fitness =
+                                                _toInt(data['fitness']);
+
+                                            final remarks =
+                                                _text(data['remarks']);
+
+                                            final rating = _ratingText(
+                                              batting,
+                                              bowling,
+                                              fielding,
+                                              fitness,
+                                            );
+
+                                            final ratingColor =
+                                                _ratingColor(rating);
+
+                                            return _performanceCard(
+                                              isDark: isDark,
+                                              name: name,
+                                              batch: batch,
+                                              batting: batting,
+                                              bowling: bowling,
+                                              fielding: fielding,
+                                              fitness: fitness,
+                                              remarks: remarks,
+                                              rating: rating,
+                                              ratingColor: ratingColor,
+                                            );
+                                          }).toList(),
+                                        ),
+                                ),
+                                const SizedBox(height: 30),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-      floatingActionButton:
-          role == 'Admin' || (role == 'Coach' && assignedBatches.isNotEmpty)
-              ? FloatingActionButton.extended(
-                  backgroundColor: maroon,
-                  foregroundColor: gold,
-                  onPressed: () {
-                    _showAddDialog(context);
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text("Add Report"),
-                )
-              : null,
+          ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 58,
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
           const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "PERFORMANCE REPORTS",
-              style: TextStyle(
-                color: gold,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "PERFORMANCE",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Reports & Player Analytics",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.bar_chart, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
   Widget _heroBanner({
+    required bool isDark,
     required int totalReports,
     required int excellent,
-    required int average,
+    required int good,
+    required int needsWork,
   }) {
     return Container(
-      height: 240,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 225,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -424,15 +597,30 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.72),
-                    Colors.black.withOpacity(0.40),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -22,
+            bottom: -22,
+            child: Icon(
+              Icons.emoji_events_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -440,55 +628,65 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: 46,
                   backgroundColor: Colors.white,
                   child: Icon(
-                    Icons.emoji_events,
+                    Icons.emoji_events_rounded,
                     color: maroon,
                     size: 42,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "PLAYER",
-                        style: TextStyle(
-                          color: gold,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        "PERFORMANCE",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 27,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "CENTER",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _heroChip("Reports: $totalReports"),
-                          _heroChip("Excellent: $excellent"),
-                          _heroChip("Average: $average"),
+                          Text(
+                            "CRICHEROES",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "PERFORMANCE",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "CENTER",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Reports: $totalReports"),
+                              _heroChip("Excellent: $excellent"),
+                              _heroChip("Good: $good"),
+                              _heroChip("Needs Work: $needsWork"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -501,24 +699,62 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
 
   Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 150),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _cricHeroesInfoCard(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? gold.withOpacity(0.45) : gold.withOpacity(0.75),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.sync_rounded,
+            color: isDark ? gold : maroon,
+            size: 26,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Performance reports are view-only now. Data will be updated through CricHeroes integration later.",
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -526,20 +762,26 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
           Text(
             title,
             style: TextStyle(
-              color: maroon,
-              fontSize: 18,
+              color: isDark ? gold : maroon,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
           const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _performanceCard({
+    required bool isDark,
     required String name,
     required String batch,
     required int batting,
@@ -562,9 +804,20 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.28)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: 9,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -575,7 +828,10 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                 backgroundColor: maroon,
                 child: Text(
                   initials.isNotEmpty ? initials : "?",
-                  style: TextStyle(color: gold, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: gold,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -587,16 +843,21 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
+                        color: _primaryText(isDark),
                         fontWeight: FontWeight.w900,
                         fontSize: 15,
                       ),
                     ),
+                    const SizedBox(height: 3),
                     Text(
-                      batch,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
+                      batch.isEmpty ? "No batch" : batch,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -606,29 +867,37 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _skillBar("Batting", batting, Colors.green),
-          _skillBar("Bowling", bowling, Colors.blue),
-          _skillBar("Fielding", fielding, Colors.orange),
-          _skillBar("Fitness", fitness, Colors.purple),
+          _skillBar(isDark, "Batting", batting, Colors.green),
+          _skillBar(isDark, "Bowling", bowling, Colors.blue),
+          _skillBar(isDark, "Fielding", fielding, Colors.orange),
+          _skillBar(isDark, "Fitness", fitness, Colors.purpleAccent),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFBF2),
+              color: isDark ? const Color(0xFF180808) : const Color(0xFFFFFBF2),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+              border: Border.all(
+                color: isDark
+                    ? gold.withOpacity(0.35)
+                    : const Color(0xFFFDE68A),
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.rate_review, color: gold, size: 22),
+                Icon(Icons.rate_review_rounded, color: gold, size: 22),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     remarks.isEmpty
                         ? "Coach Remarks: No remarks added"
                         : "Coach Remarks: $remarks",
-                    style: const TextStyle(fontSize: 12),
+                    style: TextStyle(
+                      color: _primaryText(isDark),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -645,254 +914,20 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Text(
         rating,
         style: TextStyle(
           color: color,
           fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  void _showAddDialog(BuildContext context) {
-    String? selectedStudentId;
-    String selectedStudentName = '';
-    String selectedBatch = '';
-
-    final battingController = TextEditingController();
-    final bowlingController = TextEditingController();
-    final fieldingController = TextEditingController();
-    final fitnessController = TextEditingController();
-    final remarksController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text("Add Performance Report"),
-              content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    StreamBuilder<QuerySnapshot>(
-                      stream: _studentSelectionStream(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Padding(
-                            padding: EdgeInsets.only(bottom: 10),
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-
-                        if (snapshot.hasError) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Text(
-                              "Error: ${snapshot.error}",
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          );
-                        }
-
-                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return const Text("No students found");
-                        }
-
-                        final students = snapshot.data!.docs.toList();
-
-                        students.sort((a, b) {
-                          final aData = a.data() as Map<String, dynamic>;
-                          final bData = b.data() as Map<String, dynamic>;
-
-                          final aName = aData['name']?.toString() ?? '';
-                          final bName = bData['name']?.toString() ?? '';
-
-                          return aName.compareTo(bName);
-                        });
-
-                        return DropdownButtonFormField<String>(
-                          value: selectedStudentId,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: "Select Student",
-                            border: OutlineInputBorder(),
-                          ),
-                          items: students.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-                            final name = data['name']?.toString() ?? 'No Name';
-                            final batch =
-                                data['batch']?.toString() ?? 'No Batch';
-
-                            return DropdownMenuItem(
-                              value: doc.id,
-                              child: Text(
-                                "$name - $batch",
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value == null) return;
-
-                            final selectedDoc = students.firstWhere(
-                              (doc) => doc.id == value,
-                            );
-
-                            final data =
-                                selectedDoc.data() as Map<String, dynamic>;
-
-                            setDialogState(() {
-                              selectedStudentId = selectedDoc.id;
-                              selectedStudentName =
-                                  data['name']?.toString() ?? '';
-                              selectedBatch = data['batch']?.toString() ?? '';
-                            });
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _field(
-                      "Batting %",
-                      battingController,
-                      keyboardType: TextInputType.number,
-                    ),
-                    _field(
-                      "Bowling %",
-                      bowlingController,
-                      keyboardType: TextInputType.number,
-                    ),
-                    _field(
-                      "Fielding %",
-                      fieldingController,
-                      keyboardType: TextInputType.number,
-                    ),
-                    _field(
-                      "Fitness %",
-                      fitnessController,
-                      keyboardType: TextInputType.number,
-                    ),
-                    _field("Coach Remarks", remarksController),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: maroon,
-                    foregroundColor: gold,
-                  ),
-                  onPressed: () async {
-                    if (selectedStudentId == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please select a student"),
-                        ),
-                      );
-                      return;
-                    }
-
-                    final batting =
-                        int.tryParse(battingController.text.trim()) ?? 0;
-                    final bowling =
-                        int.tryParse(bowlingController.text.trim()) ?? 0;
-                    final fielding =
-                        int.tryParse(fieldingController.text.trim()) ?? 0;
-                    final fitness =
-                        int.tryParse(fitnessController.text.trim()) ?? 0;
-
-                    try {
-                      await FirebaseFirestore.instance
-                          .collection('performance_reports')
-                          .add({
-                        'studentId': selectedStudentId,
-                        'studentName': selectedStudentName,
-                        'batch': selectedBatch,
-                        'batting': batting,
-                        'bowling': bowling,
-                        'fielding': fielding,
-                        'fitness': fitness,
-                        'remarks': remarksController.text.trim(),
-                        'createdBy': uid,
-                        'createdByRole': role,
-                        'createdAt': FieldValue.serverTimestamp(),
-                        'updatedAt': FieldValue.serverTimestamp(),
-                      });
-
-                      await FirebaseFirestore.instance
-                          .collection('students')
-                          .doc(selectedStudentId)
-                          .update({
-                        'latestBatting': batting,
-                        'latestBowling': bowling,
-                        'latestFielding': fielding,
-                        'latestFitness': fitness,
-                        'latestPerformanceRemarks':
-                            remarksController.text.trim(),
-                        'latestPerformanceUpdatedAt':
-                            FieldValue.serverTimestamp(),
-                      });
-
-                      await NotificationService.performanceUpdate(
-                        studentName: selectedStudentName,
-                        studentId: selectedStudentId!,
-                        batch: selectedBatch,
-                      );
-
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Performance report saved"),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Error: $e")),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text("Save"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _field(
-    String label,
-    TextEditingController controller, {
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
-
-  Widget _skillBar(String title, int value, Color color) {
+  Widget _skillBar(bool isDark, String title, int value, Color color) {
     final safeValue = value.clamp(0, 100);
 
     return Padding(
@@ -904,12 +939,18 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               Text(
                 "$safeValue%",
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -918,8 +959,9 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
             borderRadius: BorderRadius.circular(20),
             child: LinearProgressIndicator(
               value: safeValue / 100,
-              backgroundColor: const Color(0xFFE2E8F0),
-              color: color,
+              backgroundColor:
+                  isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 8,
             ),
           ),
@@ -928,26 +970,66 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.bar_chart, size: 38, color: Colors.grey),
-          SizedBox(height: 10),
+          Icon(
+            Icons.bar_chart_rounded,
+            size: 38,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
           Text(
             "No performance reports found",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          SizedBox(height: 4),
-          Text("Performance data will be available here"),
+          const SizedBox(height: 4),
+          Text(
+            "Performance data will sync from CricHeroes integration later",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText(isDark)),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _messageCard(bool isDark, String message, IconData icon) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _border(isDark)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: _secondaryText(isDark), size: 42),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

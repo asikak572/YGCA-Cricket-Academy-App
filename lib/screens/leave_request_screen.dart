@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 import 'notification_service.dart';
-import 'widgets/ygca_app_bar.dart';
 
 class LeaveRequestScreen extends StatefulWidget {
   const LeaveRequestScreen({super.key});
@@ -13,10 +14,10 @@ class LeaveRequestScreen extends StatefulWidget {
 }
 
 class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   bool loadingUser = true;
   Map<String, dynamic> userData = {};
@@ -49,6 +50,26 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     return result;
   }
 
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -74,23 +95,76 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       return;
     }
 
+    final data = doc.data() ?? {};
+    final loadedRole = _text(data['role']);
+
+    final parentLinkedIds = <String>{};
+
+    final linkedChildrenIds = data['linkedChildrenIds'];
+    if (linkedChildrenIds is List) {
+      for (final item in linkedChildrenIds) {
+        final value = _text(item);
+        if (value.isNotEmpty) parentLinkedIds.add(value);
+      }
+    }
+
+    final childId = _text(data['childId']);
+    if (childId.isNotEmpty) parentLinkedIds.add(childId);
+
+    final studentId = _text(data['studentId']);
+    if (studentId.isNotEmpty) parentLinkedIds.add(studentId);
+
+    final userEmail = _lower(
+      _text(data['email']).isNotEmpty ? _text(data['email']) : user.email ?? '',
+    );
+
+    if (loadedRole == 'Parent') {
+      if (userEmail.isNotEmpty) {
+        final byParentEmailLower = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmailLower', isEqualTo: userEmail)
+            .get();
+
+        for (final doc in byParentEmailLower.docs) {
+          parentLinkedIds.add(doc.id);
+        }
+
+        final byParentEmail = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmail', isEqualTo: userEmail)
+            .get();
+
+        for (final doc in byParentEmail.docs) {
+          parentLinkedIds.add(doc.id);
+        }
+      }
+
+      final byParentUid = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentUid', isEqualTo: user.uid)
+          .get();
+
+      for (final doc in byParentUid.docs) {
+        parentLinkedIds.add(doc.id);
+      }
+    }
+
     setState(() {
       userData = {
         'uid': user.uid,
         'authEmail': user.email ?? '',
-        ...doc.data()!,
+        ...data,
+        if (loadedRole == 'Parent') 'linkedChildrenIds': parentLinkedIds.toList(),
       };
       loadingUser = false;
     });
   }
 
   Future<Map<String, dynamic>?> _getStudentDoc(String studentId) async {
-    final studentDoc = await FirebaseFirestore.instance
-        .collection('students')
-        .doc(studentId)
-        .get();
+    final studentDoc =
+        await FirebaseFirestore.instance.collection('students').doc(studentId).get();
 
-    if (studentDoc.exists) {
+    if (studentDoc.exists && studentDoc.data() != null) {
       return {
         'studentId': studentId,
         ...studentDoc.data()!,
@@ -100,7 +174,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(studentId).get();
 
-    if (userDoc.exists) {
+    if (userDoc.exists && userDoc.data() != null) {
       return {
         'studentId': studentId,
         ...userDoc.data()!,
@@ -179,11 +253,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     final sorted = docs.toList();
 
     sorted.sort((a, b) {
-      final aData = a.data();
-      final bData = b.data();
-
-      final aTime = aData['createdAt'];
-      final bTime = bData['createdAt'];
+      final aTime = a.data()['createdAt'];
+      final bTime = b.data()['createdAt'];
 
       if (aTime is Timestamp && bTime is Timestamp) {
         return bTime.compareTo(aTime);
@@ -256,9 +327,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
 
     final makeupBatch = _autoMakeupBatch(originalBatch);
 
-    final makeupDocRef = FirebaseFirestore.instance
-        .collection('makeup_sessions')
-        .doc(leaveRequestId);
+    final makeupDocRef =
+        FirebaseFirestore.instance.collection('makeup_sessions').doc(leaveRequestId);
 
     await makeupDocRef.set({
       'leaveRequestId': leaveRequestId,
@@ -279,10 +349,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    await FirebaseFirestore.instance
-        .collection('leave_requests')
-        .doc(leaveRequestId)
-        .set({
+    await FirebaseFirestore.instance.collection('leave_requests').doc(leaveRequestId).set({
       'makeupSessionCreated': true,
       'makeupSessionId': leaveRequestId,
       'makeupBatch': makeupBatch,
@@ -297,10 +364,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     required Map<String, dynamic> leaveData,
   }) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('leave_requests')
-          .doc(docId)
-          .set({
+      await FirebaseFirestore.instance.collection('leave_requests').doc(docId).set({
         'status': status,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
@@ -332,42 +396,57 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                 ? "Leave approved and makeup session created"
                 : "Leave rejected",
           ),
+          backgroundColor: status == "Approved" ? Colors.green : Colors.red,
         ),
       );
     } catch (e) {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Update failed: $e")),
+        SnackBar(
+          content: Text("Update failed: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
   Future<void> _deleteLeave(BuildContext context, String docId) async {
-    await FirebaseFirestore.instance
-        .collection('leave_requests')
-        .doc(docId)
-        .delete();
+    await FirebaseFirestore.instance.collection('leave_requests').doc(docId).delete();
 
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Leave request deleted")),
+      const SnackBar(
+        content: Text("Leave request deleted"),
+        backgroundColor: Colors.green,
+      ),
     );
   }
 
-  void _confirmDelete(BuildContext context, String docId) {
+  void _confirmDelete(BuildContext context, String docId, bool isDark) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Delete Leave Request"),
-        content: const Text(
+        backgroundColor: isDark ? const Color(0xFF111111) : Colors.white,
+        title: Text(
+          "Delete Leave Request",
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
           "Are you sure you want to delete this leave request?",
+          style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: isDark ? Colors.white70 : maroon),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -387,52 +466,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
 
   Color _getStatusColor(String status) {
     if (status == "Approved") return Colors.green;
-    if (status == "Rejected") return Colors.red;
+    if (status == "Rejected") return Colors.redAccent;
     return Colors.orange;
-  }
-
-  Widget _statusChip(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _row(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   bool _canApprove(String role) {
@@ -452,213 +487,775 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
         data['makeupSessionCreated'] == true;
   }
 
- Future<void> _openLeaveForm() async {
-  final submitted = await Navigator.push<bool>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => LeaveFormScreen(userData: userData),
-    ),
-  );
-
-  if (!mounted) return;
-
-  if (submitted == true) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Leave request submitted")),
+  Future<void> _openLeaveForm() async {
+    final submitted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LeaveFormScreen(userData: userData),
+      ),
     );
+
+    if (!mounted) return;
+
+    if (submitted == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Leave request submitted"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
-}
+
+  int _countByStatus(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    String status,
+  ) {
+    int count = 0;
+
+    for (final doc in docs) {
+      final currentStatus =
+          _text(doc.data()['status']).isEmpty ? 'Pending' : _text(doc.data()['status']);
+
+      if (currentStatus == status) count++;
+    }
+
+    return count;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final role = _text(userData['role']);
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+        final role = _text(userData['role']);
 
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: const YgcaAppBar(title: "Leave Requests"),
-      body: loadingUser
-          ? const Center(child: CircularProgressIndicator())
-          : userData.isEmpty
-              ? const Center(child: Text("User data not found"))
-              : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _leaveQuery().snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            "Error: ${snapshot.error}",
-                            textAlign: TextAlign.center,
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          floatingActionButton: _canCreate(role)
+              ? FloatingActionButton.extended(
+                  backgroundColor: isDark ? red : maroon,
+                  foregroundColor: isDark ? Colors.white : gold,
+                  onPressed: _openLeaveForm,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text(
+                    "New Leave",
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                )
+              : null,
+          body: SafeArea(
+            child: loadingUser
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  )
+                : userData.isEmpty
+                    ? Column(
+                        children: [
+                          _topHeader(context, isDark),
+                          Expanded(
+                            child: _messageCard(
+                              isDark,
+                              "User data not found",
+                              Icons.person_off_rounded,
+                            ),
                           ),
-                        ),
-                      );
-                    }
-
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final requests = _sortLeaveDocs(snapshot.data?.docs ?? []);
-
-                    if (requests.isEmpty) {
-                      return const Center(child: Text("No leave requests found"));
-                    }
-
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: requests.length,
-                      itemBuilder: (context, index) {
-                        final doc = requests[index];
-                        final data = doc.data();
-
-                        final name =
-                            _text(data['name'] ?? data['studentName']);
-                        final batch = _text(data['batch']);
-                        final date = _text(
-                          _text(data['date']).isNotEmpty
-                              ? data['date']
-                              : data['leaveDate'],
-                        );
-                        final reason = _text(data['reason']);
-
-                        final status = _text(data['status']).isEmpty
-                            ? 'Pending'
-                            : _text(data['status']);
-
-                        final requestedBy = _text(data['requestedBy']).isEmpty
-                            ? 'Unknown'
-                            : _text(data['requestedBy']);
-
-                        final statusColor = _getStatusColor(status);
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            side: BorderSide(color: border),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
+                        ],
+                      )
+                    : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: _leaveQuery().snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Column(
                               children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      backgroundColor: maroon,
+                                _topHeader(context, isDark),
+                                Expanded(
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
                                       child: Text(
-                                        name.isNotEmpty
-                                            ? name[0].toUpperCase()
-                                            : "?",
-                                        style: TextStyle(
-                                          color: gold,
+                                        "Error: ${snapshot.error}",
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.redAccent,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            name,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text(
-                                            batch,
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    _statusChip(status, statusColor),
-                                    if (_canDelete(role))
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () =>
-                                            _confirmDelete(context, doc.id),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                _row("Leave Date", date),
-                                _row("Reason", reason),
-                                _row("Requested By", requestedBy),
-                                if (_showMakeupInfo(data))
-                                  _row(
-                                    "Makeup Batch",
-                                    _text(data['makeupBatch']).isEmpty
-                                        ? "Created"
-                                        : _text(data['makeupBatch']),
                                   ),
-                                if (status == "Pending" &&
-                                    _canApprove(role)) ...[
-                                  const SizedBox(height: 12),
-                                  Row(
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Column(
+                              children: [
+                                _topHeader(context, isDark),
+                                const Expanded(
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          final requests = _sortLeaveDocs(snapshot.data?.docs ?? []);
+
+                          final pending = _countByStatus(requests, "Pending");
+                          final approved = _countByStatus(requests, "Approved");
+                          final rejected = _countByStatus(requests, "Rejected");
+
+                          return Column(
+                            children: [
+                              _topHeader(context, isDark),
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  child: Column(
                                     children: [
-                                      Expanded(
-                                        child: OutlinedButton.icon(
-                                          onPressed: () async {
-                                            await _updateStatus(
-                                              context: context,
-                                              docId: doc.id,
-                                              status: "Rejected",
-                                              leaveData: data,
-                                            );
-                                          },
-                                          icon: const Icon(Icons.close),
-                                          label: const Text("Reject"),
-                                        ),
+                                      _heroBanner(
+                                        isDark: isDark,
+                                        total: requests.length,
+                                        pending: pending,
+                                        approved: approved,
+                                        rejected: rejected,
                                       ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: maroon,
-                                            foregroundColor: gold,
-                                          ),
-                                          onPressed: () async {
-                                            await _updateStatus(
-                                              context: context,
-                                              docId: doc.id,
-                                              status: "Approved",
-                                              leaveData: data,
-                                            );
-                                          },
-                                          icon: const Icon(Icons.check),
-                                          label: const Text("Approve"),
+                                      const SizedBox(height: 14),
+                                      _sectionTitle("LEAVE REQUESTS", isDark),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
                                         ),
+                                        child: requests.isEmpty
+                                            ? _emptyCard(isDark)
+                                            : Column(
+                                                children: requests.map((doc) {
+                                                  final data = doc.data();
+
+                                                  final name = _text(
+                                                    _text(data['name']).isNotEmpty
+                                                        ? data['name']
+                                                        : data['studentName'],
+                                                  );
+
+                                                  final batch = _text(data['batch']);
+
+                                                  final date = _text(
+                                                    _text(data['date']).isNotEmpty
+                                                        ? data['date']
+                                                        : data['leaveDate'],
+                                                  );
+
+                                                  final reason =
+                                                      _text(data['reason']);
+
+                                                  final status =
+                                                      _text(data['status']).isEmpty
+                                                          ? 'Pending'
+                                                          : _text(data['status']);
+
+                                                  final requestedBy =
+                                                      _text(data['requestedBy'])
+                                                              .isEmpty
+                                                          ? 'Unknown'
+                                                          : _text(
+                                                              data['requestedBy'],
+                                                            );
+
+                                                  return _leaveCard(
+                                                    context: context,
+                                                    isDark: isDark,
+                                                    docId: doc.id,
+                                                    data: data,
+                                                    name: name,
+                                                    batch: batch,
+                                                    date: date,
+                                                    reason: reason,
+                                                    status: status,
+                                                    requestedBy: requestedBy,
+                                                    role: role,
+                                                  );
+                                                }).toList(),
+                                              ),
                                       ),
+                                      const SizedBox(height: 90),
                                     ],
                                   ),
-                                ],
-                              ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      child: Row(
+        children: [
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "LEAVE REQUESTS",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Approval & makeup session flow",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
+  Widget _heroBanner({
+    required bool isDark,
+    required int total,
+    required int pending,
+    required int approved,
+    required int rejected,
+  }) {
+    return Container(
+      height: 220,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -25,
+            bottom: -25,
+            child: Icon(
+              Icons.event_available_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 46,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.event_available_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "ACADEMY",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
                             ),
                           ),
-                        );
-                      },
-                    );
-                  },
+                          const Text(
+                            "LEAVE",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "CENTER",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Total: $total"),
+                              _heroChip("Pending: $pending"),
+                              _heroChip("Approved: $approved"),
+                              _heroChip("Rejected: $rejected"),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-      floatingActionButton: _canCreate(role)
-          ? FloatingActionButton.extended(
-              backgroundColor: maroon,
-              foregroundColor: gold,
-              onPressed: _openLeaveForm,
-              icon: const Icon(Icons.add),
-              label: const Text("New Leave"),
-            )
-          : null,
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroChip(String text) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 155),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.75)),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: isDark ? gold : maroon,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _leaveCard({
+    required BuildContext context,
+    required bool isDark,
+    required String docId,
+    required Map<String, dynamic> data,
+    required String name,
+    required String batch,
+    required String date,
+    required String reason,
+    required String status,
+    required String requestedBy,
+    required String role,
+  }) {
+    final statusColor = _getStatusColor(status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.28)
+                : Colors.black.withOpacity(0.045),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: maroon,
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : "?",
+                  style: const TextStyle(
+                    color: gold,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isEmpty ? "Unknown Student" : name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      batch.isEmpty ? "No batch" : batch,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _statusChip(status, statusColor),
+              if (_canDelete(role))
+                IconButton(
+                  icon: const Icon(
+                    Icons.delete_rounded,
+                    color: Colors.redAccent,
+                    size: 21,
+                  ),
+                  onPressed: () => _confirmDelete(context, docId, isDark),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _row(isDark, "Leave Date", date.isEmpty ? "-" : date),
+          _row(isDark, "Reason", reason.isEmpty ? "-" : reason),
+          _row(isDark, "Requested By", requestedBy),
+          if (_showMakeupInfo(data))
+            _row(
+              isDark,
+              "Makeup Batch",
+              _text(data['makeupBatch']).isEmpty
+                  ? "Created"
+                  : _text(data['makeupBatch']),
+            ),
+          if (status == "Pending" && _canApprove(role)) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      side: const BorderSide(color: Colors.redAccent),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () async {
+                      await _updateStatus(
+                        context: context,
+                        docId: docId,
+                        status: "Rejected",
+                        leaveData: data,
+                      );
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                    label: const Text(
+                      "Reject",
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark ? red : maroon,
+                      foregroundColor: isDark ? Colors.white : gold,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () async {
+                      await _updateStatus(
+                        context: context,
+                        docId: docId,
+                        status: "Approved",
+                        leaveData: data,
+                      );
+                    },
+                    icon: const Icon(Icons.check_rounded),
+                    label: const Text(
+                      "Approve",
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _statusChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Widget _row(bool isDark, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyCard(bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border(isDark)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.event_busy_rounded,
+            size: 38,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "No leave requests found",
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Leave requests will appear here",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText(isDark)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _messageCard(bool isDark, String message, IconData icon) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _border(isDark)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: _secondaryText(isDark), size: 42),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -676,10 +1273,10 @@ class LeaveFormScreen extends StatefulWidget {
 }
 
 class _LeaveFormScreenState extends State<LeaveFormScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController batchController = TextEditingController();
@@ -720,13 +1317,31 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
 
   String get uid => _text(widget.userData['uid']);
 
-  Future<Map<String, dynamic>?> _getStudentDoc(String studentId) async {
-    final studentDoc = await FirebaseFirestore.instance
-        .collection('students')
-        .doc(studentId)
-        .get();
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
 
-    if (studentDoc.exists) {
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  Future<Map<String, dynamic>?> _getStudentDoc(String studentId) async {
+    final studentDoc =
+        await FirebaseFirestore.instance.collection('students').doc(studentId).get();
+
+    if (studentDoc.exists && studentDoc.data() != null) {
       return {
         'studentId': studentId,
         ...studentDoc.data()!,
@@ -736,7 +1351,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(studentId).get();
 
-    if (userDoc.exists) {
+    if (userDoc.exists && userDoc.data() != null) {
       return {
         'studentId': studentId,
         ...userDoc.data()!,
@@ -770,7 +1385,9 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
       selectedChild = linkedChildren.first;
 
       nameController.text = _text(
-        selectedChild!['name'] ?? selectedChild!['studentName'],
+        _text(selectedChild!['name']).isNotEmpty
+            ? selectedChild!['name']
+            : selectedChild!['studentName'],
       );
 
       batchController.text = _text(selectedChild!['batch']);
@@ -834,17 +1451,41 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
     );
 
     if (parentEmail.isNotEmpty) {
-      final studentSnapshot = await FirebaseFirestore.instance
+      final byParentEmailLower = await FirebaseFirestore.instance
           .collection('students')
           .where('parentEmailLower', isEqualTo: parentEmail)
           .get();
 
-      for (final doc in studentSnapshot.docs) {
+      for (final doc in byParentEmailLower.docs) {
         children.add({
           'studentId': doc.id,
           ...doc.data(),
         });
       }
+
+      final byParentEmail = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmail', isEqualTo: parentEmail)
+          .get();
+
+      for (final doc in byParentEmail.docs) {
+        children.add({
+          'studentId': doc.id,
+          ...doc.data(),
+        });
+      }
+    }
+
+    final byParentUid = await FirebaseFirestore.instance
+        .collection('students')
+        .where('parentUid', isEqualTo: uid)
+        .get();
+
+    for (final doc in byParentUid.docs) {
+      children.add({
+        'studentId': doc.id,
+        ...doc.data(),
+      });
     }
 
     return _dedupeChildren(children);
@@ -866,6 +1507,22 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
     return result;
   }
 
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 2),
+    );
+
+    if (picked == null) return;
+
+    leaveDateController.text =
+        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+  }
+
   Future<void> _submitLeave() async {
     final name = nameController.text.trim();
     final batch = batchController.text.trim();
@@ -874,28 +1531,43 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
 
     if (name.isEmpty || batch.isEmpty || leaveDate.isEmpty || reason.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
+        const SnackBar(
+          content: Text("Please fill all fields"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
     String studentId = uid;
     String parentUid = '';
+    String parentEmail = '';
 
     if (role == 'Parent') {
       if (selectedChild == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select linked student")),
+          const SnackBar(
+            content: Text("Please select linked student"),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
 
       studentId = _text(selectedChild!['studentId']);
       parentUid = uid;
+      parentEmail = _lower(
+        _text(widget.userData['email']).isNotEmpty
+            ? _text(widget.userData['email'])
+            : _text(widget.userData['authEmail']),
+      );
 
       if (studentId.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Student ID not found")),
+          const SnackBar(
+            content: Text("Student ID not found"),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
@@ -904,17 +1576,17 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
           linkedChildren.isNotEmpty ? linkedChildren.first : <String, dynamic>{};
 
       parentUid = _text(studentData['parentUid']);
+      parentEmail = _lower(_text(studentData['parentEmail']));
     }
 
-    setState(() {
-      submitting = true;
-    });
+    setState(() => submitting = true);
 
     try {
       await FirebaseFirestore.instance.collection('leave_requests').add({
         'studentId': studentId,
         'parentId': role == 'Parent' ? uid : '',
         'parentUid': parentUid,
+        'parentEmail': parentEmail,
         'name': name,
         'studentName': name,
         'batch': batch,
@@ -930,195 +1602,420 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
 
       if (!mounted) return;
 
-Navigator.pop(context, true);
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Submit failed: $e")),
+        SnackBar(
+          content: Text("Submit failed: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) {
-        setState(() {
-          submitting = false;
-        });
+        setState(() => submitting = false);
       }
     }
-  }
-
-  Widget _field({
-    required String label,
-    required TextEditingController controller,
-    bool readOnly = false,
-    int maxLines = 1,
-    String? hint,
-  }) {
-    return TextField(
-      controller: controller,
-      readOnly: readOnly,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: border),
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final canSubmit = role == 'Student' || role == 'Parent';
 
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: const YgcaAppBar(title: "New Leave Request"),
-      body: loadingChildren
-          ? const Center(child: CircularProgressIndicator())
-          : !canSubmit
-              ? const Center(
-                  child: Text("You cannot create leave request"),
-                )
-              : role == 'Parent' && linkedChildren.isEmpty
-                  ? const Center(
-                      child: Text("No linked student found for this parent"),
-                    )
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: loadingChildren
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  )
+                : !canSubmit
+                    ? Column(
                         children: [
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFFBF2),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: gold),
-                            ),
-                            child: Text(
-                              "Submit your leave request. Admin/Coach will approve and makeup session will be created automatically.",
-                              style: TextStyle(
-                                color: maroon,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          if (role == 'Parent' && linkedChildren.length > 1)
-                            DropdownButtonFormField<String>(
-                              value: selectedChild == null
-                                  ? null
-                                  : _text(selectedChild!['studentId']),
-                              isExpanded: true,
-                              decoration: InputDecoration(
-                                labelText: "Select Student",
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              items: linkedChildren.map((child) {
-                                final id = _text(child['studentId']);
-                                final name = _text(
-                                  _text(child['name']).isNotEmpty
-                                      ? child['name']
-                                      : child['studentName'],
-                                );
-                                final batch = _text(child['batch']);
-
-                                return DropdownMenuItem<String>(
-                                  value: id,
-                                  child: Text(
-                                    "$name - $batch",
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                if (value == null) return;
-
-                                final child = linkedChildren.firstWhere(
-                                  (item) => _text(item['studentId']) == value,
-                                );
-
-                                setState(() {
-                                  selectedChild = child;
-                                  nameController.text = _text(
-                                    _text(child['name']).isNotEmpty
-                                        ? child['name']
-                                        : child['studentName'],
-                                  );
-                                  batchController.text = _text(child['batch']);
-                                });
-                              },
-                            ),
-                          if (role == 'Parent' && linkedChildren.length > 1)
-                            const SizedBox(height: 12),
-                          _field(
-                            label: "Student Name",
-                            controller: nameController,
-                            readOnly: true,
-                          ),
-                          const SizedBox(height: 12),
-                          _field(
-                            label: "Batch",
-                            controller: batchController,
-                            readOnly: true,
-                          ),
-                          const SizedBox(height: 12),
-                          _field(
-                            label: "Leave Date",
-                            controller: leaveDateController,
-                            hint: "Example: 22-06-2026",
-                          ),
-                          const SizedBox(height: 12),
-                          _field(
-                            label: "Reason",
-                            controller: reasonController,
-                            maxLines: 3,
-                          ),
-                          const SizedBox(height: 22),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: maroon,
-                                foregroundColor: gold,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              onPressed: submitting ? null : _submitLeave,
-                              icon: submitting
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.send),
-                              label: Text(
-                                submitting ? "Submitting..." : "Submit Leave",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                          _topHeader(context, isDark),
+                          Expanded(
+                            child: _messageCard(
+                              isDark,
+                              "You cannot create leave request",
+                              Icons.block_rounded,
                             ),
                           ),
                         ],
-                      ),
-                    ),
+                      )
+                    : role == 'Parent' && linkedChildren.isEmpty
+                        ? Column(
+                            children: [
+                              _topHeader(context, isDark),
+                              Expanded(
+                                child: _messageCard(
+                                  isDark,
+                                  "No linked student found for this parent",
+                                  Icons.person_search_rounded,
+                                ),
+                              ),
+                            ],
+                          )
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                            child: Column(
+                              children: [
+                                _topHeader(context, isDark),
+                                _infoCard(isDark),
+                                const SizedBox(height: 16),
+                                if (role == 'Parent' && linkedChildren.length > 1)
+                                  _studentDropdown(isDark),
+                                if (role == 'Parent' && linkedChildren.length > 1)
+                                  const SizedBox(height: 12),
+                                _field(
+                                  isDark: isDark,
+                                  label: "Student Name",
+                                  controller: nameController,
+                                  readOnly: true,
+                                ),
+                                const SizedBox(height: 12),
+                                _field(
+                                  isDark: isDark,
+                                  label: "Batch",
+                                  controller: batchController,
+                                  readOnly: true,
+                                ),
+                                const SizedBox(height: 12),
+                                _field(
+                                  isDark: isDark,
+                                  label: "Leave Date",
+                                  controller: leaveDateController,
+                                  readOnly: true,
+                                  hint: "Select leave date",
+                                  suffixIcon: Icons.calendar_month_rounded,
+                                  onTap: _pickDate,
+                                ),
+                                const SizedBox(height: 12),
+                                _field(
+                                  isDark: isDark,
+                                  label: "Reason",
+                                  controller: reasonController,
+                                  maxLines: 3,
+                                  hint: "Enter leave reason",
+                                ),
+                                const SizedBox(height: 22),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 54,
+                                  child: ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isDark ? red : maroon,
+                                      foregroundColor:
+                                          isDark ? Colors.white : gold,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    onPressed: submitting ? null : _submitLeave,
+                                    icon: submitting
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Icon(Icons.send_rounded),
+                                    label: Text(
+                                      submitting
+                                          ? "Submitting..."
+                                          : "Submit Leave",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+      child: Row(
+        children: [
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "NEW LEAVE",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Submit leave request",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
+  Widget _infoCard(bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? gold.withOpacity(0.45) : gold.withOpacity(0.75),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            color: isDark ? gold : maroon,
+            size: 26,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Submit your leave request. Admin or Coach will approve it, then a makeup session will be created automatically.",
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _studentDropdown(bool isDark) {
+    return DropdownButtonFormField<String>(
+      value: selectedChild == null ? null : _text(selectedChild!['studentId']),
+      isExpanded: true,
+      dropdownColor: _card(isDark),
+      style: TextStyle(
+        color: _primaryText(isDark),
+        fontWeight: FontWeight.w700,
+      ),
+      decoration: InputDecoration(
+        labelText: "Select Student",
+        labelStyle: TextStyle(color: _secondaryText(isDark)),
+        filled: true,
+        fillColor: _card(isDark),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border(isDark)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: isDark ? red : maroon),
+        ),
+      ),
+      items: linkedChildren.map((child) {
+        final id = _text(child['studentId']);
+        final name = _text(
+          _text(child['name']).isNotEmpty ? child['name'] : child['studentName'],
+        );
+        final batch = _text(child['batch']);
+
+        return DropdownMenuItem<String>(
+          value: id,
+          child: Text(
+            "$name - $batch",
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        if (value == null) return;
+
+        final child = linkedChildren.firstWhere(
+          (item) => _text(item['studentId']) == value,
+        );
+
+        setState(() {
+          selectedChild = child;
+          nameController.text = _text(
+            _text(child['name']).isNotEmpty ? child['name'] : child['studentName'],
+          );
+          batchController.text = _text(child['batch']);
+        });
+      },
+    );
+  }
+
+  Widget _field({
+    required bool isDark,
+    required String label,
+    required TextEditingController controller,
+    bool readOnly = false,
+    int maxLines = 1,
+    String? hint,
+    IconData? suffixIcon,
+    VoidCallback? onTap,
+  }) {
+    return TextField(
+      controller: controller,
+      readOnly: readOnly,
+      maxLines: maxLines,
+      onTap: onTap,
+      style: TextStyle(
+        color: _primaryText(isDark),
+        fontWeight: FontWeight.w700,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: TextStyle(color: _secondaryText(isDark)),
+        hintStyle: TextStyle(color: _secondaryText(isDark)),
+        suffixIcon: suffixIcon == null
+            ? null
+            : Icon(
+                suffixIcon,
+                color: isDark ? gold : maroon,
+              ),
+        filled: true,
+        fillColor: _card(isDark),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border(isDark)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border(isDark)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: isDark ? red : maroon),
+        ),
+      ),
+    );
+  }
+
+  Widget _messageCard(bool isDark, String message, IconData icon) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _border(isDark)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: _secondaryText(isDark), size: 42),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

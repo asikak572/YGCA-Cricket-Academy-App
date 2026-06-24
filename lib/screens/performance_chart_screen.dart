@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import '../theme/theme_controller.dart';
+
 class PerformanceChartScreen extends StatefulWidget {
   const PerformanceChartScreen({super.key});
 
@@ -11,13 +13,14 @@ class PerformanceChartScreen extends StatefulWidget {
 }
 
 class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   String role = '';
   String uid = '';
+  String email = '';
   bool userLoaded = false;
 
   List<String> assignedBatches = [];
@@ -29,74 +32,113 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
     _loadUserData();
   }
 
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
+
+  List<String> _listFromDynamic(dynamic value) {
+    final result = <String>[];
+
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) {
+          result.add(text);
+        }
+      }
+    }
+
+    return result;
+  }
+
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
       if (!mounted) return;
-      setState(() {
-        userLoaded = true;
-      });
+      setState(() => userLoaded = true);
       return;
     }
 
     uid = user.uid;
+    email = _lower(user.email ?? '');
 
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     if (!userDoc.exists) {
       if (!mounted) return;
-      setState(() {
-        userLoaded = true;
-      });
+      setState(() => userLoaded = true);
       return;
     }
 
     final data = userDoc.data() ?? {};
 
-    final List<String> coachBatches = [];
-    final rawAssignedBatches = data['assignedBatches'];
+    final loadedRole = _text(data['role']);
 
-    if (rawAssignedBatches is List) {
-      coachBatches.addAll(
-        rawAssignedBatches
-            .map((e) => e.toString().trim())
-            .where((e) => e.isNotEmpty),
-      );
-    }
+    final coachBatches = _listFromDynamic(data['assignedBatches']);
 
-    final oldBatch = data['batch']?.toString().trim() ?? '';
+    final oldBatch = _text(data['assignedBatch']).isNotEmpty
+        ? _text(data['assignedBatch'])
+        : _text(data['batch']);
 
-    if (coachBatches.isEmpty && oldBatch.isNotEmpty) {
+    if (oldBatch.isNotEmpty && !coachBatches.contains(oldBatch)) {
       coachBatches.add(oldBatch);
     }
 
-    final List<String> children = [];
-    final rawChildren = data['linkedChildrenIds'];
+    final children = _listFromDynamic(data['linkedChildrenIds']);
 
-    if (rawChildren is List) {
-      children.addAll(
-        rawChildren
-            .map((e) => e.toString().trim())
-            .where((e) => e.isNotEmpty),
-      );
+    final childId = _text(data['childId']);
+    if (childId.isNotEmpty && !children.contains(childId)) {
+      children.add(childId);
+    }
+
+    final parentEmail = _lower(
+      _text(data['email']).isNotEmpty ? _text(data['email']) : email,
+    );
+
+    if (loadedRole == 'Parent' && parentEmail.isNotEmpty) {
+      final childByEmailLower = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmailLower', isEqualTo: parentEmail)
+          .get();
+
+      for (final doc in childByEmailLower.docs) {
+        if (!children.contains(doc.id)) {
+          children.add(doc.id);
+        }
+      }
+
+      final childByEmail = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmail', isEqualTo: parentEmail)
+          .get();
+
+      for (final doc in childByEmail.docs) {
+        if (!children.contains(doc.id)) {
+          children.add(doc.id);
+        }
+      }
     }
 
     if (!mounted) return;
 
     setState(() {
-      role = data['role']?.toString() ?? '';
+      role = loadedRole;
       assignedBatches = coachBatches;
       linkedChildrenIds = children;
       userLoaded = true;
     });
   }
 
-  Query _performanceQuery() {
-    Query query = FirebaseFirestore.instance.collection('performance_reports');
+  Query<Map<String, dynamic>> _performanceQuery() {
+    Query<Map<String, dynamic>> query =
+        FirebaseFirestore.instance.collection('performance_reports');
 
     if (role == 'Admin') {
       return query;
@@ -144,27 +186,26 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
     return int.tryParse(value.toString()) ?? 0;
   }
 
-  double _average(List<QueryDocumentSnapshot> docs, String key) {
+  double _average(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs, String key) {
     if (docs.isEmpty) return 0;
 
     int total = 0;
 
     for (final doc in docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      total += _toInt(data[key]);
+      total += _toInt(doc.data()[key]);
     }
 
     return total / docs.length;
   }
 
-  String _topPerformer(List<QueryDocumentSnapshot> docs) {
+  String _topPerformer(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
     if (docs.isEmpty) return "No Data";
 
     String topName = "No Data";
     double topScore = -1;
 
     for (final doc in docs) {
-      final data = doc.data() as Map<String, dynamic>;
+      final data = doc.data();
 
       final batting = _toInt(data['batting']);
       final bowling = _toInt(data['bowling']);
@@ -175,24 +216,25 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
 
       if (avg > topScore) {
         topScore = avg;
-        topName = data['studentName']?.toString() ??
-            data['name']?.toString() ??
-            'Unknown';
+        topName = _text(data['studentName']).isNotEmpty
+            ? _text(data['studentName'])
+            : _text(data['name']).isNotEmpty
+                ? _text(data['name'])
+                : 'Unknown';
       }
     }
 
     return topName;
   }
 
-  List<QueryDocumentSnapshot> _sortedDocs(List<QueryDocumentSnapshot> docs) {
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortedDocs(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
     final sorted = docs.toList();
 
     sorted.sort((a, b) {
-      final aData = a.data() as Map<String, dynamic>;
-      final bData = b.data() as Map<String, dynamic>;
-
-      final aTime = aData['createdAt'];
-      final bTime = bData['createdAt'];
+      final aTime = a.data()['createdAt'];
+      final bTime = b.data()['createdAt'];
 
       if (aTime is Timestamp && bTime is Timestamp) {
         return bTime.compareTo(aTime);
@@ -204,12 +246,14 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
     return sorted;
   }
 
-  List<QueryDocumentSnapshot> _topFivePlayers(List<QueryDocumentSnapshot> docs) {
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _topFivePlayers(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
     final sorted = docs.toList();
 
     sorted.sort((a, b) {
-      final aData = a.data() as Map<String, dynamic>;
-      final bData = b.data() as Map<String, dynamic>;
+      final aData = a.data();
+      final bData = b.data();
 
       final aAvg = (
             _toInt(aData['batting']) +
@@ -233,144 +277,429 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
     return sorted.take(5).toList();
   }
 
+  String _ratingText(int avg) {
+    if (avg >= 90) return "ELITE";
+    if (avg >= 75) return "EXCELLENT";
+    if (avg >= 60) return "GOOD";
+    if (avg >= 40) return "AVERAGE";
+    return "NEEDS WORK";
+  }
+
+  Color _ratingColor(String rating) {
+    if (rating == "ELITE") return Colors.purpleAccent;
+    if (rating == "EXCELLENT") return Colors.green;
+    if (rating == "GOOD") return Colors.blueAccent;
+    if (rating == "AVERAGE") return Colors.orange;
+    return Colors.redAccent;
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text("Performance Analytics"),
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-      ),
-      body: !userLoaded
-          ? const Center(child: CircularProgressIndicator())
-          : role == 'Coach' && assignedBatches.isEmpty
-              ? const Center(
-                  child: Text("No batch assigned to this coach"),
-                )
-              : StreamBuilder<QuerySnapshot>(
-                  stream: _performanceQuery().snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Text(
-                            "Error: ${snapshot.error}",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      );
-                    }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final docs = _sortedDocs(snapshot.data?.docs ?? []);
-
-                    final battingAvg = _average(docs, 'batting');
-                    final bowlingAvg = _average(docs, 'bowling');
-                    final fieldingAvg = _average(docs, 'fielding');
-                    final fitnessAvg = _average(docs, 'fitness');
-                    final topPlayer = _topPerformer(docs);
-                    final topDocs = _topFivePlayers(docs);
-
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          _heroCard(
-                            totalReports: docs.length,
-                            topPlayer: topPlayer,
-                          ),
-                          const SizedBox(height: 16),
-                          _summaryGrid(
-                            battingAvg,
-                            bowlingAvg,
-                            fieldingAvg,
-                            fitnessAvg,
-                          ),
-                          const SizedBox(height: 18),
-                          _sectionTitle("Skill Average Chart"),
-                          _barChart(
-                            battingAvg,
-                            bowlingAvg,
-                            fieldingAvg,
-                            fitnessAvg,
-                          ),
-                          const SizedBox(height: 18),
-                          _sectionTitle("Top Performers"),
-                          if (docs.isEmpty)
-                            _emptyCard()
-                          else
-                            ...topDocs.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              final name = data['studentName']?.toString() ??
-                                  data['name']?.toString() ??
-                                  'Unknown';
-
-                              final batting = _toInt(data['batting']);
-                              final bowling = _toInt(data['bowling']);
-                              final fielding = _toInt(data['fielding']);
-                              final fitness = _toInt(data['fitness']);
-
-                              final avg =
-                                  ((batting + bowling + fielding + fitness) /
-                                          4)
-                                      .round();
-
-                              return _topPlayerTile(
-                                name: name,
-                                avg: avg,
-                                batch: data['batch']?.toString() ?? '',
-                              );
-                            }),
-                        ],
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: !userLoaded
+                ? Column(
+                    children: [
+                      _topBar(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
                       ),
-                    );
-                  },
+                    ],
+                  )
+                : role == 'Coach' && assignedBatches.isEmpty
+                    ? Column(
+                        children: [
+                          _topBar(context, isDark),
+                          Expanded(
+                            child: _messageCard(
+                              isDark,
+                              "No batch assigned to this coach",
+                              Icons.groups_2_outlined,
+                            ),
+                          ),
+                        ],
+                      )
+                    : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: _performanceQuery().snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Column(
+                              children: [
+                                _topBar(context, isDark),
+                                Expanded(
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Text(
+                                        "Error: ${snapshot.error}",
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.redAccent,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Column(
+                              children: [
+                                _topBar(context, isDark),
+                                const Expanded(
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          final docs = _sortedDocs(snapshot.data?.docs ?? []);
+
+                          final battingAvg = _average(docs, 'batting');
+                          final bowlingAvg = _average(docs, 'bowling');
+                          final fieldingAvg = _average(docs, 'fielding');
+                          final fitnessAvg = _average(docs, 'fitness');
+
+                          final topPlayer = _topPerformer(docs);
+                          final topDocs = _topFivePlayers(docs);
+
+                          return SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                            child: Column(
+                              children: [
+                                _topBar(context, isDark),
+                                _heroCard(
+                                  isDark: isDark,
+                                  totalReports: docs.length,
+                                  topPlayer: topPlayer,
+                                ),
+                                const SizedBox(height: 14),
+                                _cricHeroesInfoCard(isDark),
+                                const SizedBox(height: 16),
+                                _summaryGrid(
+                                  isDark: isDark,
+                                  batting: battingAvg,
+                                  bowling: bowlingAvg,
+                                  fielding: fieldingAvg,
+                                  fitness: fitnessAvg,
+                                ),
+                                const SizedBox(height: 18),
+                                _sectionTitle("SKILL AVERAGE CHART", isDark),
+                                _barChart(
+                                  isDark: isDark,
+                                  batting: battingAvg,
+                                  bowling: bowlingAvg,
+                                  fielding: fieldingAvg,
+                                  fitness: fitnessAvg,
+                                ),
+                                const SizedBox(height: 18),
+                                _sectionTitle("TOP PERFORMERS", isDark),
+                                docs.isEmpty
+                                    ? _emptyCard(isDark)
+                                    : Column(
+                                        children: topDocs.map((doc) {
+                                          final data = doc.data();
+
+                                          final name =
+                                              _text(data['studentName'])
+                                                      .isNotEmpty
+                                                  ? _text(data['studentName'])
+                                                  : _text(data['name'])
+                                                          .isNotEmpty
+                                                      ? _text(data['name'])
+                                                      : 'Unknown';
+
+                                          final batting = _toInt(data['batting']);
+                                          final bowling = _toInt(data['bowling']);
+                                          final fielding =
+                                              _toInt(data['fielding']);
+                                          final fitness = _toInt(data['fitness']);
+
+                                          final avg =
+                                              ((batting + bowling + fielding + fitness) /
+                                                      4)
+                                                  .round();
+
+                                          final rating = _ratingText(avg);
+
+                                          return _topPlayerTile(
+                                            isDark: isDark,
+                                            name: name,
+                                            avg: avg,
+                                            batch: _text(data['batch']),
+                                            rating: rating,
+                                            ratingColor: _ratingColor(rating),
+                                          );
+                                        }).toList(),
+                                      ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _topBar(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+      child: Row(
+        children: [
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "ANALYTICS",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
                 ),
+                Text(
+                  "Performance insight center",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
     );
   }
 
   Widget _heroCard({
+    required bool isDark,
     required int totalReports,
     required String topPlayer,
   }) {
     return Container(
+      height: 215,
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: maroon,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          Text(
-            "YGCA Performance Analytics",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: gold,
-              fontSize: 21,
-              fontWeight: FontWeight.w900,
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            "Skill-wise player performance overview",
-            style: TextStyle(color: Colors.white70, fontSize: 12),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 14),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _heroChip("Reports: $totalReports"),
-              _heroChip("Top: $topPlayer"),
-            ],
+          Positioned(
+            right: -24,
+            bottom: -24,
+            child: Icon(
+              Icons.insights_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 46,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.insights_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 235,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "CRICHEROES",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "PERFORMANCE",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "ANALYTICS",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Reports: $totalReports"),
+                              _heroChip("Top: $topPlayer"),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -379,127 +708,256 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
 
   Widget _heroChip(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+      constraints: const BoxConstraints(maxWidth: 210),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.8)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _summaryGrid(
-    double batting,
-    double bowling,
-    double fielding,
-    double fitness,
-  ) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 1.35,
-      children: [
-        _statCard(
-          "Batting Avg",
-          batting.round().toString(),
-          Icons.sports_cricket,
-          Colors.green,
-        ),
-        _statCard(
-          "Bowling Avg",
-          bowling.round().toString(),
-          Icons.sports_baseball,
-          Colors.blue,
-        ),
-        _statCard(
-          "Fielding Avg",
-          fielding.round().toString(),
-          Icons.sports_handball,
-          Colors.orange,
-        ),
-        _statCard(
-          "Fitness Avg",
-          fitness.round().toString(),
-          Icons.fitness_center,
-          Colors.purple,
-        ),
-      ],
-    );
-  }
-
-  Widget _statCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 30),
-          const SizedBox(height: 8),
-          Text(
-            "$value%",
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            title,
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: TextStyle(
-          color: maroon,
-          fontSize: 16,
           fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _barChart(
-    double batting,
-    double bowling,
-    double fielding,
-    double fitness,
-  ) {
+  Widget _cricHeroesInfoCard(bool isDark) {
     return Container(
-      height: 270,
+      width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? gold.withOpacity(0.45) : gold.withOpacity(0.75),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.sync_rounded,
+            color: isDark ? gold : maroon,
+            size: 26,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Analytics are view-only now. Data will sync from CricHeroes integration later.",
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryGrid({
+    required bool isDark,
+    required double batting,
+    required double bowling,
+    required double fielding,
+    required double fitness,
+  }) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.22,
+      children: [
+        _statCard(
+          isDark: isDark,
+          title: "Batting Avg",
+          value: batting.round().toString(),
+          icon: Icons.sports_cricket_rounded,
+          color: Colors.green,
+        ),
+        _statCard(
+          isDark: isDark,
+          title: "Bowling Avg",
+          value: bowling.round().toString(),
+          icon: Icons.sports_baseball_rounded,
+          color: Colors.blueAccent,
+        ),
+        _statCard(
+          isDark: isDark,
+          title: "Fielding Avg",
+          value: fielding.round().toString(),
+          icon: Icons.sports_handball_rounded,
+          color: Colors.orange,
+        ),
+        _statCard(
+          isDark: isDark,
+          title: "Fitness Avg",
+          value: fitness.round().toString(),
+          icon: Icons.fitness_center_rounded,
+          color: Colors.purpleAccent,
+        ),
+      ],
+    );
+  }
+
+  Widget _statCard({
+    required bool isDark,
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  const Color(0xFF151515),
+                  const Color(0xFF1A0808),
+                  color.withOpacity(0.16),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFFBF2),
+                  color.withOpacity(0.08),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? color.withOpacity(0.10)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 135,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "$value%",
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: isDark ? gold : maroon,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _barChart({
+    required bool isDark,
+    required double batting,
+    required double bowling,
+    required double fielding,
+    required double fitness,
+  }) {
+    return Container(
+      height: 285,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
       ),
       child: BarChart(
         BarChartData(
           maxY: 100,
           borderData: FlBorderData(show: false),
-          gridData: const FlGridData(show: true),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (value) {
+              return FlLine(
+                color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                strokeWidth: 1,
+              );
+            },
+          ),
           titlesData: FlTitlesData(
-            leftTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: true, reservedSize: 35),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 35,
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    value.toInt().toString(),
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                },
+              ),
             ),
             topTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
@@ -510,28 +968,45 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
+                reservedSize: 32,
                 getTitlesWidget: (value, meta) {
+                  String title = "";
+
                   switch (value.toInt()) {
                     case 0:
-                      return const Text("BAT");
+                      title = "BAT";
+                      break;
                     case 1:
-                      return const Text("BOWL");
+                      title = "BOWL";
+                      break;
                     case 2:
-                      return const Text("FIELD");
+                      title = "FIELD";
+                      break;
                     case 3:
-                      return const Text("FIT");
-                    default:
-                      return const Text("");
+                      title = "FIT";
+                      break;
                   }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  );
                 },
               ),
             ),
           ),
           barGroups: [
             _bar(0, batting, Colors.green),
-            _bar(1, bowling, Colors.blue),
+            _bar(1, bowling, Colors.blueAccent),
             _bar(2, fielding, Colors.orange),
-            _bar(3, fitness, Colors.purple),
+            _bar(3, fitness, Colors.purpleAccent),
           ],
         ),
       ),
@@ -543,7 +1018,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
       x: x,
       barRods: [
         BarChartRodData(
-          toY: y.clamp(0, 100),
+          toY: y.clamp(0, 100).toDouble(),
           color: color,
           width: 24,
           borderRadius: BorderRadius.circular(8),
@@ -553,54 +1028,161 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
   }
 
   Widget _topPlayerTile({
+    required bool isDark,
     required String name,
     required int avg,
     required String batch,
+    required String rating,
+    required Color ratingColor,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(top: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: border),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
       ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: maroon,
-          child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : "?",
-            style: TextStyle(color: gold, fontWeight: FontWeight.bold),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: maroon,
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : "?",
+              style: const TextStyle(
+                color: gold,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(batch.isEmpty ? "No batch" : batch),
-        trailing: Text(
-          "$avg%",
-          style: TextStyle(
-            color: maroon,
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  batch.isEmpty ? "No batch" : batch,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "$avg%",
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: ratingColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: ratingColor.withOpacity(0.25)),
+                ),
+                child: Text(
+                  rating,
+                  style: TextStyle(
+                    color: ratingColor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(top: 10),
+      margin: const EdgeInsets.only(top: 2),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Text(
-        "No performance records available",
-        textAlign: TextAlign.center,
+      child: Column(
+        children: [
+          Icon(
+            Icons.bar_chart_rounded,
+            size: 38,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "No performance records available",
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Analytics data will sync from CricHeroes later",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _secondaryText(isDark)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _messageCard(bool isDark, String message, IconData icon) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _border(isDark)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: _secondaryText(isDark), size: 42),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
