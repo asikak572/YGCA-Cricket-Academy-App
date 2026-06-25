@@ -1,317 +1,520 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class CancelSessionScreen extends StatelessWidget {
+import '../theme/theme_controller.dart';
+
+class CancelSessionScreen extends StatefulWidget {
   const CancelSessionScreen({super.key});
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
-
-  Future<void> _cancelSession({
-  required BuildContext context,
-  required TextEditingController batchController,
-  required TextEditingController dateController,
-  required TextEditingController timeController,
-  required TextEditingController reasonController,
-}) async {
-  final batch = batchController.text.trim();
-  final date = dateController.text.trim();
-  final time = timeController.text.trim();
-  final reason = reasonController.text.trim();
-
-  if (batch.isEmpty || date.isEmpty || time.isEmpty || reason.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please fill all fields")),
-    );
-    return;
-  }
-
-  final notificationMessage =
-      '$batch session on $date at $time has been cancelled. Reason: $reason. Makeup session will be scheduled soon.';
-
-  final cancelledDoc =
-      await FirebaseFirestore.instance.collection('cancelled_sessions').add({
-    'batch': batch,
-    'date': date,
-    'time': time,
-    'reason': reason,
-    'makeup': 'Not scheduled',
-    'status': 'Cancelled',
-    'makeupStatus': 'Pending',
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-
-  await FirebaseFirestore.instance.collection('makeup_sessions').add({
-    'cancelledSessionId': cancelledDoc.id,
-    'batch': batch,
-    'cancelledDate': date,
-    'cancelledTime': time,
-    'reason': reason,
-    'makeupDate': '',
-    'makeupTime': '',
-    'status': 'Pending',
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-
-  await FirebaseFirestore.instance.collection('notifications').add({
-    'title': 'Session Cancelled',
-    'message': notificationMessage,
-    'targetRole': 'Parent',
-    'batch': batch,
-    'type': 'session_cancelled',
-    'status': 'Unread',
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-
-  await FirebaseFirestore.instance.collection('notifications').add({
-    'title': 'Session Cancelled',
-    'message': notificationMessage,
-    'targetRole': 'Student',
-    'batch': batch,
-    'type': 'session_cancelled',
-    'status': 'Unread',
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Session cancelled, makeup created and notified"),
-      ),
-    );
-
-    batchController.clear();
-    dateController.clear();
-    timeController.clear();
-    reasonController.clear();
-  }
+  @override
+  State<CancelSessionScreen> createState() => _CancelSessionScreenState();
 }
+
+class _CancelSessionScreenState extends State<CancelSessionScreen> {
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  final TextEditingController batchController = TextEditingController();
+  final TextEditingController dateController = TextEditingController();
+  final TextEditingController timeController = TextEditingController();
+  final TextEditingController reasonController = TextEditingController();
+
+  bool submitting = false;
+
+  @override
+  void dispose() {
+    batchController.dispose();
+    dateController.dispose();
+    timeController.dispose();
+    reasonController.dispose();
+    super.dispose();
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  Future<void> _cancelSession(BuildContext context) async {
+    final batch = batchController.text.trim();
+    final date = dateController.text.trim();
+    final time = timeController.text.trim();
+    final reason = reasonController.text.trim();
+
+    if (batch.isEmpty || date.isEmpty || time.isEmpty || reason.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please fill all fields"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => submitting = true);
+
+    try {
+      final notificationMessage =
+          '$batch session on $date at $time has been cancelled. Reason: $reason. Makeup session will be scheduled soon.';
+
+      final cancelledDoc =
+          await FirebaseFirestore.instance.collection('cancelled_sessions').add({
+        'batch': batch,
+        'date': date,
+        'time': time,
+        'reason': reason,
+        'makeup': 'Not scheduled',
+        'status': 'Cancelled',
+        'makeupStatus': 'Pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      await FirebaseFirestore.instance.collection('makeup_sessions').add({
+        'cancelledSessionId': cancelledDoc.id,
+        'batch': batch,
+        'cancelledDate': date,
+        'cancelledTime': time,
+        'reason': reason,
+        'makeupDate': '',
+        'makeupTime': '',
+        'status': 'Pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'title': 'Session Cancelled',
+        'message': notificationMessage,
+        'targetRole': 'Parent',
+        'batch': batch,
+        'type': 'session_cancelled',
+        'status': 'Unread',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'title': 'Session Cancelled',
+        'message': notificationMessage,
+        'targetRole': 'Student',
+        'batch': batch,
+        'type': 'session_cancelled',
+        'status': 'Unread',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Session cancelled, makeup created and notified"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      batchController.clear();
+      dateController.clear();
+      timeController.clear();
+      reasonController.clear();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Cancel session failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => submitting = false);
+      }
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 2),
+    );
+
+    if (picked == null) return;
+
+    dateController.text =
+        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (picked == null) return;
+
+    if (!mounted) return;
+
+    timeController.text = picked.format(context);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final batchController = TextEditingController();
-    final dateController = TextEditingController();
-    final timeController = TextEditingController();
-    final reasonController = TextEditingController();
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('cancelled_sessions')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text("Something went wrong"));
-          }
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('cancelled_sessions')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      Expanded(
+                        child: _messageCard(
+                          isDark: isDark,
+                          icon: Icons.error_outline_rounded,
+                          title: "Something went wrong",
+                          message: snapshot.error.toString(),
+                        ),
+                      ),
+                    ],
+                  );
+                }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  );
+                }
 
-          final sessions = snapshot.data?.docs ?? [];
+                final sessions = snapshot.data?.docs ?? [];
 
-          int makeupPending = 0;
-          final Set<String> batches = {};
+                int makeupPending = 0;
+                final Set<String> batches = {};
 
-          for (final doc in sessions) {
-            final data = doc.data() as Map<String, dynamic>;
-            final makeup = data['makeup']?.toString() ?? 'Not scheduled';
-            final batch = data['batch']?.toString() ?? '';
+                for (final doc in sessions) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final makeup = data['makeup']?.toString() ?? 'Not scheduled';
+                  final batch = data['batch']?.toString() ?? '';
 
-            if (makeup == 'Not scheduled') makeupPending++;
-            if (batch.isNotEmpty) batches.add(batch);
-          }
+                  if (makeup == 'Not scheduled') makeupPending++;
+                  if (batch.isNotEmpty) batches.add(batch);
+                }
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _heroBanner(
-                  total: sessions.length,
-                  makeupPending: makeupPending,
-                  batches: batches.length,
-                ),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("CANCEL SESSION FORM"),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                      _warningBox(),
-                      const SizedBox(height: 14),
-                      _inputBox("Select Batch", batchController, Icons.groups),
-                      _inputBox(
-                        "Session Date",
-                        dateController,
-                        Icons.calendar_month,
+                      _topHeader(context, isDark),
+                      _heroBanner(
+                        isDark: isDark,
+                        total: sessions.length,
+                        makeupPending: makeupPending,
+                        batches: batches.length,
                       ),
-                      _inputBox(
-                        "Session Time",
-                        timeController,
-                        Icons.access_time,
-                      ),
-                      _inputBox(
-                        "Reason",
-                        reasonController,
-                        Icons.warning_amber,
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 6),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: maroon,
-                            foregroundColor: gold,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      const SizedBox(height: 18),
+                      _sectionTitle("CANCEL SESSION FORM", isDark),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: [
+                            _warningBox(isDark),
+                            const SizedBox(height: 14),
+                            _inputBox(
+                              isDark: isDark,
+                              label: "Select Batch",
+                              controller: batchController,
+                              icon: Icons.groups_rounded,
                             ),
-                          ),
-                          onPressed: () => _cancelSession(
-                            context: context,
-                            batchController: batchController,
-                            dateController: dateController,
-                            timeController: timeController,
-                            reasonController: reasonController,
-                          ),
-                          icon: const Icon(Icons.notifications_active),
-                          label: const Text(
-                            "CANCEL & CREATE MAKEUP",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
+                            _inputBox(
+                              isDark: isDark,
+                              label: "Session Date",
+                              controller: dateController,
+                              icon: Icons.calendar_month_rounded,
+                              readOnly: true,
+                              onTap: _pickDate,
                             ),
-                          ),
+                            _inputBox(
+                              isDark: isDark,
+                              label: "Session Time",
+                              controller: timeController,
+                              icon: Icons.access_time_rounded,
+                              readOnly: true,
+                              onTap: _pickTime,
+                            ),
+                            _inputBox(
+                              isDark: isDark,
+                              label: "Reason",
+                              controller: reasonController,
+                              icon: Icons.warning_amber_rounded,
+                              maxLines: 2,
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 54,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark ? red : maroon,
+                                  foregroundColor:
+                                      isDark ? Colors.white : gold,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                onPressed: submitting
+                                    ? null
+                                    : () => _cancelSession(context),
+                                icon: submitting
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.notifications_active_rounded,
+                                      ),
+                                label: Text(
+                                  submitting
+                                      ? "CREATING..."
+                                      : "CANCEL & CREATE MAKEUP",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                _sectionTitle("SESSION OVERVIEW"),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 3,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 1.15,
-                    children: [
-                      _smallStatCard(
-                        Icons.event_busy,
-                        "TOTAL",
-                        sessions.length.toString(),
-                        Colors.red,
-                      ),
-                      _smallStatCard(
-                        Icons.groups,
-                        "BATCHES",
-                        batches.length.toString(),
-                        Colors.blue,
-                      ),
-                      _smallStatCard(
-                        Icons.event_repeat,
-                        "MAKEUP",
-                        makeupPending.toString(),
-                        Colors.orange,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("RECENTLY CANCELLED"),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: sessions.isEmpty
-                      ? _emptyCard()
-                      : Column(
-                          children: sessions.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-
-                            return _cancelledCard(
-                              batch: data['batch']?.toString() ?? '',
-                              date: data['date']?.toString() ?? '',
-                              time: data['time']?.toString() ?? '',
-                              reason: data['reason']?.toString() ?? '',
-                              makeup:
-                                  data['makeup']?.toString() ?? 'Not scheduled',
-                            );
-                          }).toList(),
+                      const SizedBox(height: 22),
+                      _sectionTitle("SESSION OVERVIEW", isDark),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.count(
+                          crossAxisCount: 3,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 1.05,
+                          children: [
+                            _smallStatCard(
+                              isDark: isDark,
+                              icon: Icons.event_busy_rounded,
+                              title: "TOTAL",
+                              value: sessions.length.toString(),
+                              color: Colors.redAccent,
+                            ),
+                            _smallStatCard(
+                              isDark: isDark,
+                              icon: Icons.groups_rounded,
+                              title: "BATCHES",
+                              value: batches.length.toString(),
+                              color: Colors.blueAccent,
+                            ),
+                            _smallStatCard(
+                              isDark: isDark,
+                              icon: Icons.event_repeat_rounded,
+                              title: "MAKEUP",
+                              value: makeupPending.toString(),
+                              color: Colors.orange,
+                            ),
+                          ],
                         ),
-                ),
+                      ),
+                      const SizedBox(height: 20),
+                      _sectionTitle("RECENTLY CANCELLED", isDark),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: sessions.isEmpty
+                            ? _emptyCard(isDark)
+                            : Column(
+                                children: sessions.map((doc) {
+                                  final data =
+                                      doc.data() as Map<String, dynamic>;
 
-                const SizedBox(height: 30),
-              ],
+                                  return _cancelledCard(
+                                    isDark: isDark,
+                                    batch: data['batch']?.toString() ?? '',
+                                    date: data['date']?.toString() ?? '',
+                                    time: data['time']?.toString() ?? '',
+                                    reason: data['reason']?.toString() ?? '',
+                                    makeup: data['makeup']?.toString() ??
+                                        'Not scheduled',
+                                  );
+                                }).toList(),
+                              ),
+                      ),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
-    return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
-          Image.asset('assets/images/ygca_logo.jpg', width: 58),
           const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "CANCEL SESSION",
-              style: TextStyle(
-                color: gold,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "CANCEL SESSION",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Session control and makeup flow",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.event_busy, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
   Widget _heroBanner({
+    required bool isDark,
     required int total,
     required int makeupPending,
     required int batches,
   }) {
     return Container(
-      height: 210,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 220,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -325,15 +528,30 @@ class CancelSessionScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -25,
+            bottom: -25,
+            child: Icon(
+              Icons.event_busy_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -341,53 +559,64 @@ class CancelSessionScreen extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 48,
+                  radius: 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.event_busy, color: maroon, size: 42),
+                  child: Icon(
+                    Icons.event_busy_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "ACADEMY",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        "SESSION",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 31,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "CONTROL",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 25,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _heroChip("Cancelled: $total"),
-                          _heroChip("Batches: $batches"),
-                          _heroChip("Makeup Pending: $makeupPending"),
+                          Text(
+                            "ACADEMY",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "SESSION",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "CONTROL",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Cancelled: $total"),
+                              _heroChip("Batches: $batches"),
+                              _heroChip("Makeup: $makeupPending"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -400,40 +629,54 @@ class CancelSessionScreen extends StatelessWidget {
 
   Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 155),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
-        style: TextStyle(
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _warningBox() {
+  Widget _warningBox(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
-        border: Border.all(color: const Color(0xFFFECACA)),
-        borderRadius: BorderRadius.circular(14),
+        color: isDark
+            ? Colors.red.withOpacity(0.10)
+            : const Color(0xFFFEF2F2),
+        border: Border.all(
+          color: isDark
+              ? Colors.redAccent.withOpacity(0.35)
+              : const Color(0xFFFECACA),
+        ),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.red),
-          SizedBox(width: 10),
+          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               "Cancel a session only when required. Parents and students will be notified immediately. A makeup session will be created automatically.",
-              style: TextStyle(fontSize: 12, color: Colors.red),
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.35,
+                color: isDark ? Colors.red.shade200 : Colors.red,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -441,113 +684,136 @@ class CancelSessionScreen extends StatelessWidget {
     );
   }
 
-  Widget _inputBox(
-    String label,
-    TextEditingController controller,
-    IconData icon, {
+  Widget _inputBox({
+    required bool isDark,
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
     int maxLines = 1,
+    bool readOnly = false,
+    VoidCallback? onTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: controller,
         maxLines: maxLines,
+        readOnly: readOnly,
+        onTap: onTap,
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
+        ),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: maroon),
+          labelStyle: TextStyle(color: _secondaryText(isDark)),
+          prefixIcon: Icon(icon, color: isDark ? gold : maroon),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: _card(isDark),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: isDark ? red : maroon),
           ),
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
+  Widget _sectionTitle(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
             title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: maroon,
-              fontSize: 16,
+              color: isDark ? gold : maroon,
+              fontSize: 15,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
-        ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-        const SizedBox(width: 8),
-
-        Container(
-          width: 35,
-          height: 2,
-          color: gold,
-        ),
-      ],
-    ),
-  );
-}
-
-  Widget _smallStatCard(
-    IconData icon,
-    String title,
-    String value,
-    Color color,
-  ) {
+  Widget _smallStatCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? color.withOpacity(0.35) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: isDark
+                ? color.withOpacity(0.10)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white, size: 20),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 92,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                title,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _cancelledCard({
+    required bool isDark,
     required String batch,
     required String date,
     required String time,
@@ -560,12 +826,16 @@ class CancelSessionScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
+            color: isDark
+                ? Colors.black.withOpacity(0.28)
+                : Colors.black.withOpacity(0.045),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -575,8 +845,11 @@ class CancelSessionScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: const Color(0xFFFEF2F2),
-            child: Icon(Icons.event_busy, color: Colors.red.shade700),
+            backgroundColor: Colors.red.withOpacity(0.12),
+            child: const Icon(
+              Icons.event_busy_rounded,
+              color: Colors.redAccent,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -587,7 +860,8 @@ class CancelSessionScreen extends StatelessWidget {
                   batch.isEmpty ? "Unknown Batch" : batch,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
@@ -595,18 +869,25 @@ class CancelSessionScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   time.isEmpty ? date : "$date • $time",
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 8),
-                _detailChip(Icons.warning_amber, reason, Colors.red),
+                _detailChip(
+                  isDark: isDark,
+                  icon: Icons.warning_amber_rounded,
+                  text: reason,
+                  color: Colors.redAccent,
+                ),
                 const SizedBox(height: 6),
                 _detailChip(
-                  Icons.event_repeat,
-                  makeup,
-                  needsMakeup ? Colors.orange : Colors.green,
+                  isDark: isDark,
+                  icon: Icons.event_repeat_rounded,
+                  text: makeup,
+                  color: needsMakeup ? Colors.orange : Colors.green,
                 ),
               ],
             ),
@@ -616,12 +897,18 @@ class CancelSessionScreen extends StatelessWidget {
     );
   }
 
-  Widget _detailChip(IconData icon, String text, Color color) {
+  Widget _detailChip({
+    required bool isDark,
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withOpacity(isDark ? 0.16 : 0.10),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -644,26 +931,81 @@ class CancelSessionScreen extends StatelessWidget {
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.event_busy, size: 40, color: Colors.grey),
-          SizedBox(height: 10),
+          Icon(
+            Icons.event_busy_rounded,
+            size: 40,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
           Text(
             "No Cancelled Sessions Found",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          SizedBox(height: 4),
-          Text("Cancelled sessions will appear here"),
+          const SizedBox(height: 4),
+          Text(
+            "Cancelled sessions will appear here",
+            style: TextStyle(color: _secondaryText(isDark)),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _messageCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _border(isDark)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: _secondaryText(isDark), size: 42),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

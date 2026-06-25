@@ -1,244 +1,360 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 import 'widgets/ygca_app_bar.dart';
 
 class AttendanceReportScreen extends StatelessWidget {
   const AttendanceReportScreen({super.key});
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFF8FAFC);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
+
+  int _toPercent(int present, int total) {
+    if (total == 0) return 0;
+    return ((present / total) * 100).round();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: const YgcaAppBar(title: "Attendance Reports"),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('attendance')
-            .orderBy('date', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          appBar: const YgcaAppBar(title: "Attendance Reports"),
+          body: SafeArea(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('attendance')
+                  .orderBy('date', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return _messageCard(
+                    isDark: isDark,
+                    icon: Icons.error_outline_rounded,
+                    title: "Something went wrong",
+                    message: snapshot.error.toString(),
+                  );
+                }
 
-          final records = snapshot.data?.docs ?? [];
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          int totalRecords = records.length;
-          int presentCount = 0;
-          int absentCount = 0;
+                final records = snapshot.data?.docs ?? [];
 
-          final Map<String, Map<String, dynamic>> studentSummary = {};
-          final Map<String, Map<String, int>> batchSummary = {};
+                int totalRecords = records.length;
+                int presentCount = 0;
+                int absentCount = 0;
 
-          for (final record in records) {
-            final data = record.data() as Map<String, dynamic>;
+                final Map<String, Map<String, dynamic>> studentSummary = {};
+                final Map<String, Map<String, int>> batchSummary = {};
 
-            final studentId = data['studentId']?.toString() ?? '';
-            final studentName = data['studentName']?.toString() ?? 'No Name';
-            final batch = data['batch']?.toString() ?? 'No Batch';
-            final status = data['status']?.toString() ?? 'Absent';
+                for (final record in records) {
+                  final data = record.data() as Map<String, dynamic>;
 
-            if (status == "Present") {
-              presentCount++;
-            } else {
-              absentCount++;
-            }
+                  final studentId = data['studentId']?.toString() ?? '';
+                  final studentName =
+                      data['studentName']?.toString() ?? 'No Name';
+                  final batch = data['batch']?.toString() ?? 'No Batch';
+                  final status = data['status']?.toString() ?? 'Absent';
 
-            studentSummary.putIfAbsent(studentId, () {
-              return {
-                'name': studentName,
-                'batch': batch,
-                'present': 0,
-                'absent': 0,
-                'total': 0,
-              };
-            });
+                  if (status == "Present") {
+                    presentCount++;
+                  } else {
+                    absentCount++;
+                  }
 
-            studentSummary[studentId]!['total']++;
-            if (status == "Present") {
-              studentSummary[studentId]!['present']++;
-            } else {
-              studentSummary[studentId]!['absent']++;
-            }
+                  studentSummary.putIfAbsent(studentId, () {
+                    return {
+                      'name': studentName,
+                      'batch': batch,
+                      'present': 0,
+                      'absent': 0,
+                      'total': 0,
+                    };
+                  });
 
-            batchSummary.putIfAbsent(batch, () {
-              return {'present': 0, 'absent': 0, 'total': 0};
-            });
+                  studentSummary[studentId]!['total']++;
 
-            batchSummary[batch]!['total'] =
-                (batchSummary[batch]!['total'] ?? 0) + 1;
+                  if (status == "Present") {
+                    studentSummary[studentId]!['present']++;
+                  } else {
+                    studentSummary[studentId]!['absent']++;
+                  }
 
-            if (status == "Present") {
-              batchSummary[batch]!['present'] =
-                  (batchSummary[batch]!['present'] ?? 0) + 1;
-            } else {
-              batchSummary[batch]!['absent'] =
-                  (batchSummary[batch]!['absent'] ?? 0) + 1;
-            }
-          }
+                  batchSummary.putIfAbsent(batch, () {
+                    return {'present': 0, 'absent': 0, 'total': 0};
+                  });
 
-          final attendancePercent = totalRecords == 0
-              ? 0
-              : ((presentCount / totalRecords) * 100).round();
+                  batchSummary[batch]!['total'] =
+                      (batchSummary[batch]!['total'] ?? 0) + 1;
 
-          final allStudents = studentSummary.values.toList();
+                  if (status == "Present") {
+                    batchSummary[batch]!['present'] =
+                        (batchSummary[batch]!['present'] ?? 0) + 1;
+                  } else {
+                    batchSummary[batch]!['absent'] =
+                        (batchSummary[batch]!['absent'] ?? 0) + 1;
+                  }
+                }
 
-          allStudents.sort((a, b) {
-            final aTotal = a['total'] as int;
-            final bTotal = b['total'] as int;
-            final aPresent = a['present'] as int;
-            final bPresent = b['present'] as int;
+                final attendancePercent =
+                    _toPercent(presentCount, totalRecords);
 
-            final aPercent =
-                aTotal == 0 ? 0 : ((aPresent / aTotal) * 100).round();
-            final bPercent =
-                bTotal == 0 ? 0 : ((bPresent / bTotal) * 100).round();
+                final allStudents = studentSummary.values.toList();
 
-            return bPercent.compareTo(aPercent);
-          });
+                allStudents.sort((a, b) {
+                  final aTotal = a['total'] as int;
+                  final bTotal = b['total'] as int;
+                  final aPresent = a['present'] as int;
+                  final bPresent = b['present'] as int;
 
-          final topStudents = allStudents.take(3).toList();
+                  final aPercent = _toPercent(aPresent, aTotal);
+                  final bPercent = _toPercent(bPresent, bTotal);
 
-          final lowAttendance = allStudents.where((student) {
-            final total = student['total'] as int;
-            final present = student['present'] as int;
-            final percent = total == 0 ? 0 : ((present / total) * 100).round();
-            return percent < 75;
-          }).toList();
+                  return bPercent.compareTo(aPercent);
+                });
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _heroReportCard(context, attendancePercent),
-                const SizedBox(height: 16),
+                final topStudents = allStudents.take(3).toList();
 
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.35,
-                  children: [
-                    _statCard("Total Records", totalRecords.toString(),
-                        Icons.list_alt, gold),
-                    _statCard("Present", presentCount.toString(),
-                        Icons.check_circle, Colors.green),
-                    _statCard(
-                        "Absent", absentCount.toString(), Icons.cancel, Colors.red),
-                    _statCard("Attendance %", "$attendancePercent%",
-                        Icons.percent, Colors.blue),
+                final lowAttendance = allStudents.where((student) {
+                  final total = student['total'] as int;
+                  final present = student['present'] as int;
+                  final percent = _toPercent(present, total);
+                  return percent < 75;
+                }).toList();
+
+                return CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: _heroReportCard(
+                        context: context,
+                        isDark: isDark,
+                        attendancePercent: attendancePercent,
+                        totalRecords: totalRecords,
+                        presentCount: presentCount,
+                        absentCount: absentCount,
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 18)),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverGrid(
+                        delegate: SliverChildListDelegate(
+                          [
+                            _statCard(
+                              isDark: isDark,
+                              title: "Total Records",
+                              value: totalRecords.toString(),
+                              icon: Icons.list_alt_rounded,
+                              color: gold,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              title: "Present",
+                              value: presentCount.toString(),
+                              icon: Icons.check_circle_rounded,
+                              color: Colors.green,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              title: "Absent",
+                              value: absentCount.toString(),
+                              icon: Icons.cancel_rounded,
+                              color: Colors.redAccent,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              title: "Attendance %",
+                              value: "$attendancePercent%",
+                              icon: Icons.percent_rounded,
+                              color: Colors.blueAccent,
+                            ),
+                          ],
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.18,
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    SliverToBoxAdapter(
+                      child: _sectionTitle("BATCH WISE SUMMARY", isDark),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate(
+                          batchSummary.isEmpty
+                              ? [
+                                  _emptySmall(
+                                    isDark,
+                                    "No batch report available",
+                                  ),
+                                ]
+                              : batchSummary.entries.map((entry) {
+                                  final batch = entry.key;
+                                  final present = entry.value['present'] ?? 0;
+                                  final absent = entry.value['absent'] ?? 0;
+                                  final total = entry.value['total'] ?? 0;
+                                  final percent = _toPercent(present, total);
+
+                                  return _batchCard(
+                                    isDark: isDark,
+                                    batch: batch,
+                                    present: present,
+                                    absent: absent,
+                                    percent: percent,
+                                  );
+                                }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    SliverToBoxAdapter(
+                      child: _sectionTitle("TOP ATTENDANCE STUDENTS", isDark),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate(
+                          topStudents.isEmpty
+                              ? [
+                                  _emptySmall(
+                                    isDark,
+                                    "No student data available",
+                                  ),
+                                ]
+                              : topStudents.map((student) {
+                                  final total = student['total'] as int;
+                                  final present = student['present'] as int;
+                                  final percent = _toPercent(present, total);
+
+                                  return _topStudentCard(
+                                    isDark: isDark,
+                                    name: student['name'].toString(),
+                                    batch: student['batch'].toString(),
+                                    percent: percent,
+                                  );
+                                }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    SliverToBoxAdapter(
+                      child: _sectionTitle(
+                        "STUDENT ATTENDANCE SUMMARY",
+                        isDark,
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate(
+                          studentSummary.isEmpty
+                              ? [
+                                  _emptySmall(
+                                    isDark,
+                                    "No attendance data available",
+                                  ),
+                                ]
+                              : studentSummary.values.map((student) {
+                                  final total = student['total'] as int;
+                                  final present = student['present'] as int;
+                                  final absent = student['absent'] as int;
+                                  final percent = _toPercent(present, total);
+
+                                  return _studentSummaryCard(
+                                    isDark: isDark,
+                                    name: student['name'].toString(),
+                                    batch: student['batch'].toString(),
+                                    present: present,
+                                    absent: absent,
+                                    percent: percent,
+                                  );
+                                }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    SliverToBoxAdapter(
+                      child: _sectionTitle("LOW ATTENDANCE ALERT", isDark),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate(
+                          lowAttendance.isEmpty
+                              ? [_successCard(isDark)]
+                              : lowAttendance.map((student) {
+                                  final total = student['total'] as int;
+                                  final present = student['present'] as int;
+                                  final percent = _toPercent(present, total);
+
+                                  return _studentAlertCard(
+                                    isDark: isDark,
+                                    name: student['name'].toString(),
+                                    batch: student['batch'].toString(),
+                                    percent: percent,
+                                  );
+                                }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   ],
-                ),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("Batch Wise Summary"),
-
-                if (batchSummary.isEmpty)
-                  _emptySmall("No batch report available")
-                else
-                  ...batchSummary.entries.map((entry) {
-                    final batch = entry.key;
-                    final present = entry.value['present'] ?? 0;
-                    final absent = entry.value['absent'] ?? 0;
-                    final total = entry.value['total'] ?? 0;
-                    final percent =
-                        total == 0 ? 0 : ((present / total) * 100).round();
-
-                    return _batchCard(
-                      batch: batch,
-                      present: present,
-                      absent: absent,
-                      percent: percent,
-                    );
-                  }),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("Top Attendance Students"),
-
-                if (topStudents.isEmpty)
-                  _emptySmall("No student data available")
-                else
-                  ...topStudents.map((student) {
-                    final total = student['total'] as int;
-                    final present = student['present'] as int;
-                    final percent =
-                        total == 0 ? 0 : ((present / total) * 100).round();
-
-                    return _topStudentCard(
-                      name: student['name'].toString(),
-                      batch: student['batch'].toString(),
-                      percent: percent,
-                    );
-                  }),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("Student Attendance Summary"),
-
-                if (studentSummary.isEmpty)
-                  _emptySmall("No attendance data available")
-                else
-                  ...studentSummary.values.map((student) {
-                    final total = student['total'] as int;
-                    final present = student['present'] as int;
-                    final absent = student['absent'] as int;
-                    final percent =
-                        total == 0 ? 0 : ((present / total) * 100).round();
-
-                    return _studentSummaryCard(
-                      name: student['name'].toString(),
-                      batch: student['batch'].toString(),
-                      present: present,
-                      absent: absent,
-                      percent: percent,
-                    );
-                  }),
-
-                const SizedBox(height: 18),
-
-                _sectionTitle("Low Attendance Alert"),
-
-                if (lowAttendance.isEmpty)
-                  _successCard()
-                else
-                  ...lowAttendance.map((student) {
-                    final total = student['total'] as int;
-                    final present = student['present'] as int;
-                    final percent =
-                        total == 0 ? 0 : ((present / total) * 100).round();
-
-                    return _studentAlertCard(
-                      name: student['name'].toString(),
-                      batch: student['batch'].toString(),
-                      percent: "$percent%",
-                    );
-                  }),
-
-                const SizedBox(height: 20),
-              ],
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _heroReportCard(BuildContext context, int attendancePercent) {
+  Widget _heroReportCard({
+    required BuildContext context,
+    required bool isDark,
+    required int attendancePercent,
+    required int totalRecords,
+    required int presentCount,
+    required int absentCount,
+  }) {
     String health = "Needs Attention";
-    Color healthColor = Colors.red;
+    Color healthColor = Colors.redAccent;
 
     if (attendancePercent >= 90) {
       health = "Excellent";
@@ -248,238 +364,471 @@ class AttendanceReportScreen extends StatelessWidget {
       healthColor = Colors.orange;
     }
 
+    final progress = attendancePercent.clamp(0, 100) / 100;
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      height: 245,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: maroon,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: gold),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          Text(
-            "Attendance Report",
-            style: TextStyle(
-              color: gold,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            "Overall academy attendance performance",
-            style: TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          const SizedBox(height: 14),
-          LinearProgressIndicator(
-            value: attendancePercent / 100,
-            backgroundColor: Colors.white24,
-            color: gold,
-            minHeight: 8,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "$attendancePercent% overall attendance",
-            style: const TextStyle(color: Colors.white, fontSize: 12),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: healthColor.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: healthColor),
-            ),
-            child: Text(
-              health,
-              style: TextStyle(
-                color: healthColor,
-                fontWeight: FontWeight.bold,
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: gold,
-              side: BorderSide(color: gold),
+          Positioned(
+            right: -25,
+            bottom: -25,
+            child: Icon(
+              Icons.analytics_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 155,
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("PDF export will be added later")),
-              );
-            },
-            icon: const Icon(Icons.download),
-            label: const Text("Export Report"),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 46,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.fact_check_rounded,
+                    color: maroon,
+                    size: 42,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 235,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "ACADEMY",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "ATTENDANCE",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "REPORT",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: LinearProgressIndicator(
+                              value: progress.toDouble(),
+                              backgroundColor: Colors.white24,
+                              color: gold,
+                              minHeight: 8,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "$attendancePercent% overall attendance",
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 9),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Total: $totalRecords"),
+                              _heroChip("Present: $presentCount"),
+                              _heroChip("Absent: $absentCount"),
+                              _statusChip(health, healthColor),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 14,
+            top: 14,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("PDF export will be added later"),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.11),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: gold.withOpacity(0.7)),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.download_rounded, color: gold, size: 15),
+                    SizedBox(width: 5),
+                    Text(
+                      "Export",
+                      style: TextStyle(
+                        color: gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _statCard(String title, String value, IconData icon, Color iconColor) {
+  Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 145),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: iconColor, size: 30),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
-          ),
-        ],
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: gold,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: maroon,
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
+  Widget _statCard({
+    required bool isDark,
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  const Color(0xFF151515),
+                  const Color(0xFF1A0808),
+                  color.withOpacity(0.16),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFFBF2),
+                  color.withOpacity(0.08),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? color.withOpacity(0.10)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 135,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: isDark ? gold : maroon,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _batchCard({
+    required bool isDark,
     required String batch,
     required int present,
     required int absent,
     required int percent,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: border),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: maroon,
-          child: Icon(Icons.groups, color: gold),
-        ),
-        title: Text(
-          batch,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text("Present: $present • Absent: $absent"),
-        trailing: _percentChip(percent),
-      ),
+    return _infoListCard(
+      isDark: isDark,
+      leadingColor: maroon,
+      leading: const Icon(Icons.groups_rounded, color: gold),
+      title: batch,
+      subtitle: "Present: $present • Absent: $absent",
+      trailing: _percentChip(percent),
     );
   }
 
   Widget _topStudentCard({
+    required bool isDark,
     required String name,
     required String batch,
     required int percent,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: border),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: gold,
-          child: Icon(Icons.emoji_events, color: maroon),
-        ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(batch),
-        trailing: _percentChip(percent),
-      ),
+    return _infoListCard(
+      isDark: isDark,
+      leadingColor: gold,
+      leading: const Icon(Icons.emoji_events_rounded, color: maroon),
+      title: name,
+      subtitle: batch,
+      trailing: _percentChip(percent),
     );
   }
 
   Widget _studentSummaryCard({
+    required bool isDark,
     required String name,
     required String batch,
     required int present,
     required int absent,
     required int percent,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: border),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: maroon,
-          child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : "?",
-            style: TextStyle(color: gold, fontWeight: FontWeight.bold),
-          ),
+    return _infoListCard(
+      isDark: isDark,
+      leadingColor: maroon,
+      leading: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : "?",
+        style: const TextStyle(
+          color: gold,
+          fontWeight: FontWeight.w900,
         ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text("$batch\nPresent: $present • Absent: $absent"),
-        isThreeLine: true,
-        trailing: _percentChip(percent),
       ),
+      title: name,
+      subtitle: "$batch\nPresent: $present • Absent: $absent",
+      trailing: _percentChip(percent),
+      isThreeLine: true,
     );
   }
 
   Widget _studentAlertCard({
+    required bool isDark,
     required String name,
     required String batch,
-    required String percent,
+    required int percent,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: border),
+    return _infoListCard(
+      isDark: isDark,
+      leadingColor: Colors.red.withOpacity(0.13),
+      leading: const Icon(
+        Icons.warning_amber_rounded,
+        color: Colors.redAccent,
       ),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFFFEF2F2),
-          child: Icon(Icons.warning_amber, color: Colors.red),
+      title: name,
+      subtitle: batch,
+      trailing: _alertChip("$percent%"),
+    );
+  }
+
+  Widget _infoListCard({
+    required bool isDark,
+    required Color leadingColor,
+    required Widget leading,
+    required String title,
+    required String subtitle,
+    required Widget trailing,
+    bool isThreeLine = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.24) : _border(isDark),
         ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(batch),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.28)
+                : Colors.black.withOpacity(0.045),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
-          child: Text(
-            percent,
-            style: const TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: leadingColor,
+            child: leading,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.isEmpty ? "Unknown" : title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  maxLines: isThreeLine ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    height: 1.28,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
+          const SizedBox(width: 10),
+          trailing,
+        ],
       ),
     );
   }
 
   Widget _percentChip(int percent) {
-    Color color = Colors.red;
+    Color color = Colors.redAccent;
 
     if (percent >= 90) {
       color = Colors.green;
@@ -492,36 +841,177 @@ class AttendanceReportScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.24)),
       ),
       child: Text(
         "$percent%",
         style: TextStyle(
           color: color,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
           fontSize: 12,
         ),
       ),
     );
   }
 
-  Widget _successCard() {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.check_circle, color: Colors.green),
-        title: const Text(
-          "No low attendance students",
-          style: TextStyle(fontWeight: FontWeight.bold),
+  Widget _statusChip(String text, Color color) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 150),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
         ),
-        subtitle: const Text("All students are above 75%"),
       ),
     );
   }
 
-  Widget _emptySmall(String text) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.info_outline),
-        title: Text(text),
+  Widget _alertChip(String percent) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.red.withOpacity(0.24)),
+      ),
+      child: Text(
+        percent,
+        style: const TextStyle(
+          color: Colors.redAccent,
+          fontWeight: FontWeight.w900,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _successCard(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? Colors.green.withOpacity(0.35) : _border(isDark),
+        ),
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            backgroundColor: Color(0xFFEAF8EF),
+            child: Icon(Icons.check_circle_rounded, color: Colors.green),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "No low attendance students",
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "All students are above 75%",
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptySmall(bool isDark, String text) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border(isDark)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _messageCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _border(isDark)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: _secondaryText(isDark), size: 42),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
