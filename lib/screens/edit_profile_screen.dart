@@ -6,6 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../theme/theme_controller.dart';
+
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -14,10 +16,10 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
@@ -35,6 +37,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
   Future<DocumentReference<Map<String, dynamic>>?> _studentDocRef(
@@ -58,12 +80,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadProfile() async {
     final user = FirebaseAuth.instance.currentUser;
-   if (user == null) {
-  if (mounted) {
-    setState(() => isLoading = false);
-  }
-  return;
-}
+
+    if (user == null) {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+      return;
+    }
 
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
@@ -83,23 +106,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     DocumentSnapshot<Map<String, dynamic>>? studentDoc;
 
-try {
-  final studentRef = await _studentDocRef(user.uid);
-  studentDoc = await studentRef?.get();
-} catch (_) {
-  studentDoc = null;
-}
+    try {
+      final studentRef = await _studentDocRef(user.uid);
+      studentDoc = await studentRef?.get();
+    } catch (_) {
+      studentDoc = null;
+    }
 
-if (studentDoc != null && studentDoc.exists) {
+    if (studentDoc != null && studentDoc.exists) {
       final data = studentDoc.data() ?? {};
 
-      nameController.text =
-          nameController.text.isNotEmpty ? nameController.text : data['name']?.toString() ?? '';
-      phoneController.text =
-          phoneController.text.isNotEmpty ? phoneController.text : data['phone']?.toString() ?? '';
-      addressController.text =
-          addressController.text.isNotEmpty ? addressController.text : data['address']?.toString() ?? '';
-      photoUrl = photoUrl.isNotEmpty ? photoUrl : data['photoUrl']?.toString() ?? '';
+      nameController.text = nameController.text.isNotEmpty
+          ? nameController.text
+          : data['name']?.toString() ?? '';
+
+      phoneController.text = phoneController.text.isNotEmpty
+          ? phoneController.text
+          : data['phone']?.toString() ?? '';
+
+      addressController.text = addressController.text.isNotEmpty
+          ? addressController.text
+          : data['address']?.toString() ?? '';
+
+      photoUrl = photoUrl.isNotEmpty
+          ? photoUrl
+          : data['photoUrl']?.toString() ?? '';
     }
 
     if (mounted) {
@@ -107,102 +138,105 @@ if (studentDoc != null && studentDoc.exists) {
     }
   }
 
- Future<void> _uploadPhoto() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+  Future<void> _uploadPhoto() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  try {
-    final pickedImage = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
+    try {
+      final pickedImage = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
 
-    if (pickedImage == null) return;
+      if (pickedImage == null) return;
 
-    final file = File(pickedImage.path);
+      final file = File(pickedImage.path);
 
-    final fileSizeBytes = await file.length();
-    final fileSizeMB = fileSizeBytes / (1024 * 1024);
+      final fileSizeBytes = await file.length();
+      final fileSizeMB = fileSizeBytes / (1024 * 1024);
 
-    if (fileSizeMB > 2) {
+      if (fileSizeMB > 2) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Image size must be less than 2 MB"),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        isUploadingPhoto = true;
+      });
+
+      final storageRef = FirebaseStorage.instance.ref().child(
+            'student_photos/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          );
+
+      final uploadTask = await storageRef.putFile(
+        file,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+        {
+          'photoUrl': downloadUrl,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+
+      if (role == "Student") {
+        final studentRef = await _studentDocRef(user.uid);
+
+        if (studentRef != null) {
+          await studentRef.set(
+            {
+              'name': nameController.text.trim(),
+              'phone': phoneController.text.trim(),
+              'address': addressController.text.trim(),
+              'photoUrl': downloadUrl,
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true),
+          );
+        }
+      }
+
       if (!mounted) return;
+
+      setState(() {
+        photoUrl = downloadUrl;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Image size must be less than 2 MB"),
+          content: Text("Profile photo uploaded successfully"),
+          backgroundColor: Colors.green,
         ),
       );
-      return;
-    }
+    } catch (e) {
+      if (!mounted) return;
 
-    setState(() {
-      isUploadingPhoto = true;
-    });
-
-    final storageRef = FirebaseStorage.instance
-        .ref()
-        .child(
-          'student_photos/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        );
-
-    final uploadTask = await storageRef.putFile(
-      file,
-      SettableMetadata(contentType: 'image/jpeg'),
-    );
-
-    final downloadUrl = await uploadTask.ref.getDownloadURL();
-
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
-      {
-        'photoUrl': downloadUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
-
-    if (role == "Student") {
-  final studentRef = await _studentDocRef(user.uid);
-
-  if (studentRef != null) {
-    await studentRef.set(
-      {
-        'name': nameController.text.trim(),
-        'phone': phoneController.text.trim(),
-        'address': addressController.text.trim(),
-        'photoUrl': photoUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
-  }
-}
-    if (!mounted) return;
-
-    setState(() {
-      photoUrl = downloadUrl;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Profile photo uploaded successfully"),
-      ),
-    );
-  } catch (e) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Photo upload failed: $e"),
-      ),
-    );
-  } finally {
-    if (mounted) {
-      setState(() {
-        isUploadingPhoto = false;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Photo upload failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUploadingPhoto = false;
+        });
+      }
     }
   }
-}
+
   Future<void> _saveProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -210,7 +244,10 @@ if (studentDoc != null && studentDoc.exists) {
     if (nameController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Name and phone number are required")),
+        const SnackBar(
+          content: Text("Name and phone number are required"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -232,26 +269,29 @@ if (studentDoc != null && studentDoc.exists) {
       );
 
       if (role == "Student") {
-  final studentRef = await _studentDocRef(user.uid);
+        final studentRef = await _studentDocRef(user.uid);
 
-  if (studentRef != null) {
-    await studentRef.set(
-      {
-        'name': nameController.text.trim(),
-        'phone': phoneController.text.trim(),
-        'address': addressController.text.trim(),
-        'photoUrl': photoUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
-  }
-}
+        if (studentRef != null) {
+          await studentRef.set(
+            {
+              'name': nameController.text.trim(),
+              'phone': phoneController.text.trim(),
+              'address': addressController.text.trim(),
+              'photoUrl': photoUrl,
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true),
+          );
+        }
+      }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Profile updated successfully")),
+        const SnackBar(
+          content: Text("Profile updated successfully"),
+          backgroundColor: Colors.green,
+        ),
       );
 
       Navigator.pop(context);
@@ -259,7 +299,10 @@ if (studentDoc != null && studentDoc.exists) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(
+          content: Text("Error: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => isSaving = false);
@@ -277,189 +320,346 @@ if (studentDoc != null && studentDoc.exists) {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: maroon,
-        foregroundColor: Colors.white,
-        title: const Text(
-          "Edit Profile",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _header(),
-            const SizedBox(height: 18),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  _inputField(
-                    label: "Full Name",
-                    controller: nameController,
-                    icon: Icons.person,
-                  ),
-                  _inputField(
-                    label: "Phone Number",
-                    controller: phoneController,
-                    icon: Icons.phone,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  _inputField(
-                    label: "Email",
-                    controller: emailController,
-                    icon: Icons.email,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  _inputField(
-                    label: "Address",
-                    controller: addressController,
-                    icon: Icons.location_on,
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: maroon,
-                        foregroundColor: gold,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+        if (isLoading) {
+          return Scaffold(
+            backgroundColor: _bg(isDark),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          body: SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _topHeader(context, isDark),
+                ),
+                SliverToBoxAdapter(
+                  child: _profileHeader(isDark),
+                ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 18),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        _inputField(
+                          isDark: isDark,
+                          label: "Full Name",
+                          controller: nameController,
+                          icon: Icons.person_rounded,
                         ),
-                      ),
-                      onPressed: isSaving ? null : _saveProfile,
-                      icon: isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.save),
-                      label: Text(
-                        isSaving ? "SAVING..." : "SAVE CHANGES",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
+                        _inputField(
+                          isDark: isDark,
+                          label: "Phone Number",
+                          controller: phoneController,
+                          icon: Icons.phone_rounded,
+                          keyboardType: TextInputType.phone,
                         ),
-                      ),
+                        _inputField(
+                          isDark: isDark,
+                          label: "Email",
+                          controller: emailController,
+                          icon: Icons.email_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        _inputField(
+                          isDark: isDark,
+                          label: "Address",
+                          controller: addressController,
+                          icon: Icons.location_on_rounded,
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDark ? red : maroon,
+                              foregroundColor: isDark ? Colors.white : gold,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              disabledBackgroundColor:
+                                  isDark ? Colors.white12 : Colors.grey.shade300,
+                            ),
+                            onPressed: isSaving ? null : _saveProfile,
+                            icon: isSaving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.save_rounded),
+                            label: Text(
+                              isSaving ? "SAVING..." : "SAVE CHANGES",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        _noteCard(isDark),
+                        const SizedBox(height: 26),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  _noteCard(),
-                ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _topHeader(BuildContext context, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black : maroon,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.55),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 10),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "EDIT PROFILE",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isDark ? Colors.white : gold,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
               ),
             ),
-          ],
+          ),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color:
+              isDark ? const Color(0xFF111111) : Colors.white.withOpacity(0.14),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isDark ? red.withOpacity(0.28) : gold.withOpacity(0.55),
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : gold,
+          size: 22,
         ),
       ),
     );
   }
 
-  Widget _header() {
-    final initial =
-        nameController.text.isNotEmpty ? nameController.text[0].toUpperCase() : "U";
+  Widget _profileHeader(bool isDark) {
+    final initial = nameController.text.isNotEmpty
+        ? nameController.text[0].toUpperCase()
+        : "U";
 
     return Container(
       width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: maroon,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  Colors.black,
+                  darkMaroon,
+                  red.withOpacity(0.42),
+                ]
+              : [
+                  maroon,
+                  darkMaroon,
+                  Colors.black.withOpacity(0.86),
+                ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.85),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.18) : maroon.withOpacity(0.16),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          Stack(
+          Positioned(
+            right: -26,
+            bottom: -28,
+            child: Icon(
+              Icons.person_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 130,
+            ),
+          ),
+          Column(
             children: [
-              CircleAvatar(
-                radius: 48,
-                backgroundColor: Colors.white,
-                backgroundImage:
-                    photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                child: photoUrl.isEmpty
-                    ? Text(
-                        initial,
-                        style: TextStyle(
-                          color: maroon,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      )
-                    : null,
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: InkWell(
-                  onTap: isUploadingPhoto ? null : _uploadPhoto,
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: gold,
-                    child: isUploadingPhoto
-                        ? SizedBox(
-                            height: 14,
-                            width: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 52,
+                    backgroundColor: Colors.white,
+                    backgroundImage:
+                        photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                    child: photoUrl.isEmpty
+                        ? Text(
+                            initial,
+                            style: const TextStyle(
                               color: maroon,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
                             ),
                           )
-                        : Icon(Icons.camera_alt, color: maroon, size: 16),
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(30),
+                      onTap: isUploadingPhoto ? null : _uploadPhoto,
+                      child: CircleAvatar(
+                        radius: 17,
+                        backgroundColor: gold,
+                        child: isUploadingPhoto
+                            ? const SizedBox(
+                                height: 14,
+                                width: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: maroon,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.camera_alt_rounded,
+                                color: maroon,
+                                size: 17,
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: isUploadingPhoto ? null : _uploadPhoto,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: gold.withOpacity(0.85)),
+                  ),
+                  child: Text(
+                    isUploadingPhoto
+                        ? "Uploading..."
+                        : photoUrl.isEmpty
+                            ? "Upload Photo"
+                            : "Change Photo",
+                    style: const TextStyle(
+                      color: gold,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: isUploadingPhoto ? null : _uploadPhoto,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.14),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: gold),
-              ),
-              child: Text(
-                photoUrl.isEmpty ? "Upload Photo" : "Change Photo",
-                style: TextStyle(
-                  color: gold,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+              const SizedBox(height: 12),
+              Text(
+                nameController.text.isEmpty
+                    ? "User Profile"
+                    : nameController.text,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            nameController.text.isEmpty ? "User Profile" : nameController.text,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            role.isEmpty ? "YGCA Member" : role.toUpperCase(),
-            style: TextStyle(
-              color: gold,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
+              const SizedBox(height: 4),
+              Text(
+                role.isEmpty ? "YGCA MEMBER" : role.toUpperCase(),
+                style: const TextStyle(
+                  color: gold,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -467,6 +667,7 @@ if (studentDoc != null && studentDoc.exists) {
   }
 
   Widget _inputField({
+    required bool isDark,
     required String label,
     required TextEditingController controller,
     required IconData icon,
@@ -479,41 +680,63 @@ if (studentDoc != null && studentDoc.exists) {
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
+        ),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: maroon),
+          labelStyle: TextStyle(color: _secondaryText(isDark)),
+          prefixIcon: Icon(icon, color: isDark ? gold : maroon),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: _card(isDark),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(
+              color: isDark ? red : maroon,
+              width: 1.4,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _noteCard() {
+  Widget _noteCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
+        color: isDark ? const Color(0xFF180808) : const Color(0xFFFFFBEB),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFDE68A)),
+        border: Border.all(
+          color: isDark ? gold.withOpacity(0.35) : const Color(0xFFFDE68A),
+        ),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.info_outline, color: Colors.orange),
-          SizedBox(width: 10),
+          Icon(
+            Icons.info_outline_rounded,
+            color: isDark ? gold : Colors.orange,
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               "You can update only your own profile details. Academy data like batch, roll number, attendance and fees are controlled by Admin.",
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : const Color(0xFF374151),
+                fontSize: 12,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

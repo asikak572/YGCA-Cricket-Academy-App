@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 import 'coach_details_screen.dart';
 
 class CoachManagementScreen extends StatelessWidget {
@@ -13,11 +15,30 @@ class CoachManagementScreen extends StatelessWidget {
     "Saturday: 6:00 PM – 8:00 PM",
   ];
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  }
 
   String _cleanEmail(String value) => value.trim().toLowerCase();
 
@@ -86,7 +107,7 @@ class CoachManagementScreen extends StatelessWidget {
         .set(data, SetOptions(merge: true));
   }
 
-  Future<void> _addCoachDialog(BuildContext context) async {
+  Future<void> _addCoachDialog(BuildContext context, bool isDark) async {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
     final phoneController = TextEditingController();
@@ -109,27 +130,50 @@ class CoachManagementScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text("Add Coach"),
+              backgroundColor: _card(isDark),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
+              title: Text(
+                "Add Coach",
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _field("Coach Name", nameController),
                     _field(
-                      "Coach Email",
-                      emailController,
+                      isDark: isDark,
+                      label: "Coach Name",
+                      controller: nameController,
+                    ),
+                    _field(
+                      isDark: isDark,
+                      label: "Coach Email",
+                      controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                     ),
                     _field(
-                      "Phone",
-                      phoneController,
+                      isDark: isDark,
+                      label: "Phone",
+                      controller: phoneController,
                       keyboardType: TextInputType.phone,
                     ),
                     DropdownButtonFormField<String>(
                       value: selectedSpecialization,
-                      decoration: const InputDecoration(
-                        labelText: "Specialization",
-                        border: OutlineInputBorder(),
+                      isExpanded: true,
+                      dropdownColor:
+                          isDark ? const Color(0xFF111111) : Colors.white,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w700,
+                      ),
+                      decoration: _inputDecoration(
+                        isDark: isDark,
+                        label: "Specialization",
                       ),
                       items: specializations.map((item) {
                         return DropdownMenuItem<String>(
@@ -148,8 +192,8 @@ class CoachManagementScreen extends StatelessWidget {
                       child: Text(
                         "Assign Batches",
                         style: TextStyle(
-                          color: maroon,
-                          fontWeight: FontWeight.bold,
+                          color: isDark ? gold : maroon,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
@@ -159,18 +203,26 @@ class CoachManagementScreen extends StatelessWidget {
                       runSpacing: 8,
                       children: academyBatches.map((batch) {
                         final selected = selectedBatches.contains(batch);
+
                         return FilterChip(
                           label: Text(
                             batch,
                             style: TextStyle(
                               fontSize: 11,
-                              color: selected ? gold : Colors.black87,
+                              color: selected
+                                  ? (isDark ? Colors.black : gold)
+                                  : _primaryText(isDark),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           selected: selected,
-                          selectedColor: maroon,
-                          checkmarkColor: gold,
+                          selectedColor: isDark ? gold : maroon,
+                          checkmarkColor: selected
+                              ? (isDark ? Colors.black : gold)
+                              : _primaryText(isDark),
+                          backgroundColor:
+                              isDark ? const Color(0xFF151515) : Colors.white,
+                          side: BorderSide(color: _border(isDark)),
                           onSelected: (value) {
                             setDialogState(() {
                               if (value) {
@@ -189,12 +241,15 @@ class CoachManagementScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: isDark ? Colors.white70 : maroon),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: maroon,
-                    foregroundColor: gold,
+                    backgroundColor: isDark ? red : maroon,
+                    foregroundColor: isDark ? Colors.white : gold,
                   ),
                   onPressed: () async {
                     final name = nameController.text.trim();
@@ -212,6 +267,7 @@ class CoachManagementScreen extends StatelessWidget {
                           content: Text(
                             "Please fill name, email, phone and select batch",
                           ),
+                          backgroundColor: Colors.red,
                         ),
                       );
                       return;
@@ -263,13 +319,17 @@ class CoachManagementScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Coach added and batch assigned"),
+                            backgroundColor: Colors.green,
                           ),
                         );
                       }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Error: $e")),
+                          SnackBar(
+                            content: Text("Error: $e"),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                       }
                     }
@@ -290,6 +350,7 @@ class CoachManagementScreen extends StatelessWidget {
 
   Future<void> _approveCoachDialog({
     required BuildContext context,
+    required bool isDark,
     required String coachId,
     required Map<String, dynamic> data,
   }) async {
@@ -301,7 +362,17 @@ class CoachManagementScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text("Approve Coach"),
+              backgroundColor: _card(isDark),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
+              title: Text(
+                "Approve Coach",
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -309,19 +380,23 @@ class CoachManagementScreen extends StatelessWidget {
                   children: [
                     Text(
                       data['name']?.toString() ?? 'Coach',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
                         fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(data['email']?.toString() ?? ''),
+                    Text(
+                      data['email']?.toString() ?? '',
+                      style: TextStyle(color: _secondaryText(isDark)),
+                    ),
                     const SizedBox(height: 14),
                     Text(
                       "Assign Batches",
                       style: TextStyle(
-                        color: maroon,
-                        fontWeight: FontWeight.bold,
+                        color: isDark ? gold : maroon,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -330,18 +405,26 @@ class CoachManagementScreen extends StatelessWidget {
                       runSpacing: 8,
                       children: academyBatches.map((batch) {
                         final selected = selectedBatches.contains(batch);
+
                         return FilterChip(
                           label: Text(
                             batch,
                             style: TextStyle(
                               fontSize: 11,
-                              color: selected ? gold : Colors.black87,
+                              color: selected
+                                  ? (isDark ? Colors.black : gold)
+                                  : _primaryText(isDark),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           selected: selected,
-                          selectedColor: maroon,
-                          checkmarkColor: gold,
+                          selectedColor: isDark ? gold : maroon,
+                          checkmarkColor: selected
+                              ? (isDark ? Colors.black : gold)
+                              : _primaryText(isDark),
+                          backgroundColor:
+                              isDark ? const Color(0xFF151515) : Colors.white,
+                          side: BorderSide(color: _border(isDark)),
                           onSelected: (value) {
                             setDialogState(() {
                               if (value) {
@@ -360,19 +443,25 @@ class CoachManagementScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: isDark ? Colors.white70 : maroon),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: maroon,
-                    foregroundColor: gold,
+                    backgroundColor: isDark ? red : maroon,
+                    foregroundColor: isDark ? Colors.white : gold,
                   ),
                   onPressed: () async {
                     final batches = selectedBatches.toList();
 
                     if (batches.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Please select batch")),
+                        const SnackBar(
+                          content: Text("Please select batch"),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                       return;
                     }
@@ -417,13 +506,17 @@ class CoachManagementScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Coach approved and batch assigned"),
+                            backgroundColor: Colors.green,
                           ),
                         );
                       }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Approve failed: $e")),
+                          SnackBar(
+                            content: Text("Approve failed: $e"),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                       }
                     }
@@ -438,9 +531,33 @@ class CoachManagementScreen extends StatelessWidget {
     );
   }
 
-  static Widget _field(
-    String label,
-    TextEditingController controller, {
+  InputDecoration _inputDecoration({
+    required bool isDark,
+    required String label,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: _secondaryText(isDark)),
+      filled: true,
+      fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: _border(isDark)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: isDark ? red : maroon, width: 1.4),
+      ),
+    );
+  }
+
+  Widget _field({
+    required bool isDark,
+    required String label,
+    required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return Padding(
@@ -448,10 +565,11 @@ class CoachManagementScreen extends StatelessWidget {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
         ),
+        decoration: _inputDecoration(isDark: isDark, label: label),
       ),
     );
   }
@@ -461,21 +579,43 @@ class CoachManagementScreen extends StatelessWidget {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Coach deleted")),
+        const SnackBar(
+          content: Text("Coach deleted"),
+          backgroundColor: Colors.green,
+        ),
       );
     }
   }
 
-  void _confirmDelete(BuildContext context, String coachId, String coachName) {
+  void _confirmDelete(
+    BuildContext context,
+    bool isDark,
+    String coachId,
+    String coachName,
+  ) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Delete Coach"),
-        content: Text("Are you sure you want to delete $coachName?"),
+        backgroundColor: _card(isDark),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Text(
+          "Delete Coach",
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
+          "Are you sure you want to delete $coachName?",
+          style: TextStyle(color: _secondaryText(isDark)),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: isDark ? Colors.white70 : maroon),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -518,168 +658,315 @@ class CoachManagementScreen extends StatelessWidget {
   }
 
   Color _statusColor(String status) {
-    if (status == "Active") return Colors.green;
-    if (status == "Inactive") return Colors.red;
-    if (status == "Pending") return Colors.orange;
+    final value = status.toLowerCase().trim();
+
+    if (value == "active" || value == "approved") return Colors.green;
+    if (value == "inactive") return Colors.red;
+    if (value == "pending" || value == "waiting") return Colors.orange;
     return Colors.orange;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('coaches')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final coaches = snapshot.data?.docs ?? [];
-          int active = 0;
-          int pending = 0;
-          final Set<String> specializations = {};
-
-          for (final doc in coaches) {
-            final data = doc.data() as Map<String, dynamic>;
-            final status = data['status']?.toString() ?? 'Pending';
-            final specialization = data['specialization']?.toString() ?? '';
-
-            if (_isApproved(data)) active++;
-            if (_isPendingStatus(status) || !_isApproved(data)) pending++;
-            if (specialization.isNotEmpty) specializations.add(specialization);
-          }
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _topHeader(context),
-                _heroBanner(
-                  total: coaches.length,
-                  active: active,
-                  pending: pending,
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("COACH OVERVIEW"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.25,
-                    children: [
-                      _statCard(Icons.sports, "COACHES",
-                          coaches.length.toString(), "Total", Colors.blue),
-                      _statCard(Icons.verified, "ACTIVE", active.toString(),
-                          "Approved", Colors.green),
-                      _statCard(Icons.pending_actions, "PENDING",
-                          pending.toString(), "Approval", Colors.orange),
-                      _statCard(Icons.category, "SPECIAL",
-                          specializations.length.toString(), "Types", Colors.purple),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _sectionTitle("COACH LIST"),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: coaches.isEmpty
-                      ? _emptyCard()
-                      : Column(
-                          children: coaches.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-
-                            final name = data['name']?.toString() ?? 'No Name';
-                            final role = data['role']?.toString() ?? 'Coach';
-                            final phone = data['phone']?.toString() ?? 'No Phone';
-                            final batch = _batchesText(data);
-                            final status = data['status']?.toString() ?? 'Pending';
-
-                            return _coachCard(
-                              context: context,
-                              coachId: doc.id,
-                              data: data,
-                              name: name,
-                              role: role,
-                              phone: phone,
-                              batch: batch,
-                              status: status,
-                            );
-                          }).toList(),
-                        ),
-                ),
-                const SizedBox(height: 90),
-              ],
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: isDark ? red : maroon,
+            foregroundColor: isDark ? Colors.white : gold,
+            onPressed: () => _addCoachDialog(context, isDark),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text(
+              "Add Coach",
+              style: TextStyle(fontWeight: FontWeight.w900),
             ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        onPressed: () => _addCoachDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text("Add Coach"),
-      ),
+          ),
+          body: SafeArea(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('coaches')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      Expanded(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: Text(
+                              "Error: ${snapshot.error}",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  );
+                }
+
+                final coaches = snapshot.data?.docs ?? [];
+                int active = 0;
+                int pending = 0;
+                final Set<String> specializations = {};
+
+                for (final doc in coaches) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final status = data['status']?.toString() ?? 'Pending';
+                  final specialization =
+                      data['specialization']?.toString() ?? '';
+
+                  if (_isApproved(data)) active++;
+                  if (_isPendingStatus(status) || !_isApproved(data)) pending++;
+                  if (specialization.isNotEmpty) {
+                    specializations.add(specialization);
+                  }
+                }
+
+                return CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(child: _topHeader(context, isDark)),
+                    SliverToBoxAdapter(
+                      child: _heroBanner(
+                        isDark: isDark,
+                        total: coaches.length,
+                        active: active,
+                        pending: pending,
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 18)),
+                    SliverToBoxAdapter(
+                      child: _sectionTitle("COACH OVERVIEW", isDark),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverGrid(
+                        delegate: SliverChildListDelegate(
+                          [
+                            _statCard(
+                              isDark: isDark,
+                              icon: Icons.sports_rounded,
+                              title: "COACHES",
+                              value: coaches.length.toString(),
+                              subtitle: "Total",
+                              color: Colors.blue,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              icon: Icons.verified_rounded,
+                              title: "ACTIVE",
+                              value: active.toString(),
+                              subtitle: "Approved",
+                              color: Colors.green,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              icon: Icons.pending_actions_rounded,
+                              title: "PENDING",
+                              value: pending.toString(),
+                              subtitle: "Approval",
+                              color: Colors.orange,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              icon: Icons.category_rounded,
+                              title: "SPECIAL",
+                              value: specializations.length.toString(),
+                              subtitle: "Types",
+                              color: Colors.purple,
+                            ),
+                          ],
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 1.17,
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 18)),
+                    SliverToBoxAdapter(
+                      child: _sectionTitle("COACH LIST", isDark),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: coaches.isEmpty
+                          ? SliverToBoxAdapter(child: _emptyCard(isDark))
+                          : SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final doc = coaches[index];
+                                  final data =
+                                      doc.data() as Map<String, dynamic>;
+
+                                  final name =
+                                      data['name']?.toString() ?? 'No Name';
+                                  final role =
+                                      data['role']?.toString() ?? 'Coach';
+                                  final phone =
+                                      data['phone']?.toString() ?? 'No Phone';
+                                  final batch = _batchesText(data);
+                                  final status =
+                                      data['status']?.toString() ?? 'Pending';
+
+                                  return _coachCard(
+                                    context: context,
+                                    isDark: isDark,
+                                    coachId: doc.id,
+                                    data: data,
+                                    name: name,
+                                    role: role,
+                                    phone: phone,
+                                    batch: batch,
+                                    status: status,
+                                  );
+                                },
+                                childCount: coaches.length,
+                              ),
+                            ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 90)),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
+  Widget _topHeader(BuildContext context, bool isDark) {
     return Container(
-      color: maroon,
-      padding: const EdgeInsets.fromLTRB(16, 45, 16, 20),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black : maroon,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.55),
+          ),
+        ),
+      ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
-          Image.asset('assets/images/ygca_logo.jpg', width: 58),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               "COACH CENTER",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: gold,
+                color: isDark ? Colors.white : gold,
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
+                letterSpacing: 1,
               ),
             ),
           ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Icon(Icons.sports, color: Colors.black),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF111111) : Colors.white.withOpacity(0.14),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isDark ? red.withOpacity(0.28) : gold.withOpacity(0.55),
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : gold,
+          size: 22,
+        ),
+      ),
+    );
+  }
+
   Widget _heroBanner({
+    required bool isDark,
     required int total,
     required int active,
     required int pending,
   }) {
     return Container(
-      height: 190,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: 188,
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.85),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.16) : maroon.withOpacity(0.16),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -693,15 +980,30 @@ class CoachManagementScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.34),
+                        ]
+                      : [
+                          maroon.withOpacity(0.94),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.26),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -28,
+            bottom: -30,
+            child: Icon(
+              Icons.sports_cricket_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 150,
             ),
           ),
           Padding(
@@ -709,35 +1011,65 @@ class CoachManagementScreen extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 43,
+                  radius: 42,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.sports, color: maroon, size: 38),
+                  child: Icon(
+                    Icons.sports_cricket_rounded,
+                    color: maroon,
+                    size: 38,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 15),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "YGCA COACH CENTER",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _heroChip("Total: $total"),
-                          _heroChip("Active: $active"),
-                          _heroChip("Pending: $pending"),
+                          Text(
+                            "YGCA",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Text(
+                            "COACH",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 31,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "CENTER",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Total: $total"),
+                              _heroChip("Active: $active"),
+                              _heroChip("Pending: $pending"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -750,24 +1082,27 @@ class CoachManagementScreen extends StatelessWidget {
 
   Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 130),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.7)),
+        border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -775,70 +1110,103 @@ class CoachManagementScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: maroon,
-              fontSize: 18,
+              color: isDark ? gold : maroon,
+              fontSize: 16,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
           ),
           const SizedBox(width: 10),
-          Container(width: 42, height: 2, color: gold),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _statCard(
-    IconData icon,
-    String title,
-    String value,
-    String subtitle,
-    Color color,
-  ) {
+  Widget _statCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color color,
+  }) {
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  const Color(0xFF151515),
+                  const Color(0xFF1A0808),
+                  color.withOpacity(0.15),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFFBF2),
+                  color.withOpacity(0.08),
+                ],
+        ),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : gold.withOpacity(0.65),
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 130,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: color.withOpacity(0.16),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                title,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
-          ),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 10,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _coachCard({
     required BuildContext context,
+    required bool isDark,
     required String coachId,
     required Map<String, dynamic> data,
     required String name,
@@ -852,13 +1220,24 @@ class CoachManagementScreen extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.26)
+                : Colors.black.withOpacity(0.045),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: InkWell(
+        borderRadius: BorderRadius.circular(18),
         onTap: () {
           _openCoachDetails(
             context: context,
@@ -870,99 +1249,129 @@ class CoachManagementScreen extends StatelessWidget {
             status: status,
           );
         },
-        child: Column(
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: maroon,
-                  child: Icon(Icons.sports, color: gold),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "$role • $batch",
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: [
-                          _chip(Icons.phone, phone, Colors.blue),
-                          _chip(Icons.verified, status, color),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _confirmDelete(context, coachId, name),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.grey,
-                ),
-              ],
-            ),
-            if (needsApproval) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
                     backgroundColor: maroon,
-                    foregroundColor: gold,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                    child: const Icon(
+                      Icons.sports_cricket_rounded,
+                      color: gold,
                     ),
                   ),
-                  onPressed: () => _approveCoachDialog(
-                    context: context,
-                    coachId: coachId,
-                    data: data,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: _primaryText(isDark),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "$role • $batch",
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: _secondaryText(isDark),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _chip(
+                              isDark: isDark,
+                              icon: Icons.phone_rounded,
+                              text: phone,
+                              color: Colors.blue,
+                            ),
+                            _chip(
+                              isDark: isDark,
+                              icon: Icons.verified_rounded,
+                              text: status,
+                              color: color,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  icon: const Icon(Icons.verified_user),
-                  label: const Text(
-                    "Approve & Assign Batch",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  IconButton(
+                    icon: const Icon(Icons.delete_rounded, color: Colors.red),
+                    onPressed: () => _confirmDelete(
+                      context,
+                      isDark,
+                      coachId,
+                      name,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 15,
+                    color: _secondaryText(isDark),
+                  ),
+                ],
+              ),
+              if (needsApproval) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark ? red : maroon,
+                      foregroundColor: isDark ? Colors.white : gold,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () => _approveCoachDialog(
+                      context: context,
+                      isDark: isDark,
+                      coachId: coachId,
+                      data: data,
+                    ),
+                    icon: const Icon(Icons.verified_user_rounded),
+                    label: const Text(
+                      "Approve & Assign Batch",
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _chip(IconData icon, String text, Color color) {
+  Widget _chip({
+    required bool isDark,
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withOpacity(isDark ? 0.13 : 0.10),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.20)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -982,22 +1391,29 @@ class CoachManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _emptyCard() {
+  Widget _emptyCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.sports, size: 40, color: Colors.grey),
-          SizedBox(height: 10),
+          Icon(
+            Icons.sports_cricket_rounded,
+            size: 40,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
           Text(
             "No Coaches Found",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
