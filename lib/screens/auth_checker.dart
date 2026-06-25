@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 
-import 'home_screen.dart';
+import 'login_screen.dart';
 import 'admin_dashboard.dart';
 import 'coach_dashboard.dart';
 import 'parent_dashboard.dart';
@@ -12,11 +12,6 @@ import 'student_dashboard.dart';
 
 class AuthChecker extends StatelessWidget {
   const AuthChecker({super.key});
-
-  static const Color red = Color(0xFFE50914);
-  static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF3B0000);
-  static const Color gold = Color(0xFFD4AF37);
 
   String _safeText(dynamic value) {
     if (value == null) return '';
@@ -53,10 +48,8 @@ class AuthChecker extends StatelessWidget {
   }
 
   Future<Map<String, dynamic>?> _getStudentData(String uid) async {
-    final studentDoc = await FirebaseFirestore.instance
-        .collection('students')
-        .doc(uid)
-        .get();
+    final studentDoc =
+        await FirebaseFirestore.instance.collection('students').doc(uid).get();
 
     if (studentDoc.exists && studentDoc.data() != null) {
       return studentDoc.data();
@@ -76,22 +69,23 @@ class AuthChecker extends StatelessWidget {
   }
 
   Future<Widget> _getStartScreen() async {
+    // AuthChecker loading screen after login.
+    await Future.delayed(const Duration(seconds: 3));
+
     final user = FirebaseAuth.instance.currentUser;
 
     debugPrint("Current User: ${user?.uid}");
 
     if (user == null) {
-      return const HomeScreen();
+      return const LoginScreen();
     }
 
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
     if (!userDoc.exists || userDoc.data() == null) {
       await FirebaseAuth.instance.signOut();
-      return const HomeScreen();
+      return const LoginScreen();
     }
 
     final userData = userDoc.data() ?? {};
@@ -141,7 +135,7 @@ class AuthChecker extends StatelessWidget {
 
       default:
         await FirebaseAuth.instance.signOut();
-        return const HomeScreen();
+        return const LoginScreen();
     }
   }
 
@@ -159,7 +153,7 @@ class AuthChecker extends StatelessWidget {
         }
 
         if (!snapshot.hasData) {
-          return const HomeScreen();
+          return const LoginScreen();
         }
 
         return snapshot.data!;
@@ -171,75 +165,76 @@ class AuthChecker extends StatelessWidget {
 class SplashLoadingScreen extends StatelessWidget {
   const SplashLoadingScreen({super.key});
 
-  static const Color red = Color(0xFFE50914);
-  static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
+  static const Color red = Color(0xFFE50914);
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeController.themeMode,
-      builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
 
-        return Scaffold(
-          backgroundColor: isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA),
-          body: Center(
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/auth_checker_bg.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+            ),
+          ),
+
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 230,
             child: Container(
-              width: 150,
-              height: 150,
-              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: isDark
-                      ? [
-                          Colors.black,
-                          darkMaroon,
-                          red.withOpacity(0.35),
-                        ]
-                      : [
-                          Colors.white,
-                          const Color(0xFFFFFBF2),
-                          gold.withOpacity(0.16),
-                        ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.35),
+                    Colors.black.withOpacity(0.85),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.8),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? red.withOpacity(0.18)
-                        : maroon.withOpacity(0.12),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/images/ygca_logo.jpg',
-                    width: 62,
-                    height: 62,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 14),
-                  CircularProgressIndicator(
-                    color: isDark ? gold : maroon,
-                    strokeWidth: 2.5,
-                  ),
-                ],
               ),
             ),
           ),
-        );
-      },
+
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: bottomSafe + 25,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: CircularProgressIndicator(
+                    color: red,
+                    strokeWidth: 2.8,
+                    backgroundColor: Colors.white.withOpacity(0.18),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  "LOADING...",
+                  style: TextStyle(
+                    color: gold,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -256,7 +251,6 @@ class PendingApprovalScreen extends StatelessWidget {
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
   Future<void> _logout(BuildContext context) async {
@@ -265,7 +259,7 @@ class PendingApprovalScreen extends StatelessWidget {
     if (context.mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
       );
     }
@@ -311,7 +305,9 @@ class PendingApprovalScreen extends StatelessWidget {
                     color: _card(isDark),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.75),
+                      color: isDark
+                          ? red.withOpacity(0.35)
+                          : gold.withOpacity(0.75),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -454,7 +450,7 @@ class ErrorScreen extends StatelessWidget {
     if (context.mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
       );
     }
@@ -468,7 +464,8 @@ class ErrorScreen extends StatelessWidget {
         final isDark = mode == ThemeMode.dark;
 
         return Scaffold(
-          backgroundColor: isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA),
+          backgroundColor:
+              isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA),
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -516,7 +513,7 @@ class ErrorScreen extends StatelessWidget {
                           ),
                           onPressed: () => _logout(context),
                           child: const Text(
-                            "BACK TO HOME",
+                            "BACK TO LOGIN",
                             style: TextStyle(fontWeight: FontWeight.w900),
                           ),
                         ),

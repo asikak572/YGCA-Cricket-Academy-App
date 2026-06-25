@@ -6,8 +6,10 @@ import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 
-import 'screens/home_screen.dart';
+import 'screens/initial_splash_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/auth_checker.dart';
 import 'screens/admin_dashboard.dart';
 import 'screens/coach_dashboard.dart';
 import 'screens/parent_dashboard.dart';
@@ -44,10 +46,15 @@ class MyApp extends StatelessWidget {
           darkTheme: YGCATheme.darkTheme,
           themeMode: themeMode,
 
-          home: const HomeScreen(),
+          // Final flow:
+          // First Photo Splash -> Login if not logged in
+          // Login -> AuthChecker -> Second Loading -> Dashboard
+          home: const InitialSplashScreen(),
 
           routes: {
             '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
+            '/auth-checker': (context) => const AuthChecker(),
             '/admin': (context) => const AdminDashboard(),
             '/coach': (context) => const CoachDashboard(),
             '/parent': (context) => const ParentDashboard(),
