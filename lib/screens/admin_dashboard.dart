@@ -23,6 +23,8 @@ class AdminDashboard extends StatelessWidget {
   static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
+  static const String logoPath = 'assets/images/ygca_logo_background.png';
+
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
 
@@ -377,12 +379,17 @@ class AdminDashboard extends StatelessWidget {
             },
           ),
           const SizedBox(width: 12),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 46,
-            height: 46,
-            fit: BoxFit.contain,
+
+          // LOGO ADDED HERE
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: Image.asset(
+              logoPath,
+              fit: BoxFit.contain,
+            ),
           ),
+
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -438,9 +445,7 @@ class AdminDashboard extends StatelessWidget {
 
               return _circleButton(
                 isDark: isDark,
-                icon: dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 onTap: ThemeController.toggleTheme,
               );
             },
@@ -473,9 +478,8 @@ class AdminDashboard extends StatelessWidget {
           border: Border.all(color: _border(isDark)),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? red.withOpacity(0.12)
-                  : Colors.black.withOpacity(0.08),
+              color:
+                  isDark ? red.withOpacity(0.12) : Colors.black.withOpacity(0.08),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -492,22 +496,20 @@ class AdminDashboard extends StatelessWidget {
 
   Widget _heroBanner(bool isDark) {
     return Container(
-      height: 220,
+      height: 235,
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
-          width: 1,
+          color: isDark ? red.withOpacity(0.65) : gold.withOpacity(0.95),
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? red.withOpacity(0.22)
-                : maroon.withOpacity(0.18),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
+            color: isDark ? red.withOpacity(0.22) : maroon.withOpacity(0.18),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -523,17 +525,12 @@ class AdminDashboard extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: isDark
-                      ? [
-                          Colors.black.withOpacity(0.90),
-                          darkMaroon.withOpacity(0.88),
-                          red.withOpacity(0.35),
-                        ]
-                      : [
-                          maroon.withOpacity(0.92),
-                          maroon.withOpacity(0.70),
-                          Colors.black.withOpacity(0.25),
-                        ],
+                  colors: [
+                    Colors.black.withOpacity(0.88),
+                    darkMaroon.withOpacity(0.86),
+                    maroon.withOpacity(0.78),
+                    Colors.black.withOpacity(0.72),
+                  ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
@@ -542,89 +539,206 @@ class AdminDashboard extends StatelessWidget {
           ),
           Positioned(
             right: -22,
-            bottom: -22,
+            bottom: -26,
             child: Icon(
               Icons.sports_cricket_rounded,
-              color: Colors.white.withOpacity(0.08),
-              size: 150,
+              color: Colors.white.withOpacity(0.055),
+              size: 155,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.42),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: red.withOpacity(0.55)),
-                  ),
-                  child: Image.asset(
-                    'assets/images/ygca_logo.jpg',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "GOOD MORNING,",
-                          style: TextStyle(
-                            color: gold,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        const Text(
-                          "ADMIN",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.w900,
-                            height: 0.95,
-                          ),
-                        ),
-                        Text(
-                          "CONTROL DASHBOARD",
-                          style: TextStyle(
-                            color: gold,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          "Manage students, coaches,\nattendance and academy growth.",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            height: 1.3,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            _heroChip("4 Roles"),
-                            const SizedBox(width: 8),
-                            _heroChip("10 Modules"),
-                          ],
+          Positioned(
+            left: 14,
+            top: 14,
+            right: 14,
+            bottom: 14,
+            child: CustomPaint(
+              painter: _CyberBorderPainter(
+                color: gold.withOpacity(0.78),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 22,
+            top: 58,
+            child: SizedBox(
+              width: 112,
+              height: 112,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 108,
+                    height: 108,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: gold.withOpacity(0.65),
+                        width: 1.4,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: gold.withOpacity(0.16),
+                          blurRadius: 22,
+                          spreadRadius: 2,
                         ),
                       ],
                     ),
                   ),
+                  Container(
+                    width: 92,
+                    height: 92,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: red.withOpacity(0.45),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+
+                  // LOGO ADDED HERE
+                  SizedBox(
+                    width: 92,
+                    height: 92,
+                    child: Image.asset(
+                      logoPath,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 150,
+            top: 38,
+            right: 18,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "GOOD MORNING,",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: gold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  "ADMIN",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 35,
+                    height: 0.95,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                Text(
+                  "CONTROL DASHBOARD",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: gold,
+                    fontSize: 19,
+                    height: 1.1,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Container(
+                  width: 48,
+                  height: 2,
+                  color: gold,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Manage students, coaches,\nattendance and academy growth.",
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    height: 1.32,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
+            ),
+          ),
+          Positioned(
+            left: 150,
+            right: 18,
+            bottom: 28,
+            child: Row(
+              children: [
+                Expanded(
+                  child: _heroChipWithIcon(
+                    icon: Icons.groups_rounded,
+                    text: "4 Roles",
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _heroChipWithIcon(
+                    icon: Icons.grid_view_rounded,
+                    text: "10 Modules",
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroChipWithIcon({
+    required IconData icon,
+    required String text,
+  }) {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: gold.withOpacity(0.85),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: gold.withOpacity(0.12),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: gold,
+            size: 17,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: gold,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -642,7 +756,7 @@ class AdminDashboard extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: const TextStyle(
           color: gold,
           fontSize: 11,
           fontWeight: FontWeight.w900,
@@ -709,9 +823,8 @@ class AdminDashboard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? color.withOpacity(0.12)
-                : Colors.black.withOpacity(0.06),
+            color:
+                isDark ? color.withOpacity(0.12) : Colors.black.withOpacity(0.06),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -846,9 +959,8 @@ class AdminDashboard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black.withOpacity(0.30)
-                  : Colors.black.withOpacity(0.05),
+              color:
+                  isDark ? Colors.black.withOpacity(0.30) : Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -941,7 +1053,11 @@ class AdminDashboard extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: red.withOpacity(0.18),
-            child: Icon(Icons.event_available_rounded, color: gold, size: 28),
+            child: const Icon(
+              Icons.event_available_rounded,
+              color: gold,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1013,7 +1129,7 @@ class AdminDashboard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.history_rounded, color: gold),
+              const Icon(Icons.history_rounded, color: gold),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1025,7 +1141,7 @@ class AdminDashboard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(
+              const Text(
                 "View All",
                 style: TextStyle(
                   color: red,
@@ -1145,9 +1261,9 @@ class AdminDashboard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.emoji_events_rounded, color: gold, size: 42),
+              const Icon(Icons.emoji_events_rounded, color: gold, size: 42),
               const SizedBox(width: 12),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1159,8 +1275,8 @@ class AdminDashboard extends StatelessWidget {
                         fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       "Building champions with passion, discipline and success.",
                       style: TextStyle(
                         color: Colors.white70,
@@ -1204,4 +1320,57 @@ class AdminDashboard extends StatelessWidget {
       ],
     );
   }
+}
+
+class _CyberBorderPainter extends CustomPainter {
+  final Color color;
+
+  _CyberBorderPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.05
+      ..style = PaintingStyle.stroke;
+
+    const cut = 18.0;
+    const len = 42.0;
+
+    final path = Path();
+
+    path.moveTo(cut, 0);
+    path.lineTo(len, 0);
+
+    path.moveTo(size.width - len, 0);
+    path.lineTo(size.width - cut, 0);
+    path.lineTo(size.width, cut);
+    path.lineTo(size.width, len);
+
+    path.moveTo(size.width, size.height - len);
+    path.lineTo(size.width, size.height - cut);
+    path.lineTo(size.width - cut, size.height);
+    path.lineTo(size.width - len, size.height);
+
+    path.moveTo(len, size.height);
+    path.lineTo(cut, size.height);
+    path.lineTo(0, size.height - cut);
+    path.lineTo(0, size.height - len);
+
+    path.moveTo(0, len);
+    path.lineTo(0, cut);
+    path.lineTo(cut, 0);
+
+    canvas.drawPath(path, paint);
+
+    final dotPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(const Offset(52, 0), 2, dotPaint);
+    canvas.drawCircle(Offset(size.width - 52, size.height), 2, dotPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

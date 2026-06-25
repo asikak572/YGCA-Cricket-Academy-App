@@ -376,9 +376,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           ),
           const SizedBox(width: 12),
           Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 52,
-            height: 52,
+            'assets/images/ygca_logo_background.png',
+            width: 55,
+            height: 55,
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 12),
