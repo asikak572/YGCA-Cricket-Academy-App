@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../theme/theme_controller.dart';
+
 import 'add_student_screen.dart';
 import 'student_details_screen.dart';
 
@@ -12,17 +14,35 @@ class StudentListScreen extends StatefulWidget {
 }
 
 class _StudentListScreenState extends State<StudentListScreen> {
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color red = Color(0xFFE50914);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
 
   String searchQuery = "";
 
   bool get isSmallScreen {
-    final width = MediaQuery.of(context).size.width;
-    return width < 370;
+    return MediaQuery.of(context).size.width < 370;
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
   String _cleanEmail(String value) {
@@ -64,9 +84,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Future<String> _generateRollNumber(String studentName) async {
-    if (studentName.trim().isEmpty) {
-      return "Y1";
-    }
+    if (studentName.trim().isEmpty) return "Y1";
 
     final firstLetter = studentName.trim()[0].toUpperCase();
 
@@ -79,10 +97,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
     for (final doc in snapshot.docs) {
       final rollNo = doc.data()['rollNo']?.toString().toUpperCase() ?? '';
-
-      if (rollNo.startsWith(firstLetter)) {
-        count++;
-      }
+      if (rollNo.startsWith(firstLetter)) count++;
     }
 
     return '$firstLetter${count + 1}';
@@ -95,9 +110,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
     final rawParentEmail = studentData['parentEmail']?.toString() ?? '';
     final parentEmail = _cleanEmail(rawParentEmail);
 
-    if (parentEmail.isEmpty) {
-      return;
-    }
+    if (parentEmail.isEmpty) return;
 
     QuerySnapshot<Map<String, dynamic>> parentQuery =
         await FirebaseFirestore.instance
@@ -128,9 +141,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    if (parentQuery.docs.isEmpty) {
-      return;
-    }
+    if (parentQuery.docs.isEmpty) return;
 
     final parentDoc = parentQuery.docs.first;
 
@@ -153,6 +164,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   Future<void> _showApprovalDialog({
     required BuildContext context,
     required QueryDocumentSnapshot doc,
+    required bool isDark,
   }) async {
     final data = doc.data() as Map<String, dynamic>;
 
@@ -179,30 +191,34 @@ class _StudentListScreenState extends State<StudentListScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: _card(isDark),
               insetPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 16,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
+                side: BorderSide(color: isDark ? red.withOpacity(0.35) : gold),
               ),
-              titlePadding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
-              contentPadding: const EdgeInsets.fromLTRB(18, 8, 18, 10),
-              actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               title: Row(
                 children: [
                   CircleAvatar(
                     radius: 18,
                     backgroundColor: maroon,
-                    child: Icon(Icons.verified_user, color: gold, size: 18),
+                    child: const Icon(
+                      Icons.verified_user_rounded,
+                      color: gold,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       "Approve Student",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
+                        color: _primaryText(isDark),
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
                       ),
@@ -217,18 +233,22 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _approvalInfoTile(
+                        isDark,
                         "Student Name",
                         data['name']?.toString() ?? 'No Name',
                       ),
                       _approvalInfoTile(
+                        isDark,
                         "Parent",
                         data['parentName']?.toString() ?? 'Not Added',
                       ),
                       _approvalInfoTile(
+                        isDark,
                         "Parent Email",
                         data['parentEmail']?.toString() ?? 'Not Added',
                       ),
                       _approvalInfoTile(
+                        isDark,
                         "Phone",
                         data['phone']?.toString() ?? 'Not Added',
                       ),
@@ -237,14 +257,16 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: isDark
+                              ? Colors.white.withOpacity(0.04)
+                              : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: border),
+                          border: Border.all(color: _border(isDark)),
                         ),
                         child: Text(
                           "Roll No will be generated automatically after approval",
                           style: TextStyle(
-                            color: maroon,
+                            color: isDark ? gold : maroon,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -253,11 +275,27 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         value: selectedBatch,
+                        dropdownColor: _card(isDark),
+                        style: TextStyle(
+                          color: _primaryText(isDark),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
                         decoration: InputDecoration(
                           labelText: "Session Batch",
-                          prefixIcon: const Icon(Icons.groups),
+                          labelStyle: TextStyle(
+                            color: _secondaryText(isDark),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.groups_rounded,
+                            color: isDark ? gold : maroon,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: _border(isDark)),
                           ),
                         ),
                         items: batchOptions.map((batch) {
@@ -289,12 +327,18 @@ class _StudentListScreenState extends State<StudentListScreen> {
                           FocusScope.of(dialogContext).unfocus();
                           Navigator.of(dialogContext).pop();
                         },
-                  child: const Text("Cancel", style: TextStyle(fontSize: 12)),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : maroon,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: maroon,
-                    foregroundColor: gold,
+                    backgroundColor: isDark ? red : maroon,
+                    foregroundColor: isDark ? Colors.white : gold,
                     minimumSize: const Size(105, 38),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -400,7 +444,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.check_circle, size: 17),
+                      : const Icon(Icons.check_circle_rounded, size: 17),
                   label: Text(
                     isSaving ? "Saving..." : "Approve",
                     style: const TextStyle(
@@ -425,10 +469,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -499,19 +539,23 @@ class _StudentListScreenState extends State<StudentListScreen> {
     }
   }
 
-  Widget _approvalInfoTile(String title, String value) {
+  Widget _approvalInfoTile(bool isDark, String title, String value) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.all(9),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline, size: 16, color: maroon),
+          Icon(
+            Icons.info_outline_rounded,
+            size: 16,
+            color: isDark ? gold : maroon,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -519,8 +563,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.grey,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -530,7 +574,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: _primaryText(isDark),
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
                   ),
@@ -545,277 +590,375 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final small = isSmallScreen;
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+        final small = isSmallScreen;
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('students')
-              .orderBy('createdAt', descending: true)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const Center(child: Text("Something went wrong"));
-            }
+        return Scaffold(
+          backgroundColor: _bg(isDark),
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: isDark ? red : maroon,
+            foregroundColor: isDark ? Colors.white : gold,
+            extendedPadding: const EdgeInsets.symmetric(horizontal: 16),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddStudentScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add_rounded, size: 19),
+            label: const Text(
+              "Add Student",
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+            ),
+          ),
+          body: SafeArea(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('students')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return _messageCard(
+                    isDark: isDark,
+                    icon: Icons.error_outline_rounded,
+                    title: "Something went wrong",
+                    message: snapshot.error.toString(),
+                  );
+                }
 
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            final allStudents = snapshot.data?.docs ?? [];
+                final allStudents = snapshot.data?.docs ?? [];
 
-            final pendingStudents = allStudents.where((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              final status = data['status']?.toString().toLowerCase() ?? '';
-              final approvalStatus =
-                  data['approvalStatus']?.toString().toLowerCase() ?? '';
+                final pendingStudents = allStudents.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final status =
+                      data['status']?.toString().toLowerCase() ?? '';
+                  final approvalStatus =
+                      data['approvalStatus']?.toString().toLowerCase() ?? '';
 
-              return !_isApproved(data) &&
-                  status != 'rejected' &&
-                  approvalStatus != 'rejected' &&
-                  _matchesSearch(data);
-            }).toList();
+                  return !_isApproved(data) &&
+                      status != 'rejected' &&
+                      approvalStatus != 'rejected' &&
+                      _matchesSearch(data);
+                }).toList();
 
-            final approvedStudents = allStudents.where((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              return _isApproved(data) && _matchesSearch(data);
-            }).toList();
+                final approvedStudents = allStudents.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return _isApproved(data) && _matchesSearch(data);
+                }).toList();
 
-            int totalAttendance = 0;
+                int totalAttendance = 0;
 
-            for (final doc in approvedStudents) {
-              final data = doc.data() as Map<String, dynamic>;
-              final attendance = data['attendance']?.toString() ?? '0%';
-              totalAttendance += _percentValue(attendance);
-            }
+                for (final doc in approvedStudents) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final attendance = data['attendance']?.toString() ?? '0%';
+                  totalAttendance += _percentValue(attendance);
+                }
 
-            final avgAttendance = approvedStudents.isEmpty
-                ? 0
-                : (totalAttendance / approvedStudents.length).round();
+                final avgAttendance = approvedStudents.isEmpty
+                    ? 0
+                    : (totalAttendance / approvedStudents.length).round();
 
-            return SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                children: [
-                  _topHeader(context),
-                  _heroBanner(
-                    totalStudents: allStudents.length,
-                    activeStudents: approvedStudents.length,
-                    pendingApprovals: pendingStudents.length,
-                  ),
-                  SizedBox(height: small ? 14 : 18),
-                  _sectionTitle(
-                    title: "STUDENT OVERVIEW",
-                    leftIcon: Icons.dashboard_rounded,
-                    rightIcon: Icons.insights_rounded,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: small ? 8 : 10,
-                      mainAxisSpacing: small ? 8 : 10,
-                      childAspectRatio: small ? 1.18 : 1.28,
-                      children: [
-                        _statCard(
-                          Icons.groups,
-                          "REGISTERED",
-                          allStudents.length.toString(),
-                          "Students",
-                          Colors.blue,
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      _heroBanner(
+                        isDark: isDark,
+                        totalStudents: allStudents.length,
+                        activeStudents: approvedStudents.length,
+                        pendingApprovals: pendingStudents.length,
+                      ),
+                      SizedBox(height: small ? 14 : 18),
+                      _sectionTitle(
+                        isDark: isDark,
+                        title: "STUDENT OVERVIEW",
+                        leftIcon: Icons.dashboard_rounded,
+                        rightIcon: Icons.insights_rounded,
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: small ? 12 : 16,
                         ),
-                        _statCard(
-                          Icons.verified,
-                          "APPROVED",
-                          approvedStudents.length.toString(),
-                          "Active Players",
-                          Colors.green,
+                        child: GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: small ? 8 : 10,
+                          mainAxisSpacing: small ? 8 : 10,
+                          childAspectRatio: small ? 1.18 : 1.28,
+                          children: [
+                            _statCard(
+                              isDark: isDark,
+                              icon: Icons.groups_rounded,
+                              title: "REGISTERED",
+                              value: allStudents.length.toString(),
+                              subtitle: "Students",
+                              color: Colors.blueAccent,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              icon: Icons.verified_rounded,
+                              title: "APPROVED",
+                              value: approvedStudents.length.toString(),
+                              subtitle: "Active Players",
+                              color: Colors.green,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              icon: Icons.pending_actions_rounded,
+                              title: "PENDING",
+                              value: pendingStudents.length.toString(),
+                              subtitle: "Approvals",
+                              color: Colors.orange,
+                            ),
+                            _statCard(
+                              isDark: isDark,
+                              icon: Icons.bar_chart_rounded,
+                              title: "ATTENDANCE",
+                              value: "$avgAttendance%",
+                              subtitle: "Average",
+                              color: Colors.purpleAccent,
+                            ),
+                          ],
                         ),
-                        _statCard(
-                          Icons.pending_actions,
-                          "PENDING",
-                          pendingStudents.length.toString(),
-                          "Approvals",
-                          Colors.orange,
+                      ),
+                      SizedBox(height: small ? 14 : 18),
+                      _sectionTitle(
+                        isDark: isDark,
+                        title: "SEARCH STUDENT",
+                        leftIcon: Icons.search_rounded,
+                        rightIcon: Icons.tune_rounded,
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: small ? 12 : 16,
                         ),
-                        _statCard(
-                          Icons.bar_chart,
-                          "ATTENDANCE",
-                          "$avgAttendance%",
-                          "Average",
-                          Colors.purple,
+                        child: _searchBox(isDark),
+                      ),
+                      SizedBox(height: small ? 14 : 18),
+                      _sectionTitle(
+                        isDark: isDark,
+                        title: "PENDING APPROVAL",
+                        leftIcon: Icons.pending_actions_rounded,
+                        rightIcon: Icons.verified_user_outlined,
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: small ? 12 : 16,
                         ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: small ? 14 : 18),
-                  _sectionTitle(
-                    title: "SEARCH STUDENT",
-                    leftIcon: Icons.search_rounded,
-                    rightIcon: Icons.tune_rounded,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
-                    child: _searchBox(),
-                  ),
-                  SizedBox(height: small ? 14 : 18),
-                  _sectionTitle(
-                    title: "PENDING APPROVAL",
-                    leftIcon: Icons.pending_actions_rounded,
-                    rightIcon: Icons.verified_user_outlined,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
-                    child: pendingStudents.isEmpty
-                        ? _emptyCard(
-                            icon: Icons.verified_user_outlined,
-                            title: "No Pending Approvals",
-                            subtitle:
-                                "Newly registered students will appear here for approval.",
-                          )
-                        : Column(
-                            children: pendingStudents.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
+                        child: pendingStudents.isEmpty
+                            ? _emptyCard(
+                                isDark: isDark,
+                                icon: Icons.verified_user_outlined,
+                                title: "No Pending Approvals",
+                                subtitle:
+                                    "Newly registered students will appear here for approval.",
+                              )
+                            : Column(
+                                children: pendingStudents.map((doc) {
+                                  final data =
+                                      doc.data() as Map<String, dynamic>;
 
-                              return _pendingStudentCard(
-                                context: context,
-                                doc: doc,
-                                name: data['name']?.toString() ?? 'No Name',
-                                age: data['age']?.toString() ?? '',
-                                parentName:
-                                    data['parentName']?.toString() ??
-                                        'Not Added',
-                                phone: data['phone']?.toString() ?? 'Not Added',
-                                registeredAt: data['createdAt'],
-                              );
-                            }).toList(),
-                          ),
-                  ),
-                  SizedBox(height: small ? 14 : 18),
-                  _sectionTitle(
-                    title: "APPROVED STUDENTS",
-                    leftIcon: Icons.people_alt_rounded,
-                    rightIcon: Icons.arrow_forward_rounded,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
-                    child: approvedStudents.isEmpty
-                        ? _emptyCard(
-                            icon: Icons.people_outline,
-                            title: "No Approved Students Found",
-                            subtitle:
-                                "Approved students will appear here after assigning batch and roll number.",
-                          )
-                        : Column(
-                            children: approvedStudents.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
+                                  return _pendingStudentCard(
+                                    context: context,
+                                    isDark: isDark,
+                                    doc: doc,
+                                    name: data['name']?.toString() ?? 'No Name',
+                                    age: data['age']?.toString() ?? '',
+                                    parentName:
+                                        data['parentName']?.toString() ??
+                                            'Not Added',
+                                    phone:
+                                        data['phone']?.toString() ?? 'Not Added',
+                                    registeredAt: data['createdAt'],
+                                  );
+                                }).toList(),
+                              ),
+                      ),
+                      SizedBox(height: small ? 14 : 18),
+                      _sectionTitle(
+                        isDark: isDark,
+                        title: "APPROVED STUDENTS",
+                        leftIcon: Icons.people_alt_rounded,
+                        rightIcon: Icons.arrow_forward_rounded,
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: small ? 12 : 16,
+                        ),
+                        child: approvedStudents.isEmpty
+                            ? _emptyCard(
+                                isDark: isDark,
+                                icon: Icons.people_outline_rounded,
+                                title: "No Approved Students Found",
+                                subtitle:
+                                    "Approved students will appear here after assigning batch and roll number.",
+                              )
+                            : Column(
+                                children: approvedStudents.map((doc) {
+                                  final data =
+                                      doc.data() as Map<String, dynamic>;
 
-                              final name =
-                                  data['name']?.toString() ?? 'No Name';
-                              final age = data['age']?.toString() ?? '';
-                              final batch =
-                                  data['batch']?.toString() ?? 'No Batch';
-                              final phone = data['phone']?.toString() ?? '';
-                              final parentName =
-                                  data['parentName']?.toString() ??
-                                      'Not Added';
-                              final rollNo =
-                                  data['rollNo']?.toString() ?? '#YGCA';
-                              final attendance =
-                                  data['attendance']?.toString() ?? '0%';
-                              final feeStatus =
-                                  data['feeStatus']?.toString() ?? 'Pending';
+                                  final name =
+                                      data['name']?.toString() ?? 'No Name';
+                                  final age = data['age']?.toString() ?? '';
+                                  final batch =
+                                      data['batch']?.toString() ?? 'No Batch';
+                                  final phone =
+                                      data['phone']?.toString() ?? '';
+                                  final parentName =
+                                      data['parentName']?.toString() ??
+                                          'Not Added';
+                                  final rollNo =
+                                      data['rollNo']?.toString() ?? '#YGCA';
+                                  final attendance =
+                                      data['attendance']?.toString() ?? '0%';
+                                  final feeStatus =
+                                      data['feeStatus']?.toString() ??
+                                          'Pending';
 
-                              return _studentCard(
-                                context: context,
-                                studentId: doc.id,
-                                name: name,
-                                age: age,
-                                batch: batch,
-                                rollNo: rollNo,
-                                parentName: parentName,
-                                phone: phone,
-                                attendance: attendance,
-                                feeStatus: feeStatus,
-                              );
-                            }).toList(),
-                          ),
+                                  return _studentCard(
+                                    context: context,
+                                    isDark: isDark,
+                                    studentId: doc.id,
+                                    name: name,
+                                    age: age,
+                                    batch: batch,
+                                    rollNo: rollNo,
+                                    parentName: parentName,
+                                    phone: phone,
+                                    attendance: attendance,
+                                    feeStatus: feeStatus,
+                                  );
+                                }).toList(),
+                              ),
+                      ),
+                      const SizedBox(height: 95),
+                    ],
                   ),
-                  const SizedBox(height: 95),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: maroon,
-        foregroundColor: gold,
-        extendedPadding: const EdgeInsets.symmetric(horizontal: 16),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddStudentScreen()),
-          );
-        },
-        icon: const Icon(Icons.add, size: 19),
-        label: const Text(
-          "Add Student",
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
-        ),
-      ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(BuildContext context) {
+  Widget _topHeader(BuildContext context, bool isDark) {
     final small = isSmallScreen;
 
-    return Container(
-      color: maroon,
-      padding: EdgeInsets.fromLTRB(12, small ? 12 : 16, 14, 16),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
         children: [
-          IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
           const SizedBox(width: 12),
-          Image.asset('assets/images/ygca_logo.jpg', width: small ? 44 : 52),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: small ? 42 : 46,
+            height: small ? 42 : 46,
+            fit: BoxFit.contain,
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "STUDENT CENTER",
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: gold,
-                fontSize: small ? 16 : 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.8,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "STUDENT CENTER",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: small ? 16 : 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Approval & student management",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          CircleAvatar(
-            radius: small ? 18 : 20,
-            backgroundColor: Colors.white,
-            child: Icon(
-              Icons.people,
-              color: Colors.black,
-              size: small ? 19 : 21,
-            ),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
+
+              return _circleButton(
+                isDark: isDark,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
   Widget _heroBanner({
+    required bool isDark,
     required int totalStudents,
     required int activeStudents,
     required int pendingApprovals,
@@ -823,15 +966,21 @@ class _StudentListScreenState extends State<StudentListScreen> {
     final small = isSmallScreen;
 
     return Container(
-      height: small ? 205 : 225,
-      margin: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
+      height: small ? 210 : 230,
+      margin: EdgeInsets.fromLTRB(small ? 12 : 16, 12, small ? 12 : 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        border: Border.all(color: gold, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -845,15 +994,30 @@ class _StudentListScreenState extends State<StudentListScreen> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    darkMaroon.withOpacity(0.96),
-                    maroon.withOpacity(0.70),
-                    Colors.black.withOpacity(0.38),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.90),
+                          darkMaroon.withOpacity(0.88),
+                          red.withOpacity(0.35),
+                        ]
+                      : [
+                          maroon.withOpacity(0.92),
+                          maroon.withOpacity(0.72),
+                          Colors.black.withOpacity(0.25),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            right: -22,
+            bottom: -22,
+            child: Icon(
+              Icons.groups_rounded,
+              color: Colors.white.withOpacity(0.08),
+              size: 145,
             ),
           ),
           Padding(
@@ -861,57 +1025,65 @@ class _StudentListScreenState extends State<StudentListScreen> {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: small ? 38 : 46,
+                  radius: small ? 39 : 46,
                   backgroundColor: Colors.white,
                   child: Icon(
-                    Icons.groups,
+                    Icons.groups_rounded,
                     color: maroon,
                     size: small ? 34 : 40,
                   ),
                 ),
                 SizedBox(width: small ? 12 : 16),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "YGCA",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: small ? 12 : 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "STUDENT",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: small ? 25 : 29,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      Text(
-                        "APPROVAL",
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: small ? 21 : 24,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 230,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _heroChip("Registered: $totalStudents"),
-                          _heroChip("Approved: $activeStudents"),
-                          _heroChip("Pending: $pendingApprovals"),
+                          Text(
+                            "YGCA",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: small ? 12 : 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          Text(
+                            "STUDENT",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: small ? 27 : 30,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            "APPROVAL",
+                            style: TextStyle(
+                              color: gold,
+                              fontSize: small ? 22 : 25,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 7,
+                            runSpacing: 6,
+                            children: [
+                              _heroChip("Registered: $totalStudents"),
+                              _heroChip("Approved: $activeStudents"),
+                              _heroChip("Pending: $pendingApprovals"),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -924,24 +1096,28 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   Widget _heroChip(String text) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 160),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
+        color: Colors.white.withOpacity(0.12),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: gold.withOpacity(0.7)),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
           fontSize: isSmallScreen ? 10 : 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
   Widget _sectionTitle({
+    required bool isDark,
     required String title,
     required IconData leftIcon,
     required IconData rightIcon,
@@ -956,11 +1132,17 @@ class _StudentListScreenState extends State<StudentListScreen> {
             width: small ? 28 : 31,
             height: small ? 28 : 31,
             decoration: BoxDecoration(
-              color: maroon.withOpacity(0.10),
+              color: isDark ? red.withOpacity(0.12) : maroon.withOpacity(0.10),
               borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: maroon.withOpacity(0.15)),
+              border: Border.all(
+                color: isDark ? red.withOpacity(0.25) : maroon.withOpacity(0.15),
+              ),
             ),
-            child: Icon(leftIcon, color: maroon, size: small ? 16 : 17),
+            child: Icon(
+              leftIcon,
+              color: isDark ? gold : maroon,
+              size: small ? 16 : 17,
+            ),
           ),
           const SizedBox(width: 8),
           Flexible(
@@ -969,7 +1151,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: maroon,
+                color: isDark ? gold : maroon,
                 fontSize: small ? 13 : 15,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.7,
@@ -978,16 +1160,27 @@ class _StudentListScreenState extends State<StudentListScreen> {
           ),
           const SizedBox(width: 8),
           Icon(rightIcon, color: gold, size: small ? 17 : 19),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: isDark ? red.withOpacity(0.40) : gold.withOpacity(0.80),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _searchBox() {
+  Widget _searchBox(bool isDark) {
     return SizedBox(
       height: 48,
       child: TextField(
-        style: const TextStyle(fontSize: 13),
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
         onChanged: (value) {
           setState(() {
             searchQuery = value;
@@ -995,92 +1188,116 @@ class _StudentListScreenState extends State<StudentListScreen> {
         },
         decoration: InputDecoration(
           hintText: "Search name, phone, parent, batch",
-          hintStyle: const TextStyle(fontSize: 12),
-          prefixIcon: Icon(Icons.search, color: maroon, size: 20),
+          hintStyle: TextStyle(
+            color: _secondaryText(isDark),
+            fontSize: 12,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: isDark ? gold : maroon,
+            size: 20,
+          ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: _card(isDark),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: border),
+            borderSide: BorderSide(color: _border(isDark)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: gold, width: 1.2),
+            borderSide: BorderSide(color: isDark ? red : gold, width: 1.2),
           ),
         ),
       ),
     );
   }
 
-  Widget _statCard(
-    IconData icon,
-    String title,
-    String value,
-    String subtitle,
-    Color color,
-  ) {
+  Widget _statCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color color,
+  }) {
     final small = isSmallScreen;
 
     return Container(
       padding: EdgeInsets.all(small ? 8 : 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
+        color: _card(isDark),
+        border: Border.all(
+          color: isDark ? color.withOpacity(0.35) : _border(isDark),
+        ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
+            color: isDark
+                ? color.withOpacity(0.09)
+                : Colors.black.withOpacity(0.045),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: small ? 17 : 19,
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white, size: small ? 17 : 19),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 138,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: small ? 17 : 19,
+                backgroundColor: color.withOpacity(0.18),
+                child: Icon(icon, color: color, size: small ? 17 : 19),
+              ),
+              SizedBox(height: small ? 6 : 7),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: small ? 17 : 19,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontWeight: FontWeight.bold,
+                  fontSize: small ? 9.5 : 10.5,
+                ),
+              ),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: small ? 9 : 10,
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: small ? 6 : 7),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: small ? 17 : 19,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: small ? 9.5 : 10.5,
-            ),
-          ),
-          Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.grey, fontSize: small ? 9 : 10),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _pendingStudentCard({
     required BuildContext context,
+    required bool isDark,
     required QueryDocumentSnapshot doc,
     required String name,
     required String age,
@@ -1101,12 +1318,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(small ? 12 : 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         border: Border.all(color: Colors.orange.withOpacity(0.35)),
         borderRadius: BorderRadius.circular(17),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: isDark
+                ? Colors.orange.withOpacity(0.09)
+                : Colors.black.withOpacity(0.04),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1139,6 +1358,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
+                        color: _primaryText(isDark),
                         fontWeight: FontWeight.w900,
                         fontSize: small ? 13 : 14,
                       ),
@@ -1149,7 +1369,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: const Color(0xFF64748B),
+                        color: _secondaryText(isDark),
                         fontSize: small ? 11 : 12,
                       ),
                     ),
@@ -1159,7 +1379,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: const Color(0xFF64748B),
+                        color: _secondaryText(isDark),
                         fontSize: small ? 11 : 12,
                       ),
                     ),
@@ -1168,8 +1388,18 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       spacing: 6,
                       runSpacing: 5,
                       children: [
-                        _chip(Icons.pending_actions, "Pending", Colors.orange),
-                        _chip(Icons.calendar_month, dateText, Colors.blueGrey),
+                        _chip(
+                          isDark,
+                          Icons.pending_actions_rounded,
+                          "Pending",
+                          Colors.orange,
+                        ),
+                        _chip(
+                          isDark,
+                          Icons.calendar_month_rounded,
+                          dateText,
+                          Colors.blueGrey,
+                        ),
                       ],
                     ),
                   ],
@@ -1178,7 +1408,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          _pendingActionButtons(context: context, doc: doc),
+          _pendingActionButtons(
+            context: context,
+            doc: doc,
+            isDark: isDark,
+          ),
         ],
       ),
     );
@@ -1187,6 +1421,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   Widget _pendingActionButtons({
     required BuildContext context,
     required QueryDocumentSnapshot doc,
+    required bool isDark,
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1210,7 +1445,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
             onPressed: () {
               _rejectStudent(context: context, doc: doc);
             },
-            icon: const Icon(Icons.close, size: 15),
+            icon: const Icon(Icons.close_rounded, size: 15),
             label: const Text(
               "Reject",
               maxLines: 1,
@@ -1223,8 +1458,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
           height: 39,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: maroon,
-              foregroundColor: gold,
+              backgroundColor: isDark ? red : maroon,
+              foregroundColor: isDark ? Colors.white : gold,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1235,9 +1470,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
               ),
             ),
             onPressed: () {
-              _showApprovalDialog(context: context, doc: doc);
+              _showApprovalDialog(context: context, doc: doc, isDark: isDark);
             },
-            icon: const Icon(Icons.assignment_turned_in, size: 15),
+            icon: const Icon(Icons.assignment_turned_in_rounded, size: 15),
             label: const Text(
               "Approve Student",
               maxLines: 1,
@@ -1269,6 +1504,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   Widget _studentCard({
     required BuildContext context,
+    required bool isDark,
     required String studentId,
     required String name,
     required String age,
@@ -1281,21 +1517,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }) {
     final small = isSmallScreen;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(small ? 12 : 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(17),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(17),
         onTap: () {
@@ -1316,73 +1539,103 @@ class _StudentListScreenState extends State<StudentListScreen> {
             ),
           );
         },
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: small ? 23 : 26,
-              backgroundColor: maroon,
-              child: Text(
-                name.isNotEmpty ? name[0].toUpperCase() : "?",
-                style: TextStyle(
-                  color: gold,
-                  fontWeight: FontWeight.bold,
-                  fontSize: small ? 15 : 17,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.all(small ? 12 : 14),
+          decoration: BoxDecoration(
+            color: _card(isDark),
+            border: Border.all(color: _border(isDark)),
+            borderRadius: BorderRadius.circular(17),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? red.withOpacity(0.08)
+                    : Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: small ? 23 : 26,
+                backgroundColor: maroon,
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : "?",
+                  style: TextStyle(
+                    color: gold,
+                    fontWeight: FontWeight.bold,
+                    fontSize: small ? 15 : 17,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(width: small ? 9 : 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: small ? 13 : 14,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    "$rollNo • $batch",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: const Color(0xFF64748B),
-                      fontSize: small ? 11 : 12,
-                    ),
-                  ),
-                  const SizedBox(height: 7),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 5,
-                    children: [
-                      _chip(Icons.check_circle, attendance, Colors.green),
-                      _chip(
-                        Icons.payments,
-                        feeStatus,
-                        feeStatus == "Paid" ? Colors.green : Colors.orange,
+              SizedBox(width: small ? 9 : 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
+                        fontSize: small ? 13 : 14,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      "$rollNo • $batch",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: small ? 11 : 12,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 5,
+                      children: [
+                        _chip(
+                          isDark,
+                          Icons.check_circle_rounded,
+                          attendance,
+                          Colors.green,
+                        ),
+                        _chip(
+                          isDark,
+                          Icons.payments_rounded,
+                          feeStatus,
+                          feeStatus == "Paid" ? Colors.green : Colors.orange,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
-          ],
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 15,
+                color: _secondaryText(isDark),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _chip(IconData icon, String text, Color color) {
+  Widget _chip(bool isDark, IconData icon, String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withOpacity(isDark ? 0.16 : 0.10),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.20)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1405,6 +1658,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _emptyCard({
+    required bool isDark,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -1416,18 +1670,19 @@ class _StudentListScreenState extends State<StudentListScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(small ? 16 : 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: border),
+        border: Border.all(color: _border(isDark)),
       ),
       child: Column(
         children: [
-          Icon(icon, size: small ? 34 : 38, color: Colors.grey),
+          Icon(icon, size: small ? 34 : 38, color: _secondaryText(isDark)),
           const SizedBox(height: 8),
           Text(
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
+              color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
               fontSize: small ? 13 : 14,
             ),
@@ -1436,9 +1691,57 @@ class _StudentListScreenState extends State<StudentListScreen> {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, fontSize: small ? 11 : 12),
+            style: TextStyle(
+              color: _secondaryText(isDark),
+              fontSize: small ? 11 : 12,
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _messageCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _border(isDark)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: _secondaryText(isDark), size: 42),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 12,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

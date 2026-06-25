@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/theme_controller.dart';
+
 import '../notification_screen.dart';
 import '../leave_request_screen.dart';
 import '../parent_attendance_module_screen.dart';
@@ -39,7 +41,6 @@ class YgcaDrawer extends StatelessWidget {
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
   static const Color darkMaroon = Color(0xFF3B0000);
-  static const Color deepBlack = Color(0xFF070707);
   static const Color gold = Color(0xFFD4AF37);
 
   String get initials {
@@ -51,6 +52,30 @@ class YgcaDrawer extends StatelessWidget {
     }
 
     return parts.map((e) => e[0].toUpperCase()).take(2).join();
+  }
+
+  Color _bg(bool isDark) {
+    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  }
+
+  Color _card(bool isDark) {
+    return isDark ? const Color(0xFF151515) : Colors.white;
+  }
+
+  Color _tile(bool isDark) {
+    return isDark ? const Color(0xFF1B0A0A) : Colors.white;
+  }
+
+  Color _tileBorder(bool isDark) {
+    return isDark ? red.withOpacity(0.28) : const Color(0xFFE2E8F0);
+  }
+
+  Color _primaryText(bool isDark) {
+    return isDark ? Colors.white : const Color(0xFF111827);
+  }
+
+  Color _secondaryText(bool isDark) {
+    return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
   void _closeDrawer(BuildContext context) {
@@ -87,58 +112,51 @@ class YgcaDrawer extends StatelessWidget {
           YgcaNavItem(
             icon: Icons.fact_check_rounded,
             label: 'Attendance',
-            onTap: () => _openScreen(
-              context,
-              const ParentAttendanceModuleScreen(),
-            ),
+            onTap: () {
+              _openScreen(context, const ParentAttendanceModuleScreen());
+            },
           ),
           YgcaNavItem(
             icon: Icons.bar_chart_rounded,
             label: 'Performance',
-            onTap: () => _openScreen(
-              context,
-              const ParentPerformanceModuleScreen(),
-            ),
+            onTap: () {
+              _openScreen(context, const ParentPerformanceModuleScreen());
+            },
           ),
           YgcaNavItem(
             icon: Icons.receipt_long_rounded,
             label: 'Payment History',
-            onTap: () => _openScreen(
-              context,
-              const ParentFeeModuleScreen(),
-            ),
+            onTap: () {
+              _openScreen(context, const ParentFeeModuleScreen());
+            },
           ),
           YgcaNavItem(
             icon: Icons.calendar_month_rounded,
             label: 'Match Schedule',
-            onTap: () => _openScreen(
-              context,
-              const ParentScheduleModuleScreen(),
-            ),
+            onTap: () {
+              _openScreen(context, const ParentScheduleModuleScreen());
+            },
           ),
           YgcaNavItem(
             icon: Icons.event_note_rounded,
             label: 'Apply Leave',
-            onTap: () => _openScreen(
-              context,
-              const LeaveRequestScreen(),
-            ),
+            onTap: () {
+              _openScreen(context, const LeaveRequestScreen());
+            },
           ),
           YgcaNavItem(
             icon: Icons.notifications_rounded,
             label: 'Notifications',
-            onTap: () => _openScreen(
-              context,
-              const NotificationScreen(),
-            ),
+            onTap: () {
+              _openScreen(context, const NotificationScreen());
+            },
           ),
           YgcaNavItem(
             icon: Icons.person_rounded,
             label: 'Edit Profile',
-            onTap: () => _openScreen(
-              context,
-              const EditProfileScreen(),
-            ),
+            onTap: () {
+              _openScreen(context, const EditProfileScreen());
+            },
           ),
         ];
 
@@ -203,24 +221,29 @@ class YgcaDrawer extends StatelessWidget {
             onTap: () => _closeDrawer(context),
           ),
           YgcaNavItem(
+            icon: Icons.grid_view_rounded,
+            label: 'Reports Dashboard',
+            onTap: () => _openNamedRoute(context, '/reports'),
+          ),
+          YgcaNavItem(
             icon: Icons.people_rounded,
             label: 'Students',
             onTap: () => _openNamedRoute(context, '/student-list'),
           ),
           YgcaNavItem(
-            icon: Icons.fact_check_rounded,
-            label: 'Attendance',
+            icon: Icons.check_circle_rounded,
+            label: 'Attendance Module',
             onTap: () => _openNamedRoute(context, '/attendance'),
           ),
           YgcaNavItem(
-            icon: Icons.payments_rounded,
-            label: 'Fees',
-            onTap: () => _openNamedRoute(context, '/fees'),
+            icon: Icons.sports_cricket_rounded,
+            label: 'Coach Module',
+            onTap: () => _openNamedRoute(context, '/coach-module'),
           ),
           YgcaNavItem(
-            icon: Icons.notifications_rounded,
-            label: 'Notifications',
-            onTap: () => _openNamedRoute(context, '/notifications'),
+            icon: Icons.payments_rounded,
+            label: 'Fee Module',
+            onTap: () => _openNamedRoute(context, '/fees'),
           ),
         ];
 
@@ -237,68 +260,99 @@ class YgcaDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = navItems.isNotEmpty ? navItems : _defaultItems(context);
-    final drawerWidth = MediaQuery.of(context).size.width < 360 ? 288.0 : 315.0;
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, mode, _) {
+        final isDark = mode == ThemeMode.dark;
+        final items = navItems.isNotEmpty ? navItems : _defaultItems(context);
 
-    return Drawer(
-      width: drawerWidth,
-      backgroundColor: deepBlack,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF050505),
-              Color(0xFF160202),
-              Color(0xFF320000),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _premiumHeader(),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 9),
-                  itemBuilder: (context, index) {
-                    return _premiumTile(items[index]);
-                  },
-                ),
+        return Drawer(
+          backgroundColor: _bg(isDark),
+          width: MediaQuery.of(context).size.width < 360 ? 300 : 320,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [
+                        Colors.black,
+                        const Color(0xFF160606),
+                        const Color(0xFF250808),
+                      ]
+                    : [
+                        const Color(0xFFFAFAFA),
+                        const Color(0xFFFFFBF2),
+                        Colors.white,
+                      ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              if (onLogout != null) _logoutTile(context),
-              const SizedBox(height: 12),
-            ],
+            ),
+            child: Column(
+              children: [
+                _drawerHeader(context, isDark),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+
+                      return _drawerTile(
+                        isDark: isDark,
+                        icon: item.icon,
+                        label: item.label,
+                        onTap: item.onTap,
+                      );
+                    },
+                  ),
+                ),
+                if (onLogout != null) _logoutTile(context, isDark),
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 10),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _premiumHeader() {
+  Widget _drawerHeader(BuildContext context, bool isDark) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      margin: EdgeInsets.fromLTRB(
+        14,
+        MediaQuery.of(context).padding.top + 14,
+        14,
+        10,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            maroon,
-            darkMaroon,
-            Colors.black.withOpacity(0.95),
-          ],
+          colors: isDark
+              ? [
+                  darkMaroon,
+                  maroon,
+                  Colors.black,
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFF6D9),
+                  const Color(0xFFFFFBF2),
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: gold.withOpacity(0.75), width: 1.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? gold.withOpacity(0.75) : gold.withOpacity(0.95),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: red.withOpacity(0.20),
-            blurRadius: 22,
+            color: isDark
+                ? red.withOpacity(0.18)
+                : maroon.withOpacity(0.10),
+            blurRadius: 18,
             offset: const Offset(0, 8),
           ),
         ],
@@ -308,45 +362,45 @@ class YgcaDrawer extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 54,
-                height: 54,
-                padding: const EdgeInsets.all(4),
+                width: 58,
+                height: 58,
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.35),
+                  color: isDark ? Colors.white.withOpacity(0.08) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: gold.withOpacity(0.55)),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/images/ygca_logo.jpg',
-                    fit: BoxFit.cover,
+                  border: Border.all(
+                    color: isDark
+                        ? gold.withOpacity(0.35)
+                        : gold.withOpacity(0.75),
                   ),
                 ),
+                child: Image.asset(
+                  'assets/images/ygca_logo.jpg',
+                  fit: BoxFit.contain,
+                ),
               ),
-              const SizedBox(width: 12),
-              const Expanded(
+              const SizedBox(width: 14),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'YGCA',
                       style: TextStyle(
-                        color: gold,
+                        color: isDark ? gold : maroon,
                         fontSize: 27,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.5,
                       ),
                     ),
-                    SizedBox(height: 2),
                     Text(
                       'Young Gen Cricket Academy',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -356,11 +410,18 @@ class YgcaDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Container(
-            padding: const EdgeInsets.all(12),
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.28),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.10)),
+              color: isDark
+                  ? Colors.black.withOpacity(0.28)
+                  : Colors.white.withOpacity(0.82),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.12)
+                    : gold.withOpacity(0.45),
+              ),
             ),
             child: Row(
               children: [
@@ -371,12 +432,12 @@ class YgcaDrawer extends StatelessWidget {
                     initials,
                     style: const TextStyle(
                       color: maroon,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,41 +446,45 @@ class YgcaDrawer extends StatelessWidget {
                         username ?? "$role User",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: _primaryText(isDark),
                           fontWeight: FontWeight.w900,
-                          fontSize: 15,
+                          fontSize: 16,
                         ),
                       ),
-                      if (email != null) ...[
+                      if (email != null && email!.trim().isNotEmpty) ...[
                         const SizedBox(height: 3),
                         Text(
                           email!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white60,
+                          style: TextStyle(
+                            color: _secondaryText(isDark),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
-                      const SizedBox(height: 7),
+                      const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
+                          horizontal: 11,
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: gold.withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: gold.withOpacity(0.65)),
+                          color: isDark
+                              ? gold.withOpacity(0.13)
+                              : maroon.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: gold.withOpacity(0.65),
+                          ),
                         ),
                         child: Text(
                           role.toUpperCase(),
-                          style: const TextStyle(
-                            color: gold,
-                            fontSize: 10,
+                          style: TextStyle(
+                            color: isDark ? gold : maroon,
+                            fontSize: 11,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.6,
                           ),
@@ -436,88 +501,103 @@ class YgcaDrawer extends StatelessWidget {
     );
   }
 
-  Widget _premiumTile(YgcaNavItem item) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: item.onTap,
-        borderRadius: BorderRadius.circular(20),
-        splashColor: gold.withOpacity(0.15),
-        highlightColor: red.withOpacity(0.10),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 62),
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.075),
-                Colors.white.withOpacity(0.030),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.22),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: red.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: red.withOpacity(0.35)),
+  Widget _drawerTile({
+    required bool isDark,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            decoration: BoxDecoration(
+              color: _tile(isDark),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: _tileBorder(isDark)),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withOpacity(0.30)
+                      : Colors.black.withOpacity(0.045),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
                 ),
-                child: Icon(item.icon, color: gold, size: 23),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14.5,
-                    letterSpacing: 0.1,
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? red.withOpacity(0.12)
+                        : maroon.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: isDark
+                          ? red.withOpacity(0.35)
+                          : gold.withOpacity(0.55),
+                    ),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isDark ? gold : maroon,
+                    size: 24,
                   ),
                 ),
-              ),
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.055),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _primaryText(isDark),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 19,
-                  color: Colors.white70,
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.06)
+                        : const Color(0xFFFFFBF2),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.10)
+                          : gold.withOpacity(0.45),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: isDark ? Colors.white70 : maroon,
+                    size: 22,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _logoutTile(BuildContext context) {
+  Widget _logoutTile(BuildContext context, bool isDark) {
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 4, 14, 0),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         onTap: () {
           final navigator = Navigator.of(context);
           navigator.pop();
@@ -527,36 +607,29 @@ class YgcaDrawer extends StatelessWidget {
           });
         },
         child: Container(
-          height: 58,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                red.withOpacity(0.22),
-                Colors.red.withOpacity(0.10),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: red.withOpacity(0.40)),
+            color: isDark ? red.withOpacity(0.16) : Colors.red.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.red.withOpacity(0.45)),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.logout_rounded, color: Colors.redAccent, size: 26),
-              SizedBox(width: 14),
-              Expanded(
+              const Icon(Icons.logout_rounded, color: Colors.redAccent),
+              const SizedBox(width: 14),
+              const Expanded(
                 child: Text(
                   'Logout',
                   style: TextStyle(
                     color: Colors.redAccent,
-                    fontWeight: FontWeight.w900,
                     fontSize: 15,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
               Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: Colors.redAccent,
-                size: 16,
+                Icons.chevron_right_rounded,
+                color: isDark ? Colors.white70 : Colors.redAccent,
               ),
             ],
           ),
