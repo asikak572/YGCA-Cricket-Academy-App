@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'widgets/ygca_drawer.dart';
+import 'widgets/ygca_bottom_nav.dart';
 import '../theme/theme_controller.dart';
 
 import 'student_list_screen.dart';
@@ -15,26 +16,38 @@ import 'schedule_module_screen.dart';
 import 'coach_salary_analytics_screen.dart';
 import 'communication_center_screen.dart';
 
-class AdminDashboard extends StatelessWidget {
+class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
+
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color darkMaroon = Color(0xFF250000);
   static const Color gold = Color(0xFFD4AF37);
 
-  static const String logoPath = 'assets/images/ygca_logo_background.png';
+  static const String logoAsset = 'assets/images/ygca_logo.jpg';
 
-  Future<void> _logout(BuildContext context) async {
+  Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
 
-    if (context.mounted) {
+    if (mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
   }
 
-  void _open(BuildContext context, Widget screen) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  void _open(Widget screen) {
+    _scaffoldKey.currentState?.closeDrawer();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
   }
 
   Color _bg(bool isDark) {
@@ -43,10 +56,6 @@ class AdminDashboard extends StatelessWidget {
 
   Color _card(bool isDark) {
     return isDark ? const Color(0xFF111111) : Colors.white;
-  }
-
-  Color _border(bool isDark) {
-    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
   }
 
   Color _primaryText(bool isDark) {
@@ -65,6 +74,7 @@ class AdminDashboard extends StatelessWidget {
         final isDark = mode == ThemeMode.dark;
 
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: _bg(isDark),
           drawer: YgcaDrawer(
             role: 'Admin',
@@ -72,72 +82,61 @@ class AdminDashboard extends StatelessWidget {
               YgcaNavItem(
                 icon: Icons.home_rounded,
                 label: 'Dashboard',
-                onTap: () {},
-              ),
-              YgcaNavItem(
-                icon: Icons.dashboard_rounded,
-                label: 'Reports Dashboard',
-                onTap: () => _open(context, const ReportsDashboardScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.people_rounded,
-                label: 'Students',
-                onTap: () => _open(context, const StudentListScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.check_circle_rounded,
-                label: 'Attendance Module',
-                onTap: () => _open(context, const AttendanceModuleScreen()),
+                onTap: () => _scaffoldKey.currentState?.closeDrawer(),
               ),
               YgcaNavItem(
                 icon: Icons.sports_rounded,
                 label: 'Coach Module',
-                onTap: () => _open(context, CoachModuleScreen()),
+                onTap: () => _open(CoachModuleScreen()),
               ),
               YgcaNavItem(
                 icon: Icons.payments_rounded,
                 label: 'Fee Module',
-                onTap: () => _open(context, FeeModuleScreen()),
+                onTap: () => _open(FeeModuleScreen()),
               ),
               YgcaNavItem(
                 icon: Icons.calendar_month_rounded,
                 label: 'Schedule Module',
-                onTap: () => _open(context, const ScheduleModuleScreen()),
+                onTap: () => _open(const ScheduleModuleScreen()),
               ),
               YgcaNavItem(
                 icon: Icons.bar_chart_rounded,
                 label: 'Performance Reports',
-                onTap: () => _open(context, const PerformanceReportScreen()),
+                onTap: () => _open(const PerformanceReportScreen()),
               ),
               YgcaNavItem(
-                icon: Icons.payments,
+                icon: Icons.account_balance_wallet_rounded,
                 label: 'Coach Salary Analytics',
-                onTap: () => _open(
-                  context,
-                  const CoachSalaryAnalyticsScreen(),
-                ),
+                onTap: () => _open(const CoachSalaryAnalyticsScreen()),
               ),
               YgcaNavItem(
                 icon: Icons.notifications_rounded,
                 label: 'Notifications',
-                onTap: () => _open(context, const NotificationScreen()),
+                onTap: () => _open(const NotificationScreen()),
               ),
               YgcaNavItem(
-                icon: Icons.campaign,
+                icon: Icons.campaign_rounded,
                 label: 'Communication Center',
-                onTap: () => _open(context, const CommunicationCenterScreen()),
+                onTap: () => _open(const CommunicationCenterScreen()),
               ),
             ],
-            onLogout: () => _logout(context),
+            onLogout: _logout,
           ),
           body: SafeArea(
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 18),
               child: Column(
                 children: [
-                  _topBar(context, isDark),
-                  _heroBanner(isDark),
-                  const SizedBox(height: 18),
-                  _sectionTitle("ACADEMY OVERVIEW", isDark),
+                  _topBar(isDark),
+                  _heroCard(isDark),
+                  const SizedBox(height: 20),
+
+                  _sectionTitle(
+                    title: "ACADEMY OVERVIEW",
+                    isDark: isDark,
+                    showViewAll: true,
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: GridView.count(
@@ -146,7 +145,7 @@ class AdminDashboard extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 1.05,
+                      childAspectRatio: 2.25,
                       children: [
                         _overviewCard(
                           isDark: isDark,
@@ -154,7 +153,7 @@ class AdminDashboard extends StatelessWidget {
                           title: "Total Students",
                           value: "248",
                           subtitle: "Registered players",
-                          color: Colors.blueAccent,
+                          color: red,
                         ),
                         _overviewCard(
                           isDark: isDark,
@@ -183,233 +182,139 @@ class AdminDashboard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  _sectionTitle("QUICK ACTIONS", isDark),
-                  SizedBox(
-                    height: 116,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      children: [
-                        _quickAction(
-                          context,
-                          isDark,
-                          Icons.how_to_reg_rounded,
-                          "Student\nApproval",
-                          Colors.green,
-                          () => _open(context, const StudentListScreen()),
-                        ),
-                        _quickAction(
-                          context,
-                          isDark,
-                          Icons.sports_rounded,
-                          "Coach\nCenter",
-                          Colors.deepOrange,
-                          () => _open(context, CoachModuleScreen()),
-                        ),
-                        _quickAction(
-                          context,
-                          isDark,
-                          Icons.fact_check_rounded,
-                          "Mark\nAttendance",
-                          Colors.blue,
-                          () => _open(context, const AttendanceModuleScreen()),
-                        ),
-                        _quickAction(
-                          context,
-                          isDark,
-                          Icons.campaign_rounded,
-                          "Send\nNotice",
-                          Colors.purple,
-                          () => _open(
-                            context,
-                            const CommunicationCenterScreen(),
-                          ),
-                        ),
-                        _quickAction(
-                          context,
-                          isDark,
-                          Icons.analytics_rounded,
-                          "Reports\nAnalytics",
-                          Colors.amber,
-                          () => _open(context, const ReportsDashboardScreen()),
-                        ),
-                      ],
-                    ),
-                  ),
+
                   const SizedBox(height: 22),
-                  _sectionTitle("MODULE ACCESS", isDark),
+                  _sectionTitle(
+                    title: "QUICK ACTIONS",
+                    isDark: isDark,
+                    showViewAll: false,
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: GridView.count(
-                      crossAxisCount: 2,
+                      crossAxisCount: 4,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.38,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.82,
                       children: [
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.dashboard_rounded,
-                          "Reports Dashboard",
-                          "Academy insights",
-                          Colors.red,
-                          () => _open(context, const ReportsDashboardScreen()),
+                        _quickActionCard(
+                          isDark: isDark,
+                          icon: Icons.person_add_alt_1_rounded,
+                          title: "Student\nApproval",
+                          color: Colors.green,
+                          onTap: () => _open(const StudentListScreen()),
                         ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.people_alt_rounded,
-                          "Students",
-                          "Manage players",
-                          Colors.orange,
-                          () => _open(context, const StudentListScreen()),
+                        _quickActionCard(
+                          isDark: isDark,
+                          icon: Icons.sports_rounded,
+                          title: "Coach\nCenter",
+                          color: Colors.redAccent,
+                          onTap: () => _open(CoachModuleScreen()),
                         ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.check_circle_rounded,
-                          "Attendance",
-                          "Track sessions",
-                          Colors.green,
-                          () => _open(context, const AttendanceModuleScreen()),
+                        _quickActionCard(
+                          isDark: isDark,
+                          icon: Icons.fact_check_rounded,
+                          title: "Mark\nAttendance",
+                          color: Colors.blue,
+                          onTap: () => _open(const AttendanceModuleScreen()),
                         ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.sports_cricket_rounded,
-                          "Coach Module",
-                          "Coach approval",
-                          Colors.purple,
-                          () => _open(context, CoachModuleScreen()),
-                        ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.payments_rounded,
-                          "Fee Module",
-                          "Fees & dues",
-                          Colors.blue,
-                          () => _open(context, FeeModuleScreen()),
-                        ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.calendar_month_rounded,
-                          "Schedule",
-                          "Batches & sessions",
-                          Colors.teal,
-                          () => _open(context, const ScheduleModuleScreen()),
-                        ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.bar_chart_rounded,
-                          "Performance",
-                          "Player reports",
-                          Colors.indigo,
-                          () => _open(context, const PerformanceReportScreen()),
-                        ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.account_balance_wallet_rounded,
-                          "Coach Salary",
-                          "Salary analytics",
-                          Colors.greenAccent,
-                          () => _open(
-                            context,
-                            const CoachSalaryAnalyticsScreen(),
-                          ),
-                        ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.notifications_active_rounded,
-                          "Notifications",
-                          "Alerts & updates",
-                          Colors.redAccent,
-                          () => _open(context, const NotificationScreen()),
-                        ),
-                        _moduleCard(
-                          context,
-                          isDark,
-                          Icons.campaign_rounded,
-                          "Communication",
-                          "Announcements",
-                          Colors.deepPurpleAccent,
-                          () => _open(
-                            context,
-                            const CommunicationCenterScreen(),
-                          ),
+                        _quickActionCard(
+                          isDark: isDark,
+                          icon: Icons.account_balance_wallet_rounded,
+                          title: "Fees\n& Dues",
+                          color: Colors.orange,
+                          onTap: () => _open(FeeModuleScreen()),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 22),
-                  _todaySessionCard(isDark),
-                  const SizedBox(height: 18),
-                  _recentActivity(isDark),
-                  const SizedBox(height: 24),
-                  _footer(isDark),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 90),
                 ],
               ),
             ),
+          ),
+          bottomNavigationBar: YgcaBottomNav(
+            currentIndex: 0,
+            items: [
+              YgcaBottomNavItem(
+                icon: Icons.home_rounded,
+                label: 'Home',
+                onTap: () {},
+              ),
+              YgcaBottomNavItem(
+                icon: Icons.people_rounded,
+                label: 'Students',
+                onTap: () => _open(const StudentListScreen()),
+              ),
+              YgcaBottomNavItem(
+                icon: Icons.fact_check_rounded,
+                label: 'Attendance',
+                onTap: () => _open(const AttendanceModuleScreen()),
+              ),
+              YgcaBottomNavItem(
+                icon: Icons.analytics_rounded,
+                label: 'Reports',
+                onTap: () => _open(const ReportsDashboardScreen()),
+              ),
+              YgcaBottomNavItem(
+                icon: Icons.more_horiz_rounded,
+                label: 'More',
+                onTap: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _topBar(BuildContext context, bool isDark) {
+  Widget _topBar(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
       child: Row(
         children: [
-          Builder(
-            builder: (drawerContext) {
-              return _circleButton(
-                isDark: isDark,
-                icon: Icons.menu_rounded,
-                onTap: () => Scaffold.of(drawerContext).openDrawer(),
-              );
-            },
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.menu_rounded,
+            onTap: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+          const SizedBox(width: 14),
+          Image.asset(
+            logoAsset,
+            width: 58,
+            height: 58,
+            fit: BoxFit.contain,
           ),
           const SizedBox(width: 12),
-
-          // LOGO ADDED HERE
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: Image.asset(
-              logoPath,
-              fit: BoxFit.contain,
-            ),
-          ),
-
-          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "YGCA",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 19,
+                    fontSize: 30,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                    letterSpacing: 1.4,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   "Admin Control Center",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -421,14 +326,14 @@ class AdminDashboard extends StatelessWidget {
               _circleButton(
                 isDark: isDark,
                 icon: Icons.notifications_none_rounded,
-                onTap: () => _open(context, const NotificationScreen()),
+                onTap: () => _open(const NotificationScreen()),
               ),
               Positioned(
                 right: 3,
                 top: 2,
                 child: Container(
-                  width: 9,
-                  height: 9,
+                  width: 10,
+                  height: 10,
                   decoration: const BoxDecoration(
                     color: red,
                     shape: BoxShape.circle,
@@ -438,23 +343,16 @@ class AdminDashboard extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 8),
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: ThemeController.themeMode,
-            builder: (context, mode, _) {
-              final dark = mode == ThemeMode.dark;
-
-              return _circleButton(
-                isDark: isDark,
-                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                onTap: ThemeController.toggleTheme,
-              );
-            },
+          _circleButton(
+            isDark: isDark,
+            icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+            onTap: ThemeController.toggleTheme,
           ),
           const SizedBox(width: 8),
           _circleButton(
             isDark: isDark,
             icon: Icons.logout_rounded,
-            onTap: () => _logout(context),
+            onTap: _logout,
           ),
         ],
       ),
@@ -467,47 +365,51 @@ class AdminDashboard extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(40),
+      borderRadius: BorderRadius.circular(50),
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
+        width: 54,
+        height: 54,
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF111111) : Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: _border(isDark)),
+          border: Border.all(
+            color: red.withOpacity(isDark ? 0.34 : 0.18),
+          ),
           boxShadow: [
             BoxShadow(
-              color:
-                  isDark ? red.withOpacity(0.12) : Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: isDark
+                  ? red.withOpacity(0.13)
+                  : Colors.black.withOpacity(0.07),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Icon(
           icon,
           color: isDark ? Colors.white : maroon,
-          size: 21,
+          size: 25,
         ),
       ),
     );
   }
 
-  Widget _heroBanner(bool isDark) {
+  Widget _heroCard(bool isDark) {
     return Container(
-      height: 235,
+      height: 285,
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        color: isDark ? const Color(0xFF090909) : Colors.white,
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: isDark ? red.withOpacity(0.65) : gold.withOpacity(0.95),
-          width: 1.2,
+          color: red.withOpacity(isDark ? 0.60 : 0.75),
+          width: 1.15,
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? red.withOpacity(0.22) : maroon.withOpacity(0.18),
+            color: red.withOpacity(isDark ? 0.22 : 0.10),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -516,103 +418,115 @@ class AdminDashboard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/home_hero_bg.png',
-              fit: BoxFit.cover,
+            child: Opacity(
+              opacity: isDark ? 0.78 : 0.16,
+              child: Image.asset(
+                'assets/images/home_hero_bg.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withOpacity(0.88),
-                    darkMaroon.withOpacity(0.86),
-                    maroon.withOpacity(0.78),
-                    Colors.black.withOpacity(0.72),
-                  ],
+                  colors: isDark
+                      ? [
+                          Colors.black.withOpacity(0.96),
+                          Colors.black.withOpacity(0.82),
+                          red.withOpacity(0.30),
+                        ]
+                      : [
+                          Colors.white.withOpacity(0.98),
+                          Colors.white.withOpacity(0.90),
+                          red.withOpacity(0.06),
+                        ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
               ),
             ),
           ),
+
           Positioned(
-            right: -22,
-            bottom: -26,
-            child: Icon(
-              Icons.sports_cricket_rounded,
-              color: Colors.white.withOpacity(0.055),
-              size: 155,
-            ),
-          ),
-          Positioned(
-            left: 14,
-            top: 14,
-            right: 14,
-            bottom: 14,
-            child: CustomPaint(
-              painter: _CyberBorderPainter(
-                color: gold.withOpacity(0.78),
+            right: 0,
+            top: 20,
+            bottom: 0,
+            child: Opacity(
+              opacity: isDark ? 0.38 : 0.12,
+              child: Icon(
+                Icons.sports_cricket_rounded,
+                size: 205,
+                color: red,
               ),
             ),
           ),
+
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _HeroTechBorderPainter(
+                color: red.withOpacity(isDark ? 0.95 : 0.70),
+              ),
+            ),
+          ),
+
           Positioned(
-            left: 22,
-            top: 58,
+            left: 20,
+            top: 57,
             child: SizedBox(
-              width: 112,
-              height: 112,
+              width: 138,
+              height: 138,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Container(
-                    width: 108,
-                    height: 108,
+                    width: 138,
+                    height: 138,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: gold.withOpacity(0.65),
-                        width: 1.4,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: gold.withOpacity(0.16),
-                          blurRadius: 22,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 92,
-                    height: 92,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: red.withOpacity(0.45),
+                        color: red.withOpacity(0.38),
                         width: 1,
                       ),
                     ),
                   ),
-
-                  // LOGO ADDED HERE
-                  SizedBox(
-                    width: 92,
-                    height: 92,
-                    child: Image.asset(
-                      logoPath,
-                      fit: BoxFit.contain,
+                  Container(
+                    width: 118,
+                    height: 118,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: red.withOpacity(0.34),
+                        width: 1,
+                      ),
                     ),
+                  ),
+                  Container(
+                    width: 98,
+                    height: 98,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: red.withOpacity(0.65),
+                        width: 1.4,
+                      ),
+                    ),
+                  ),
+                  Image.asset(
+                    logoAsset,
+                    width: 98,
+                    height: 98,
+                    fit: BoxFit.contain,
                   ),
                 ],
               ),
             ),
           ),
+
           Positioned(
-            left: 150,
-            top: 38,
-            right: 18,
+            left: 170,
+            top: 58,
+            right: 16,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -621,72 +535,78 @@ class AdminDashboard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: gold,
-                    fontSize: 13,
+                    color: isDark ? gold : red,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
+                    letterSpacing: 3,
                   ),
                 ),
-                const SizedBox(height: 5),
-                const Text(
+                const SizedBox(height: 6),
+                Text(
                   "ADMIN",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 35,
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 42,
                     height: 0.95,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 0.6,
+                    letterSpacing: 0.4,
                   ),
                 ),
-                Text(
-                  "CONTROL DASHBOARD",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: gold,
-                    fontSize: 19,
-                    height: 1.1,
-                    fontWeight: FontWeight.w900,
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "CONTROL DASHBOARD",
+                    style: TextStyle(
+                      color: red,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 9),
+                const SizedBox(height: 12),
                 Container(
-                  width: 48,
-                  height: 2,
-                  color: gold,
+                  width: 62,
+                  height: 3,
+                  color: isDark ? gold : red,
                 ),
-                const SizedBox(height: 10),
-                const Text(
+                const SizedBox(height: 16),
+                Text(
                   "Manage students, coaches,\nattendance and academy growth.",
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    height: 1.32,
+                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                    fontSize: 13.5,
+                    height: 1.35,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
           ),
+
           Positioned(
-            left: 150,
-            right: 18,
-            bottom: 28,
+            left: 170,
+            right: 22,
+            bottom: 36,
             child: Row(
               children: [
                 Expanded(
-                  child: _heroChipWithIcon(
+                  child: _heroChip(
+                    isDark: isDark,
                     icon: Icons.groups_rounded,
                     text: "4 Roles",
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: _heroChipWithIcon(
+                  child: _heroChip(
+                    isDark: isDark,
                     icon: Icons.grid_view_rounded,
                     text: "10 Modules",
                   ),
@@ -699,44 +619,40 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _heroChipWithIcon({
+  Widget _heroChip({
+    required bool isDark,
     required IconData icon,
     required String text,
   }) {
     return Container(
-      height: 40,
+      height: 45,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(14),
+        color: isDark ? Colors.white.withOpacity(0.06) : Colors.white70,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: gold.withOpacity(0.85),
-          width: 1,
+          color: red.withOpacity(isDark ? 0.55 : 0.35),
         ),
         boxShadow: [
           BoxShadow(
-            color: gold.withOpacity(0.12),
-            blurRadius: 10,
+            color: red.withOpacity(0.08),
+            blurRadius: 12,
           ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: gold,
-            size: 17,
-          ),
-          const SizedBox(width: 6),
+          Icon(icon, color: red, size: 20),
+          const SizedBox(width: 9),
           Flexible(
             child: Text(
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: gold,
-                fontSize: 12,
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontSize: 14,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -746,46 +662,48 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _heroChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.75)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: gold,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title, bool isDark) {
+  Widget _sectionTitle({
+    required String title,
+    required bool isDark,
+    required bool showViewAll,
+  }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
       child: Row(
         children: [
           Text(
             title,
             style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 16,
+              color: isDark ? gold : const Color(0xFF111827),
+              fontSize: 19,
               fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+              letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Container(
               height: 1,
-              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+              color: red.withOpacity(isDark ? 0.58 : 0.55),
             ),
           ),
+          if (showViewAll) ...[
+            const SizedBox(width: 10),
+            Text(
+              "View all",
+              style: TextStyle(
+                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: red,
+              size: 20,
+            ),
+          ],
         ],
       ),
     );
@@ -800,126 +718,133 @@ class AdminDashboard extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(11),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
               ? [
-                  const Color(0xFF151515),
-                  const Color(0xFF1A0808),
-                  color.withOpacity(0.16),
+                  const Color(0xFF121212),
+                  const Color(0xFF171717),
+                  color.withOpacity(0.12),
                 ]
               : [
                   Colors.white,
-                  const Color(0xFFFFFBF2),
-                  color.withOpacity(0.08),
+                  Colors.white,
+                  color.withOpacity(0.04),
                 ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
+          color: isDark ? red.withOpacity(0.32) : const Color(0xFFE5E7EB),
         ),
         boxShadow: [
           BoxShadow(
             color:
-                isDark ? color.withOpacity(0.12) : Colors.black.withOpacity(0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+                isDark ? color.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+            blurRadius: 13,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: SizedBox(
-          width: 135,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: color.withOpacity(0.18),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _secondaryText(isDark),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+      child: Row(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withOpacity(isDark ? 0.15 : 0.10),
+              border: Border.all(color: color.withOpacity(0.35)),
+            ),
+            child: Icon(icon, color: color, size: 28),
           ),
-        ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                width: 120,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 25,
+                        height: 1,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _quickAction(
-    BuildContext context,
-    bool isDark,
-    IconData icon,
-    String title,
-    Color color,
-    VoidCallback onTap,
-  ) {
+  Widget _quickActionCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
+      borderRadius: BorderRadius.circular(20),
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
       child: Container(
-        width: 105,
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
         decoration: BoxDecoration(
           color: _card(isDark),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _border(isDark)),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
+          ),
           boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
+            BoxShadow(
+              color:
+                  isDark ? red.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.16),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 10),
+            Icon(icon, color: color, size: 35),
+            const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -927,448 +852,93 @@ class AdminDashboard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: _primaryText(isDark),
-                fontSize: 11,
+                fontSize: 12.5,
+                height: 1.25,
                 fontWeight: FontWeight.w900,
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _moduleCard(
-    BuildContext context,
-    bool isDark,
-    IconData icon,
-    String title,
-    String subtitle,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: _card(isDark),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isDark ? red.withOpacity(0.25) : _border(isDark),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  isDark ? Colors.black.withOpacity(0.30) : Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 45,
-              height: 45,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color.withOpacity(0.22),
-                    red.withOpacity(0.10),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: color.withOpacity(0.40)),
-              ),
-              child: Icon(icon, color: color, size: 23),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _primaryText(isDark),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      height: 1.15,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _secondaryText(isDark),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: isDark ? Colors.white38 : Colors.black38,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _todaySessionCard(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  const Color(0xFF180808),
-                  const Color(0xFF0F0F0F),
-                  red.withOpacity(0.18),
-                ]
-              : [
-                  Colors.white,
-                  const Color(0xFFFFFBF2),
-                  gold.withOpacity(0.18),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.7),
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: red.withOpacity(0.18),
-            child: const Icon(
-              Icons.event_available_rounded,
-              color: gold,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Today's Main Session",
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  "Saturday: 7:00 AM - 9:00 AM",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "20 / 24 Present • YGCA Ground",
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 58,
-            height: 58,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: gold, width: 4),
-            ),
-            child: Text(
-              "83%",
-              style: TextStyle(
-                color: _primaryText(isDark),
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _recentActivity(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: _card(isDark),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _border(isDark)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.history_rounded, color: gold),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "Recent Activity",
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-              const Text(
-                "View All",
-                style: TextStyle(
-                  color: red,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _activityItem(
-            isDark,
-            Icons.check_circle_rounded,
-            "Attendance marked for Saturday batch",
-            "1h ago",
-            Colors.green,
-          ),
-          _activityItem(
-            isDark,
-            Icons.person_add_alt_1_rounded,
-            "New student waiting for approval",
-            "2h ago",
-            Colors.orange,
-          ),
-          _activityItem(
-            isDark,
-            Icons.sports_rounded,
-            "Coach approval flow updated",
-            "Today",
-            Colors.blue,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _activityItem(
-    bool isDark,
-    IconData icon,
-    String text,
-    String time,
-    Color color,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 9),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.035) : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade200,
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: color.withOpacity(0.16),
-            child: Icon(icon, color: color, size: 19),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: _primaryText(isDark),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            time,
-            style: TextStyle(
-              color: _secondaryText(isDark),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _footer(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  maroon,
-                  darkMaroon,
-                  Colors.black,
-                ]
-              : [
-                  maroon,
-                  red.withOpacity(0.85),
-                  darkMaroon,
-                ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: gold.withOpacity(0.7), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: red.withOpacity(0.20),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.emoji_events_rounded, color: gold, size: 42),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Excellence in Cricket Training",
-                      style: TextStyle(
-                        color: gold,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      "Building champions with passion, discipline and success.",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        height: 1.3,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _footerItem(Icons.favorite_rounded, "Passion"),
-              _footerItem(Icons.star_rounded, "Discipline"),
-              _footerItem(Icons.emoji_events_rounded, "Success"),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _footerItem(IconData icon, String title) {
-    return Column(
-      children: [
-        Icon(icon, color: gold, size: 25),
-        const SizedBox(height: 6),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-          ),
-        ),
-      ],
     );
   }
 }
 
-class _CyberBorderPainter extends CustomPainter {
+class _HeroTechBorderPainter extends CustomPainter {
   final Color color;
 
-  _CyberBorderPainter({required this.color});
+  _HeroTechBorderPainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 1.05
+      ..strokeWidth = 1.4
       ..style = PaintingStyle.stroke;
-
-    const cut = 18.0;
-    const len = 42.0;
-
-    final path = Path();
-
-    path.moveTo(cut, 0);
-    path.lineTo(len, 0);
-
-    path.moveTo(size.width - len, 0);
-    path.lineTo(size.width - cut, 0);
-    path.lineTo(size.width, cut);
-    path.lineTo(size.width, len);
-
-    path.moveTo(size.width, size.height - len);
-    path.lineTo(size.width, size.height - cut);
-    path.lineTo(size.width - cut, size.height);
-    path.lineTo(size.width - len, size.height);
-
-    path.moveTo(len, size.height);
-    path.lineTo(cut, size.height);
-    path.lineTo(0, size.height - cut);
-    path.lineTo(0, size.height - len);
-
-    path.moveTo(0, len);
-    path.lineTo(0, cut);
-    path.lineTo(cut, 0);
-
-    canvas.drawPath(path, paint);
 
     final dotPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(const Offset(52, 0), 2, dotPaint);
-    canvas.drawCircle(Offset(size.width - 52, size.height), 2, dotPaint);
+    const corner = 34.0;
+    const gap = 18.0;
+
+    // Top-left corner
+    canvas.drawLine(const Offset(22, 22), const Offset(78, 22), paint);
+    canvas.drawLine(const Offset(22, 22), const Offset(22, 78), paint);
+    canvas.drawLine(const Offset(35, 35), const Offset(78, 35), paint);
+    canvas.drawLine(const Offset(35, 35), const Offset(35, 78), paint);
+    canvas.drawCircle(const Offset(88, 22), 3, dotPaint);
+
+    // Top-right corner
+    canvas.drawLine(Offset(size.width - 22, 22), Offset(size.width - 78, 22), paint);
+    canvas.drawLine(Offset(size.width - 22, 22), Offset(size.width - 22, 78), paint);
+    canvas.drawLine(Offset(size.width - 35, 35), Offset(size.width - 78, 35), paint);
+    canvas.drawLine(Offset(size.width - 35, 35), Offset(size.width - 35, 78), paint);
+    canvas.drawCircle(Offset(size.width - 88, 22), 3, dotPaint);
+
+    // Bottom-left corner
+    canvas.drawLine(Offset(22, size.height - 22), Offset(78, size.height - 22), paint);
+    canvas.drawLine(Offset(22, size.height - 22), Offset(22, size.height - 78), paint);
+    canvas.drawLine(Offset(35, size.height - 35), Offset(78, size.height - 35), paint);
+    canvas.drawLine(Offset(35, size.height - 35), Offset(35, size.height - 78), paint);
+    canvas.drawCircle(Offset(88, size.height - 22), 3, dotPaint);
+
+    // Bottom-right corner
+    canvas.drawLine(
+      Offset(size.width - 22, size.height - 22),
+      Offset(size.width - 78, size.height - 22),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 22, size.height - 22),
+      Offset(size.width - 22, size.height - 78),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 35, size.height - 35),
+      Offset(size.width - 78, size.height - 35),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 35, size.height - 35),
+      Offset(size.width - 35, size.height - 78),
+      paint,
+    );
+    canvas.drawCircle(Offset(size.width - 88, size.height - 22), 3, dotPaint);
+
+    // Soft outer border
+    final borderPaint = Paint()
+      ..color = color.withOpacity(0.22)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(gap, gap, size.width - gap * 2, size.height - gap * 2),
+      const Radius.circular(corner),
+    );
+
+    canvas.drawRRect(rect, borderPaint);
   }
 
   @override

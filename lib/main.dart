@@ -46,16 +46,17 @@ class MyApp extends StatelessWidget {
           darkTheme: YGCATheme.darkTheme,
           themeMode: themeMode,
 
-          // Final flow:
-          // First Photo Splash -> Login if not logged in
-          // Login -> AuthChecker -> Second Loading -> Dashboard
-          home: const InitialSplashScreen(),
+          // TEMPORARY:
+          // Directly opening Admin Dashboard for UI testing.
+          // After Admin Dashboard is fixed, change this back to:
+          // home: const InitialSplashScreen(),
+          home: const AdminDashboard(),
 
           routes: {
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/auth-checker': (context) => const AuthChecker(),
-            '/admin': (context) => const AdminDashboard(),
+            '/admin': (context) => AdminDashboard(),
             '/coach': (context) => const CoachDashboard(),
             '/parent': (context) => const ParentDashboard(),
             '/student': (context) => const StudentDashboard(),

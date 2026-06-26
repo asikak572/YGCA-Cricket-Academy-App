@@ -93,7 +93,7 @@ class AuthChecker extends StatelessWidget {
 
     switch (role) {
       case 'admin':
-        return const AdminDashboard();
+        return  AdminDashboard();
 
       case 'coach':
         final coachApproved = _isApproved(userData);
