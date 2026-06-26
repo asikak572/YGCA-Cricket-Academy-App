@@ -28,9 +28,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF250000);
   static const Color gold = Color(0xFFD4AF37);
 
+  // IMPORTANT:
+  // Use transparent PNG logo here if you have it.
+  // Example: static const String logoAsset = 'assets/images/ygca_logo_transparent.png';
   static const String logoAsset = 'assets/images/ygca_logo.jpg';
 
   Future<void> _logout() async {
@@ -123,29 +125,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
             onLogout: _logout,
           ),
           body: SafeArea(
+            bottom: false,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 18),
+              padding: const EdgeInsets.only(bottom: 6),
               child: Column(
                 children: [
                   _topBar(isDark),
                   _heroCard(isDark),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
                   _sectionTitle(
                     title: "ACADEMY OVERVIEW",
                     isDark: isDark,
                     showViewAll: true,
                   ),
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 2.25,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 2.35,
                       children: [
                         _overviewCard(
                           isDark: isDark,
@@ -183,55 +187,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ),
                   ),
 
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 14),
+
                   _sectionTitle(
                     title: "QUICK ACTIONS",
                     isDark: isDark,
                     showViewAll: false,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GridView.count(
-                      crossAxisCount: 4,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.82,
-                      children: [
-                        _quickActionCard(
-                          isDark: isDark,
-                          icon: Icons.person_add_alt_1_rounded,
-                          title: "Student\nApproval",
-                          color: Colors.green,
-                          onTap: () => _open(const StudentListScreen()),
-                        ),
-                        _quickActionCard(
-                          isDark: isDark,
-                          icon: Icons.sports_rounded,
-                          title: "Coach\nCenter",
-                          color: Colors.redAccent,
-                          onTap: () => _open(CoachModuleScreen()),
-                        ),
-                        _quickActionCard(
-                          isDark: isDark,
-                          icon: Icons.fact_check_rounded,
-                          title: "Mark\nAttendance",
-                          color: Colors.blue,
-                          onTap: () => _open(const AttendanceModuleScreen()),
-                        ),
-                        _quickActionCard(
-                          isDark: isDark,
-                          icon: Icons.account_balance_wallet_rounded,
-                          title: "Fees\n& Dues",
-                          color: Colors.orange,
-                          onTap: () => _open(FeeModuleScreen()),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 90),
+                  _quickActions(isDark),
+
+                  const SizedBox(height: 6),
                 ],
               ),
             ),
@@ -275,7 +241,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _topBar(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
       child: Row(
         children: [
           _circleButton(
@@ -283,14 +249,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
             icon: Icons.menu_rounded,
             onTap: () => _scaffoldKey.currentState?.openDrawer(),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           Image.asset(
             logoAsset,
-            width: 58,
-            height: 58,
+            width: 46,
+            height: 46,
             fit: BoxFit.contain,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,19 +267,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 30,
+                    fontSize: 21,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.4,
+                    letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   "Admin Control Center",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 12.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -332,8 +298,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 right: 3,
                 top: 2,
                 child: Container(
-                  width: 10,
-                  height: 10,
+                  width: 9,
+                  height: 9,
                   decoration: const BoxDecoration(
                     color: red,
                     shape: BoxShape.circle,
@@ -342,13 +308,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 7),
           _circleButton(
             isDark: isDark,
             icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
             onTap: ThemeController.toggleTheme,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 7),
           _circleButton(
             isDark: isDark,
             icon: Icons.logout_rounded,
@@ -368,8 +334,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       borderRadius: BorderRadius.circular(50),
       onTap: onTap,
       child: Container(
-        width: 54,
-        height: 54,
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF111111) : Colors.white,
           shape: BoxShape.circle,
@@ -379,17 +345,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
           boxShadow: [
             BoxShadow(
               color: isDark
-                  ? red.withOpacity(0.13)
-                  : Colors.black.withOpacity(0.07),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Icon(
           icon,
           color: isDark ? Colors.white : maroon,
-          size: 25,
+          size: 21,
         ),
       ),
     );
@@ -397,8 +363,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _heroCard(bool isDark) {
     return Container(
-      height: 285,
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      height: 248,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF090909) : Colors.white,
@@ -410,8 +376,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         boxShadow: [
           BoxShadow(
             color: red.withOpacity(isDark ? 0.22 : 0.10),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -419,7 +385,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         children: [
           Positioned.fill(
             child: Opacity(
-              opacity: isDark ? 0.78 : 0.16,
+              opacity: isDark ? 0.76 : 0.16,
               child: Image.asset(
                 'assets/images/home_hero_bg.png',
                 fit: BoxFit.cover,
@@ -432,14 +398,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 gradient: LinearGradient(
                   colors: isDark
                       ? [
-                          Colors.black.withOpacity(0.96),
-                          Colors.black.withOpacity(0.82),
-                          red.withOpacity(0.30),
+                          Colors.black.withOpacity(0.92),
+                          Colors.black.withOpacity(0.78),
+                          red.withOpacity(0.28),
                         ]
                       : [
-                          Colors.white.withOpacity(0.98),
-                          Colors.white.withOpacity(0.90),
-                          red.withOpacity(0.06),
+                          Colors.white.withOpacity(0.96),
+                          Colors.white.withOpacity(0.88),
+                          red.withOpacity(0.05),
                         ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
@@ -447,76 +413,69 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
           ),
-
           Positioned(
-            right: 0,
-            top: 20,
+            right: -6,
+            top: 18,
             bottom: 0,
             child: Opacity(
-              opacity: isDark ? 0.38 : 0.12,
+              opacity: isDark ? 0.30 : 0.10,
               child: Icon(
                 Icons.sports_cricket_rounded,
-                size: 205,
+                size: 170,
                 color: red,
               ),
             ),
           ),
-
           Positioned.fill(
             child: CustomPaint(
-              painter: _HeroTechBorderPainter(
-                color: red.withOpacity(isDark ? 0.95 : 0.70),
+              painter: _HeroClosedBorderPainter(
+                color: isDark ? gold.withOpacity(0.85) : red.withOpacity(0.65),
               ),
             ),
           ),
 
           Positioned(
-            left: 20,
-            top: 57,
+            left: 24,
+            top: 58,
             child: SizedBox(
-              width: 138,
-              height: 138,
+              width: 118,
+              height: 118,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Container(
-                    width: 138,
-                    height: 138,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: red.withOpacity(0.38),
-                        width: 1,
-                      ),
-                    ),
-                  ),
                   Container(
                     width: 118,
                     height: 118,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: red.withOpacity(0.34),
-                        width: 1,
+                        color: isDark
+                            ? gold.withOpacity(0.65)
+                            : red.withOpacity(0.35),
+                        width: 1.6,
                       ),
                     ),
                   ),
                   Container(
-                    width: 98,
-                    height: 98,
+                    width: 96,
+                    height: 96,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: red.withOpacity(0.65),
-                        width: 1.4,
+                        color: isDark
+                            ? red.withOpacity(0.45)
+                            : red.withOpacity(0.20),
+                        width: 1.2,
                       ),
                     ),
                   ),
-                  Image.asset(
-                    logoAsset,
-                    width: 98,
-                    height: 98,
-                    fit: BoxFit.contain,
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Image.asset(
+                      logoAsset,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ],
               ),
@@ -524,9 +483,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
 
           Positioned(
-            left: 170,
-            top: 58,
-            right: 16,
+            left: 154,
+            top: 44,
+            right: 18,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -536,9 +495,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? gold : red,
-                    fontSize: 12.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 3,
+                    letterSpacing: 2.2,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -548,113 +507,45 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black,
-                    fontSize: 42,
+                    fontSize: 35,
                     height: 0.95,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 0.4,
                   ),
                 ),
                 const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "CONTROL DASHBOARD",
-                    style: TextStyle(
-                      color: red,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.2,
-                    ),
+                Text(
+                  "CONTROL DASHBOARD",
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? gold : red,
+                    fontSize: 18,
+                    height: 1.0,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: 60,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: isDark ? gold : red,
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  width: 62,
-                  height: 3,
-                  color: isDark ? gold : red,
-                ),
-                const SizedBox(height: 16),
                 Text(
-                  "Manage students, coaches,\nattendance and academy growth.",
+                  "Manage students, coaches,\nattendance and growth.",
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? Colors.white70 : const Color(0xFF374151),
-                    fontSize: 13.5,
-                    height: 1.35,
+                    fontSize: 12.5,
+                    height: 1.28,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
-            ),
-          ),
-
-          Positioned(
-            left: 170,
-            right: 22,
-            bottom: 36,
-            child: Row(
-              children: [
-                Expanded(
-                  child: _heroChip(
-                    isDark: isDark,
-                    icon: Icons.groups_rounded,
-                    text: "4 Roles",
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: _heroChip(
-                    isDark: isDark,
-                    icon: Icons.grid_view_rounded,
-                    text: "10 Modules",
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _heroChip({
-    required bool isDark,
-    required IconData icon,
-    required String text,
-  }) {
-    return Container(
-      height: 45,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.06) : Colors.white70,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: red.withOpacity(isDark ? 0.55 : 0.35),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: red.withOpacity(0.08),
-            blurRadius: 12,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: red, size: 20),
-          const SizedBox(width: 9),
-          Flexible(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark ? Colors.white : Colors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-              ),
             ),
           ),
         ],
@@ -668,19 +559,28 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required bool showViewAll,
   }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : const Color(0xFF111827),
-              fontSize: 19,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.2,
+          SizedBox(
+            width: showViewAll ? 158 : 170,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: isDark ? gold : const Color(0xFF111827),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.9,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
             child: Container(
               height: 1,
@@ -688,20 +588,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
           if (showViewAll) ...[
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Text(
               "View all",
               style: TextStyle(
                 color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 2),
             const Icon(
               Icons.chevron_right_rounded,
               color: red,
-              size: 20,
+              size: 19,
             ),
           ],
         ],
@@ -718,14 +618,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
               ? [
                   const Color(0xFF121212),
                   const Color(0xFF171717),
-                  color.withOpacity(0.12),
+                  color.withOpacity(0.14),
                 ]
               : [
                   Colors.white,
@@ -735,7 +635,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark ? red.withOpacity(0.32) : const Color(0xFFE5E7EB),
         ),
@@ -743,30 +643,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
           BoxShadow(
             color:
                 isDark ? color.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-            blurRadius: 13,
-            offset: const Offset(0, 5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 54,
-            height: 54,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color.withOpacity(isDark ? 0.15 : 0.10),
               border: Border.all(color: color.withOpacity(0.35)),
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: SizedBox(
-                width: 120,
+                width: 96,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -776,30 +676,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _primaryText(isDark),
-                        fontSize: 25,
+                        fontSize: 19,
                         height: 1,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 3),
                     Text(
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _primaryText(isDark),
-                        fontSize: 13.5,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _secondaryText(isDark),
-                        fontSize: 11.5,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -807,6 +707,47 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickActions(bool isDark) {
+    return SizedBox(
+      height: 92,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.person_add_alt_1_rounded,
+            title: "Student\nApproval",
+            color: Colors.green,
+            onTap: () => _open(const StudentListScreen()),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.sports_rounded,
+            title: "Coach\nCenter",
+            color: Colors.redAccent,
+            onTap: () => _open(CoachModuleScreen()),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.fact_check_rounded,
+            title: "Mark\nAttendance",
+            color: Colors.blue,
+            onTap: () => _open(const AttendanceModuleScreen()),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.account_balance_wallet_rounded,
+            title: "Fees\n& Dues",
+            color: Colors.orange,
+            onTap: () => _open(FeeModuleScreen()),
           ),
         ],
       ),
@@ -821,13 +762,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
+        width: 92,
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
           color: _card(isDark),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
           ),
@@ -835,16 +778,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
             BoxShadow(
               color:
                   isDark ? red.withOpacity(0.08) : Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 35),
-            const SizedBox(height: 12),
+            Icon(icon, color: color, size: 25),
+            const SizedBox(height: 7),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -852,8 +795,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: _primaryText(isDark),
-                fontSize: 12.5,
-                height: 1.25,
+                fontSize: 10.5,
+                height: 1.12,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -864,14 +807,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 }
 
-class _HeroTechBorderPainter extends CustomPainter {
+class _HeroClosedBorderPainter extends CustomPainter {
   final Color color;
 
-  _HeroTechBorderPainter({required this.color});
+  _HeroClosedBorderPainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final outerPaint = Paint()
+      ..color = color.withOpacity(0.28)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    final accentPaint = Paint()
       ..color = color
       ..strokeWidth = 1.4
       ..style = PaintingStyle.stroke;
@@ -880,65 +828,96 @@ class _HeroTechBorderPainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.fill;
 
-    const corner = 34.0;
-    const gap = 18.0;
+    final outer = RRect.fromRectAndRadius(
+      Rect.fromLTWH(10, 10, size.width - 20, size.height - 20),
+      const Radius.circular(26),
+    );
 
-    // Top-left corner
-    canvas.drawLine(const Offset(22, 22), const Offset(78, 22), paint);
-    canvas.drawLine(const Offset(22, 22), const Offset(22, 78), paint);
-    canvas.drawLine(const Offset(35, 35), const Offset(78, 35), paint);
-    canvas.drawLine(const Offset(35, 35), const Offset(35, 78), paint);
-    canvas.drawCircle(const Offset(88, 22), 3, dotPaint);
+    final inner = RRect.fromRectAndRadius(
+      Rect.fromLTWH(18, 18, size.width - 36, size.height - 36),
+      const Radius.circular(22),
+    );
 
-    // Top-right corner
-    canvas.drawLine(Offset(size.width - 22, 22), Offset(size.width - 78, 22), paint);
-    canvas.drawLine(Offset(size.width - 22, 22), Offset(size.width - 22, 78), paint);
-    canvas.drawLine(Offset(size.width - 35, 35), Offset(size.width - 78, 35), paint);
-    canvas.drawLine(Offset(size.width - 35, 35), Offset(size.width - 35, 78), paint);
-    canvas.drawCircle(Offset(size.width - 88, 22), 3, dotPaint);
+    canvas.drawRRect(outer, outerPaint);
+    canvas.drawRRect(inner, outerPaint);
 
-    // Bottom-left corner
-    canvas.drawLine(Offset(22, size.height - 22), Offset(78, size.height - 22), paint);
-    canvas.drawLine(Offset(22, size.height - 22), Offset(22, size.height - 78), paint);
-    canvas.drawLine(Offset(35, size.height - 35), Offset(78, size.height - 35), paint);
-    canvas.drawLine(Offset(35, size.height - 35), Offset(35, size.height - 78), paint);
-    canvas.drawCircle(Offset(88, size.height - 22), 3, dotPaint);
+    // top-left closed accents
+    canvas.drawLine(const Offset(28, 28), const Offset(70, 28), accentPaint);
+    canvas.drawLine(const Offset(28, 28), const Offset(28, 70), accentPaint);
+    canvas.drawLine(const Offset(40, 40), const Offset(70, 40), accentPaint);
+    canvas.drawLine(const Offset(40, 40), const Offset(40, 70), accentPaint);
 
-    // Bottom-right corner
+    // top-right closed accents
     canvas.drawLine(
-      Offset(size.width - 22, size.height - 22),
-      Offset(size.width - 78, size.height - 22),
-      paint,
+      Offset(size.width - 28, 28),
+      Offset(size.width - 70, 28),
+      accentPaint,
     );
     canvas.drawLine(
-      Offset(size.width - 22, size.height - 22),
-      Offset(size.width - 22, size.height - 78),
-      paint,
+      Offset(size.width - 28, 28),
+      Offset(size.width - 28, 70),
+      accentPaint,
     );
     canvas.drawLine(
-      Offset(size.width - 35, size.height - 35),
-      Offset(size.width - 78, size.height - 35),
-      paint,
+      Offset(size.width - 40, 40),
+      Offset(size.width - 70, 40),
+      accentPaint,
     );
     canvas.drawLine(
-      Offset(size.width - 35, size.height - 35),
-      Offset(size.width - 35, size.height - 78),
-      paint,
-    );
-    canvas.drawCircle(Offset(size.width - 88, size.height - 22), 3, dotPaint);
-
-    // Soft outer border
-    final borderPaint = Paint()
-      ..color = color.withOpacity(0.22)
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-
-    final rect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(gap, gap, size.width - gap * 2, size.height - gap * 2),
-      const Radius.circular(corner),
+      Offset(size.width - 40, 40),
+      Offset(size.width - 40, 70),
+      accentPaint,
     );
 
-    canvas.drawRRect(rect, borderPaint);
+    // bottom-left closed accents
+    canvas.drawLine(
+      Offset(28, size.height - 28),
+      Offset(70, size.height - 28),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(28, size.height - 28),
+      Offset(28, size.height - 70),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(40, size.height - 40),
+      Offset(70, size.height - 40),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(40, size.height - 40),
+      Offset(40, size.height - 70),
+      accentPaint,
+    );
+
+    // bottom-right closed accents
+    canvas.drawLine(
+      Offset(size.width - 28, size.height - 28),
+      Offset(size.width - 70, size.height - 28),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 28, size.height - 28),
+      Offset(size.width - 28, size.height - 70),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 40, size.height - 40),
+      Offset(size.width - 70, size.height - 40),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 40, size.height - 40),
+      Offset(size.width - 40, size.height - 70),
+      accentPaint,
+    );
+
+    // dots
+    canvas.drawCircle(const Offset(88, 28), 3, dotPaint);
+    canvas.drawCircle(Offset(size.width - 88, 28), 3, dotPaint);
+    canvas.drawCircle(Offset(88, size.height - 28), 3, dotPaint);
+    canvas.drawCircle(Offset(size.width - 88, size.height - 28), 3, dotPaint);
   }
 
   @override
