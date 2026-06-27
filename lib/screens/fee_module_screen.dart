@@ -7,12 +7,18 @@ import 'payment_history_screen.dart';
 import 'pending_fees_screen.dart';
 import 'fee_report_screen.dart';
 
-class FeeModuleScreen extends StatelessWidget {
-  FeeModuleScreen({super.key});
+class FeeModuleScreen extends StatefulWidget {
+  const FeeModuleScreen({super.key});
+
+  @override
+  State<FeeModuleScreen> createState() => _FeeModuleScreenState();
+}
+
+class _FeeModuleScreenState extends State<FeeModuleScreen> {
+  int _currentIndex = 0;
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
   Color _bg(bool isDark) {
@@ -35,6 +41,95 @@ class FeeModuleScreen extends StatelessWidget {
     return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
+  String get _title {
+    switch (_currentIndex) {
+      case 0:
+        return "Fee Collection";
+      case 1:
+        return "Payments";
+      case 2:
+        return "Fee Reports";
+      default:
+        return "Fee Module";
+    }
+  }
+
+  String get _subtitle {
+    switch (_currentIndex) {
+      case 0:
+        return "Collect fees and track pending student dues";
+      case 1:
+        return "View fee transactions and payment history";
+      case 2:
+        return "Analyze fee collection and pending fee reports";
+      default:
+        return "";
+    }
+  }
+
+  IconData get _headerIcon {
+    switch (_currentIndex) {
+      case 0:
+        return Icons.currency_rupee_rounded;
+      case 1:
+        return Icons.receipt_long_rounded;
+      case 2:
+        return Icons.analytics_rounded;
+      default:
+        return Icons.dashboard_rounded;
+    }
+  }
+
+  void _openScreen(Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
+  List<_InfoItem> _itemsForCurrentTab() {
+    if (_currentIndex == 0) {
+      return [
+        _InfoItem(
+          icon: Icons.payments_rounded,
+          title: "Collect Fee",
+          subtitle: "Record student fee payment",
+          color: Colors.green,
+          screen: const FeeManagementScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.warning_amber_rounded,
+          title: "Pending Fees",
+          subtitle: "Track pending student dues",
+          color: Colors.orange,
+          screen: const PendingFeesScreen(),
+        ),
+      ];
+    }
+
+    if (_currentIndex == 1) {
+      return [
+        _InfoItem(
+          icon: Icons.receipt_long_rounded,
+          title: "Payment History",
+          subtitle: "View all fee transactions",
+          color: Colors.blueAccent,
+          screen: const PaymentHistoryScreen(),
+        ),
+      ];
+    }
+
+    return [
+      _InfoItem(
+        icon: Icons.analytics_rounded,
+        title: "Fee Reports",
+        subtitle: "Analyze fee collection status",
+        color: Colors.purpleAccent,
+        screen: const FeeReportScreen(),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
@@ -45,173 +140,90 @@ class FeeModuleScreen extends StatelessWidget {
         return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
-            child: Column(
-              children: [
-                _topHeader(context, isDark),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        _heroBanner(isDark),
-                        const SizedBox(height: 18),
-                        _sectionTitle("FEE MODULES", isDark),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.08,
-                            children: [
-                              _moduleCard(
-                                context: context,
-                                isDark: isDark,
-                                icon: Icons.payments_rounded,
-                                title: "Collect Fee",
-                                subtitle: "Record student fee payment",
-                                color: Colors.green,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const FeeManagementScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _moduleCard(
-                                context: context,
-                                isDark: isDark,
-                                icon: Icons.receipt_long_rounded,
-                                title: "Payment History",
-                                subtitle: "View all fee transactions",
-                                color: Colors.blueAccent,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const PaymentHistoryScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _moduleCard(
-                                context: context,
-                                isDark: isDark,
-                                icon: Icons.warning_amber_rounded,
-                                title: "Pending Fees",
-                                subtitle: "Track pending student dues",
-                                color: Colors.orange,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const PendingFeesScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _moduleCard(
-                                context: context,
-                                isDark: isDark,
-                                icon: Icons.analytics_rounded,
-                                title: "Fee Reports",
-                                subtitle: "Analyze fee collection status",
-                                color: Colors.purpleAccent,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const FeeReportScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        _infoCard(isDark),
-                        const SizedBox(height: 30),
-                      ],
+            bottom: false,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _pageHeader(context, isDark),
+                  const SizedBox(height: 16),
+                  _moduleHeader(isDark),
+                  const SizedBox(height: 18),
+                  _sectionTitle(
+                    title: _title.toUpperCase(),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _subtitle,
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  _contentList(isDark),
+                  const SizedBox(height: 12),
+                  _summaryRow(isDark),
+                  const SizedBox(height: 90),
+                ],
+              ),
             ),
+          ),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: _bottomNavigation(isDark),
           ),
         );
       },
     );
   }
 
-  Widget _topHeader(BuildContext context, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-      child: Row(
-        children: [
-          _circleButton(
-            isDark: isDark,
-            icon: Icons.arrow_back_rounded,
-            onTap: () => Navigator.pop(context),
-          ),
-          const SizedBox(width: 12),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 46,
-            height: 46,
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "FEE MODULE",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                  ),
-                ),
-                Text(
-                  "Payments, pending fees & reports",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+  Widget _pageHeader(BuildContext context, bool isDark) {
+    return Row(
+      children: [
+        _circleButton(
+          isDark: isDark,
+          icon: Icons.arrow_back_rounded,
+          onTap: () => Navigator.pop(context),
+        ),
+        const SizedBox(width: 12),
+        Image.asset(
+          'assets/images/ygca_logo.jpg',
+          width: 42,
+          height: 42,
+          fit: BoxFit.contain,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            "FEE MODULE",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.8,
             ),
           ),
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: ThemeController.themeMode,
-            builder: (context, mode, _) {
-              final dark = mode == ThemeMode.dark;
+        ),
+        ValueListenableBuilder<ThemeMode>(
+          valueListenable: ThemeController.themeMode,
+          builder: (context, mode, _) {
+            final dark = mode == ThemeMode.dark;
 
-              return _circleButton(
-                isDark: isDark,
-                icon: dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
-                onTap: ThemeController.toggleTheme,
-              );
-            },
-          ),
-        ],
-      ),
+            return _circleButton(
+              isDark: isDark,
+              icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              onTap: ThemeController.toggleTheme,
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -234,8 +246,8 @@ class FeeModuleScreen extends StatelessWidget {
             BoxShadow(
               color: isDark
                   ? red.withOpacity(0.12)
-                  : Colors.black.withOpacity(0.08),
-              blurRadius: 12,
+                  : Colors.black.withOpacity(0.07),
+              blurRadius: 11,
               offset: const Offset(0, 4),
             ),
           ],
@@ -249,311 +261,564 @@ class FeeModuleScreen extends StatelessWidget {
     );
   }
 
-  Widget _heroBanner(bool isDark) {
+  Widget _moduleHeader(bool isDark) {
     return Container(
-      height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      clipBehavior: Clip.antiAlias,
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  const Color(0xFF120202),
+                  const Color(0xFF1A0505),
+                  red.withOpacity(0.22),
+                ]
+              : [
+                  Colors.white,
+                  const Color(0xFFFFF7F7),
+                  gold.withOpacity(0.20),
+                ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
         border: Border.all(
-          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
+          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.75),
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
+            color:
+                isDark ? red.withOpacity(0.10) : Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/home_hero_bg.png',
-              fit: BoxFit.cover,
+          Positioned(
+            right: -22,
+            bottom: -30,
+            child: Icon(
+              _headerIcon,
+              color: isDark ? red.withOpacity(0.13) : maroon.withOpacity(0.07),
+              size: 118,
             ),
           ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [
-                          Colors.black.withOpacity(0.90),
-                          darkMaroon.withOpacity(0.88),
-                          red.withOpacity(0.35),
-                        ]
-                      : [
-                          maroon.withOpacity(0.92),
-                          maroon.withOpacity(0.72),
-                          Colors.black.withOpacity(0.25),
-                        ],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? Colors.black.withOpacity(0.30)
+                      : Colors.white.withOpacity(0.75),
+                  border: Border.all(
+                    color: gold.withOpacity(0.85),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gold.withOpacity(0.13),
+                      blurRadius: 14,
+                    ),
+                  ],
                 ),
+                child: Icon(
+                  _headerIcon,
+                  color: gold,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 12,
+                        height: 1.35,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle({
+    required String title,
+    required bool isDark,
+  }) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 220,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              maxLines: 1,
+              softWrap: false,
+              style: TextStyle(
+                color: isDark ? gold : maroon,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.1,
               ),
             ),
           ),
-          Positioned(
-            right: -25,
-            bottom: -25,
-            child: Icon(
-              Icons.currency_rupee_rounded,
-              color: Colors.white.withOpacity(0.08),
-              size: 150,
-            ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: isDark ? red.withOpacity(0.50) : gold.withOpacity(0.85),
           ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 46,
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.currency_rupee_rounded,
-                    color: maroon,
-                    size: 42,
+        ),
+      ],
+    );
+  }
+
+  Widget _contentList(bool isDark) {
+    final items = _itemsForCurrentTab();
+
+    return Column(
+      children: List.generate(items.length, (index) {
+        final item = items[index];
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: index == items.length - 1 ? 0 : 10),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => _openScreen(item.screen),
+              child: Ink(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _card(isDark),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isDark
+                        ? red.withOpacity(0.25)
+                        : const Color(0xFFE5E7EB),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? item.color.withOpacity(0.07)
+                          : Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 230,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            item.color.withOpacity(isDark ? 0.38 : 0.20),
+                            item.color.withOpacity(isDark ? 0.16 : 0.08),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: item.color.withOpacity(0.30),
+                        ),
+                      ),
+                      child: Icon(
+                        item.icon,
+                        color: item.color,
+                        size: 25,
+                      ),
+                    ),
+                    const SizedBox(width: 13),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "YGCA",
+                            item.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: gold,
-                              fontSize: 13,
+                              color: _primaryText(isDark),
+                              fontSize: 14.5,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "FEE",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 31,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
-                          ),
+                          const SizedBox(height: 4),
                           Text(
-                            "MANAGEMENT",
+                            item.subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: gold,
-                              fontSize: 23,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
+                              color: _secondaryText(isDark),
+                              fontSize: 11.2,
+                              height: 1.25,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _heroChip("Collect Fee"),
-                              _heroChip("Pending Dues"),
-                              _heroChip("Reports"),
-                            ],
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _heroChip(String text) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 150),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.75)),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: gold,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Container(
-              height: 1,
-              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _moduleCard({
-    required BuildContext context,
-    required bool isDark,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [
-                    const Color(0xFF151515),
-                    const Color(0xFF1A0808),
-                    color.withOpacity(0.15),
-                  ]
-                : [
-                    Colors.white,
-                    const Color(0xFFFFFBF2),
-                    color.withOpacity(0.08),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: isDark ? Colors.white38 : Colors.black38,
+                      size: 25,
+                    ),
                   ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? color.withOpacity(0.10)
-                  : Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: SizedBox(
-            width: 135,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: color.withOpacity(0.18),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 27,
-                  ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 13,
-                  color: isDark ? gold : maroon,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 
-  Widget _infoCard(bool isDark) {
+  Widget _summaryRow(bool isDark) {
+    if (_currentIndex == 0) {
+      return _summaryContainer(
+        isDark: isDark,
+        items: [
+          _MiniStatData(
+            icon: Icons.payments_rounded,
+            label: "Collect",
+            value: "Fee",
+            color: Colors.green,
+          ),
+          _MiniStatData(
+            icon: Icons.warning_amber_rounded,
+            label: "Pending",
+            value: "Dues",
+            color: Colors.orange,
+          ),
+          _MiniStatData(
+            icon: Icons.school_rounded,
+            label: "Students",
+            value: "All",
+            color: Colors.blueAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.currency_rupee_rounded,
+            label: "Finance",
+            value: "Live",
+            color: Colors.purpleAccent,
+          ),
+        ],
+      );
+    }
+
+    if (_currentIndex == 1) {
+      return _summaryContainer(
+        isDark: isDark,
+        items: [
+          _MiniStatData(
+            icon: Icons.receipt_long_rounded,
+            label: "History",
+            value: "All",
+            color: Colors.blueAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.payment_rounded,
+            label: "Payments",
+            value: "View",
+            color: Colors.green,
+          ),
+          _MiniStatData(
+            icon: Icons.verified_rounded,
+            label: "Status",
+            value: "Track",
+            color: Colors.orange,
+          ),
+          _MiniStatData(
+            icon: Icons.description_rounded,
+            label: "Receipt",
+            value: "Soon",
+            color: Colors.purpleAccent,
+          ),
+        ],
+      );
+    }
+
+    return _summaryContainer(
+      isDark: isDark,
+      items: [
+        _MiniStatData(
+          icon: Icons.analytics_rounded,
+          label: "Reports",
+          value: "All",
+          color: Colors.purpleAccent,
+        ),
+        _MiniStatData(
+          icon: Icons.calendar_month_rounded,
+          label: "Month",
+          value: "30D",
+          color: Colors.blueAccent,
+        ),
+        _MiniStatData(
+          icon: Icons.warning_rounded,
+          label: "Dues",
+          value: "Track",
+          color: Colors.orange,
+        ),
+        _MiniStatData(
+          icon: Icons.trending_up_rounded,
+          label: "Growth",
+          value: "Live",
+          color: Colors.green,
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryContainer({
+    required bool isDark,
+    required List<_MiniStatData> items,
+  }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? gold.withOpacity(0.45) : gold.withOpacity(0.75),
+          color: isDark ? red.withOpacity(0.25) : const Color(0xFFE5E7EB),
         ),
       ),
       child: Row(
-        children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: isDark ? gold : maroon,
-            size: 26,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "Use this module to collect payments, monitor pending fees, check history, and generate fee reports.",
-              style: TextStyle(
-                color: _secondaryText(isDark),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                height: 1.35,
-              ),
+        children: items.map((item) {
+          return Expanded(
+            child: _miniStat(
+              isDark: isDark,
+              icon: item.icon,
+              label: item.label,
+              value: item.value,
+              color: item.color,
             ),
-          ),
-        ],
+          );
+        }).toList(),
       ),
     );
   }
+
+  Widget _miniStat({
+    required bool isDark,
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: color,
+          size: 22,
+        ),
+        const SizedBox(height: 5),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: _secondaryText(isDark),
+            fontSize: 9.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontSize: 17,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _bottomNavigation(bool isDark) {
+    final items = [
+      _BottomNavItem(
+        icon: Icons.currency_rupee_rounded,
+        label: "Main",
+      ),
+      _BottomNavItem(
+        icon: Icons.receipt_long_rounded,
+        label: "Payments",
+      ),
+      _BottomNavItem(
+        icon: Icons.analytics_rounded,
+        label: "Reports",
+      ),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.all(7),
+      height: 76,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF101010) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                isDark ? red.withOpacity(0.12) : Colors.black.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Row(
+        children: List.generate(items.length, (index) {
+          final selected = index == _currentIndex;
+          final item = items[index];
+
+          return Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(23),
+              onTap: () {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: selected
+                      ? LinearGradient(
+                          colors: [
+                            red.withOpacity(isDark ? 0.90 : 0.92),
+                            maroon.withOpacity(isDark ? 0.95 : 0.90),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: selected ? null : Colors.transparent,
+                  borderRadius: BorderRadius.circular(23),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: red.withOpacity(isDark ? 0.23 : 0.15),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: selected
+                          ? Colors.white
+                          : isDark
+                              ? Colors.white60
+                              : const Color(0xFF6B7280),
+                      size: selected ? 25 : 23,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected
+                            ? Colors.white
+                            : isDark
+                                ? Colors.white60
+                                : const Color(0xFF6B7280),
+                        fontSize: 11,
+                        fontWeight:
+                            selected ? FontWeight.w900 : FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _InfoItem {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Widget screen;
+
+  _InfoItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.screen,
+  });
+}
+
+class _BottomNavItem {
+  final IconData icon;
+  final String label;
+
+  _BottomNavItem({
+    required this.icon,
+    required this.label,
+  });
+}
+
+class _MiniStatData {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  _MiniStatData({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 }
