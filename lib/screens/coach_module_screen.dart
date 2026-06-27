@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
 
-import 'widgets/ygca_app_bar.dart';
-
 import 'coach_management_screen.dart';
-import 'coach_salary_screen.dart';
 import 'coach_assigned_students_screen.dart';
+import 'coach_salary_screen.dart';
+
+import 'coach_details_list_screen.dart';
+import 'coach_status_screen.dart';
+
+import 'coach_student_attendance_screen.dart';
+import 'coach_student_performance_screen.dart';
+
+import 'coach_payment_status_screen.dart';
+import 'coach_salary_reports_screen.dart';
 
 class CoachModuleScreen extends StatefulWidget {
   const CoachModuleScreen({super.key});
@@ -20,7 +27,6 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
   Color _bg(bool isDark) {
@@ -29,6 +35,10 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
 
   Color _card(bool isDark) {
     return isDark ? const Color(0xFF111111) : Colors.white;
+  }
+
+  Color _border(bool isDark) {
+    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
   }
 
   Color _primaryText(bool isDark) {
@@ -55,57 +65,112 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Manage all coaches and staff details";
+        return "Manage coach records, details and status";
       case 1:
-        return "View students assigned to coaches";
+        return "View assigned students, attendance and performance";
       case 2:
-        return "View salary and payment records";
+        return "View salary records, payments and reports";
       default:
         return "";
     }
   }
 
-  Widget get _targetScreen {
+  IconData get _headerIcon {
     switch (_currentIndex) {
       case 0:
-        return const CoachManagementScreen();
+        return Icons.groups_rounded;
       case 1:
-        return const CoachAssignedStudentsScreen();
+        return Icons.school_rounded;
       case 2:
-        return const CoachSalaryScreen();
+        return Icons.account_balance_wallet_rounded;
       default:
-        return const CoachManagementScreen();
+        return Icons.dashboard_rounded;
     }
   }
 
-  void _openCurrentScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => _targetScreen),
-    );
-  }
-
-  void _openSpecificScreen(int index) {
-    Widget screen;
-
-    switch (index) {
-      case 0:
-        screen = const CoachManagementScreen();
-        break;
-      case 1:
-        screen = const CoachAssignedStudentsScreen();
-        break;
-      case 2:
-        screen = const CoachSalaryScreen();
-        break;
-      default:
-        screen = const CoachManagementScreen();
-    }
-
+  void _openScreen(Widget screen) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => screen),
     );
+  }
+
+  List<_InfoItem> _itemsForCurrentTab() {
+    if (_currentIndex == 0) {
+      return [
+        _InfoItem(
+          icon: Icons.person_add_alt_1_rounded,
+          title: "Add / Manage Coaches",
+          subtitle: "Add new coach, edit, delete and manage coach records",
+          color: Colors.purpleAccent,
+          screen: const CoachManagementScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.badge_rounded,
+          title: "Coach Details",
+          subtitle: "View full profile details of each coach",
+          color: Colors.blueAccent,
+          screen: const CoachDetailsListScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.verified_rounded,
+          title: "Coach Status",
+          subtitle: "Manage active, inactive and pending coach status",
+          color: Colors.orange,
+          screen: const CoachStatusScreen(),
+        ),
+      ];
+    }
+
+    if (_currentIndex == 1) {
+      return [
+        _InfoItem(
+          icon: Icons.groups_rounded,
+          title: "View Students by Batch",
+          subtitle: "See assigned students batch wise",
+          color: Colors.blueAccent,
+          screen: const CoachAssignedStudentsScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.fact_check_rounded,
+          title: "Student Attendance",
+          subtitle: "View attendance summary of assigned students",
+          color: Colors.green,
+          screen: const CoachStudentAttendanceScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.analytics_rounded,
+          title: "Student Performance",
+          subtitle: "Check batting, bowling, fielding and fitness progress",
+          color: Colors.orange,
+          screen: const CoachStudentPerformanceScreen(),
+        ),
+      ];
+    }
+
+    return [
+      _InfoItem(
+        icon: Icons.currency_rupee_rounded,
+        title: "Salary Records",
+        subtitle: "Add salary and view monthly salary records",
+        color: Colors.green,
+        screen: const CoachSalaryScreen(),
+      ),
+      _InfoItem(
+        icon: Icons.payment_rounded,
+        title: "Payment Status",
+        subtitle: "View and update paid or pending salary status",
+        color: Colors.orange,
+        screen: const CoachPaymentStatusScreen(),
+      ),
+      _InfoItem(
+        icon: Icons.receipt_long_rounded,
+        title: "Salary Reports",
+        subtitle: "View salary summary, analytics and report details",
+        color: Colors.blueAccent,
+        screen: const CoachSalaryReportsScreen(),
+      ),
+    ];
   }
 
   @override
@@ -117,54 +182,129 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
 
         return Scaffold(
           backgroundColor: _bg(isDark),
-          appBar: const YgcaAppBar(title: "Coach Module"),
           body: SafeArea(
             bottom: false,
-            child: Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-                    child: Column(
-                      children: [
-                        _smallHeader(isDark),
-                        const SizedBox(height: 16),
-                        _segmentedTabs(isDark),
-                        const SizedBox(height: 16),
-                        _sectionTitle(
-                          title: _title.toUpperCase(),
-                          isDark: isDark,
-                        ),
-                        const SizedBox(height: 6),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            _subtitle,
-                            style: TextStyle(
-                              color: _secondaryText(isDark),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _contentList(isDark),
-                        const SizedBox(height: 12),
-                        _summaryRow(isDark),
-                      ],
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _pageHeader(context, isDark),
+                  const SizedBox(height: 16),
+                  _moduleHeader(isDark),
+                  const SizedBox(height: 18),
+                  _sectionTitle(
+                    title: _title.toUpperCase(),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _subtitle,
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  _contentList(isDark),
+                  const SizedBox(height: 12),
+                  _summaryRow(isDark),
+                  const SizedBox(height: 90),
+                ],
+              ),
             ),
+          ),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: _bottomNavigation(isDark),
           ),
         );
       },
     );
   }
 
-  Widget _smallHeader(bool isDark) {
+  Widget _pageHeader(BuildContext context, bool isDark) {
+    return Row(
+      children: [
+        _circleButton(
+          isDark: isDark,
+          icon: Icons.arrow_back_rounded,
+          onTap: () => Navigator.pop(context),
+        ),
+        const SizedBox(width: 12),
+        Image.asset(
+          'assets/images/ygca_logo.jpg',
+          width: 42,
+          height: 42,
+          fit: BoxFit.contain,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            "COACH MODULE",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        ValueListenableBuilder<ThemeMode>(
+          valueListenable: ThemeController.themeMode,
+          builder: (context, mode, _) {
+            final dark = mode == ThemeMode.dark;
+
+            return _circleButton(
+              isDark: isDark,
+              icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              onTap: ThemeController.toggleTheme,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF111111) : Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.07),
+              blurRadius: 11,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
+      ),
+    );
+  }
+
+  Widget _moduleHeader(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
@@ -179,18 +319,19 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
               : [
                   Colors.white,
                   const Color(0xFFFFF7F7),
-                  red.withOpacity(0.06),
+                  gold.withOpacity(0.20),
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
-          color: isDark ? red.withOpacity(0.30) : red.withOpacity(0.20),
+          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.75),
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? red.withOpacity(0.10) : Colors.black.withOpacity(0.05),
+            color:
+                isDark ? red.withOpacity(0.10) : Colors.black.withOpacity(0.05),
             blurRadius: 16,
             offset: const Offset(0, 7),
           ),
@@ -199,26 +340,24 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
       child: Stack(
         children: [
           Positioned(
-            right: -18,
+            right: -22,
             bottom: -30,
             child: Icon(
-              Icons.sports_cricket_rounded,
-              color: isDark
-                  ? red.withOpacity(0.12)
-                  : red.withOpacity(0.08),
-              size: 115,
+              _headerIcon,
+              color: isDark ? red.withOpacity(0.13) : maroon.withOpacity(0.07),
+              size: 118,
             ),
           ),
-          Column(
+          Row(
             children: [
               Container(
-                width: 54,
-                height: 54,
+                width: 58,
+                height: 58,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isDark
-                      ? Colors.black.withOpacity(0.28)
-                      : Colors.white.withOpacity(0.70),
+                      ? Colors.black.withOpacity(0.30)
+                      : Colors.white.withOpacity(0.75),
                   border: Border.all(
                     color: gold.withOpacity(0.85),
                   ),
@@ -229,145 +368,45 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.emoji_events_rounded,
+                child: Icon(
+                  _headerIcon,
                   color: gold,
-                  size: 28,
+                  size: 30,
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                "Coach Module",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "Manage coaches, students and salary\nrecords in one place.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _secondaryText(isDark),
-                  fontSize: 12,
-                  height: 1.35,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _segmentedTabs(bool isDark) {
-    final items = [
-      _ModuleTabItem(
-        icon: Icons.groups_rounded,
-        label: "Coach",
-      ),
-      _ModuleTabItem(
-        icon: Icons.school_rounded,
-        label: "Students",
-      ),
-      _ModuleTabItem(
-        icon: Icons.account_balance_wallet_rounded,
-        label: "Salary",
-      ),
-    ];
-
-    return Container(
-      height: 74,
-      padding: const EdgeInsets.all(7),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF101010) : Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? red.withOpacity(0.10) : Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Row(
-        children: List.generate(items.length, (index) {
-          final selected = index == _currentIndex;
-          final item = items[index];
-
-          return Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: selected
-                      ? LinearGradient(
-                          colors: [
-                            red.withOpacity(isDark ? 0.90 : 0.92),
-                            maroon.withOpacity(isDark ? 0.95 : 0.90),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: selected ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(23),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color: red.withOpacity(isDark ? 0.22 : 0.15),
-                            blurRadius: 12,
-                            offset: const Offset(0, 5),
-                          ),
-                        ]
-                      : [],
-                ),
+              const SizedBox(width: 14),
+              Expanded(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      item.icon,
-                      color: selected
-                          ? Colors.white
-                          : isDark
-                              ? Colors.white60
-                              : const Color(0xFF6B7280),
-                      size: selected ? 25 : 23,
-                    ),
-                    const SizedBox(height: 4),
                     Text(
-                      item.label,
+                      _title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: selected
-                            ? Colors.white
-                            : isDark
-                                ? Colors.white60
-                                : const Color(0xFF6B7280),
-                        fontSize: 11,
-                        fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                        color: _primaryText(isDark),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 12,
+                        height: 1.35,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          );
-        }),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -379,7 +418,7 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
     return Row(
       children: [
         SizedBox(
-          width: 205,
+          width: 220,
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -400,7 +439,7 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
         Expanded(
           child: Container(
             height: 1,
-            color: red.withOpacity(isDark ? 0.58 : 0.55),
+            color: isDark ? red.withOpacity(0.50) : gold.withOpacity(0.85),
           ),
         ),
       ],
@@ -408,77 +447,7 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
   }
 
   Widget _contentList(bool isDark) {
-    final items = _currentIndex == 0
-        ? [
-            _InfoItem(
-              icon: Icons.person_add_alt_1_rounded,
-              title: "Add / Manage Coaches",
-              subtitle: "Add new coaches and manage their profiles",
-              color: Colors.purpleAccent,
-              targetIndex: 0,
-            ),
-            _InfoItem(
-              icon: Icons.badge_rounded,
-              title: "Coach Details",
-              subtitle: "View and update coach information",
-              color: Colors.blueAccent,
-              targetIndex: 0,
-            ),
-            _InfoItem(
-              icon: Icons.verified_rounded,
-              title: "Coach Status",
-              subtitle: "Active, inactive and leave details",
-              color: Colors.orange,
-              targetIndex: 0,
-            ),
-          ]
-        : _currentIndex == 1
-            ? [
-                _InfoItem(
-                  icon: Icons.groups_rounded,
-                  title: "View Students by Batch",
-                  subtitle: "See students batch wise",
-                  color: Colors.blueAccent,
-                  targetIndex: 1,
-                ),
-                _InfoItem(
-                  icon: Icons.fact_check_rounded,
-                  title: "Student Attendance",
-                  subtitle: "View attendance summary",
-                  color: Colors.green,
-                  targetIndex: 1,
-                ),
-                _InfoItem(
-                  icon: Icons.analytics_rounded,
-                  title: "Student Performance",
-                  subtitle: "Check student performance",
-                  color: Colors.orange,
-                  targetIndex: 1,
-                ),
-              ]
-            : [
-                _InfoItem(
-                  icon: Icons.currency_rupee_rounded,
-                  title: "Salary Records",
-                  subtitle: "Monthly salary details",
-                  color: Colors.green,
-                  targetIndex: 2,
-                ),
-                _InfoItem(
-                  icon: Icons.payment_rounded,
-                  title: "Payment Status",
-                  subtitle: "Paid and pending payments",
-                  color: Colors.orange,
-                  targetIndex: 2,
-                ),
-                _InfoItem(
-                  icon: Icons.receipt_long_rounded,
-                  title: "Salary Reports",
-                  subtitle: "View salary history and reports",
-                  color: Colors.blueAccent,
-                  targetIndex: 2,
-                ),
-              ];
+    final items = _itemsForCurrentTab();
 
     return Column(
       children: List.generate(items.length, (index) {
@@ -490,7 +459,7 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: () => _openSpecificScreen(item.targetIndex),
+              onTap: () => _openScreen(item.screen),
               child: Ink(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -582,6 +551,105 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
   }
 
   Widget _summaryRow(bool isDark) {
+    if (_currentIndex == 0) {
+      return _summaryContainer(
+        isDark: isDark,
+        items: [
+          _MiniStatData(
+            icon: Icons.groups_rounded,
+            label: "Coaches",
+            value: "12",
+            color: Colors.purpleAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.verified_rounded,
+            label: "Active",
+            value: "10",
+            color: Colors.green,
+          ),
+          _MiniStatData(
+            icon: Icons.pending_actions_rounded,
+            label: "Pending",
+            value: "2",
+            color: Colors.orange,
+          ),
+          _MiniStatData(
+            icon: Icons.cancel_rounded,
+            label: "Inactive",
+            value: "0",
+            color: Colors.redAccent,
+          ),
+        ],
+      );
+    }
+
+    if (_currentIndex == 1) {
+      return _summaryContainer(
+        isDark: isDark,
+        items: [
+          _MiniStatData(
+            icon: Icons.school_rounded,
+            label: "Students",
+            value: "45",
+            color: Colors.blueAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.check_circle_rounded,
+            label: "Present",
+            value: "38",
+            color: Colors.green,
+          ),
+          _MiniStatData(
+            icon: Icons.cancel_rounded,
+            label: "Absent",
+            value: "5",
+            color: Colors.redAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.analytics_rounded,
+            label: "Avg",
+            value: "86%",
+            color: Colors.orange,
+          ),
+        ],
+      );
+    }
+
+    return _summaryContainer(
+      isDark: isDark,
+      items: [
+        _MiniStatData(
+          icon: Icons.currency_rupee_rounded,
+          label: "Records",
+          value: "12",
+          color: Colors.green,
+        ),
+        _MiniStatData(
+          icon: Icons.payment_rounded,
+          label: "Paid",
+          value: "10",
+          color: Colors.blueAccent,
+        ),
+        _MiniStatData(
+          icon: Icons.pending_rounded,
+          label: "Pending",
+          value: "2",
+          color: Colors.orange,
+        ),
+        _MiniStatData(
+          icon: Icons.receipt_long_rounded,
+          label: "Reports",
+          value: "All",
+          color: Colors.purpleAccent,
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryContainer({
+    required bool isDark,
+    required List<_MiniStatData> items,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -592,44 +660,17 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
         ),
       ),
       child: Row(
-        children: [
-          Expanded(
+        children: items.map((item) {
+          return Expanded(
             child: _miniStat(
               isDark: isDark,
-              icon: Icons.groups_rounded,
-              label: "Coaches",
-              value: "12",
-              color: Colors.purpleAccent,
+              icon: item.icon,
+              label: item.label,
+              value: item.value,
+              color: item.color,
             ),
-          ),
-          Expanded(
-            child: _miniStat(
-              isDark: isDark,
-              icon: Icons.verified_rounded,
-              label: "Active",
-              value: "10",
-              color: Colors.green,
-            ),
-          ),
-          Expanded(
-            child: _miniStat(
-              isDark: isDark,
-              icon: Icons.event_busy_rounded,
-              label: "Leave",
-              value: "2",
-              color: Colors.orange,
-            ),
-          ),
-          Expanded(
-            child: _miniStat(
-              isDark: isDark,
-              icon: Icons.cancel_rounded,
-              label: "Inactive",
-              value: "0",
-              color: Colors.redAccent,
-            ),
-          ),
-        ],
+          );
+        }).toList(),
       ),
     );
   }
@@ -671,6 +712,118 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
       ],
     );
   }
+
+  Widget _bottomNavigation(bool isDark) {
+    final items = [
+      _BottomNavItem(
+        icon: Icons.groups_rounded,
+        label: "Coach",
+      ),
+      _BottomNavItem(
+        icon: Icons.school_rounded,
+        label: "Students",
+      ),
+      _BottomNavItem(
+        icon: Icons.account_balance_wallet_rounded,
+        label: "Salary",
+      ),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.all(7),
+      height: 76,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF101010) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                isDark ? red.withOpacity(0.12) : Colors.black.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Row(
+        children: List.generate(items.length, (index) {
+          final selected = index == _currentIndex;
+          final item = items[index];
+
+          return Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(23),
+              onTap: () {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: selected
+                      ? LinearGradient(
+                          colors: [
+                            red.withOpacity(isDark ? 0.90 : 0.92),
+                            maroon.withOpacity(isDark ? 0.95 : 0.90),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: selected ? null : Colors.transparent,
+                  borderRadius: BorderRadius.circular(23),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: red.withOpacity(isDark ? 0.23 : 0.15),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: selected
+                          ? Colors.white
+                          : isDark
+                              ? Colors.white60
+                              : const Color(0xFF6B7280),
+                      size: selected ? 25 : 23,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected
+                            ? Colors.white
+                            : isDark
+                                ? Colors.white60
+                                : const Color(0xFF6B7280),
+                        fontSize: 11,
+                        fontWeight:
+                            selected ? FontWeight.w900 : FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
 }
 
 class _InfoItem {
@@ -678,23 +831,37 @@ class _InfoItem {
   final String title;
   final String subtitle;
   final Color color;
-  final int targetIndex;
+  final Widget screen;
 
   _InfoItem({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.color,
-    required this.targetIndex,
+    required this.screen,
   });
 }
 
-class _ModuleTabItem {
+class _BottomNavItem {
   final IconData icon;
   final String label;
 
-  _ModuleTabItem({
+  _BottomNavItem({
     required this.icon,
     required this.label,
+  });
+}
+
+class _MiniStatData {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  _MiniStatData({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
   });
 }
