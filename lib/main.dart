@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
           // Directly opening Admin Dashboard for UI testing.
           // After Admin Dashboard is fixed, change this back to:
           // home: const InitialSplashScreen(),
-          home: const AdminDashboard(),
+          home: const InitialSplashScreen(),
 
           routes: {
             '/login': (context) => const LoginScreen(),

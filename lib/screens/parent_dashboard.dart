@@ -4,101 +4,99 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 
-import 'notification_screen.dart';
-import 'leave_request_screen.dart';
-import 'parent_attendance_module_screen.dart';
-import 'parent_fee_module_screen.dart';
-import 'parent_schedule_module_screen.dart';
-import 'parent_performance_module_screen.dart';
-import 'edit_profile_screen.dart';
 import 'widgets/ygca_drawer.dart';
+import 'widgets/ygca_bottom_nav.dart';
 
-class ParentDashboard extends StatelessWidget {
+import 'notification_screen.dart';
+
+class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key});
+
+  @override
+  State<ParentDashboard> createState() => _ParentDashboardState();
+}
+
+class _ParentDashboardState extends State<ParentDashboard> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  Future<void> _logout(BuildContext context) async {
+  static const String logoAsset = 'assets/images/ygca_logo.jpg';
+
+  Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
 
-    if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/login',
+        (route) => false,
+      );
     }
   }
 
-  void _open(BuildContext context, Widget screen) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  void _open(Widget screen) {
+    _scaffoldKey.currentState?.closeDrawer();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
   }
 
-  String _safeText(Map<String, dynamic> data, String key, String fallback) {
-    final value = data[key];
+  void _openRoute(String routeName) {
+    _scaffoldKey.currentState?.closeDrawer();
+    Navigator.pushNamed(context, routeName);
+  }
 
-    if (value != null && value.toString().trim().isNotEmpty) {
-      return value.toString().trim();
+  String _safeText(
+    Map<String, dynamic> data,
+    List<String> keys,
+    String fallback,
+  ) {
+    for (final key in keys) {
+      final value = data[key];
+
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
     }
 
     return fallback;
   }
 
-  int _percentValue(String text) {
-    return int.tryParse(text.replaceAll('%', '').trim()) ?? 0;
+  String _childrenCount(Map<String, dynamic> data) {
+    final linkedChildren = data['linkedChildrenIds'];
+
+    if (linkedChildren is List) {
+      return linkedChildren.length.toString();
+    }
+
+    final childName = data['childName'];
+    if (childName != null && childName.toString().trim().isNotEmpty) {
+      return "1";
+    }
+
+    return "0";
   }
 
-  Future<Map<String, dynamic>?> _loadLinkedChild(
-    Map<String, dynamic> parentData,
-    String? authEmail,
-  ) async {
-    final linkedChildrenIds = parentData['linkedChildrenIds'];
-
-    if (linkedChildrenIds is List && linkedChildrenIds.isNotEmpty) {
-      final childId = linkedChildrenIds.first.toString().trim();
-
-      if (childId.isNotEmpty) {
-        final childDoc = await FirebaseFirestore.instance
-            .collection('students')
-            .doc(childId)
-            .get();
-
-        if (childDoc.exists && childDoc.data() != null) {
-          return {
-            'childId': childId,
-            ...childDoc.data()!,
-          };
-        }
-      }
+  String _childNameText(Map<String, dynamic> data) {
+    final childName = data['childName'];
+    if (childName != null && childName.toString().trim().isNotEmpty) {
+      return childName.toString().trim();
     }
 
-    final parentEmailFromDoc =
-        parentData['email']?.toString().trim().toLowerCase() ?? '';
-    final parentEmailFromAuth = authEmail?.trim().toLowerCase() ?? '';
-
-    final parentEmail = parentEmailFromDoc.isNotEmpty
-        ? parentEmailFromDoc
-        : parentEmailFromAuth;
-
-    if (parentEmail.isEmpty) {
-      return null;
+    final childrenNames = data['childrenNames'];
+    if (childrenNames is List && childrenNames.isNotEmpty) {
+      return childrenNames
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .join(', ');
     }
 
-    final childQuery = await FirebaseFirestore.instance
-        .collection('students')
-        .where('parentEmail', isEqualTo: parentEmail)
-        .limit(1)
-        .get();
-
-    if (childQuery.docs.isEmpty) {
-      return null;
-    }
-
-    final childDoc = childQuery.docs.first;
-
-    return {
-      'childId': childDoc.id,
-      ...childDoc.data(),
-    };
+    return "Child not linked";
   }
 
   Color _bg(bool isDark) {
@@ -107,10 +105,6 @@ class ParentDashboard extends StatelessWidget {
 
   Color _card(bool isDark) {
     return isDark ? const Color(0xFF111111) : Colors.white;
-  }
-
-  Color _border(bool isDark) {
-    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
   }
 
   Color _primaryText(bool isDark) {
@@ -127,7 +121,7 @@ class ParentDashboard extends StatelessWidget {
 
     if (currentUser == null) {
       return const Scaffold(
-        body: Center(child: Text('No user logged in')),
+        body: Center(child: Text("No user logged in")),
       );
     }
 
@@ -137,6 +131,7 @@ class ParentDashboard extends StatelessWidget {
         final isDark = mode == ThemeMode.dark;
 
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: _bg(isDark),
           drawer: YgcaDrawer(
             role: 'Parent',
@@ -144,450 +139,258 @@ class ParentDashboard extends StatelessWidget {
               YgcaNavItem(
                 icon: Icons.home_rounded,
                 label: 'Dashboard',
-                onTap: () {},
+                onTap: () => _scaffoldKey.currentState?.closeDrawer(),
               ),
               YgcaNavItem(
                 icon: Icons.fact_check_rounded,
-                label: 'Attendance Module',
-                onTap: () => _open(
-                  context,
-                  const ParentAttendanceModuleScreen(),
-                ),
+                label: 'Child Attendance',
+                onTap: () => _openRoute('/attendance'),
               ),
               YgcaNavItem(
-                icon: Icons.bar_chart_rounded,
-                label: 'Performance Module',
+                icon: Icons.analytics_rounded,
+                label: 'Performance',
                 onTap: () => _open(
-                  context,
-                  const ParentPerformanceModuleScreen(),
+                  const _ComingSoonScreen(title: "Child Performance"),
                 ),
               ),
               YgcaNavItem(
                 icon: Icons.payments_rounded,
-                label: 'Fee Module',
-                onTap: () => _open(
-                  context,
-                  const ParentFeeModuleScreen(),
-                ),
-              ),
-              YgcaNavItem(
-                icon: Icons.calendar_month_rounded,
-                label: 'Schedule Module',
-                onTap: () => _open(
-                  context,
-                  const ParentScheduleModuleScreen(),
-                ),
-              ),
-              YgcaNavItem(
-                icon: Icons.event_note_rounded,
-                label: 'Apply Leave',
-                onTap: () => _open(
-                  context,
-                  const LeaveRequestScreen(),
-                ),
-              ),
-              YgcaNavItem(
-                icon: Icons.person_rounded,
-                label: 'Edit Profile',
-                onTap: () => _open(
-                  context,
-                  const EditProfileScreen(),
-                ),
+                label: 'Fees',
+                onTap: () => _openRoute('/fees'),
               ),
               YgcaNavItem(
                 icon: Icons.notifications_rounded,
                 label: 'Notifications',
+                onTap: () => _open(const NotificationScreen()),
+              ),
+              YgcaNavItem(
+                icon: Icons.person_rounded,
+                label: 'Profile',
                 onTap: () => _open(
-                  context,
-                  const NotificationScreen(),
+                  const _ComingSoonScreen(title: "Parent Profile"),
                 ),
               ),
             ],
-            onLogout: () => _logout(context),
+            onLogout: _logout,
           ),
           body: SafeArea(
+            bottom: false,
             child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance
                   .collection('users')
                   .doc(currentUser.uid)
                   .snapshots(),
-              builder: (context, parentSnapshot) {
-                if (parentSnapshot.hasError) {
-                  return _messageBody(
-                    context: context,
-                    isDark: isDark,
-                    message: 'Error: ${parentSnapshot.error}',
-                  );
-                }
-
-                if (parentSnapshot.connectionState == ConnectionState.waiting) {
-                  return _loadingBody(context, isDark);
-                }
-
-                if (!parentSnapshot.hasData || !parentSnapshot.data!.exists) {
-                  return _messageBody(
-                    context: context,
-                    isDark: isDark,
-                    message: 'Parent details not found',
-                  );
-                }
-
-                final parentData = parentSnapshot.data!.data() ?? {};
-                final parentName = _safeText(parentData, 'name', 'Parent');
-                final parentEmail =
-                    _safeText(parentData, 'email', currentUser.email ?? '');
-
-                return FutureBuilder<Map<String, dynamic>?>(
-                  future: _loadLinkedChild(parentData, currentUser.email),
-                  builder: (context, childSnapshot) {
-                    if (childSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return _loadingBody(context, isDark);
-                    }
-
-                    if (childSnapshot.hasError) {
-                      return _messageBody(
-                        context: context,
-                        isDark: isDark,
-                        message: 'Child loading error: ${childSnapshot.error}',
-                      );
-                    }
-
-                    final childData = childSnapshot.data;
-
-                    final childName = childData == null
-                        ? 'Child not assigned'
-                        : _safeText(childData, 'name', 'Child not assigned');
-
-                    final childBatch = childData == null
-                        ? 'Batch not assigned'
-                        : _safeText(childData, 'batch', 'Batch not assigned');
-
-                    final rollNo = childData == null
-                        ? 'Not assigned'
-                        : _safeText(childData, 'rollNo', 'Not assigned');
-
-                    final attendance = childData == null
-                        ? '0%'
-                        : _safeText(childData, 'attendance', '0%');
-
-                    final feeStatus = childData == null
-                        ? 'Pending'
-                        : _safeText(childData, 'feeStatus', 'Pending');
-
-                    final attendanceNumber = _percentValue(attendance);
-
-                    return SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          _topBar(context, isDark, parentName),
-                          _childHero(
-                            isDark: isDark,
-                            childName: childName,
-                            parentName: parentName,
-                            parentEmail: parentEmail,
-                            childBatch: childBatch,
-                            rollNo: rollNo,
-                            attendance: attendance,
-                            feeStatus: feeStatus,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Column(
+                    children: [
+                      _topBar(isDark),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            "Something went wrong",
+                            style: TextStyle(color: _primaryText(isDark)),
                           ),
-                          const SizedBox(height: 18),
-                          _sectionTitle('PARENT OVERVIEW', isDark),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: GridView.count(
-                              crossAxisCount: 2,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 1.05,
-                              children: [
-                                _statCard(
-                                  isDark: isDark,
-                                  icon: Icons.verified_rounded,
-                                  title: 'ATTENDANCE',
-                                  value: '$attendanceNumber%',
-                                  subtitle: attendanceNumber >= 75
-                                      ? 'Good Progress'
-                                      : 'Needs Focus',
-                                  color: Colors.green,
-                                ),
-                                _statCard(
-                                  isDark: isDark,
-                                  icon: Icons.currency_rupee_rounded,
-                                  title: 'FEE STATUS',
-                                  value: feeStatus,
-                                  subtitle:
-                                      feeStatus == 'Paid' ? 'No Due' : 'Check Fees',
-                                  color: Colors.orange,
-                                ),
-                                _statCard(
-                                  isDark: isDark,
-                                  icon: Icons.groups_rounded,
-                                  title: 'BATCH',
-                                  value: childBatch,
-                                  subtitle: 'Assigned Batch',
-                                  color: Colors.blueAccent,
-                                ),
-                                _statCard(
-                                  isDark: isDark,
-                                  icon: Icons.tag_rounded,
-                                  title: 'ROLL NO.',
-                                  value: rollNo,
-                                  subtitle: 'Student ID',
-                                  color: Colors.purpleAccent,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          _sectionTitle('QUICK ACTIONS', isDark),
-                          SizedBox(
-                            height: 116,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              children: [
-                                _quickAction(
-                                  context,
-                                  isDark,
-                                  Icons.fact_check_rounded,
-                                  'Child\nAttendance',
-                                  Colors.orange,
-                                  () => _open(
-                                    context,
-                                    const ParentAttendanceModuleScreen(),
-                                  ),
-                                ),
-                                _quickAction(
-                                  context,
-                                  isDark,
-                                  Icons.bar_chart_rounded,
-                                  'Child\nPerformance',
-                                  Colors.green,
-                                  () => _open(
-                                    context,
-                                    const ParentPerformanceModuleScreen(),
-                                  ),
-                                ),
-                                _quickAction(
-                                  context,
-                                  isDark,
-                                  Icons.payments_rounded,
-                                  'Fee\nStatus',
-                                  Colors.blue,
-                                  () => _open(
-                                    context,
-                                    const ParentFeeModuleScreen(),
-                                  ),
-                                ),
-                                _quickAction(
-                                  context,
-                                  isDark,
-                                  Icons.calendar_month_rounded,
-                                  'Training\nSchedule',
-                                  Colors.teal,
-                                  () => _open(
-                                    context,
-                                    const ParentScheduleModuleScreen(),
-                                  ),
-                                ),
-                                _quickAction(
-                                  context,
-                                  isDark,
-                                  Icons.notifications_active_rounded,
-                                  'Academy\nNotice',
-                                  Colors.redAccent,
-                                  () => _open(
-                                    context,
-                                    const NotificationScreen(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 22),
-                          _sectionTitle('MODULE ACCESS', isDark),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: GridView.count(
-                              crossAxisCount: 2,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 1.38,
-                              children: [
-                                _moduleCard(
-                                  context,
-                                  isDark,
-                                  Icons.fact_check_rounded,
-                                  'Attendance',
-                                  'View child attendance',
-                                  Colors.orange,
-                                  () => _open(
-                                    context,
-                                    const ParentAttendanceModuleScreen(),
-                                  ),
-                                ),
-                                _moduleCard(
-                                  context,
-                                  isDark,
-                                  Icons.bar_chart_rounded,
-                                  'Performance',
-                                  'Progress reports',
-                                  Colors.green,
-                                  () => _open(
-                                    context,
-                                    const ParentPerformanceModuleScreen(),
-                                  ),
-                                ),
-                                _moduleCard(
-                                  context,
-                                  isDark,
-                                  Icons.payments_rounded,
-                                  'Fee Module',
-                                  'Payment and status',
-                                  Colors.blue,
-                                  () => _open(
-                                    context,
-                                    const ParentFeeModuleScreen(),
-                                  ),
-                                ),
-                                _moduleCard(
-                                  context,
-                                  isDark,
-                                  Icons.calendar_month_rounded,
-                                  'Schedule',
-                                  'Training sessions',
-                                  Colors.teal,
-                                  () => _open(
-                                    context,
-                                    const ParentScheduleModuleScreen(),
-                                  ),
-                                ),
-                                _moduleCard(
-                                  context,
-                                  isDark,
-                                  Icons.event_note_rounded,
-                                  'Apply Leave',
-                                  'Request child leave',
-                                  Colors.brown,
-                                  () => _open(
-                                    context,
-                                    const LeaveRequestScreen(),
-                                  ),
-                                ),
-                                _moduleCard(
-                                  context,
-                                  isDark,
-                                  Icons.person_rounded,
-                                  'Edit Profile',
-                                  'Update parent details',
-                                  Colors.indigo,
-                                  () => _open(
-                                    context,
-                                    const EditProfileScreen(),
-                                  ),
-                                ),
-                                _moduleCard(
-                                  context,
-                                  isDark,
-                                  Icons.notifications_active_rounded,
-                                  'Notifications',
-                                  'Academy updates',
-                                  Colors.redAccent,
-                                  () => _open(
-                                    context,
-                                    const NotificationScreen(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 22),
-                          _childProgressCard(
-                            isDark: isDark,
-                            attendanceNumber: attendanceNumber,
-                            attendance: attendance,
-                            feeStatus: feeStatus,
-                          ),
-                          const SizedBox(height: 18),
-                          _activityCard(isDark),
-                          const SizedBox(height: 18),
-                          _footer(isDark),
-                          const SizedBox(height: 24),
-                        ],
+                        ),
                       ),
-                    );
-                  },
+                    ],
+                  );
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Column(
+                    children: [
+                      _topBar(isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  );
+                }
+
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return Column(
+                    children: [
+                      _topBar(isDark),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            "Parent details not found",
+                            style: TextStyle(color: _primaryText(isDark)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                final data = snapshot.data!.data() ?? {};
+
+                final name = _safeText(data, ['name', 'parentName'], 'Parent');
+                final email = _safeText(
+                  data,
+                  ['email'],
+                  currentUser.email ?? '',
+                );
+                final phone = _safeText(
+                  data,
+                  ['phone', 'phoneNumber', 'mobile'],
+                  'Phone not added',
+                );
+                final childName = _childNameText(data);
+                final childrenCount = _childrenCount(data);
+                final attendance = _safeText(
+                  data,
+                  ['attendancePercentage', 'childAttendance'],
+                  '0%',
+                );
+                final feeStatus = _safeText(
+                  data,
+                  ['feeStatus', 'childFeeStatus'],
+                  'Pending',
+                );
+                final status = _safeText(
+                  data,
+                  ['status'],
+                  'Active',
+                );
+
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Column(
+                    children: [
+                      _topBar(isDark),
+
+                      _parentHero(
+                        isDark: isDark,
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        childName: childName,
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      _sectionTitle(
+                        title: "PARENT OVERVIEW",
+                        isDark: isDark,
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 2.35,
+                          children: [
+                            _overviewCard(
+                              isDark: isDark,
+                              icon: Icons.child_care_rounded,
+                              title: "Children",
+                              value: childrenCount,
+                              subtitle: "Linked",
+                              color: Colors.blueAccent,
+                            ),
+                            _overviewCard(
+                              isDark: isDark,
+                              icon: Icons.fact_check_rounded,
+                              title: "Attendance",
+                              value: attendance,
+                              subtitle: "Child overall",
+                              color: Colors.green,
+                            ),
+                            _overviewCard(
+                              isDark: isDark,
+                              icon: Icons.payments_rounded,
+                              title: "Fee Status",
+                              value: feeStatus,
+                              subtitle: "Current",
+                              color: Colors.orange,
+                            ),
+                            _overviewCard(
+                              isDark: isDark,
+                              icon: Icons.verified_rounded,
+                              title: "Status",
+                              value: status,
+                              subtitle: "Parent account",
+                              color: Colors.purpleAccent,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      _sectionTitle(
+                        title: "QUICK ACTIONS",
+                        isDark: isDark,
+                      ),
+
+                      _quickActions(isDark),
+
+                      const SizedBox(height: 6),
+                    ],
+                  ),
                 );
               },
             ),
+          ),
+          bottomNavigationBar: YgcaBottomNav(
+            currentIndex: 0,
+            items: [
+              YgcaBottomNavItem(
+                icon: Icons.home_rounded,
+                label: 'Home',
+                onTap: () {},
+              ),
+              YgcaBottomNavItem(
+                icon: Icons.fact_check_rounded,
+                label: 'Attendance',
+                onTap: () => _openRoute('/attendance'),
+              ),
+              YgcaBottomNavItem(
+                icon: Icons.analytics_rounded,
+                label: 'Performance',
+                onTap: () => _open(
+                  const _ComingSoonScreen(title: "Child Performance"),
+                ),
+              ),
+              YgcaBottomNavItem(
+                icon: Icons.payments_rounded,
+                label: 'Fees',
+                onTap: () => _openRoute('/fees'),
+              ),
+              YgcaBottomNavItem(
+                icon: Icons.more_horiz_rounded,
+                label: 'More',
+                onTap: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _loadingBody(BuildContext context, bool isDark) {
-    return Column(
-      children: [
-        _topBar(context, isDark, 'Parent'),
-        const Expanded(
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ],
-    );
-  }
-
-  Widget _messageBody({
-    required BuildContext context,
-    required bool isDark,
-    required String message,
-  }) {
-    return Column(
-      children: [
-        _topBar(context, isDark, 'Parent'),
-        Expanded(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(22),
-              child: Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _topBar(BuildContext context, bool isDark, String parentName) {
+  Widget _topBar(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
       child: Row(
         children: [
-          Builder(
-            builder: (drawerContext) {
-              return _circleButton(
-                isDark: isDark,
-                icon: Icons.menu_rounded,
-                onTap: () => Scaffold.of(drawerContext).openDrawer(),
-              );
-            },
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.menu_rounded,
+            onTap: () => _scaffoldKey.currentState?.openDrawer(),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Image.asset(
-            'assets/images/ygca_logo.jpg',
+            logoAsset,
             width: 46,
             height: 46,
             fit: BoxFit.contain,
@@ -598,20 +401,25 @@ class ParentDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'YGCA',
+                  "YGCA",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 19,
+                    fontSize: 21,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                    letterSpacing: 1.2,
                   ),
                 ),
+                const SizedBox(height: 1),
                 Text(
-                  'Parent Control Center',
+                  "Parent Control Center",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -623,7 +431,7 @@ class ParentDashboard extends StatelessWidget {
               _circleButton(
                 isDark: isDark,
                 icon: Icons.notifications_none_rounded,
-                onTap: () => _open(context, const NotificationScreen()),
+                onTap: () => _open(const NotificationScreen()),
               ),
               Positioned(
                 right: 3,
@@ -639,24 +447,17 @@ class ParentDashboard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(width: 8),
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: ThemeController.themeMode,
-            builder: (context, mode, _) {
-              final dark = mode == ThemeMode.dark;
-
-              return _circleButton(
-                isDark: isDark,
-                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                onTap: ThemeController.toggleTheme,
-              );
-            },
+          const SizedBox(width: 7),
+          _circleButton(
+            isDark: isDark,
+            icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+            onTap: ThemeController.toggleTheme,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 7),
           _circleButton(
             isDark: isDark,
             icon: Icons.logout_rounded,
-            onTap: () => _logout(context),
+            onTap: _logout,
           ),
         ],
       ),
@@ -669,7 +470,7 @@ class ParentDashboard extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(40),
+      borderRadius: BorderRadius.circular(50),
       onTap: onTap,
       child: Container(
         width: 42,
@@ -677,13 +478,16 @@ class ParentDashboard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF111111) : Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: _border(isDark)),
+          border: Border.all(
+            color: red.withOpacity(isDark ? 0.34 : 0.18),
+          ),
           boxShadow: [
             BoxShadow(
-              color:
-                  isDark ? red.withOpacity(0.12) : Colors.black.withOpacity(0.08),
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.06),
               blurRadius: 12,
-              offset: const Offset(0, 4),
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -696,36 +500,29 @@ class ParentDashboard extends StatelessWidget {
     );
   }
 
-  Widget _childHero({
+  Widget _parentHero({
     required bool isDark,
+    required String name,
+    required String email,
+    required String phone,
     required String childName,
-    required String parentName,
-    required String parentEmail,
-    required String childBatch,
-    required String rollNo,
-    required String attendance,
-    required String feeStatus,
   }) {
-    final initials = childName
-        .split(' ')
-        .where((part) => part.isNotEmpty)
-        .map((part) => part[0])
-        .take(2)
-        .join()
-        .toUpperCase();
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : "P";
 
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      height: 248,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        color: isDark ? const Color(0xFF090909) : Colors.white,
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
+          color: red.withOpacity(isDark ? 0.60 : 0.75),
+          width: 1.15,
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? red.withOpacity(0.22) : maroon.withOpacity(0.18),
+            color: red.withOpacity(isDark ? 0.22 : 0.10),
             blurRadius: 22,
             offset: const Offset(0, 8),
           ),
@@ -734,25 +531,29 @@ class ParentDashboard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/home_hero_bg.png',
-              fit: BoxFit.cover,
+            child: Opacity(
+              opacity: isDark ? 0.76 : 0.16,
+              child: Image.asset(
+                'assets/images/home_hero_bg.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
+
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isDark
                       ? [
-                          Colors.black.withOpacity(0.90),
-                          darkMaroon.withOpacity(0.88),
-                          red.withOpacity(0.35),
+                          Colors.black.withOpacity(0.92),
+                          Colors.black.withOpacity(0.78),
+                          red.withOpacity(0.28),
                         ]
                       : [
-                          maroon.withOpacity(0.92),
-                          maroon.withOpacity(0.70),
-                          Colors.black.withOpacity(0.25),
+                          Colors.white.withOpacity(0.96),
+                          Colors.white.withOpacity(0.88),
+                          red.withOpacity(0.05),
                         ],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
@@ -760,115 +561,164 @@ class ParentDashboard extends StatelessWidget {
               ),
             ),
           ),
+
           Positioned(
-            right: -24,
-            bottom: -24,
-            child: Icon(
-              Icons.family_restroom_rounded,
-              color: Colors.white.withOpacity(0.08),
-              size: 150,
+            right: -6,
+            top: 18,
+            bottom: 0,
+            child: Opacity(
+              opacity: isDark ? 0.30 : 0.10,
+              child: Icon(
+                Icons.family_restroom_rounded,
+                size: 170,
+                color: red,
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 48,
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    initials.isNotEmpty ? initials : 'C',
-                    style: const TextStyle(
-                      color: maroon,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 230,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'CHILD PROGRESS',
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          Text(
-                            childName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: gold,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'PARENT VIEW',
-                              style: TextStyle(
-                                color: maroon,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Parent: $parentName',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            parentEmail,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _heroChip('Roll No: $rollNo'),
-                              _heroChip('Fee: $feeStatus'),
-                            ],
-                          ),
-                          const SizedBox(height: 7),
-                          _heroChip('Batch: $childBatch'),
-                        ],
+
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _HeroClosedBorderPainter(
+                color: isDark ? gold.withOpacity(0.85) : red.withOpacity(0.65),
+              ),
+            ),
+          ),
+
+          Positioned(
+            left: 24,
+            top: 58,
+            child: SizedBox(
+              width: 118,
+              height: 118,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 118,
+                    height: 118,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark
+                            ? gold.withOpacity(0.65)
+                            : red.withOpacity(0.35),
+                        width: 1.6,
                       ),
                     ),
+                  ),
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark
+                          ? Colors.black.withOpacity(0.35)
+                          : Colors.white.withOpacity(0.55),
+                      border: Border.all(
+                        color: isDark
+                            ? red.withOpacity(0.45)
+                            : red.withOpacity(0.20),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        initial,
+                        style: TextStyle(
+                          color: isDark ? gold : maroon,
+                          fontSize: 38,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          Positioned(
+            left: 154,
+            top: 38,
+            right: 18,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "GOOD MORNING,",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? gold : red,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 30,
+                    height: 0.98,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  "PARENT DASHBOARD",
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? gold : red,
+                    fontSize: 17,
+                    height: 1.0,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 58,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: isDark ? gold : red,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  phone,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  "Child: $childName",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -879,47 +729,37 @@ class ParentDashboard extends StatelessWidget {
     );
   }
 
-  Widget _heroChip(String text) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 220),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.75)),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: gold,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title, bool isDark) {
+  Widget _sectionTitle({
+    required String title,
+    required bool isDark,
+  }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          SizedBox(
+            width: 178,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: isDark ? gold : const Color(0xFF111827),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.9,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Container(
               height: 1,
-              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+              color: red.withOpacity(isDark ? 0.58 : 0.55),
             ),
           ),
         ],
@@ -927,7 +767,7 @@ class ParentDashboard extends StatelessWidget {
     );
   }
 
-  Widget _statCard({
+  Widget _overviewCard({
     required bool isDark,
     required IconData icon,
     required String title,
@@ -936,125 +776,178 @@ class ParentDashboard extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(11),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
               ? [
-                  const Color(0xFF151515),
-                  const Color(0xFF1A0808),
-                  color.withOpacity(0.16),
+                  const Color(0xFF121212),
+                  const Color(0xFF171717),
+                  color.withOpacity(0.14),
                 ]
               : [
                   Colors.white,
-                  const Color(0xFFFFFBF2),
-                  color.withOpacity(0.08),
+                  Colors.white,
+                  color.withOpacity(0.04),
                 ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
+          color: isDark ? red.withOpacity(0.32) : const Color(0xFFE5E7EB),
         ),
         boxShadow: [
           BoxShadow(
             color:
-                isDark ? color.withOpacity(0.12) : Colors.black.withOpacity(0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+                isDark ? color.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: SizedBox(
-          width: 135,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: color.withOpacity(0.18),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _secondaryText(isDark),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withOpacity(isDark ? 0.15 : 0.10),
+              border: Border.all(color: color.withOpacity(0.35)),
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
-        ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                width: 96,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 19,
+                        height: 1,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _quickAction(
-    BuildContext context,
-    bool isDark,
-    IconData icon,
-    String title,
-    Color color,
-    VoidCallback onTap,
-  ) {
+  Widget _quickActions(bool isDark) {
+    return SizedBox(
+      height: 92,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.fact_check_rounded,
+            title: "Child\nAttendance",
+            color: Colors.green,
+            onTap: () => _openRoute('/attendance'),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.analytics_rounded,
+            title: "Child\nPerformance",
+            color: Colors.blue,
+            onTap: () => _open(
+              const _ComingSoonScreen(title: "Child Performance"),
+            ),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.payments_rounded,
+            title: "Fee\nStatus",
+            color: Colors.orange,
+            onTap: () => _openRoute('/fees'),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.notifications_rounded,
+            title: "Academy\nUpdates",
+            color: Colors.redAccent,
+            onTap: () => _open(const NotificationScreen()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickActionCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
-      onTap: onTap,
       borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
       child: Container(
-        width: 105,
+        width: 92,
         margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
           color: _card(isDark),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _border(isDark)),
+          border: Border.all(
+            color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
+          ),
           boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
+            BoxShadow(
+              color:
+                  isDark ? red.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.16),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 10),
+            Icon(icon, color: color, size: 25),
+            const SizedBox(height: 7),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -1062,7 +955,8 @@ class ParentDashboard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: _primaryText(isDark),
-                fontSize: 11,
+                fontSize: 10.5,
+                height: 1.12,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1071,306 +965,145 @@ class ParentDashboard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _moduleCard(
-    BuildContext context,
-    bool isDark,
-    IconData icon,
-    String title,
-    String subtitle,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: _card(isDark),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isDark ? red.withOpacity(0.25) : _border(isDark),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  isDark ? Colors.black.withOpacity(0.30) : Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 45,
-              height: 45,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color.withOpacity(0.22),
-                    red.withOpacity(0.10),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: color.withOpacity(0.40)),
-              ),
-              child: Icon(icon, color: color, size: 23),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _primaryText(isDark),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      height: 1.15,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _secondaryText(isDark),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: isDark ? Colors.white38 : Colors.black38,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
+class _HeroClosedBorderPainter extends CustomPainter {
+  final Color color;
+
+  _HeroClosedBorderPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final outerPaint = Paint()
+      ..color = color.withOpacity(0.28)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    final accentPaint = Paint()
+      ..color = color
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke;
+
+    final dotPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final outer = RRect.fromRectAndRadius(
+      Rect.fromLTWH(10, 10, size.width - 20, size.height - 20),
+      const Radius.circular(26),
     );
+
+    final inner = RRect.fromRectAndRadius(
+      Rect.fromLTWH(18, 18, size.width - 36, size.height - 36),
+      const Radius.circular(22),
+    );
+
+    canvas.drawRRect(outer, outerPaint);
+    canvas.drawRRect(inner, outerPaint);
+
+    canvas.drawLine(const Offset(28, 28), const Offset(70, 28), accentPaint);
+    canvas.drawLine(const Offset(28, 28), const Offset(28, 70), accentPaint);
+    canvas.drawLine(const Offset(40, 40), const Offset(70, 40), accentPaint);
+    canvas.drawLine(const Offset(40, 40), const Offset(40, 70), accentPaint);
+
+    canvas.drawLine(
+      Offset(size.width - 28, 28),
+      Offset(size.width - 70, 28),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 28, 28),
+      Offset(size.width - 28, 70),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 40, 40),
+      Offset(size.width - 70, 40),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 40, 40),
+      Offset(size.width - 40, 70),
+      accentPaint,
+    );
+
+    canvas.drawLine(
+      Offset(28, size.height - 28),
+      Offset(70, size.height - 28),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(28, size.height - 28),
+      Offset(28, size.height - 70),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(40, size.height - 40),
+      Offset(70, size.height - 40),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(40, size.height - 40),
+      Offset(40, size.height - 70),
+      accentPaint,
+    );
+
+    canvas.drawLine(
+      Offset(size.width - 28, size.height - 28),
+      Offset(size.width - 70, size.height - 28),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 28, size.height - 28),
+      Offset(size.width - 28, size.height - 70),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 40, size.height - 40),
+      Offset(size.width - 70, size.height - 40),
+      accentPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width - 40, size.height - 40),
+      Offset(size.width - 40, size.height - 70),
+      accentPaint,
+    );
+
+    canvas.drawCircle(const Offset(88, 28), 3, dotPaint);
+    canvas.drawCircle(Offset(size.width - 88, 28), 3, dotPaint);
+    canvas.drawCircle(Offset(88, size.height - 28), 3, dotPaint);
+    canvas.drawCircle(Offset(size.width - 88, size.height - 28), 3, dotPaint);
   }
 
-  Widget _childProgressCard({
-    required bool isDark,
-    required int attendanceNumber,
-    required String attendance,
-    required String feeStatus,
-  }) {
-    final progress = (attendanceNumber.clamp(0, 100)) / 100;
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  const Color(0xFF180808),
-                  const Color(0xFF0F0F0F),
-                  red.withOpacity(0.18),
-                ]
-              : [
-                  Colors.white,
-                  const Color(0xFFFFFBF2),
-                  gold.withOpacity(0.18),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.7),
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: red.withOpacity(0.18),
-            child: Icon(
-              Icons.insights_rounded,
-              color: gold,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Child Progress Summary',
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Attendance $attendance • Fee $feeStatus',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor:
-                        isDark ? Colors.white12 : Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      attendanceNumber >= 75 ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            attendanceNumber >= 75 ? 'GOOD' : 'FOCUS',
-            style: TextStyle(
-              color: attendanceNumber >= 75 ? Colors.green : Colors.orange,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _ComingSoonScreen extends StatelessWidget {
+  final String title;
 
-  Widget _activityCard(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _card(isDark),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? gold.withOpacity(0.55) : gold.withOpacity(0.9),
-          width: 1.2,
-        ),
-      ),
-      child: Column(
-        children: [
-          _activityRow(
-            isDark,
-            Icons.check_circle_rounded,
-            'Attendance updated recently',
-            Colors.green,
-          ),
-          _activityRow(
-            isDark,
-            Icons.sports_cricket_rounded,
-            'Training schedule available',
-            Colors.blue,
-          ),
-          _activityRow(
-            isDark,
-            Icons.payments_rounded,
-            'Fee status is visible',
-            Colors.orange,
-          ),
-          _activityRow(
-            isDark,
-            Icons.notifications_rounded,
-            'New academy notifications',
-            Colors.redAccent,
-          ),
-        ],
-      ),
-    );
-  }
+  const _ComingSoonScreen({
+    required this.title,
+  });
 
-  Widget _activityRow(
-    bool isDark,
-    IconData icon,
-    String title,
-    Color color,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                color: _primaryText(isDark),
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: const Color(0xFF7F0000),
+        foregroundColor: Colors.white,
       ),
-    );
-  }
-
-  Widget _footer(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  maroon,
-                  darkMaroon,
-                  Colors.black,
-                ]
-              : [
-                  maroon,
-                  red.withOpacity(0.85),
-                  darkMaroon,
-                ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: gold.withOpacity(0.7), width: 1.2),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _footerItem(Icons.favorite_rounded, 'Passion'),
-          _footerItem(Icons.star_rounded, 'Discipline'),
-          _footerItem(Icons.emoji_events_rounded, 'Success'),
-        ],
-      ),
-    );
-  }
-
-  Widget _footerItem(IconData icon, String title) {
-    return Column(
-      children: [
-        Icon(icon, color: gold, size: 25),
-        const SizedBox(height: 6),
-        Text(
-          title,
+      body: Center(
+        child: Text(
+          "$title screen will be connected here.",
+          textAlign: TextAlign.center,
           style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
         ),
-      ],
+      ),
     );
   }
 }
