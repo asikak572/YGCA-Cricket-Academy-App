@@ -28,17 +28,21 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
   String role = '';
   String email = '';
 
-  String selectedType = "Academy Announcement";
+  String selectedType = "General Announcement";
   String selectedTarget = "All";
   String selectedBatch = "All";
 
   final List<String> messageTypes = [
-    "Academy Announcement",
-    "Match Schedule",
-    "Practice Cancelled",
-    "Tournament Update",
-    "Camp Registration",
-    "Custom Message",
+     "Holiday Announcement",
+  "Session Cancelled",
+  "Session Rescheduled",
+  "Match Schedule",
+  "Fee Reminder",
+  "Tournament Update",
+  "Camp Registration",
+  "General Announcement",
+  "Emergency Alert",
+  "Custom Message",
   ];
 
   final List<String> targetOptions = [

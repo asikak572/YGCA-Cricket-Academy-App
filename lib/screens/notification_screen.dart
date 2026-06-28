@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'communication_center_screen.dart';
 import '../theme/theme_controller.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -21,6 +22,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
   String uid = '';
   String email = '';
   bool isUserLoaded = false;
+
+  int selectedTabIndex = 0;
+
+  final List<String> tabs = [
+    "All",
+    "Holiday",
+    "Session",
+    "Fees",
+    "Updates",
+  ];
 
   List<String> linkedChildrenIds = [];
 
@@ -82,6 +93,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     final data = userDoc.data() ?? {};
     final loadedRole = _text(data['role']);
+
     final loadedEmail = _lower(
       _text(data['email']).isNotEmpty ? _text(data['email']) : email,
     );
@@ -176,11 +188,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     if (role == 'Parent') {
       if (targetRole == 'All') return true;
-
-      if (targetRole == 'Parent' &&
-          (type == 'General' || type == 'Announcement')) {
-        return true;
-      }
+      if (targetRole == 'Parent') return true;
+      if (type == 'Fee Reminder') return true;
 
       if (targetEmail.isNotEmpty && targetEmail == email) return true;
       if (parentEmail.isNotEmpty && parentEmail == email) return true;
@@ -193,6 +202,37 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
 
     return targetRole == 'All';
+  }
+
+  bool _matchesSelectedTab(Map<String, dynamic> data) {
+    final selectedTab = tabs[selectedTabIndex];
+    final type = _text(data['type']);
+
+    if (selectedTab == "All") return true;
+
+    if (selectedTab == "Holiday") {
+      return type == "Holiday Announcement";
+    }
+
+    if (selectedTab == "Session") {
+      return type == "Session Cancelled" ||
+          type == "Session Rescheduled" ||
+          type == "Match Schedule";
+    }
+
+    if (selectedTab == "Fees") {
+      return type == "Fee Reminder";
+    }
+
+    if (selectedTab == "Updates") {
+      return type == "Tournament Update" ||
+          type == "Camp Registration" ||
+          type == "General Announcement" ||
+          type == "Emergency Alert" ||
+          type == "Custom Message";
+    }
+
+    return true;
   }
 
   String _formatDate(dynamic timestamp) {
@@ -212,6 +252,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
     } catch (_) {
       return "No date";
     }
+  }
+
+  void _openCommunicationCenter() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CommunicationCenterScreen(),
+      ),
+    );
   }
 
   Future<void> _deleteNotification(BuildContext context, String docId) async {
@@ -270,197 +319,49 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Future<void> _addNotificationDialog(
-    BuildContext context,
-    bool isDark,
-  ) async {
-    final titleController = TextEditingController();
-    final messageController = TextEditingController();
-
-    String selectedTarget = "All";
-
-    await showDialog(
-      context: context,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: isDark ? const Color(0xFF111111) : Colors.white,
-              title: Text(
-                "Add Notification",
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    DropdownButtonFormField<String>(
-                      value: selectedTarget,
-                      dropdownColor:
-                          isDark ? const Color(0xFF111111) : Colors.white,
-                      style: TextStyle(
-                        color: _primaryText(isDark),
-                        fontWeight: FontWeight.w700,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: "Send To",
-                        labelStyle: TextStyle(color: _secondaryText(isDark)),
-                        border: const OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: _border(isDark)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: isDark ? red : maroon),
-                        ),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: "All", child: Text("All")),
-                        DropdownMenuItem(value: "Admin", child: Text("Admin")),
-                        DropdownMenuItem(value: "Coach", child: Text("Coach")),
-                        DropdownMenuItem(value: "Parent", child: Text("Parent")),
-                        DropdownMenuItem(
-                          value: "Student",
-                          child: Text("Student"),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setDialogState(() => selectedTarget = value);
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _field(
-                      isDark: isDark,
-                      label: "Title",
-                      controller: titleController,
-                    ),
-                    _field(
-                      isDark: isDark,
-                      label: "Message",
-                      controller: messageController,
-                      maxLines: 3,
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    "Cancel",
-                    style: TextStyle(color: isDark ? Colors.white70 : maroon),
-                  ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? red : maroon,
-                    foregroundColor: isDark ? Colors.white : gold,
-                  ),
-                  onPressed: () async {
-                    if (titleController.text.trim().isEmpty ||
-                        messageController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please fill title and message"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
-
-                    await FirebaseFirestore.instance
-                        .collection('notifications')
-                        .add({
-                      'title': titleController.text.trim(),
-                      'message': messageController.text.trim(),
-                      'targetRole': selectedTarget,
-                      'type': 'Announcement',
-                      'createdBy': uid,
-                      'createdAt': FieldValue.serverTimestamp(),
-                    });
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Notification added"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text("Save"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    titleController.dispose();
-    messageController.dispose();
-  }
-
-  Widget _field({
-    required bool isDark,
-    required String label,
-    required TextEditingController controller,
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        style: TextStyle(
-          color: _primaryText(isDark),
-          fontWeight: FontWeight.w700,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: _secondaryText(isDark)),
-          border: const OutlineInputBorder(),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: _border(isDark)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: isDark ? red : maroon),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Color _targetColor(String targetRole) {
-    switch (targetRole) {
-      case "Admin":
-        return Colors.redAccent;
-      case "Coach":
-        return Colors.blueAccent;
-      case "Parent":
-        return Colors.orange;
-      case "Student":
+  Color _typeColor(String type) {
+    switch (type) {
+      case "Holiday Announcement":
         return Colors.green;
-      default:
+      case "Session Cancelled":
+        return Colors.redAccent;
+      case "Session Rescheduled":
+        return Colors.orange;
+      case "Match Schedule":
+        return Colors.blueAccent;
+      case "Fee Reminder":
+        return Colors.deepOrange;
+      case "Emergency Alert":
+        return Colors.red;
+      case "Tournament Update":
         return Colors.purpleAccent;
+      case "Camp Registration":
+        return Colors.teal;
+      default:
+        return Colors.indigoAccent;
     }
   }
 
-  IconData _targetIcon(String targetRole) {
-    switch (targetRole) {
-      case "Admin":
-        return Icons.admin_panel_settings_rounded;
-      case "Coach":
+  IconData _typeIcon(String type) {
+    switch (type) {
+      case "Holiday Announcement":
+        return Icons.beach_access_rounded;
+      case "Session Cancelled":
+        return Icons.event_busy_rounded;
+      case "Session Rescheduled":
+        return Icons.update_rounded;
+      case "Match Schedule":
         return Icons.sports_cricket_rounded;
-      case "Parent":
-        return Icons.family_restroom_rounded;
-      case "Student":
-        return Icons.school_rounded;
+      case "Fee Reminder":
+        return Icons.payments_rounded;
+      case "Emergency Alert":
+        return Icons.warning_rounded;
+      case "Tournament Update":
+        return Icons.emoji_events_rounded;
+      case "Camp Registration":
+        return Icons.app_registration_rounded;
       default:
-        return Icons.groups_rounded;
+        return Icons.campaign_rounded;
     }
   }
 
@@ -494,18 +395,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
         return Scaffold(
           backgroundColor: _bg(isDark),
-          floatingActionButton: role == 'Admin'
-              ? FloatingActionButton.extended(
-                  backgroundColor: isDark ? red : maroon,
-                  foregroundColor: isDark ? Colors.white : gold,
-                  onPressed: () => _addNotificationDialog(context, isDark),
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text(
-                    "Add Notification",
-                    style: TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                )
-              : null,
           body: SafeArea(
             child: !isUserLoaded
                 ? Column(
@@ -555,32 +444,41 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                       final notifications = snapshot.data?.docs ?? [];
 
-                      final filteredNotifications = notifications.where((doc) {
+                      final roleFiltered = notifications.where((doc) {
                         return _canShowNotification(doc.data());
                       }).toList();
 
-                      final todayCount = _todayCount(filteredNotifications);
+                      final tabFiltered = roleFiltered.where((doc) {
+                        return _matchesSelectedTab(doc.data());
+                      }).toList();
+
+                      final todayCount = _todayCount(roleFiltered);
 
                       return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
                         child: Column(
                           children: [
                             _topHeader(context, isDark),
                             _heroBanner(
                               isDark: isDark,
-                              total: filteredNotifications.length,
+                              total: roleFiltered.length,
                               today: todayCount,
                             ),
                             const SizedBox(height: 14),
-                            _sectionTitle("NOTIFICATION LIST", isDark),
+
+                            if (role == 'Admin') _sendCommunicationButton(isDark),
+
+                            if (role == 'Admin') const SizedBox(height: 14),
+
+                            _tabs(isDark),
+                            const SizedBox(height: 14),
+                            _sectionTitle("RECEIVED NOTIFICATIONS", isDark),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: filteredNotifications.isEmpty
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: tabFiltered.isEmpty
                                   ? _emptyCard(isDark)
                                   : Column(
-                                      children:
-                                          filteredNotifications.map((doc) {
+                                      children: tabFiltered.map((doc) {
                                         final data = doc.data();
 
                                         final title =
@@ -598,6 +496,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                                 ? 'All'
                                                 : _text(data['targetRole']);
 
+                                        final type = _text(data['type']).isEmpty
+                                            ? 'General Announcement'
+                                            : _text(data['type']);
+
                                         final time =
                                             _formatDate(data['createdAt']);
 
@@ -606,6 +508,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                           title: title,
                                           message: message,
                                           targetRole: targetRole,
+                                          type: type,
                                           time: time,
                                           onDelete: () => _confirmDelete(
                                             context,
@@ -616,7 +519,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                       }).toList(),
                                     ),
                             ),
-                            const SizedBox(height: 90),
+                            const SizedBox(height: 30),
                           ],
                         ),
                       );
@@ -662,7 +565,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   ),
                 ),
                 Text(
-                  "Academy updates center",
+                  "Academy updates and alerts",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -859,6 +762,99 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
+  Widget _sendCommunicationButton(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: _openCommunicationCenter,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [
+                      red.withOpacity(0.95),
+                      maroon.withOpacity(0.95),
+                    ]
+                  : [
+                      maroon,
+                      red,
+                    ],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isDark ? gold.withOpacity(0.55) : gold.withOpacity(0.9),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? red.withOpacity(0.18)
+                    : maroon.withOpacity(0.16),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: gold.withOpacity(0.65),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.campaign_rounded,
+                  color: gold,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 13),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Send Communication",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      "Holiday, session cancel, fee reminder and alerts",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: gold,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _heroChip(String text) {
     return Container(
       constraints: const BoxConstraints(maxWidth: 150),
@@ -877,6 +873,54 @@ class _NotificationScreenState extends State<NotificationScreen> {
           fontSize: 11,
           fontWeight: FontWeight.w900,
         ),
+      ),
+    );
+  }
+
+  Widget _tabs(bool isDark) {
+    return SizedBox(
+      height: 42,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: tabs.length,
+        itemBuilder: (context, index) {
+          final selected = selectedTabIndex == index;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() => selectedTabIndex = index);
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 9),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              decoration: BoxDecoration(
+                color: selected
+                    ? (isDark ? red : maroon)
+                    : _card(isDark),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: selected
+                      ? (isDark ? red : maroon)
+                      : _border(isDark),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  tabs[index],
+                  style: TextStyle(
+                    color: selected
+                        ? (isDark ? Colors.white : gold)
+                        : _primaryText(isDark),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -908,6 +952,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Widget _emptyCard(bool isDark) {
+    final selectedTab = tabs[selectedTabIndex];
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -925,7 +971,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No notifications found",
+            selectedTab == "All"
+                ? "No notifications found"
+                : "No $selectedTab notifications",
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -933,7 +981,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "No updates available for your account",
+            "New academy updates will appear here.",
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
@@ -947,11 +995,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
     required String title,
     required String message,
     required String targetRole,
+    required String type,
     required String time,
     required VoidCallback onDelete,
   }) {
-    final color = _targetColor(targetRole);
-    final icon = _targetIcon(targetRole);
+    final color = _typeColor(type);
+    final icon = _typeIcon(type);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1010,7 +1059,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    _roleChip(targetRole, color),
+                    _chip(type, color),
+                    _chip(targetRole, Colors.blueAccent),
                     _timeChip(time, isDark),
                   ],
                 ),
@@ -1031,7 +1081,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Widget _roleChip(String role, Color color) {
+  Widget _chip(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -1040,7 +1090,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Text(
-        role,
+        text,
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w900,
