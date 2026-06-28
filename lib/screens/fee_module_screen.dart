@@ -7,6 +7,11 @@ import 'payment_history_screen.dart';
 import 'pending_fees_screen.dart';
 import 'fee_report_screen.dart';
 
+import 'payment_status_screen.dart';
+import 'fee_receipts_screen.dart';
+import 'monthly_fee_collection_screen.dart';
+import 'due_fee_analytics_screen.dart';
+
 class FeeModuleScreen extends StatefulWidget {
   const FeeModuleScreen({super.key});
 
@@ -59,7 +64,7 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
       case 0:
         return "Collect fees and track pending student dues";
       case 1:
-        return "View fee transactions and payment history";
+        return "View transactions, status and fee receipts";
       case 2:
         return "Analyze fee collection and pending fee reports";
       default:
@@ -116,6 +121,20 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
           color: Colors.blueAccent,
           screen: const PaymentHistoryScreen(),
         ),
+        _InfoItem(
+          icon: Icons.verified_rounded,
+          title: "Payment Status",
+          subtitle: "Track paid and pending payment status",
+          color: Colors.green,
+          screen: const PaymentStatusScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.description_rounded,
+          title: "Fee Receipts",
+          subtitle: "View student fee receipts",
+          color: Colors.purpleAccent,
+          screen: const FeeReceiptsScreen(),
+        ),
       ];
     }
 
@@ -126,6 +145,20 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
         subtitle: "Analyze fee collection status",
         color: Colors.purpleAccent,
         screen: const FeeReportScreen(),
+      ),
+      _InfoItem(
+        icon: Icons.calendar_month_rounded,
+        title: "Monthly Collection",
+        subtitle: "View monthly fee collection summary",
+        color: Colors.blueAccent,
+        screen: const MonthlyFeeCollectionScreen(),
+      ),
+      _InfoItem(
+        icon: Icons.warning_rounded,
+        title: "Due Fee Analytics",
+        subtitle: "Analyze student-wise pending fees",
+        color: Colors.orange,
+        screen: const DueFeeAnalyticsScreen(),
       ),
     ];
   }
@@ -551,22 +584,22 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
             color: Colors.blueAccent,
           ),
           _MiniStatData(
-            icon: Icons.payment_rounded,
-            label: "Payments",
-            value: "View",
-            color: Colors.green,
-          ),
-          _MiniStatData(
             icon: Icons.verified_rounded,
             label: "Status",
             value: "Track",
-            color: Colors.orange,
+            color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.description_rounded,
             label: "Receipt",
-            value: "Soon",
+            value: "View",
             color: Colors.purpleAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.payment_rounded,
+            label: "Payments",
+            value: "Live",
+            color: Colors.orange,
           ),
         ],
       );

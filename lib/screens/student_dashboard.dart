@@ -8,6 +8,9 @@ import 'widgets/ygca_drawer.dart';
 import 'widgets/ygca_bottom_nav.dart';
 
 import 'notification_screen.dart';
+import 'student_attendance_module_screen.dart';
+import 'student_performance_module_screen.dart';
+import 'student_schedule_module_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -50,6 +53,67 @@ class _StudentDashboardState extends State<StudentDashboard> {
     _scaffoldKey.currentState?.closeDrawer();
 
     Navigator.pushNamed(context, routeName);
+  }
+
+  Future<void> _openStudentAttendanceModule() async {
+    _scaffoldKey.currentState?.closeDrawer();
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return;
+    }
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+
+    if (!mounted) return;
+
+    if (!doc.exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Student details not found"),
+        ),
+      );
+      return;
+    }
+
+    final data = doc.data() ?? {};
+
+    final name = _safeText(data, ['name', 'studentName'], 'Student');
+
+    final batch = _safeText(
+      data,
+      ['batch', 'assignedBatch'],
+      'Batch not assigned',
+    );
+
+    final rollNo = _safeText(
+      data,
+      ['rollNo', 'rollNumber', 'studentId'],
+      'Not assigned',
+    );
+
+    final attendance = _safeText(
+      data,
+      ['attendancePercentage', 'attendance'],
+      '0%',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StudentAttendanceModuleScreen(
+          studentId: currentUser.uid,
+          name: name,
+          batch: batch,
+          rollNo: rollNo,
+          attendance: attendance,
+        ),
+      ),
+    );
   }
 
   String _safeText(
@@ -113,13 +177,20 @@ class _StudentDashboardState extends State<StudentDashboard> {
               YgcaNavItem(
                 icon: Icons.fact_check_rounded,
                 label: 'Attendance',
-                onTap: () => _openRoute('/attendance'),
+                onTap: _openStudentAttendanceModule,
               ),
               YgcaNavItem(
-                icon: Icons.bar_chart_rounded,
+                icon: Icons.analytics_rounded,
                 label: 'Performance',
                 onTap: () => _open(
-                  const _ComingSoonScreen(title: "Performance"),
+                  const StudentPerformanceModuleScreen(),
+                ),
+              ),
+              YgcaNavItem(
+                icon: Icons.calendar_month_rounded,
+                label: 'Schedule',
+                onTap: () => _open(
+                  const StudentScheduleModuleScreen(),
                 ),
               ),
               YgcaNavItem(
@@ -196,31 +267,37 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 final data = snapshot.data!.data() ?? {};
 
                 final name = _safeText(data, ['name', 'studentName'], 'Student');
+
                 final email = _safeText(
                   data,
                   ['email'],
                   currentUser.email ?? '',
                 );
+
                 final batch = _safeText(
                   data,
                   ['batch', 'assignedBatch'],
                   'Batch not assigned',
                 );
+
                 final rollNo = _safeText(
                   data,
                   ['rollNo', 'rollNumber', 'studentId'],
                   'Not assigned',
                 );
+
                 final approvalStatus = _safeText(
                   data,
                   ['approvalStatus', 'status'],
                   'Active',
                 );
+
                 final attendance = _safeText(
                   data,
                   ['attendancePercentage', 'attendance'],
                   '0%',
                 );
+
                 final feeStatus = _safeText(
                   data,
                   ['feeStatus'],
@@ -233,7 +310,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   child: Column(
                     children: [
                       _topBar(isDark),
-
                       _studentHero(
                         isDark: isDark,
                         name: name,
@@ -241,14 +317,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         batch: batch,
                         rollNo: rollNo,
                       ),
-
                       const SizedBox(height: 14),
-
                       _sectionTitle(
                         title: "STUDENT OVERVIEW",
                         isDark: isDark,
                       ),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: GridView.count(
@@ -294,16 +367,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       _sectionTitle(
                         title: "QUICK ACTIONS",
                         isDark: isDark,
                       ),
-
                       _quickActions(isDark),
-
                       const SizedBox(height: 6),
                     ],
                   ),
@@ -322,13 +391,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
               YgcaBottomNavItem(
                 icon: Icons.fact_check_rounded,
                 label: 'Attendance',
-                onTap: () => _openRoute('/attendance'),
+                onTap: _openStudentAttendanceModule,
               ),
               YgcaBottomNavItem(
                 icon: Icons.analytics_rounded,
                 label: 'Performance',
                 onTap: () => _open(
-                  const _ComingSoonScreen(title: "Performance"),
+                  const StudentPerformanceModuleScreen(),
                 ),
               ),
               YgcaBottomNavItem(
@@ -511,7 +580,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             ),
           ),
-
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -533,7 +601,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             ),
           ),
-
           Positioned(
             right: -6,
             top: 18,
@@ -547,7 +614,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             ),
           ),
-
           Positioned.fill(
             child: CustomPaint(
               painter: _HeroClosedBorderPainter(
@@ -555,7 +621,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             ),
           ),
-
           Positioned(
             left: 24,
             top: 58,
@@ -608,7 +673,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             ),
           ),
-
           Positioned(
             left: 154,
             top: 38,
@@ -856,7 +920,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             icon: Icons.fact_check_rounded,
             title: "My\nAttendance",
             color: Colors.green,
-            onTap: () => _openRoute('/attendance'),
+            onTap: _openStudentAttendanceModule,
           ),
           _quickActionCard(
             isDark: isDark,
@@ -864,7 +928,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
             title: "My\nPerformance",
             color: Colors.blue,
             onTap: () => _open(
-              const _ComingSoonScreen(title: "Performance"),
+              const StudentPerformanceModuleScreen(),
+            ),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.calendar_month_rounded,
+            title: "My\nSchedule",
+            color: Colors.purpleAccent,
+            onTap: () => _open(
+              const StudentScheduleModuleScreen(),
             ),
           ),
           _quickActionCard(

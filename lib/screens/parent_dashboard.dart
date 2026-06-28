@@ -8,6 +8,9 @@ import 'widgets/ygca_drawer.dart';
 import 'widgets/ygca_bottom_nav.dart';
 
 import 'notification_screen.dart';
+import 'student_performance_module_screen.dart';
+import 'student_schedule_module_screen.dart';
+import 'attendance_history_screen.dart';
 
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key});
@@ -144,13 +147,22 @@ class _ParentDashboardState extends State<ParentDashboard> {
               YgcaNavItem(
                 icon: Icons.fact_check_rounded,
                 label: 'Child Attendance',
-                onTap: () => _openRoute('/attendance'),
+                onTap: () => _open(
+  const AttendanceHistoryScreen(),
+),
               ),
               YgcaNavItem(
                 icon: Icons.analytics_rounded,
-                label: 'Performance',
+                label: 'Child Performance',
                 onTap: () => _open(
-                  const _ComingSoonScreen(title: "Child Performance"),
+                  const StudentPerformanceModuleScreen(),
+                ),
+              ),
+              YgcaNavItem(
+                icon: Icons.calendar_month_rounded,
+                label: 'Child Schedule',
+                onTap: () => _open(
+                  const StudentScheduleModuleScreen(),
                 ),
               ),
               YgcaNavItem(
@@ -227,28 +239,34 @@ class _ParentDashboardState extends State<ParentDashboard> {
                 final data = snapshot.data!.data() ?? {};
 
                 final name = _safeText(data, ['name', 'parentName'], 'Parent');
+
                 final email = _safeText(
                   data,
                   ['email'],
                   currentUser.email ?? '',
                 );
+
                 final phone = _safeText(
                   data,
                   ['phone', 'phoneNumber', 'mobile'],
                   'Phone not added',
                 );
+
                 final childName = _childNameText(data);
                 final childrenCount = _childrenCount(data);
+
                 final attendance = _safeText(
                   data,
                   ['attendancePercentage', 'childAttendance'],
                   '0%',
                 );
+
                 final feeStatus = _safeText(
                   data,
                   ['feeStatus', 'childFeeStatus'],
                   'Pending',
                 );
+
                 final status = _safeText(
                   data,
                   ['status'],
@@ -261,7 +279,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   child: Column(
                     children: [
                       _topBar(isDark),
-
                       _parentHero(
                         isDark: isDark,
                         name: name,
@@ -269,14 +286,11 @@ class _ParentDashboardState extends State<ParentDashboard> {
                         phone: phone,
                         childName: childName,
                       ),
-
                       const SizedBox(height: 14),
-
                       _sectionTitle(
                         title: "PARENT OVERVIEW",
                         isDark: isDark,
                       ),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: GridView.count(
@@ -322,16 +336,12 @@ class _ParentDashboardState extends State<ParentDashboard> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       _sectionTitle(
                         title: "QUICK ACTIONS",
                         isDark: isDark,
                       ),
-
                       _quickActions(isDark),
-
                       const SizedBox(height: 6),
                     ],
                   ),
@@ -356,7 +366,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                 icon: Icons.analytics_rounded,
                 label: 'Performance',
                 onTap: () => _open(
-                  const _ComingSoonScreen(title: "Child Performance"),
+                  const StudentPerformanceModuleScreen(),
                 ),
               ),
               YgcaBottomNavItem(
@@ -539,7 +549,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
               ),
             ),
           ),
-
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -561,7 +570,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
               ),
             ),
           ),
-
           Positioned(
             right: -6,
             top: 18,
@@ -575,7 +583,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
               ),
             ),
           ),
-
           Positioned.fill(
             child: CustomPaint(
               painter: _HeroClosedBorderPainter(
@@ -583,7 +590,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
               ),
             ),
           ),
-
           Positioned(
             left: 24,
             top: 58,
@@ -636,7 +642,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
               ),
             ),
           ),
-
           Positioned(
             left: 154,
             top: 38,
@@ -892,7 +897,16 @@ class _ParentDashboardState extends State<ParentDashboard> {
             title: "Child\nPerformance",
             color: Colors.blue,
             onTap: () => _open(
-              const _ComingSoonScreen(title: "Child Performance"),
+              const StudentPerformanceModuleScreen(),
+            ),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.calendar_month_rounded,
+            title: "Child\nSchedule",
+            color: Colors.purpleAccent,
+            onTap: () => _open(
+              const StudentScheduleModuleScreen(),
             ),
           ),
           _quickActionCard(

@@ -10,13 +10,19 @@ import 'screens/initial_splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/auth_checker.dart';
+
 import 'screens/admin_dashboard.dart';
 import 'screens/coach_dashboard.dart';
 import 'screens/parent_dashboard.dart';
 import 'screens/student_dashboard.dart';
+
 import 'screens/student_list_screen.dart';
 import 'screens/add_student_screen.dart';
+
 import 'screens/attendance_screen.dart';
+import 'screens/attendance_history_screen.dart';
+import 'screens/student_attendance_module_screen.dart';
+
 import 'screens/fee_management_screen.dart';
 import 'screens/notification_screen.dart';
 
@@ -46,23 +52,30 @@ class MyApp extends StatelessWidget {
           darkTheme: YGCATheme.darkTheme,
           themeMode: themeMode,
 
-          // TEMPORARY:
-          // Directly opening Admin Dashboard for UI testing.
-          // After Admin Dashboard is fixed, change this back to:
-          // home: const InitialSplashScreen(),
           home: const InitialSplashScreen(),
 
           routes: {
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/auth-checker': (context) => const AuthChecker(),
+
             '/admin': (context) => AdminDashboard(),
             '/coach': (context) => const CoachDashboard(),
             '/parent': (context) => const ParentDashboard(),
             '/student': (context) => const StudentDashboard(),
+
             '/student-list': (context) => const StudentListScreen(),
             '/add-student': (context) => const AddStudentScreen(),
-            '/attendance': (context) => const AttendanceScreen(),
+
+            // Admin / Coach mark attendance screen only
+            '/mark-attendance': (context) => const AttendanceScreen(),
+
+            // Parent / Coach / Admin attendance history dashboard
+            '/attendance-history': (context) => const AttendanceHistoryScreen(),
+
+            // Keep old attendance route safely as history, not mark attendance
+            '/attendance': (context) => const AttendanceHistoryScreen(),
+
             '/fees': (context) => const FeeManagementScreen(),
             '/notifications': (context) => const NotificationScreen(),
           },
