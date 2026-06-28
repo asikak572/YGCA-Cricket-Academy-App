@@ -136,55 +136,11 @@ class _ParentDashboardState extends State<ParentDashboard> {
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
-          drawer: YgcaDrawer(
-            role: 'Parent',
-            navItems: [
-              YgcaNavItem(
-                icon: Icons.home_rounded,
-                label: 'Dashboard',
-                onTap: () => _scaffoldKey.currentState?.closeDrawer(),
-              ),
-              YgcaNavItem(
-                icon: Icons.fact_check_rounded,
-                label: 'Child Attendance',
-                onTap: () => _open(
-  const AttendanceHistoryScreen(),
+         drawer: YgcaDrawer(
+  role: 'Parent',
+  username: 'Parent User',
+  onLogout: _logout,
 ),
-              ),
-              YgcaNavItem(
-                icon: Icons.analytics_rounded,
-                label: 'Child Performance',
-                onTap: () => _open(
-                  const StudentPerformanceModuleScreen(),
-                ),
-              ),
-              YgcaNavItem(
-                icon: Icons.calendar_month_rounded,
-                label: 'Child Schedule',
-                onTap: () => _open(
-                  const StudentScheduleModuleScreen(),
-                ),
-              ),
-              YgcaNavItem(
-                icon: Icons.payments_rounded,
-                label: 'Fees',
-                onTap: () => _openRoute('/fees'),
-              ),
-              YgcaNavItem(
-                icon: Icons.notifications_rounded,
-                label: 'Notifications',
-                onTap: () => _open(const NotificationScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.person_rounded,
-                label: 'Profile',
-                onTap: () => _open(
-                  const _ComingSoonScreen(title: "Parent Profile"),
-                ),
-              ),
-            ],
-            onLogout: _logout,
-          ),
           body: SafeArea(
             bottom: false,
             child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -360,7 +316,9 @@ class _ParentDashboardState extends State<ParentDashboard> {
               YgcaBottomNavItem(
                 icon: Icons.fact_check_rounded,
                 label: 'Attendance',
-                onTap: () => _openRoute('/attendance'),
+                onTap: () => _open(
+  const AttendanceHistoryScreen(),
+),
               ),
               YgcaBottomNavItem(
                 icon: Icons.analytics_rounded,
@@ -889,7 +847,9 @@ class _ParentDashboardState extends State<ParentDashboard> {
             icon: Icons.fact_check_rounded,
             title: "Child\nAttendance",
             color: Colors.green,
-            onTap: () => _openRoute('/attendance'),
+            onTap: () => _open(
+  const AttendanceHistoryScreen(),
+),
           ),
           _quickActionCard(
             isDark: isDark,

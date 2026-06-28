@@ -118,51 +118,10 @@ class _CoachDashboardState extends State<CoachDashboard> {
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
           drawer: YgcaDrawer(
-            role: 'Coach',
-            navItems: [
-              YgcaNavItem(
-                icon: Icons.home_rounded,
-                label: 'Dashboard',
-                onTap: () => _scaffoldKey.currentState?.closeDrawer(),
-              ),
-              YgcaNavItem(
-                icon: Icons.people_rounded,
-                label: 'Student Module',
-                onTap: () => _open(const CoachStudentModuleScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.fact_check_rounded,
-                label: 'Attendance Module',
-                onTap: () => _open(const CoachAttendanceModuleScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.bar_chart_rounded,
-                label: 'Performance Module',
-                onTap: () => _open(const CoachPerformanceModuleScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.calendar_month_rounded,
-                label: 'Schedule Module',
-                onTap: () => _open(const CoachScheduleModuleScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.event_note_rounded,
-                label: 'Leave Requests',
-                onTap: () => _open(const LeaveRequestScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.person_rounded,
-                label: 'Edit Profile',
-                onTap: () => _open(const EditProfileScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.notifications_rounded,
-                label: 'Notifications',
-                onTap: () => _open(const NotificationScreen()),
-              ),
-            ],
-            onLogout: _logout,
-          ),
+  role: 'Coach',
+  username: 'Coach User',
+  onLogout: _logout,
+),
           body: SafeArea(
             bottom: false,
             child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(

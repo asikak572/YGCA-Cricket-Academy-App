@@ -166,53 +166,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
-          drawer: YgcaDrawer(
-            role: 'Student',
-            navItems: [
-              YgcaNavItem(
-                icon: Icons.home_rounded,
-                label: 'Dashboard',
-                onTap: () => _scaffoldKey.currentState?.closeDrawer(),
-              ),
-              YgcaNavItem(
-                icon: Icons.fact_check_rounded,
-                label: 'Attendance',
-                onTap: _openStudentAttendanceModule,
-              ),
-              YgcaNavItem(
-                icon: Icons.analytics_rounded,
-                label: 'Performance',
-                onTap: () => _open(
-                  const StudentPerformanceModuleScreen(),
-                ),
-              ),
-              YgcaNavItem(
-                icon: Icons.calendar_month_rounded,
-                label: 'Schedule',
-                onTap: () => _open(
-                  const StudentScheduleModuleScreen(),
-                ),
-              ),
-              YgcaNavItem(
-                icon: Icons.payments_rounded,
-                label: 'Fees',
-                onTap: () => _openRoute('/fees'),
-              ),
-              YgcaNavItem(
-                icon: Icons.notifications_rounded,
-                label: 'Notifications',
-                onTap: () => _open(const NotificationScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.person_rounded,
-                label: 'Profile',
-                onTap: () => _open(
-                  const _ComingSoonScreen(title: "Student Profile"),
-                ),
-              ),
-            ],
-            onLogout: _logout,
-          ),
+         drawer: YgcaDrawer(
+  role: 'Student',
+  username: 'Student User',
+  onLogout: _logout,
+),
           body: SafeArea(
             bottom: false,
             child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
