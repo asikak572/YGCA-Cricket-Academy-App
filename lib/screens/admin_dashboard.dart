@@ -30,9 +30,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   static const Color maroon = Color(0xFF7F0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  // IMPORTANT:
-  // Use transparent PNG logo here if you have it.
-  // Example: static const String logoAsset = 'assets/images/ygca_logo_transparent.png';
   static const String logoAsset = 'assets/images/ygca_logo.jpg';
 
   Future<void> _logout() async {
@@ -78,52 +75,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
+
+          // UPDATED DRAWER
           drawer: YgcaDrawer(
             role: 'Admin',
-            navItems: [
-              YgcaNavItem(
-                icon: Icons.home_rounded,
-                label: 'Dashboard',
-                onTap: () => _scaffoldKey.currentState?.closeDrawer(),
-              ),
-              YgcaNavItem(
-                icon: Icons.sports_rounded,
-                label: 'Coach Module',
-                onTap: () => _open(CoachModuleScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.payments_rounded,
-                label: 'Fee Module',
-                onTap: () => _open(FeeModuleScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.calendar_month_rounded,
-                label: 'Schedule Module',
-                onTap: () => _open(const ScheduleModuleScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.bar_chart_rounded,
-                label: 'Performance Reports',
-                onTap: () => _open(const PerformanceReportScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.account_balance_wallet_rounded,
-                label: 'Coach Salary Analytics',
-                onTap: () => _open(const CoachSalaryAnalyticsScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.notifications_rounded,
-                label: 'Notifications',
-                onTap: () => _open(const NotificationScreen()),
-              ),
-              YgcaNavItem(
-                icon: Icons.campaign_rounded,
-                label: 'Communication Center',
-                onTap: () => _open(const CommunicationCenterScreen()),
-              ),
-            ],
+            username: 'Admin User',
             onLogout: _logout,
           ),
+
           body: SafeArea(
             bottom: false,
             child: SingleChildScrollView(
@@ -134,13 +93,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   _topBar(isDark),
                   _heroCard(isDark),
                   const SizedBox(height: 14),
-
                   _sectionTitle(
                     title: "ACADEMY OVERVIEW",
                     isDark: isDark,
                     showViewAll: true,
                   ),
-
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: GridView.count(
@@ -186,17 +143,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 14),
-
                   _sectionTitle(
                     title: "QUICK ACTIONS",
                     isDark: isDark,
                     showViewAll: false,
                   ),
-
                   _quickActions(isDark),
-
                   const SizedBox(height: 6),
                 ],
               ),
@@ -433,7 +386,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
           ),
-
           Positioned(
             left: 24,
             top: 58,
@@ -481,7 +433,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
           ),
-
           Positioned(
             left: 154,
             top: 44,
@@ -641,8 +592,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                isDark ? color.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+            color: isDark
+                ? color.withOpacity(0.08)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -776,8 +728,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           boxShadow: [
             BoxShadow(
-              color:
-                  isDark ? red.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+              color: isDark
+                  ? red.withOpacity(0.08)
+                  : Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -841,13 +794,11 @@ class _HeroClosedBorderPainter extends CustomPainter {
     canvas.drawRRect(outer, outerPaint);
     canvas.drawRRect(inner, outerPaint);
 
-    // top-left closed accents
     canvas.drawLine(const Offset(28, 28), const Offset(70, 28), accentPaint);
     canvas.drawLine(const Offset(28, 28), const Offset(28, 70), accentPaint);
     canvas.drawLine(const Offset(40, 40), const Offset(70, 40), accentPaint);
     canvas.drawLine(const Offset(40, 40), const Offset(40, 70), accentPaint);
 
-    // top-right closed accents
     canvas.drawLine(
       Offset(size.width - 28, 28),
       Offset(size.width - 70, 28),
@@ -869,7 +820,6 @@ class _HeroClosedBorderPainter extends CustomPainter {
       accentPaint,
     );
 
-    // bottom-left closed accents
     canvas.drawLine(
       Offset(28, size.height - 28),
       Offset(70, size.height - 28),
@@ -891,7 +841,6 @@ class _HeroClosedBorderPainter extends CustomPainter {
       accentPaint,
     );
 
-    // bottom-right closed accents
     canvas.drawLine(
       Offset(size.width - 28, size.height - 28),
       Offset(size.width - 70, size.height - 28),
@@ -913,7 +862,6 @@ class _HeroClosedBorderPainter extends CustomPainter {
       accentPaint,
     );
 
-    // dots
     canvas.drawCircle(const Offset(88, 28), 3, dotPaint);
     canvas.drawCircle(Offset(size.width - 88, 28), 3, dotPaint);
     canvas.drawCircle(Offset(88, size.height - 28), 3, dotPaint);

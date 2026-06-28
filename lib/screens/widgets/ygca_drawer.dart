@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../theme/theme_controller.dart';
 import '../edit_profile_screen.dart';
@@ -30,7 +31,7 @@ class YgcaDrawer extends StatelessWidget {
   final String? email;
 
   // Kept for compatibility only.
-  // We are not showing these old navItems anymore.
+  // Drawer will ignore old module navItems.
   final List<YgcaNavItem> navItems;
 
   final VoidCallback? onLogout;
@@ -84,6 +85,17 @@ class YgcaDrawer extends StatelessWidget {
     });
   }
 
+  void _copyText(BuildContext context, String value, String message) {
+    Clipboard.setData(ClipboardData(text: value));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   void _openSettings(BuildContext context) {
     final navigator = Navigator.of(context);
     navigator.pop();
@@ -99,101 +111,276 @@ class YgcaDrawer extends StatelessWidget {
             builder: (context, mode, _) {
               final isDark = mode == ThemeMode.dark;
 
-              return Container(
-                margin: const EdgeInsets.all(14),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _card(isDark),
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(
-                    color: isDark
-                        ? red.withOpacity(0.35)
-                        : gold.withOpacity(0.8),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark
-                          ? red.withOpacity(0.16)
-                          : Colors.black.withOpacity(0.10),
-                      blurRadius: 22,
-                      offset: const Offset(0, 8),
+              return _bottomSheetContainer(
+                isDark: isDark,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _bottomSheetHandle(isDark),
+                    const SizedBox(height: 18),
+                    _sheetHeader(
+                      isDark: isDark,
+                      icon: Icons.settings_rounded,
+                      title: "Settings",
+                      subtitle: "App preferences and security",
+                    ),
+                    const SizedBox(height: 18),
+
+                    _sheetSectionTitle("APPEARANCE", isDark),
+                    _settingsTile(
+                      isDark: isDark,
+                      icon: isDark
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded,
+                      title: isDark
+                          ? "Switch to Light Mode"
+                          : "Switch to Dark Mode",
+                      subtitle: "Change app appearance",
+                      trailing: isDark ? "Dark" : "Light",
+                      onTap: ThemeController.toggleTheme,
+                    ),
+
+                    const SizedBox(height: 12),
+                    _sheetSectionTitle("LANGUAGE", isDark),
+                    _settingsTile(
+                      isDark: isDark,
+                      icon: Icons.language_rounded,
+                      title: "Language",
+                      subtitle: "English / தமிழ்",
+                      trailing: "English",
+                      onTap: () {},
+                    ),
+
+                    const SizedBox(height: 12),
+                    _sheetSectionTitle("APP PREFERENCES", isDark),
+                    _settingsTile(
+                      isDark: isDark,
+                      icon: Icons.view_compact_rounded,
+                      title: "Compact Mode",
+                      subtitle: "Reduce spacing and scrolling",
+                      trailing: "Soon",
+                      onTap: () {},
+                    ),
+                    const SizedBox(height: 10),
+                    _settingsTile(
+                      isDark: isDark,
+                      icon: Icons.text_fields_rounded,
+                      title: "Large Text Mode",
+                      subtitle: "Better readability for users",
+                      trailing: "Soon",
+                      onTap: () {},
+                    ),
+
+                    const SizedBox(height: 12),
+                    _sheetSectionTitle("PRIVACY & SECURITY", isDark),
+                    _settingsTile(
+                      isDark: isDark,
+                      icon: Icons.verified_user_rounded,
+                      title: "Login Status",
+                      subtitle: "Signed in as ${role.toUpperCase()}",
+                      trailing: "Active",
+                      onTap: () {},
+                    ),
+
+                    const SizedBox(height: 12),
+                    _sheetSectionTitle("ABOUT", isDark),
+                    _settingsTile(
+                      isDark: isDark,
+                      icon: Icons.info_rounded,
+                      title: "App Version",
+                      subtitle: "YGCA Management System",
+                      trailing: "1.0.0",
+                      onTap: () {},
                     ),
                   ],
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.black12,
-                          borderRadius: BorderRadius.circular(10),
+              );
+            },
+          );
+        },
+      );
+    });
+  }
+
+  void _openHelpSupport(BuildContext context) {
+    final navigator = Navigator.of(context);
+    navigator.pop();
+
+    Future.delayed(const Duration(milliseconds: 180), () {
+      showModalBottomSheet(
+        context: navigator.context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) {
+          return ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark;
+
+              return _bottomSheetContainer(
+                isDark: isDark,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _bottomSheetHandle(isDark),
+                    const SizedBox(height: 18),
+                    _sheetHeader(
+                      isDark: isDark,
+                      icon: Icons.support_agent_rounded,
+                      title: "Help & Support",
+                      subtitle: "Contact academy support team",
+                    ),
+                    const SizedBox(height: 18),
+
+                    _supportTile(
+                      context: context,
+                      isDark: isDark,
+                      icon: Icons.call_rounded,
+                      title: "Call Academy",
+                      subtitle: "9941411006",
+                      color: Colors.green,
+                      copyValue: "9941411006",
+                    ),
+                    const SizedBox(height: 10),
+                    _supportTile(
+                      context: context,
+                      isDark: isDark,
+                      icon: Icons.call_rounded,
+                      title: "Alternate Number",
+                      subtitle: "8939299555",
+                      color: Colors.blueAccent,
+                      copyValue: "8939299555",
+                    ),
+                    const SizedBox(height: 10),
+                    _supportTile(
+                      context: context,
+                      isDark: isDark,
+                      icon: Icons.chat_rounded,
+                      title: "WhatsApp Support",
+                      subtitle: "+91 9941411006",
+                      color: Colors.green,
+                      copyValue: "+919941411006",
+                    ),
+                    const SizedBox(height: 10),
+                    _supportTile(
+                      context: context,
+                      isDark: isDark,
+                      icon: Icons.report_problem_rounded,
+                      title: "Report Issue",
+                      subtitle: "Share app issue with academy admin",
+                      color: Colors.orange,
+                      copyValue: "Report issue to YGCA support",
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    });
+  }
+
+  void _openAboutApp(BuildContext context) {
+    final navigator = Navigator.of(context);
+    navigator.pop();
+
+    Future.delayed(const Duration(milliseconds: 180), () {
+      showModalBottomSheet(
+        context: navigator.context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) {
+          return ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark;
+
+              return _bottomSheetContainer(
+                isDark: isDark,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _bottomSheetHandle(isDark),
+                    const SizedBox(height: 18),
+                    Container(
+                      width: 82,
+                      height: 82,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.black : Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: gold.withOpacity(0.75),
                         ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 25,
-                            backgroundColor: isDark
-                                ? red.withOpacity(0.15)
-                                : gold.withOpacity(0.18),
-                            child: Icon(
-                              Icons.settings_rounded,
-                              color: isDark ? gold : maroon,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Settings",
-                                  style: TextStyle(
-                                    color: _primaryText(isDark),
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                Text(
-                                  "Theme and account preferences",
-                                  style: TextStyle(
-                                    color: _secondaryText(isDark),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isDark
+                                ? red.withOpacity(0.14)
+                                : maroon.withOpacity(0.10),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
-                      _settingsTile(
-                        isDark: isDark,
-                        icon: isDark
-                            ? Icons.light_mode_rounded
-                            : Icons.dark_mode_rounded,
-                        title: isDark
-                            ? "Switch to Light Mode"
-                            : "Switch to Dark Mode",
-                        subtitle: "Change app appearance",
-                        onTap: ThemeController.toggleTheme,
+                      child: Image.asset(
+                        'assets/images/ygca_logo.jpg',
+                        fit: BoxFit.contain,
                       ),
-                      const SizedBox(height: 10),
-                      _settingsTile(
-                        isDark: isDark,
-                        icon: Icons.verified_user_rounded,
-                        title: role,
-                        subtitle: email ?? "YGCA account",
-                        onTap: () {},
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      "YGCA Management System",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Young Gen Cricket Academy",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isDark ? gold : maroon,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    _aboutInfoTile(
+                      isDark: isDark,
+                      icon: Icons.verified_rounded,
+                      title: "Version",
+                      value: "1.0.0",
+                    ),
+                    const SizedBox(height: 10),
+                    _aboutInfoTile(
+                      isDark: isDark,
+                      icon: Icons.storage_rounded,
+                      title: "Backend",
+                      value: "Firebase",
+                    ),
+                    const SizedBox(height: 10),
+                    _aboutInfoTile(
+                      isDark: isDark,
+                      icon: Icons.security_rounded,
+                      title: "Access",
+                      value: "Role Based",
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      "Designed for academy management, attendance, fees, schedules, performance and parent-student communication.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 12,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -236,7 +423,6 @@ class YgcaDrawer extends StatelessWidget {
                 children: [
                   _drawerHeader(isDark),
                   const SizedBox(height: 14),
-
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: Column(
@@ -252,17 +438,28 @@ class YgcaDrawer extends StatelessWidget {
                           isDark: isDark,
                           icon: Icons.settings_rounded,
                           label: "Settings",
-                          subtitle: "Theme and preferences",
+                          subtitle: "Theme, language and security",
                           onTap: () => _openSettings(context),
+                        ),
+                        _drawerTile(
+                          isDark: isDark,
+                          icon: Icons.support_agent_rounded,
+                          label: "Help & Support",
+                          subtitle: "Call, WhatsApp and report issue",
+                          onTap: () => _openHelpSupport(context),
+                        ),
+                        _drawerTile(
+                          isDark: isDark,
+                          icon: Icons.info_rounded,
+                          label: "About App",
+                          subtitle: "Version and academy info",
+                          onTap: () => _openAboutApp(context),
                         ),
                       ],
                     ),
                   ),
-
                   const Spacer(),
-
                   if (onLogout != null) _logoutTile(context, isDark),
-
                   const SizedBox(height: 14),
                 ],
               ),
@@ -544,11 +741,118 @@ class YgcaDrawer extends StatelessWidget {
     );
   }
 
+  Widget _bottomSheetContainer({
+    required bool isDark,
+    required Widget child,
+  }) {
+    return Container(
+      margin: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.8),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? red.withOpacity(0.16)
+                : Colors.black.withOpacity(0.10),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _bottomSheetHandle(bool isDark) {
+    return Container(
+      width: 44,
+      height: 4,
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white24 : Colors.black12,
+        borderRadius: BorderRadius.circular(10),
+      ),
+    );
+  }
+
+  Widget _sheetHeader({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 25,
+          backgroundColor:
+              isDark ? red.withOpacity(0.15) : gold.withOpacity(0.18),
+          child: Icon(
+            icon,
+            color: isDark ? gold : maroon,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sheetSectionTitle(String title, bool isDark) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          title,
+          style: TextStyle(
+            color: isDark ? gold : maroon,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _settingsTile({
     required bool isDark,
     required IconData icon,
     required String title,
     required String subtitle,
+    required String trailing,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -594,8 +898,134 @@ class YgcaDrawer extends StatelessWidget {
                 ],
               ),
             ),
+            Text(
+              trailing,
+              style: TextStyle(
+                color: isDark ? gold : maroon,
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _supportTile({
+    required BuildContext context,
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required String copyValue,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        _copyText(
+          context,
+          copyValue,
+          "$title copied",
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0B0B0B) : const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _border(isDark)),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: color.withOpacity(0.14),
+              child: Icon(
+                icon,
+                color: color,
+                size: 21,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: _primaryText(isDark),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.copy_rounded,
+              color: isDark ? gold : maroon,
+              size: 19,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _aboutInfoTile({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0B0B0B) : const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border(isDark)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: isDark ? gold : maroon,
+            size: 21,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }

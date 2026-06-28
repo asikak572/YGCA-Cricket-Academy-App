@@ -13,7 +13,6 @@ import 'coach_attendance_module_screen.dart';
 import 'coach_student_module_screen.dart';
 import 'coach_performance_module_screen.dart';
 import 'coach_schedule_module_screen.dart';
-import 'edit_profile_screen.dart';
 
 class CoachDashboard extends StatefulWidget {
   const CoachDashboard({super.key});
@@ -117,11 +116,14 @@ class _CoachDashboardState extends State<CoachDashboard> {
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
+
+          // UPDATED DRAWER
           drawer: YgcaDrawer(
-  role: 'Coach',
-  username: 'Coach User',
-  onLogout: _logout,
-),
+            role: 'Coach',
+            username: 'Coach User',
+            onLogout: _logout,
+          ),
+
           body: SafeArea(
             bottom: false,
             child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -203,12 +205,10 @@ class _CoachDashboardState extends State<CoachDashboard> {
                         status: status,
                       ),
                       const SizedBox(height: 14),
-
                       _sectionTitle(
                         title: "COACH OVERVIEW",
                         isDark: isDark,
                       ),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: GridView.count(
@@ -254,16 +254,12 @@ class _CoachDashboardState extends State<CoachDashboard> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       _sectionTitle(
                         title: "QUICK ACTIONS",
                         isDark: isDark,
                       ),
-
                       _quickActions(isDark),
-
                       const SizedBox(height: 6),
                     ],
                   ),
@@ -271,6 +267,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
               },
             ),
           ),
+
           bottomNavigationBar: YgcaBottomNav(
             currentIndex: 0,
             items: [
@@ -471,7 +468,6 @@ class _CoachDashboardState extends State<CoachDashboard> {
               ),
             ),
           ),
-
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -493,7 +489,6 @@ class _CoachDashboardState extends State<CoachDashboard> {
               ),
             ),
           ),
-
           Positioned(
             right: -6,
             top: 18,
@@ -507,7 +502,6 @@ class _CoachDashboardState extends State<CoachDashboard> {
               ),
             ),
           ),
-
           Positioned.fill(
             child: CustomPaint(
               painter: _HeroClosedBorderPainter(
@@ -515,7 +509,6 @@ class _CoachDashboardState extends State<CoachDashboard> {
               ),
             ),
           ),
-
           Positioned(
             left: 24,
             top: 58,
@@ -568,7 +561,6 @@ class _CoachDashboardState extends State<CoachDashboard> {
               ),
             ),
           ),
-
           Positioned(
             left: 154,
             top: 38,
@@ -720,8 +712,9 @@ class _CoachDashboardState extends State<CoachDashboard> {
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                isDark ? color.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+            color: isDark
+                ? color.withOpacity(0.08)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -862,8 +855,9 @@ class _CoachDashboardState extends State<CoachDashboard> {
           ),
           boxShadow: [
             BoxShadow(
-              color:
-                  isDark ? red.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+              color: isDark
+                  ? red.withOpacity(0.08)
+                  : Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
