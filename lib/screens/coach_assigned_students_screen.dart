@@ -300,91 +300,101 @@ class CoachAssignedStudentsScreen extends StatelessWidget {
   }
 
   Widget _topHeader(BuildContext context, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.black : maroon,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.55),
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+    child: Row(
+      children: [
+        _circleButton(
+          isDark: isDark,
+          icon: Icons.arrow_back_rounded,
+          onTap: () => Navigator.pop(context),
+        ),
+        const SizedBox(width: 12),
+        Image.asset(
+          'assets/images/ygca_logo.jpg',
+          width: 46,
+          height: 46,
+          fit: BoxFit.contain,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "ASSIGNED STUDENTS",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
+              Text(
+                "Coach batch student center",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          _circleButton(
-            isDark: isDark,
-            icon: Icons.arrow_back_rounded,
-            onTap: () => Navigator.pop(context),
-          ),
-          const SizedBox(width: 10),
-          Image.asset(
-            'assets/images/ygca_logo.jpg',
-            width: 46,
-            height: 46,
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "ASSIGNED STUDENTS",
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark ? Colors.white : gold,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.8,
-              ),
-            ),
-          ),
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: ThemeController.themeMode,
-            builder: (context, mode, _) {
-              final dark = mode == ThemeMode.dark;
+        ValueListenableBuilder<ThemeMode>(
+          valueListenable: ThemeController.themeMode,
+          builder: (context, mode, _) {
+            final dark = mode == ThemeMode.dark;
 
-              return _circleButton(
-                isDark: isDark,
-                icon: dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
-                onTap: ThemeController.toggleTheme,
-              );
-            },
+            return _circleButton(
+              isDark: isDark,
+              icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              onTap: ThemeController.toggleTheme,
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+  Widget _circleButton({
+  required bool isDark,
+  required IconData icon,
+  required VoidCallback onTap,
+}) {
+  return InkWell(
+    borderRadius: BorderRadius.circular(40),
+    onTap: onTap,
+    child: Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        shape: BoxShape.circle,
+        border: Border.all(color: _border(isDark)),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? red.withOpacity(0.12)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _circleButton({
-    required bool isDark,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(40),
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color:
-              isDark ? const Color(0xFF111111) : Colors.white.withOpacity(0.14),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isDark ? red.withOpacity(0.28) : gold.withOpacity(0.55),
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: isDark ? Colors.white : gold,
-          size: 22,
-        ),
+      child: Icon(
+        icon,
+        color: isDark ? Colors.white : maroon,
+        size: 21,
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _heroBanner({
     required bool isDark,
     required String coachName,
