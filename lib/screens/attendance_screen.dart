@@ -163,16 +163,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            "Something went wrong",
-                            style: TextStyle(
-                              color: _primaryText(isDark),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        );
-                      }
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: Text(
+        "Error loading students:\n${snapshot.error}",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.redAccent,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+}
 
                       if (snapshot.connectionState ==
                           ConnectionState.waiting) {
