@@ -107,56 +107,106 @@ class _StudentListScreenState extends State<StudentListScreen> {
     required String studentId,
     required Map<String, dynamic> studentData,
   }) async {
-    final rawParentEmail = studentData['parentEmail']?.toString() ?? '';
-    final parentEmail = _cleanEmail(rawParentEmail);
+    final rawParentEmail = studentData['parentEmail']?.toString().trim() ?? '';
+    final parentEmailLower = _cleanEmail(rawParentEmail);
 
-    if (parentEmail.isEmpty) return;
+    final rawParentPhone =
+        studentData['parentPhone']?.toString().trim().isNotEmpty == true
+            ? studentData['parentPhone'].toString().trim()
+            : studentData['phone']?.toString().trim() ?? '';
 
-    QuerySnapshot<Map<String, dynamic>> parentQuery =
-        await FirebaseFirestore.instance
-            .collection('users')
-            .where('role', isEqualTo: 'Parent')
-            .where('emailLower', isEqualTo: parentEmail)
-            .limit(1)
-            .get();
+    final firestore = FirebaseFirestore.instance;
 
-    if (parentQuery.docs.isEmpty) {
-      parentQuery = await FirebaseFirestore.instance
+    await firestore.collection('students').doc(studentId).set({
+      'parentEmail': rawParentEmail,
+      'parentEmailLower': parentEmailLower,
+      'parentPhone': rawParentPhone,
+      'linkStatus': 'Checking Parent Account',
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await firestore.collection('users').doc(studentId).set({
+      'parentEmail': rawParentEmail,
+      'parentEmailLower': parentEmailLower,
+      'parentPhone': rawParentPhone,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    QuerySnapshot<Map<String, dynamic>> parentQuery;
+
+    if (parentEmailLower.isNotEmpty) {
+      parentQuery = await firestore
           .collection('users')
           .where('role', isEqualTo: 'Parent')
-          .where('email', isEqualTo: rawParentEmail.trim())
+          .where('emailLower', isEqualTo: parentEmailLower)
+          .limit(1)
+          .get();
+
+      if (parentQuery.docs.isEmpty && rawParentEmail.isNotEmpty) {
+        parentQuery = await firestore
+            .collection('users')
+            .where('role', isEqualTo: 'Parent')
+            .where('email', isEqualTo: rawParentEmail)
+            .limit(1)
+            .get();
+      }
+    } else {
+      parentQuery = await firestore
+          .collection('users')
+          .where('role', isEqualTo: 'Parent')
+          .where('phone', isEqualTo: rawParentPhone)
           .limit(1)
           .get();
     }
 
-    await FirebaseFirestore.instance.collection('students').doc(studentId).set({
-      'parentEmail': rawParentEmail.trim(),
-      'parentEmailLower': parentEmail,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    if (parentQuery.docs.isEmpty && rawParentPhone.isNotEmpty) {
+      parentQuery = await firestore
+          .collection('users')
+          .where('role', isEqualTo: 'Parent')
+          .where('phone', isEqualTo: rawParentPhone)
+          .limit(1)
+          .get();
+    }
 
-    await FirebaseFirestore.instance.collection('users').doc(studentId).set({
-      'parentEmail': rawParentEmail.trim(),
-      'parentEmailLower': parentEmail,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    if (parentQuery.docs.isEmpty) {
+      await firestore.collection('students').doc(studentId).set({
+        'parentUid': '',
+        'linkStatus': 'Parent Account Not Found',
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
-    if (parentQuery.docs.isEmpty) return;
+      await firestore.collection('users').doc(studentId).set({
+        'parentUid': '',
+        'linkStatus': 'Parent Account Not Found',
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      return;
+    }
 
     final parentDoc = parentQuery.docs.first;
+    final parentUid = parentDoc.id;
 
-    await FirebaseFirestore.instance.collection('users').doc(parentDoc.id).set({
+    await firestore.collection('users').doc(parentUid).set({
       'linkedChildrenIds': FieldValue.arrayUnion([studentId]),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    await FirebaseFirestore.instance.collection('students').doc(studentId).set({
-      'parentUid': parentDoc.id,
+    await firestore.collection('students').doc(studentId).set({
+      'parentUid': parentUid,
+      'parentEmail': rawParentEmail,
+      'parentEmailLower': parentEmailLower,
+      'parentPhone': rawParentPhone,
+      'linkStatus': 'Linked',
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    await FirebaseFirestore.instance.collection('users').doc(studentId).set({
-      'parentUid': parentDoc.id,
+    await firestore.collection('users').doc(studentId).set({
+      'parentUid': parentUid,
+      'parentEmail': rawParentEmail,
+      'parentEmailLower': parentEmailLower,
+      'parentPhone': rawParentPhone,
+      'linkStatus': 'Linked',
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
@@ -545,7 +595,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.all(9),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF8FAFC),
+        color:
+            isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(11),
         border: Border.all(color: _border(isDark)),
       ),

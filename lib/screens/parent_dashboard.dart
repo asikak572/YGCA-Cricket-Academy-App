@@ -85,21 +85,113 @@ class _ParentDashboardState extends State<ParentDashboard> {
     return "0";
   }
 
-  String _childNameText(Map<String, dynamic> data) {
-    final childName = data['childName'];
-    if (childName != null && childName.toString().trim().isNotEmpty) {
-      return childName.toString().trim();
-    }
+  List<String> _linkedChildIds(Map<String, dynamic> data) {
+    final linkedChildren = data['linkedChildrenIds'];
 
-    final childrenNames = data['childrenNames'];
-    if (childrenNames is List && childrenNames.isNotEmpty) {
-      return childrenNames
+    if (linkedChildren is List && linkedChildren.isNotEmpty) {
+      return linkedChildren
           .map((e) => e.toString().trim())
           .where((e) => e.isNotEmpty)
-          .join(', ');
+          .toList();
     }
 
-    return "Child not linked";
+    final childId = data['childId']?.toString().trim() ?? '';
+    if (childId.isNotEmpty) return [childId];
+
+    return [];
+  }
+
+  Future<Map<String, String>> _loadLinkedChildInfo(
+    Map<String, dynamic> parentData,
+  ) async {
+    final childIds = _linkedChildIds(parentData);
+
+    if (childIds.isEmpty) {
+      return {
+        'childName': _safeText(
+          parentData,
+          ['childName'],
+          'Child not linked',
+        ),
+        'attendance': _safeText(
+          parentData,
+          ['attendancePercentage', 'childAttendance'],
+          '0%',
+        ),
+        'feeStatus': _safeText(
+          parentData,
+          ['feeStatus', 'childFeeStatus'],
+          'Pending',
+        ),
+        'parentPhone': _safeText(
+          parentData,
+          ['phone', 'phoneNumber', 'mobile', 'parentPhone'],
+          'Phone not added',
+        ),
+      };
+    }
+
+    final studentDocs = <DocumentSnapshot<Map<String, dynamic>>>[];
+
+    for (final childId in childIds) {
+      final studentDoc = await FirebaseFirestore.instance
+          .collection('students')
+          .doc(childId)
+          .get();
+
+      if (studentDoc.exists) {
+        studentDocs.add(studentDoc);
+      }
+    }
+
+    if (studentDocs.isEmpty) {
+      return {
+        'childName': 'Child not linked',
+        'attendance': '0%',
+        'feeStatus': 'Pending',
+        'parentPhone': _safeText(
+          parentData,
+          ['phone', 'phoneNumber', 'mobile', 'parentPhone'],
+          'Phone not added',
+        ),
+      };
+    }
+
+    final firstChildData = studentDocs.first.data() ?? {};
+
+    final childNames = studentDocs.map((doc) {
+      final data = doc.data() ?? {};
+      return data['name']?.toString().trim() ?? '';
+    }).where((name) => name.isNotEmpty).toList();
+
+    final childNameText = childNames.isEmpty
+        ? 'Child not linked'
+        : childNames.length == 1
+            ? childNames.first
+            : childNames.join(', ');
+
+    return {
+      'childName': childNameText,
+      'attendance': _safeText(
+        firstChildData,
+        ['attendance', 'attendancePercentage', 'childAttendance'],
+        '0%',
+      ),
+      'feeStatus': _safeText(
+        firstChildData,
+        ['feeStatus', 'childFeeStatus'],
+        'Pending',
+      ),
+      'parentPhone': _safeText(
+        parentData,
+        ['phone', 'phoneNumber', 'mobile', 'parentPhone'],
+        _safeText(
+          firstChildData,
+          ['parentPhone', 'phone'],
+          'Phone not added',
+        ),
+      ),
+    };
   }
 
   Color _bg(bool isDark) {
@@ -136,11 +228,11 @@ class _ParentDashboardState extends State<ParentDashboard> {
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
-         drawer: YgcaDrawer(
-  role: 'Parent',
-  username: 'Parent User',
-  onLogout: _logout,
-),
+          drawer: YgcaDrawer(
+            role: 'Parent',
+            username: 'Parent User',
+            onLogout: _logout,
+          ),
           body: SafeArea(
             bottom: false,
             child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -202,26 +294,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   currentUser.email ?? '',
                 );
 
-                final phone = _safeText(
-                  data,
-                  ['phone', 'phoneNumber', 'mobile'],
-                  'Phone not added',
-                );
-
-                final childName = _childNameText(data);
                 final childrenCount = _childrenCount(data);
-
-                final attendance = _safeText(
-                  data,
-                  ['attendancePercentage', 'childAttendance'],
-                  '0%',
-                );
-
-                final feeStatus = _safeText(
-                  data,
-                  ['feeStatus', 'childFeeStatus'],
-                  'Pending',
-                );
 
                 final status = _safeText(
                   data,
@@ -229,78 +302,95 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   'Active',
                 );
 
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Column(
-                    children: [
-                      _topBar(isDark),
-                      _parentHero(
-                        isDark: isDark,
-                        name: name,
-                        email: email,
-                        phone: phone,
-                        childName: childName,
-                      ),
-                      const SizedBox(height: 14),
-                      _sectionTitle(
-                        title: "PARENT OVERVIEW",
-                        isDark: isDark,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 2.35,
-                          children: [
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.child_care_rounded,
-                              title: "Children",
-                              value: childrenCount,
-                              subtitle: "Linked",
-                              color: Colors.blueAccent,
+                return FutureBuilder<Map<String, String>>(
+                  future: _loadLinkedChildInfo(data),
+                  builder: (context, childSnapshot) {
+                    final childInfo = childSnapshot.data ?? {};
+
+                    final phone =
+                        childInfo['parentPhone'] ?? 'Phone not added';
+
+                    final childName =
+                        childInfo['childName'] ?? 'Child not linked';
+
+                    final attendance = childInfo['attendance'] ?? '0%';
+
+                    final feeStatus = childInfo['feeStatus'] ?? 'Pending';
+
+                    return SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Column(
+                        children: [
+                          _topBar(isDark),
+                          _parentHero(
+                            isDark: isDark,
+                            name: name,
+                            email: email,
+                            phone: phone,
+                            childName: childName,
+                          ),
+                          const SizedBox(height: 14),
+                          _sectionTitle(
+                            title: "PARENT OVERVIEW",
+                            isDark: isDark,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: GridView.count(
+                              crossAxisCount: 2,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 2.35,
+                              children: [
+                                _overviewCard(
+                                  isDark: isDark,
+                                  icon: Icons.child_care_rounded,
+                                  title: "Children",
+                                  value: childrenCount,
+                                  subtitle: "Linked",
+                                  color: Colors.blueAccent,
+                                ),
+                                _overviewCard(
+                                  isDark: isDark,
+                                  icon: Icons.fact_check_rounded,
+                                  title: "Attendance",
+                                  value: attendance,
+                                  subtitle: "Child overall",
+                                  color: Colors.green,
+                                ),
+                                _overviewCard(
+                                  isDark: isDark,
+                                  icon: Icons.payments_rounded,
+                                  title: "Fee Status",
+                                  value: feeStatus,
+                                  subtitle: "Current",
+                                  color: Colors.orange,
+                                ),
+                                _overviewCard(
+                                  isDark: isDark,
+                                  icon: Icons.verified_rounded,
+                                  title: "Status",
+                                  value: status,
+                                  subtitle: "Parent account",
+                                  color: Colors.purpleAccent,
+                                ),
+                              ],
                             ),
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.fact_check_rounded,
-                              title: "Attendance",
-                              value: attendance,
-                              subtitle: "Child overall",
-                              color: Colors.green,
-                            ),
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.payments_rounded,
-                              title: "Fee Status",
-                              value: feeStatus,
-                              subtitle: "Current",
-                              color: Colors.orange,
-                            ),
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.verified_rounded,
-                              title: "Status",
-                              value: status,
-                              subtitle: "Parent account",
-                              color: Colors.purpleAccent,
-                            ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 14),
+                          _sectionTitle(
+                            title: "QUICK ACTIONS",
+                            isDark: isDark,
+                          ),
+                          _quickActions(isDark),
+                          const SizedBox(height: 6),
+                        ],
                       ),
-                      const SizedBox(height: 14),
-                      _sectionTitle(
-                        title: "QUICK ACTIONS",
-                        isDark: isDark,
-                      ),
-                      _quickActions(isDark),
-                      const SizedBox(height: 6),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),
@@ -317,8 +407,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
                 icon: Icons.fact_check_rounded,
                 label: 'Attendance',
                 onTap: () => _open(
-  const AttendanceHistoryScreen(),
-),
+                  const AttendanceHistoryScreen(),
+                ),
               ),
               YgcaBottomNavItem(
                 icon: Icons.analytics_rounded,
@@ -762,8 +852,9 @@ class _ParentDashboardState extends State<ParentDashboard> {
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                isDark ? color.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+            color: isDark
+                ? color.withOpacity(0.08)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -848,8 +939,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
             title: "Child\nAttendance",
             color: Colors.green,
             onTap: () => _open(
-  const AttendanceHistoryScreen(),
-),
+              const AttendanceHistoryScreen(),
+            ),
           ),
           _quickActionCard(
             isDark: isDark,
@@ -1051,33 +1142,4 @@ class _HeroClosedBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ComingSoonScreen extends StatelessWidget {
-  final String title;
-
-  const _ComingSoonScreen({
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: const Color(0xFF7F0000),
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: Text(
-          "$title screen will be connected here.",
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
 }
