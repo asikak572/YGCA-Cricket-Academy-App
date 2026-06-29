@@ -14,6 +14,7 @@ import 'coach_student_performance_screen.dart';
 
 import 'coach_payment_status_screen.dart';
 import 'coach_salary_reports_screen.dart';
+import 'coach_session_assignment_screen.dart';
 
 class CoachModuleScreen extends StatefulWidget {
   const CoachModuleScreen({super.key});
@@ -105,6 +106,13 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
           color: Colors.purpleAccent,
           screen: const CoachManagementScreen(),
         ),
+        _InfoItem(
+  icon: Icons.event_available_rounded,
+  title: "Weekly Coach Assignment",
+  subtitle: "Assign coaches to weekly training sessions",
+  color: Colors.green,
+  screen: const CoachSessionAssignmentScreen(),
+),
         _InfoItem(
           icon: Icons.badge_rounded,
           title: "Coach Details",

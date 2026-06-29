@@ -47,23 +47,48 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return value.toString().trim();
   }
 
-  List<String> _getAssignedBatches(Map<String, dynamic> data) {
-    final assignedBatches = data['assignedBatches'];
+  DateTime _startOfWeek(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day - (date.weekday - 1),
+    );
+  }
 
-    if (assignedBatches is List && assignedBatches.isNotEmpty) {
-      return assignedBatches
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
+  String _dateId(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  String _currentWeekId() {
+    return _dateId(_startOfWeek(DateTime.now()));
+  }
+
+  Future<List<String>> _loadCoachWeeklySessions(String coachUid) async {
+    final weekId = _currentWeekId();
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('coach_session_assignments')
+        .where('weekStartDate', isEqualTo: weekId)
+        .get();
+
+    final sessions = <String>[];
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+
+      final coachId = data['coachId']?.toString().trim() ?? '';
+      final status = data['status']?.toString().toLowerCase().trim() ?? '';
+      final session = data['session']?.toString().trim() ?? '';
+
+      if (coachId == coachUid &&
+          status == 'active' &&
+          session.isNotEmpty &&
+          !sessions.contains(session)) {
+        sessions.add(session);
+      }
     }
 
-    final batch = _text(data['batch']);
-    if (batch.isNotEmpty) return [batch];
-
-    final assignedBatch = _text(data['assignedBatch']);
-    if (assignedBatch.isNotEmpty) return [assignedBatch];
-
-    return [];
+    return sessions;
   }
 
   Future<void> _loadUserAccess() async {
@@ -103,7 +128,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       if (loadedRole == 'Admin') {
         batchesToShow = List<String>.from(allBatches);
       } else if (loadedRole == 'Coach') {
-        batchesToShow = _getAssignedBatches(data);
+        batchesToShow = await _loadCoachWeeklySessions(uid);
       } else {
         batchesToShow = [];
       }
@@ -114,6 +139,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         role = loadedRole;
         availableBatches = batchesToShow;
         selectedBatch = batchesToShow.isNotEmpty ? batchesToShow.first : '';
+        attendanceStatus.clear();
         loadingUser = false;
       });
     } catch (e) {
@@ -168,7 +194,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     if (selectedBatch.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("No assigned batch found"),
+          content: Text("No assigned session found"),
           backgroundColor: Colors.red,
         ),
       );
@@ -177,7 +203,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     if (students.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No students found in this batch")),
+        const SnackBar(content: Text("No students found in this session")),
       );
       return;
     }
@@ -206,6 +232,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           'studentId': student.id,
           'studentName': studentName,
           'batch': selectedBatch,
+          'session': selectedBatch,
+          'weekStartDate': _currentWeekId(),
           'date': dateId,
           'status': isPresent ? 'Present' : 'Absent',
           'present': isPresent,
@@ -274,6 +302,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         .collection('students')
         .where('batch', isEqualTo: selectedBatch)
         .snapshots();
+  }
+
+  Future<void> _refreshCoachSessions() async {
+    if (role != 'Coach') return;
+
+    setState(() => loadingUser = true);
+    await _loadUserAccess();
   }
 
   @override
@@ -522,7 +557,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 SizedBox(height: 3),
                 Text(
-                  "Admin / assigned coach session attendance",
+                  "Weekly assigned session attendance",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -615,7 +650,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
-                  isCoach ? "Assigned Training Session" : "Select Training Batch",
+                  isCoach
+                      ? "Current Week Assigned Session"
+                      : "Select Training Session",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -625,6 +662,29 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                 ),
               ),
+              if (isCoach)
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: isSaving ? null : _refreshCoachSessions,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      "Refresh",
+                      style: TextStyle(
+                        color: Colors.blueAccent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -738,7 +798,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _noAccessState(bool isDark) {
     final title = role == 'Coach' ? "No Session Assigned" : "No Access";
     final message = role == 'Coach'
-        ? "Admin has not assigned any training session to this coach yet."
+        ? "Admin has not assigned any session to this coach for the current week."
         : "Only Admin and assigned Coach can mark attendance.";
 
     return Center(
