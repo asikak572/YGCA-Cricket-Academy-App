@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import 'notification_service.dart';
@@ -17,17 +18,121 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  String selectedBatch = "Friday: 6:00 PM – 8:00 PM";
+  bool loadingUser = true;
   bool isSaving = false;
+
+  String uid = '';
+  String role = '';
+  String selectedBatch = '';
 
   final Map<String, bool> attendanceStatus = {};
 
-  final List<String> batches = const [
+  final List<String> allBatches = const [
     "Friday: 6:00 PM – 8:00 PM",
     "Saturday: 7:00 AM – 9:00 AM",
     "Saturday: 4:00 PM – 6:00 PM",
     "Saturday: 6:00 PM – 8:00 PM",
   ];
+
+  List<String> availableBatches = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserAccess();
+  }
+
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  List<String> _getAssignedBatches(Map<String, dynamic> data) {
+    final assignedBatches = data['assignedBatches'];
+
+    if (assignedBatches is List && assignedBatches.isNotEmpty) {
+      return assignedBatches
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+
+    final batch = _text(data['batch']);
+    if (batch.isNotEmpty) return [batch];
+
+    final assignedBatch = _text(data['assignedBatch']);
+    if (assignedBatch.isNotEmpty) return [assignedBatch];
+
+    return [];
+  }
+
+  Future<void> _loadUserAccess() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() {
+        loadingUser = false;
+        availableBatches = [];
+        selectedBatch = '';
+      });
+      return;
+    }
+
+    uid = user.uid;
+
+    try {
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+      if (!userDoc.exists || userDoc.data() == null) {
+        if (!mounted) return;
+        setState(() {
+          loadingUser = false;
+          availableBatches = [];
+          selectedBatch = '';
+        });
+        return;
+      }
+
+      final data = userDoc.data() ?? {};
+      final loadedRole = _text(data['role']);
+
+      List<String> batchesToShow = [];
+
+      if (loadedRole == 'Admin') {
+        batchesToShow = List<String>.from(allBatches);
+      } else if (loadedRole == 'Coach') {
+        batchesToShow = _getAssignedBatches(data);
+      } else {
+        batchesToShow = [];
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        role = loadedRole;
+        availableBatches = batchesToShow;
+        selectedBatch = batchesToShow.isNotEmpty ? batchesToShow.first : '';
+        loadingUser = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        loadingUser = false;
+        availableBatches = [];
+        selectedBatch = '';
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("User access loading failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   Color _bg(bool isDark) {
     return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
@@ -49,9 +154,27 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
+  String _safeDocId(String value) {
+    return value
+        .replaceAll(':', '-')
+        .replaceAll('/', '-')
+        .replaceAll('–', '-')
+        .replaceAll(' ', '_');
+  }
+
   Future<void> saveAttendance(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> students,
   ) async {
+    if (selectedBatch.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No assigned batch found"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (students.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("No students found in this batch")),
@@ -68,14 +191,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
       final firestore = FirebaseFirestore.instance;
       final batchWrite = firestore.batch();
+      final batchKey = _safeDocId(selectedBatch);
 
       for (final student in students) {
         final data = student.data();
         final studentName = data['name']?.toString() ?? 'No Name';
         final isPresent = attendanceStatus[student.id] ?? true;
 
-        final attendanceDoc =
-            firestore.collection('attendance').doc("${student.id}_$dateId");
+        final attendanceDoc = firestore
+            .collection('attendance')
+            .doc("${student.id}_${dateId}_$batchKey");
 
         batchWrite.set(attendanceDoc, {
           'studentId': student.id,
@@ -84,8 +209,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           'date': dateId,
           'status': isPresent ? 'Present' : 'Absent',
           'present': isPresent,
+          'markedBy': uid,
+          'markedByRole': role,
           'createdAt': FieldValue.serverTimestamp(),
-        });
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
 
         final oldPresent =
             int.tryParse(data['presentCount']?.toString() ?? '0') ?? 0;
@@ -141,6 +269,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> _studentsStream() {
+    return FirebaseFirestore.instance
+        .collection('students')
+        .where('batch', isEqualTo: selectedBatch)
+        .snapshots();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
@@ -151,141 +286,172 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
-            child: Column(
-              children: [
-                _topHeader(context, isDark),
-                _batchSelector(isDark),
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: FirebaseFirestore.instance
-                        .collection('students')
-                        .where('batch', isEqualTo: selectedBatch)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-  return Center(
-    child: Padding(
-      padding: const EdgeInsets.all(18),
-      child: Text(
-        "Error loading students:\n${snapshot.error}",
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.redAccent,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-}
-
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      final students = snapshot.data?.docs ?? [];
-
-                      if (students.isEmpty) {
-                        return _emptyState(isDark);
-                      }
-
-                      int presentCount = 0;
-                      int absentCount = 0;
-
-                      for (final student in students) {
-                        attendanceStatus.putIfAbsent(student.id, () => true);
-                        if (attendanceStatus[student.id] == true) {
-                          presentCount++;
-                        } else {
-                          absentCount++;
-                        }
-                      }
-
-                      return Column(
+            child: loadingUser
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  )
+                : availableBatches.isEmpty
+                    ? Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _summaryCard(
-                                    isDark: isDark,
-                                    title: "Students",
-                                    value: students.length.toString(),
-                                    icon: Icons.groups_rounded,
-                                    color: Colors.blueAccent,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _summaryCard(
-                                    isDark: isDark,
-                                    title: "Present",
-                                    value: presentCount.toString(),
-                                    icon: Icons.check_circle_rounded,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _summaryCard(
-                                    isDark: isDark,
-                                    title: "Absent",
-                                    value: absentCount.toString(),
-                                    icon: Icons.cancel_rounded,
-                                    color: Colors.redAccent,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
+                          _topHeader(context, isDark),
                           Expanded(
-                            child: ListView.builder(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: students.length,
-                              itemBuilder: (context, index) {
-                                final student = students[index];
-                                final data = student.data();
+                            child: _noAccessState(isDark),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          _topHeader(context, isDark),
+                          _batchSelector(isDark),
+                          Expanded(
+                            child: StreamBuilder<
+                                QuerySnapshot<Map<String, dynamic>>>(
+                              stream: _studentsStream(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasError) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Text(
+                                        "Error loading students:\n${snapshot.error}",
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.redAccent,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
 
-                                final name =
-                                    data['name']?.toString() ?? 'No Name';
-                                final attendance =
-                                    data['attendance']?.toString() ?? '0%';
-                                final rollNo =
-                                    data['rollNo']?.toString() ?? '#YGCA';
-                                final isPresent =
-                                    attendanceStatus[student.id] ?? true;
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
 
-                                final initials = name
-                                    .split(" ")
-                                    .where((e) => e.isNotEmpty)
-                                    .map((e) => e[0])
-                                    .take(2)
-                                    .join()
-                                    .toUpperCase();
+                                final students = snapshot.data?.docs ?? [];
 
-                                return _studentAttendanceCard(
-                                  isDark: isDark,
-                                  studentId: student.id,
-                                  name: name,
-                                  rollNo: rollNo,
-                                  attendance: attendance,
-                                  initials: initials,
-                                  isPresent: isPresent,
+                                if (students.isEmpty) {
+                                  return _emptyState(isDark);
+                                }
+
+                                int presentCount = 0;
+                                int absentCount = 0;
+
+                                for (final student in students) {
+                                  attendanceStatus.putIfAbsent(
+                                    student.id,
+                                    () => true,
+                                  );
+
+                                  if (attendanceStatus[student.id] == true) {
+                                    presentCount++;
+                                  } else {
+                                    absentCount++;
+                                  }
+                                }
+
+                                return Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: _summaryCard(
+                                              isDark: isDark,
+                                              title: "Students",
+                                              value:
+                                                  students.length.toString(),
+                                              icon: Icons.groups_rounded,
+                                              color: Colors.blueAccent,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: _summaryCard(
+                                              isDark: isDark,
+                                              title: "Present",
+                                              value: presentCount.toString(),
+                                              icon:
+                                                  Icons.check_circle_rounded,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: _summaryCard(
+                                              isDark: isDark,
+                                              title: "Absent",
+                                              value: absentCount.toString(),
+                                              icon: Icons.cancel_rounded,
+                                              color: Colors.redAccent,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Expanded(
+                                      child: ListView.builder(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        itemCount: students.length,
+                                        itemBuilder: (context, index) {
+                                          final student = students[index];
+                                          final data = student.data();
+
+                                          final name =
+                                              data['name']?.toString() ??
+                                                  'No Name';
+                                          final attendance =
+                                              data['attendance']?.toString() ??
+                                                  '0%';
+                                          final rollNo =
+                                              data['rollNo']?.toString() ??
+                                                  '#YGCA';
+                                          final isPresent =
+                                              attendanceStatus[student.id] ??
+                                                  true;
+
+                                          final initials = name
+                                              .split(" ")
+                                              .where((e) => e.isNotEmpty)
+                                              .map((e) => e[0])
+                                              .take(2)
+                                              .join()
+                                              .toUpperCase();
+
+                                          return _studentAttendanceCard(
+                                            isDark: isDark,
+                                            studentId: student.id,
+                                            name: name,
+                                            rollNo: rollNo,
+                                            attendance: attendance,
+                                            initials: initials,
+                                            isPresent: isPresent,
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    _saveButton(isDark, students),
+                                  ],
                                 );
                               },
                             ),
                           ),
-                          _saveButton(isDark, students),
                         ],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+                      ),
           ),
         );
       },
@@ -319,8 +485,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                isDark ? red.withOpacity(0.18) : maroon.withOpacity(0.18),
+            color: isDark ? red.withOpacity(0.18) : maroon.withOpacity(0.18),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -357,7 +522,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 SizedBox(height: 3),
                 Text(
-                  "Batch-wise student attendance",
+                  "Admin / assigned coach session attendance",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -412,6 +577,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _batchSelector(bool isDark) {
+    final isCoach = role == 'Coach';
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       padding: const EdgeInsets.all(15),
@@ -446,69 +613,177 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
               ),
               const SizedBox(width: 9),
-              Text(
-                "Select Training Batch",
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
+              Expanded(
+                child: Text(
+                  isCoach ? "Assigned Training Session" : "Select Training Batch",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: selectedBatch,
-            dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
-            style: TextStyle(
-              color: _primaryText(isDark),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
-              prefixIcon: Icon(
-                Icons.sports_cricket_rounded,
-                color: isDark ? gold : maroon,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
-              border: OutlineInputBorder(
+          if (availableBatches.length == 1)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0B0B0B) : Colors.white,
                 borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide(color: _border(isDark)),
+                border: Border.all(color: _border(isDark)),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide(color: _border(isDark)),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.sports_cricket_rounded,
+                    color: isDark ? gold : maroon,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      selectedBatch,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  if (isCoach)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        "Assigned",
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide(color: isDark ? red : maroon),
+            )
+          else
+            DropdownButtonFormField<String>(
+              value: selectedBatch,
+              dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
-            ),
-            items: batches.map((batch) {
-              return DropdownMenuItem(
-                value: batch,
-                child: Text(
-                  batch,
-                  overflow: TextOverflow.ellipsis,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
+                prefixIcon: Icon(
+                  Icons.sports_cricket_rounded,
+                  color: isDark ? gold : maroon,
                 ),
-              );
-            }).toList(),
-            onChanged: isSaving
-                ? null
-                : (value) {
-                    if (value == null) return;
-                    setState(() {
-                      selectedBatch = value;
-                      attendanceStatus.clear();
-                    });
-                  },
-          ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide(color: _border(isDark)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide(color: _border(isDark)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide(color: isDark ? red : maroon),
+                ),
+              ),
+              items: availableBatches.map((batch) {
+                return DropdownMenuItem(
+                  value: batch,
+                  child: Text(
+                    batch,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              onChanged: isSaving
+                  ? null
+                  : (value) {
+                      if (value == null) return;
+                      setState(() {
+                        selectedBatch = value;
+                        attendanceStatus.clear();
+                      });
+                    },
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _noAccessState(bool isDark) {
+    final title = role == 'Coach' ? "No Session Assigned" : "No Access";
+    final message = role == 'Coach'
+        ? "Admin has not assigned any training session to this coach yet."
+        : "Only Admin and assigned Coach can mark attendance.";
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: _card(isDark),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: _border(isDark)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.lock_outline_rounded,
+                color: isDark ? gold : maroon,
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
