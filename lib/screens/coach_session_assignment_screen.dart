@@ -31,6 +31,8 @@ class _CoachSessionAssignmentScreenState
 
   final Map<String, String?> selectedCoachForSession = {};
   final Map<String, String> coachNameById = {};
+  final Map<String, String> coachEmailById = {};
+  final Map<String, String> coachSpecializationById = {};
 
   @override
   void initState() {
@@ -98,13 +100,15 @@ class _CoachSessionAssignmentScreenState
   }
 
   bool _isCoachActive(Map<String, dynamic> data) {
+    final role = data['role']?.toString().trim() ?? '';
     final approvalStatus =
         data['approvalStatus']?.toString().toLowerCase().trim() ?? '';
     final status = data['status']?.toString().toLowerCase().trim() ?? '';
 
-    return approvalStatus == 'approved' ||
-        status == 'active' ||
-        data['isApproved'] == true;
+    return role == 'Coach' &&
+        (approvalStatus == 'approved' ||
+            status == 'active' ||
+            data['isApproved'] == true);
   }
 
   Future<void> _loadWeeklyAssignments() async {
@@ -172,9 +176,15 @@ class _CoachSessionAssignmentScreenState
             docRef,
             {
               'weekStartDate': weekId,
+              'weekEndDate': _dateId(
+                selectedWeekStart.add(const Duration(days: 6)),
+              ),
               'session': session,
+              'batch': session,
               'coachId': '',
               'coachName': 'Not Assigned',
+              'coachEmail': '',
+              'coachSpecialization': '',
               'status': 'Unassigned',
               'updatedAt': FieldValue.serverTimestamp(),
             },
@@ -192,6 +202,9 @@ class _CoachSessionAssignmentScreenState
               'batch': session,
               'coachId': coachId,
               'coachName': coachNameById[coachId] ?? 'Coach',
+              'coachEmail': coachEmailById[coachId] ?? '',
+              'coachSpecialization':
+                  coachSpecializationById[coachId] ?? 'Coach',
               'status': 'Active',
               'updatedAt': FieldValue.serverTimestamp(),
               'createdAt': FieldValue.serverTimestamp(),
@@ -236,8 +249,10 @@ class _CoachSessionAssignmentScreenState
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream:
-                  FirebaseFirestore.instance.collection('coaches').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .where('role', isEqualTo: 'Coach')
+                  .snapshots(),
               builder: (context, coachSnapshot) {
                 if (coachSnapshot.hasError) {
                   return Column(
@@ -274,11 +289,20 @@ class _CoachSessionAssignmentScreenState
                     [];
 
                 coachNameById.clear();
+                coachEmailById.clear();
+                coachSpecializationById.clear();
 
                 for (final coach in coaches) {
                   final data = coach.data();
+
                   coachNameById[coach.id] =
                       data['name']?.toString().trim() ?? 'Coach';
+
+                  coachEmailById[coach.id] =
+                      data['email']?.toString().trim() ?? '';
+
+                  coachSpecializationById[coach.id] =
+                      data['specialization']?.toString().trim() ?? 'Coach';
                 }
 
                 return Column(
@@ -290,9 +314,9 @@ class _CoachSessionAssignmentScreenState
                           ? _messageCard(
                               isDark: isDark,
                               icon: Icons.sports_cricket_rounded,
-                              title: "No Active Coaches Found",
+                              title: "No Active Coach Users Found",
                               message:
-                                  "Add or approve coaches before assigning weekly sessions.",
+                                  "Coach must register first. Then Admin can approve and assign weekly sessions.",
                             )
                           : ListView(
                               physics: const BouncingScrollPhysics(),
@@ -530,7 +554,7 @@ class _CoachSessionAssignmentScreenState
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Assign a coach for each weekly session. Coach will later see only the sessions assigned for the selected week.",
+              "Assign registered coach users for each weekly session. Coach login will show only these sessions.",
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,

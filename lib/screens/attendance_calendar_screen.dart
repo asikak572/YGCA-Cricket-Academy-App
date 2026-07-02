@@ -64,9 +64,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     if (value is List) {
       for (final item in value) {
         final text = _text(item);
-        if (text.isNotEmpty) {
-          result.add(text);
-        }
+        if (text.isNotEmpty) result.add(text);
       }
     }
 
@@ -82,6 +80,47 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     }
 
     return chunks;
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day - (date.weekday - 1),
+    );
+  }
+
+  String _dateId(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  Future<List<String>> _loadCoachAssignedSessions() async {
+    final weekId = _dateId(_startOfWeek(DateTime.now()));
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('coach_session_assignments')
+        .where('weekStartDate', isEqualTo: weekId)
+        .get();
+
+    final sessions = snapshot.docs
+        .where((doc) {
+          final data = doc.data();
+          final coachId = data['coachId']?.toString().trim() ?? '';
+          final status = data['status']?.toString().toLowerCase().trim() ?? '';
+
+          return coachId == uid && status == 'active';
+        })
+        .map((doc) {
+          final data = doc.data();
+          final session = data['session']?.toString().trim() ?? '';
+          final batch = data['batch']?.toString().trim() ?? '';
+          return session.isNotEmpty ? session : batch;
+        })
+        .where((session) => session.isNotEmpty)
+        .toSet()
+        .toList();
+
+    return sessions;
   }
 
   Future<void> _loadInitialData() async {
@@ -117,6 +156,10 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     if (singleAssignedBatch.isNotEmpty &&
         !assignedBatches.contains(singleAssignedBatch)) {
       assignedBatches.add(singleAssignedBatch);
+    }
+
+    if (role == 'Coach') {
+      assignedBatches = await _loadCoachAssignedSessions();
     }
 
     linkedChildrenIds = _listFromDynamic(userData['linkedChildrenIds']);
@@ -324,7 +367,6 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
 
   DateTime? _parseAttendanceDate(dynamic value) {
     if (value == null) return null;
-
     if (value is Timestamp) return value.toDate();
     if (value is DateTime) return value;
 
@@ -408,8 +450,8 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                           role == 'Parent')
                         _studentDropdown(isDark),
                       Expanded(
-                        child: StreamBuilder<
-                            QuerySnapshot<Map<String, dynamic>>>(
+                        child:
+                            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                           stream: _attendanceQuery().snapshots(),
                           builder: (context, snapshot) {
                             if (snapshot.hasError) {
@@ -470,9 +512,8 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                             }
 
                             final total = present + absent + leave;
-                            final percent = total == 0
-                                ? 0
-                                : ((present / total) * 100).round();
+                            final percent =
+                                total == 0 ? 0 : ((present / total) * 100).round();
 
                             return SingleChildScrollView(
                               padding:
@@ -594,15 +635,6 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           color: isDark ? const Color(0xFF111111) : Colors.white,
           shape: BoxShape.circle,
           border: Border.all(color: _border(isDark)),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? red.withOpacity(0.12)
-                  : Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Icon(
           icon,
@@ -667,7 +699,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
               : _text(selectedStudent?['studentId']),
           isExpanded: true,
           dropdownColor: _card(isDark),
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: gold),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: gold),
           hint: Text(
             'Select Student',
             style: TextStyle(color: _secondaryText(isDark)),
@@ -687,7 +719,9 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             return DropdownMenuItem<String>(
               value: id,
               child: Text(
-                studentBatch.isEmpty ? studentName : '$studentName • $studentBatch',
+                studentBatch.isEmpty
+                    ? studentName
+                    : '$studentName • $studentBatch',
                 overflow: TextOverflow.ellipsis,
               ),
             );
@@ -727,32 +761,11 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  const Color(0xFF151515),
-                  const Color(0xFF1A0808),
-                  red.withOpacity(0.16),
-                ]
-              : [
-                  Colors.white,
-                  const Color(0xFFFFFBF2),
-                  gold.withOpacity(0.15),
-                ],
-        ),
+        color: _card(isDark),
         border: Border.all(
           color: isDark ? red.withOpacity(0.32) : gold.withOpacity(0.70),
         ),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? red.withOpacity(0.12)
-                : Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -835,17 +848,10 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: gold.withOpacity(0.75), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: maroon.withOpacity(0.25),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: Column(
         children: [
-          Text(
+          const Text(
             'Firebase Attendance',
             style: TextStyle(
               color: gold,
@@ -901,58 +907,51 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     required Map<int, String> dayStatus,
     required int daysInMonth,
   }) {
-    final days = List.generate(daysInMonth, (index) => index + 1);
-
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
-        border: Border.all(color: _border(isDark)),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-        ],
+        border: Border.all(color: _border(isDark)),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: const [
-              _WeekDay('Sun'),
-              _WeekDay('Mon'),
-              _WeekDay('Tue'),
-              _WeekDay('Wed'),
-              _WeekDay('Thu'),
-              _WeekDay('Fri'),
-              _WeekDay('Sat'),
-            ],
-          ),
-          const SizedBox(height: 10),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: days.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
-            ),
-            itemBuilder: (context, index) {
-              final day = days[index];
-              final status = dayStatus[day] ?? '';
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: List.generate(daysInMonth, (index) {
+          final day = index + 1;
+          final status = dayStatus[day] ?? '';
+          Color color = Colors.grey.withOpacity(0.25);
+          String label = day.toString();
 
-              return _DayBox(
-                day: day.toString(),
-                status: status,
-                isDark: isDark,
-              );
-            },
-          ),
-        ],
+          if (status == 'P') color = Colors.green;
+          if (status == 'A') color = Colors.red;
+          if (status == 'L') color = Colors.orange;
+
+          return Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withOpacity(status.isEmpty ? 0.20 : 0.85),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(
+                color: status.isEmpty ? _border(isDark) : color,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: status.isEmpty
+                      ? _secondaryText(isDark)
+                      : Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -960,25 +959,26 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   Widget _noteCard(bool isDark) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: _card(isDark),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? gold.withOpacity(0.55) : gold.withOpacity(0.85),
-        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border(isDark)),
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: gold, size: 26),
+          Icon(
+            Icons.info_outline_rounded,
+            color: isDark ? gold : maroon,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'This calendar shows the selected student attendance for the current month.',
+              "Calendar shows current month attendance for the selected student.",
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -992,7 +992,10 @@ class _MiniStat extends StatelessWidget {
   final String title;
   final String value;
 
-  const _MiniStat({required this.title, required this.value});
+  const _MiniStat({
+    required this.title,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1002,14 +1005,18 @@ class _MiniStat extends StatelessWidget {
           value,
           style: const TextStyle(
             color: Colors.white,
+            fontSize: 20,
             fontWeight: FontWeight.w900,
-            fontSize: 15,
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 4),
         Text(
           title,
-          style: const TextStyle(color: Colors.white70, fontSize: 10),
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
@@ -1032,106 +1039,24 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(radius: 5, backgroundColor: color),
+        Container(
+          width: 13,
+          height: 13,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
         const SizedBox(width: 5),
         Text(
           label,
           style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black87,
             fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: isDark ? Colors.white70 : const Color(0xFF111827),
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
-    );
-  }
-}
-
-class _WeekDay extends StatelessWidget {
-  final String text;
-
-  const _WeekDay(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 10,
-          color: Colors.grey,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
-class _DayBox extends StatelessWidget {
-  final String day;
-  final String status;
-  final bool isDark;
-
-  const _DayBox({
-    required this.day,
-    required this.status,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Color bgColor = isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade100;
-    Color textColor = isDark ? Colors.white54 : Colors.grey;
-    String label = '-';
-
-    if (status == 'P') {
-      bgColor = Colors.green.withOpacity(0.16);
-      textColor = Colors.green;
-      label = 'P';
-    } else if (status == 'A') {
-      bgColor = Colors.red.withOpacity(0.16);
-      textColor = Colors.red;
-      label = 'A';
-    } else if (status == 'L') {
-      bgColor = Colors.orange.withOpacity(0.16);
-      textColor = Colors.orange;
-      label = 'L';
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: textColor.withOpacity(0.28)),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                day,
-                style: TextStyle(
-                  color: textColor,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

@@ -37,43 +37,26 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
     return value.toString().trim();
   }
 
-  List<String> _getAssignedBatches(Map<String, dynamic> coachData) {
-    final assignedBatches = coachData['assignedBatches'];
-
-    if (assignedBatches is List && assignedBatches.isNotEmpty) {
-      return assignedBatches
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-    }
-
-    final singleBatch = coachData['batch']?.toString().trim() ?? '';
-    if (singleBatch.isNotEmpty) return [singleBatch];
-
-    final assignedBatch = coachData['assignedBatch']?.toString().trim() ?? '';
-    if (assignedBatch.isNotEmpty) return [assignedBatch];
-
-    return [];
-  }
-
-  Stream<QuerySnapshot<Map<String, dynamic>>> _studentStream(
-    List<String> assignedBatches,
-  ) {
-    final studentsRef = FirebaseFirestore.instance.collection('students');
-
-    if (assignedBatches.length == 1) {
-      return studentsRef
-          .where('batch', isEqualTo: assignedBatches.first)
-          .snapshots();
-    }
-
-    return studentsRef.where('batch', whereIn: assignedBatches).snapshots();
-  }
-
   int _safeInt(dynamic value) {
     if (value == null) return 0;
     if (value is int) return value;
     return int.tryParse(value.toString()) ?? 0;
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day - (date.weekday - 1),
+    );
+  }
+
+  String _dateId(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  String _currentWeekId() {
+    return _dateId(_startOfWeek(DateTime.now()));
   }
 
   double _attendancePercentage({
@@ -84,6 +67,88 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
     final total = present + absent + leave;
     if (total == 0) return 0;
     return (present / total) * 100;
+  }
+
+  Future<Map<String, dynamic>> _loadCoachWeeklyData(String coachUid) async {
+    final firestore = FirebaseFirestore.instance;
+    final weekId = _currentWeekId();
+
+    final coachDoc = await firestore.collection('users').doc(coachUid).get();
+    final coachData = coachDoc.data() ?? {};
+    final coachName = _text(coachData['name'], 'Coach');
+
+    final assignmentSnapshot = await firestore
+        .collection('coach_session_assignments')
+        .where('weekStartDate', isEqualTo: weekId)
+        .get();
+
+    final assignedSessions = <String>[];
+
+    for (final doc in assignmentSnapshot.docs) {
+      final data = doc.data();
+
+      final assignedCoachId = data['coachId']?.toString().trim() ?? '';
+      final status = data['status']?.toString().toLowerCase().trim() ?? '';
+      final session = data['session']?.toString().trim() ?? '';
+
+      if (assignedCoachId == coachUid &&
+          status == 'active' &&
+          session.isNotEmpty &&
+          !assignedSessions.contains(session)) {
+        assignedSessions.add(session);
+      }
+    }
+
+    return {
+      'coachName': coachName,
+      'assignedSessions': assignedSessions,
+      'weekStartDate': weekId,
+    };
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> _studentStream(
+    List<String> assignedSessions,
+  ) {
+    final studentsRef = FirebaseFirestore.instance.collection('students');
+
+    if (assignedSessions.length == 1) {
+      return studentsRef
+          .where('batch', isEqualTo: assignedSessions.first)
+          .snapshots();
+    }
+
+    return studentsRef.where('batch', whereIn: assignedSessions).snapshots();
+  }
+
+  Map<String, int> _studentAttendanceCounts(Map<String, dynamic> data) {
+    final present = _safeInt(
+      data['presentDays'] ?? data['presentCount'] ?? data['present'] ?? 0,
+    );
+
+    final leave = _safeInt(
+      data['leaveDays'] ?? data['leaveCount'] ?? data['leave'] ?? 0,
+    );
+
+    final directAbsent = _safeInt(
+      data['absentDays'] ?? data['absentCount'] ?? data['absent'] ?? 0,
+    );
+
+    final total = _safeInt(
+      data['totalAttendanceCount'] ?? data['attendanceTotal'] ?? 0,
+    );
+
+    int absent = directAbsent;
+
+    if (absent == 0 && total > 0) {
+      final calculatedAbsent = total - present - leave;
+      absent = calculatedAbsent < 0 ? 0 : calculatedAbsent;
+    }
+
+    return {
+      'present': present,
+      'absent': absent,
+      'leave': leave,
+    };
   }
 
   @override
@@ -120,13 +185,11 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
         return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
-            child: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-              future: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(coachUid)
-                  .get(),
-              builder: (context, coachSnapshot) {
-                if (coachSnapshot.connectionState == ConnectionState.waiting) {
+            child: FutureBuilder<Map<String, dynamic>>(
+              future: _loadCoachWeeklyData(coachUid),
+              builder: (context, weeklySnapshot) {
+                if (weeklySnapshot.connectionState ==
+                    ConnectionState.waiting) {
                   return Column(
                     children: [
                       _topHeader(context, isDark),
@@ -137,7 +200,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   );
                 }
 
-                if (coachSnapshot.hasError) {
+                if (weeklySnapshot.hasError) {
                   return Column(
                     children: [
                       _topHeader(context, isDark),
@@ -145,46 +208,36 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.error_outline_rounded,
-                          title: "Something Went Wrong",
-                          message: coachSnapshot.error.toString(),
+                          title: "Weekly Assignment Error",
+                          message: weeklySnapshot.error.toString(),
                         ),
                       ),
                     ],
                   );
                 }
 
-                if (!coachSnapshot.hasData || !coachSnapshot.data!.exists) {
+                final weeklyData = weeklySnapshot.data ?? {};
+                final coachName =
+                    weeklyData['coachName']?.toString() ?? 'Coach';
+
+                final assignedSessions =
+                    (weeklyData['assignedSessions'] as List?)
+                            ?.map((e) => e.toString())
+                            .where((e) => e.trim().isNotEmpty)
+                            .toList() ??
+                        [];
+
+                if (assignedSessions.isEmpty) {
                   return Column(
                     children: [
                       _topHeader(context, isDark),
                       Expanded(
                         child: _messageCard(
                           isDark: isDark,
-                          icon: Icons.person_off_rounded,
-                          title: "Coach Data Not Found",
+                          icon: Icons.event_busy_rounded,
+                          title: "No Session Assigned",
                           message:
-                              "Coach profile is not available in users collection.",
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                final coachData = coachSnapshot.data!.data() ?? {};
-                final assignedBatches = _getAssignedBatches(coachData);
-                final coachName = _text(coachData['name'], 'Coach');
-
-                if (assignedBatches.isEmpty) {
-                  return Column(
-                    children: [
-                      _topHeader(context, isDark),
-                      Expanded(
-                        child: _messageCard(
-                          isDark: isDark,
-                          icon: Icons.groups_2_outlined,
-                          title: "No Batch Assigned",
-                          message:
-                              "No batch is assigned to this coach yet.",
+                              "Admin has not assigned any session to this coach for the current week.",
                         ),
                       ),
                     ],
@@ -192,7 +245,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                 }
 
                 return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _studentStream(assignedBatches),
+                  stream: _studentStream(assignedSessions),
                   builder: (context, studentSnapshot) {
                     if (studentSnapshot.connectionState ==
                         ConnectionState.waiting) {
@@ -229,17 +282,10 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                     int totalLeave = 0;
 
                     for (final student in students) {
-                      final data = student.data();
-
-                      totalPresent += _safeInt(
-                        data['presentDays'] ?? data['present'] ?? 0,
-                      );
-                      totalAbsent += _safeInt(
-                        data['absentDays'] ?? data['absent'] ?? 0,
-                      );
-                      totalLeave += _safeInt(
-                        data['leaveDays'] ?? data['leave'] ?? 0,
-                      );
+                      final counts = _studentAttendanceCounts(student.data());
+                      totalPresent += counts['present'] ?? 0;
+                      totalAbsent += counts['absent'] ?? 0;
+                      totalLeave += counts['leave'] ?? 0;
                     }
 
                     final percentage = _attendancePercentage(
@@ -258,11 +304,28 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                           child: _heroBanner(
                             isDark: isDark,
                             coachName: coachName,
+                            sessionCount: assignedSessions.length,
                             studentCount: students.length,
                             percentage: percentage,
                           ),
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                        SliverToBoxAdapter(
+                          child: _sectionTitle(
+                            "CURRENT WEEK SESSIONS",
+                            isDark,
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _sessionCard(
+                              isDark: isDark,
+                              sessions: assignedSessions,
+                            ),
+                          ),
+                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 18)),
                         SliverToBoxAdapter(
                           child: _summaryCards(
                             isDark: isDark,
@@ -314,21 +377,14 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                                         'Active',
                                       );
 
-                                      final present = _safeInt(
-                                        data['presentDays'] ??
-                                            data['present'] ??
-                                            0,
-                                      );
-                                      final absent = _safeInt(
-                                        data['absentDays'] ??
-                                            data['absent'] ??
-                                            0,
-                                      );
-                                      final leave = _safeInt(
-                                        data['leaveDays'] ??
-                                            data['leave'] ??
-                                            0,
-                                      );
+                                      final counts =
+                                          _studentAttendanceCounts(data);
+
+                                      final present =
+                                          counts['present'] ?? 0;
+                                      final absent =
+                                          counts['absent'] ?? 0;
+                                      final leave = counts['leave'] ?? 0;
 
                                       final studentPercentage =
                                           _attendancePercentage(
@@ -367,105 +423,106 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
   }
 
   Widget _topHeader(BuildContext context, bool isDark) {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-    child: Row(
-      children: [
-        _circleButton(
-          isDark: isDark,
-          icon: Icons.arrow_back_rounded,
-          onTap: () => Navigator.pop(context),
-        ),
-        const SizedBox(width: 12),
-        Image.asset(
-          'assets/images/ygca_logo.jpg',
-          width: 46,
-          height: 46,
-          fit: BoxFit.contain,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "STUDENT ATTENDANCE",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-              Text(
-                "Assigned batch attendance overview",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _secondaryText(isDark),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      child: Row(
+        children: [
+          _circleButton(
+            isDark: isDark,
+            icon: Icons.arrow_back_rounded,
+            onTap: () => Navigator.pop(context),
           ),
-        ),
-        ValueListenableBuilder<ThemeMode>(
-          valueListenable: ThemeController.themeMode,
-          builder: (context, mode, _) {
-            final dark = mode == ThemeMode.dark;
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/ygca_logo.jpg',
+            width: 46,
+            height: 46,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "STUDENT ATTENDANCE",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  "Current week assigned session overview",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeController.themeMode,
+            builder: (context, mode, _) {
+              final dark = mode == ThemeMode.dark;
 
-            return _circleButton(
-              isDark: isDark,
-              icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-              onTap: ThemeController.toggleTheme,
-            );
-          },
-        ),
-      ],
-    ),
-  );
-}
-
- Widget _circleButton({
-  required bool isDark,
-  required IconData icon,
-  required VoidCallback onTap,
-}) {
-  return InkWell(
-    borderRadius: BorderRadius.circular(40),
-    onTap: onTap,
-    child: Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        color: _card(isDark),
-        shape: BoxShape.circle,
-        border: Border.all(color: _border(isDark)),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? red.withOpacity(0.12)
-                : Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+              return _circleButton(
+                isDark: isDark,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              );
+            },
           ),
         ],
       ),
-      child: Icon(
-        icon,
-        color: isDark ? Colors.white : maroon,
-        size: 21,
+    );
+  }
+
+  Widget _circleButton({
+    required bool isDark,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: _card(isDark),
+          shape: BoxShape.circle,
+          border: Border.all(color: _border(isDark)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : maroon,
+          size: 21,
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _heroBanner({
     required bool isDark,
     required String coachName,
+    required int sessionCount,
     required int studentCount,
     required double percentage,
   }) {
@@ -523,7 +580,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 44,
                     backgroundColor: Colors.white,
                     child: Icon(
@@ -554,8 +611,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              "Assigned Student Attendance",
+                            const Text(
+                              "Current Week Attendance",
                               style: TextStyle(
                                 color: gold,
                                 fontSize: 13,
@@ -567,6 +624,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                               spacing: 8,
                               runSpacing: 6,
                               children: [
+                                _heroChip("Sessions: $sessionCount"),
                                 _heroChip("Students: $studentCount"),
                                 _heroChip(
                                   "Avg: ${percentage.toStringAsFixed(0)}%",
@@ -600,11 +658,52 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
+        style: const TextStyle(
           color: gold,
           fontSize: 11,
           fontWeight: FontWeight.w900,
         ),
+      ),
+    );
+  }
+
+  Widget _sessionCard({
+    required bool isDark,
+    required List<String> sessions,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : gold.withOpacity(0.75),
+        ),
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: sessions.map((session) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: isDark ? red.withOpacity(0.10) : gold.withOpacity(0.16),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark ? red.withOpacity(0.25) : gold.withOpacity(0.65),
+              ),
+            ),
+            child: Text(
+              session,
+              style: TextStyle(
+                color: isDark ? gold : maroon,
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -674,15 +773,6 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
         border: Border.all(
           color: isDark ? red.withOpacity(0.25) : _border(isDark),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.25)
-                : Colors.black.withOpacity(0.045),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -772,15 +862,6 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
         border: Border.all(
           color: isDark ? red.withOpacity(0.25) : _border(isDark),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.28)
-                : Colors.black.withOpacity(0.045),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -813,7 +894,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "Roll No: $rollNo • Batch: $batch",
+                  "Roll No: $rollNo • Session: $batch",
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -924,7 +1005,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            "No students are available in this coach assigned batch.",
+            "No students are available in this coach current week assigned sessions.",
             textAlign: TextAlign.center,
             style: TextStyle(
               color: _secondaryText(isDark),

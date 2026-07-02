@@ -4,16 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/theme_controller.dart';
 
 import 'coach_details_screen.dart';
+import 'add_coach_screen.dart';
 
 class CoachManagementScreen extends StatelessWidget {
   const CoachManagementScreen({super.key});
-
-  static const List<String> academyBatches = [
-    "Friday: 6:00 PM – 8:00 PM",
-    "Saturday: 7:00 AM – 9:00 AM",
-    "Saturday: 4:00 PM – 6:00 PM",
-    "Saturday: 6:00 PM – 8:00 PM",
-  ];
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
@@ -56,26 +50,20 @@ class CoachManagementScreen extends StatelessWidget {
     return approvalStatus == 'approved' || status == 'active' || isApproved;
   }
 
-  List<String> _batchesFromData(Map<String, dynamic> data) {
+  String _sessionInfoText(Map<String, dynamic> data) {
     final assignedBatches = data['assignedBatches'];
 
     if (assignedBatches is List && assignedBatches.isNotEmpty) {
       return assignedBatches
           .map((e) => e.toString().trim())
           .where((e) => e.isNotEmpty)
-          .toList();
+          .join(', ');
     }
 
-    final oldBatch = data['batch']?.toString().trim() ?? '';
-    if (oldBatch.isNotEmpty) return [oldBatch];
+    final batch = data['batch']?.toString().trim() ?? '';
+    if (batch.isNotEmpty) return batch;
 
-    return [];
-  }
-
-  String _batchesText(Map<String, dynamic> data) {
-    final batches = _batchesFromData(data);
-    if (batches.isEmpty) return 'No Batch Assigned';
-    return batches.join(', ');
+    return 'Weekly sessions assigned separately';
   }
 
   Future<void> _syncCoachUserByEmail({
@@ -108,12 +96,13 @@ class CoachManagementScreen extends StatelessWidget {
   }
 
   Future<void> _addCoachDialog(BuildContext context, bool isDark) async {
+    final rootContext = context;
+
     final nameController = TextEditingController();
     final emailController = TextEditingController();
     final phoneController = TextEditingController();
 
     String selectedSpecialization = "Batting Coach";
-    final selectedBatches = <String>{};
 
     final specializations = [
       "Batting Coach",
@@ -125,10 +114,10 @@ class CoachManagementScreen extends StatelessWidget {
     ];
 
     await showDialog(
-      context: context,
-      builder: (_) {
+      context: rootContext,
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (dialogContext, setDialogState) {
             return AlertDialog(
               backgroundColor: _card(isDark),
               shape: RoundedRectangleBorder(
@@ -183,64 +172,44 @@ class CoachManagementScreen extends StatelessWidget {
                       }).toList(),
                       onChanged: (value) {
                         if (value == null) return;
-                        setDialogState(() => selectedSpecialization = value);
+                        setDialogState(() {
+                          selectedSpecialization = value;
+                        });
                       },
                     ),
-                    const SizedBox(height: 14),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Assign Batches",
-                        style: TextStyle(
-                          color: isDark ? gold : maroon,
-                          fontWeight: FontWeight.w900,
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? red.withOpacity(0.08)
+                            : gold.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark
+                              ? red.withOpacity(0.25)
+                              : gold.withOpacity(0.55),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: academyBatches.map((batch) {
-                        final selected = selectedBatches.contains(batch);
-
-                        return FilterChip(
-                          label: Text(
-                            batch,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: selected
-                                  ? (isDark ? Colors.black : gold)
-                                  : _primaryText(isDark),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          selected: selected,
-                          selectedColor: isDark ? gold : maroon,
-                          checkmarkColor: selected
-                              ? (isDark ? Colors.black : gold)
-                              : _primaryText(isDark),
-                          backgroundColor:
-                              isDark ? const Color(0xFF151515) : Colors.white,
-                          side: BorderSide(color: _border(isDark)),
-                          onSelected: (value) {
-                            setDialogState(() {
-                              if (value) {
-                                selectedBatches.add(batch);
-                              } else {
-                                selectedBatches.remove(batch);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
+                      child: Text(
+                        "Session assignment is handled separately in Weekly Coach Assignment.",
+                        style: TextStyle(
+                          color: _secondaryText(isDark),
+                          fontSize: 12,
+                          height: 1.35,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
                   child: Text(
                     "Cancel",
                     style: TextStyle(color: isDark ? Colors.white70 : maroon),
@@ -256,22 +225,23 @@ class CoachManagementScreen extends StatelessWidget {
                     final email = emailController.text.trim();
                     final emailLower = _cleanEmail(email);
                     final phone = phoneController.text.trim();
-                    final batches = selectedBatches.toList();
+                    final specialization = selectedSpecialization;
 
-                    if (name.isEmpty ||
-                        email.isEmpty ||
-                        phone.isEmpty ||
-                        batches.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                    if (name.isEmpty || email.isEmpty || phone.isEmpty) {
+                      if (!rootContext.mounted) return;
+
+                      ScaffoldMessenger.of(rootContext).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            "Please fill name, email, phone and select batch",
-                          ),
+                          content: Text("Please fill name, email and phone"),
                           backgroundColor: Colors.red,
                         ),
                       );
                       return;
                     }
+
+                    Navigator.of(dialogContext).pop();
+
+                    await Future.delayed(const Duration(milliseconds: 250));
 
                     try {
                       final coachData = {
@@ -280,10 +250,7 @@ class CoachManagementScreen extends StatelessWidget {
                         'emailLower': emailLower,
                         'role': 'Coach',
                         'phone': phone,
-                        'specialization': selectedSpecialization,
-                        'assignedBatches': batches,
-                        'batch': batches.first,
-                        'batchText': batches.join(', '),
+                        'specialization': specialization,
                         'approvalStatus': 'Approved',
                         'status': 'Active',
                         'isApproved': true,
@@ -303,10 +270,7 @@ class CoachManagementScreen extends StatelessWidget {
                           'emailLower': emailLower,
                           'role': 'Coach',
                           'phone': phone,
-                          'specialization': selectedSpecialization,
-                          'assignedBatches': batches,
-                          'batch': batches.first,
-                          'batchText': batches.join(', '),
+                          'specialization': specialization,
                           'approvalStatus': 'Approved',
                           'status': 'Active',
                           'isApproved': true,
@@ -314,24 +278,23 @@ class CoachManagementScreen extends StatelessWidget {
                         },
                       );
 
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Coach added and batch assigned"),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
+                      if (!rootContext.mounted) return;
+
+                      ScaffoldMessenger.of(rootContext).showSnackBar(
+                        const SnackBar(
+                          content: Text("Coach added successfully"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
                     } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Error: $e"),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
+                      if (!rootContext.mounted) return;
+
+                      ScaffoldMessenger.of(rootContext).showSnackBar(
+                        SnackBar(
+                          content: Text("Error: $e"),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
                     }
                   },
                   child: const Text("Save"),
@@ -348,187 +311,60 @@ class CoachManagementScreen extends StatelessWidget {
     phoneController.dispose();
   }
 
-  Future<void> _approveCoachDialog({
+  Future<void> _approveCoach({
     required BuildContext context,
-    required bool isDark,
     required String coachId,
     required Map<String, dynamic> data,
   }) async {
-    final selectedBatches = <String>{..._batchesFromData(data)};
+    try {
+      final email = data['email']?.toString() ?? '';
+      final emailLower = _cleanEmail(email);
 
-    await showDialog(
-      context: context,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: _card(isDark),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-              title: Text(
-                "Approve Coach",
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      data['name']?.toString() ?? 'Coach',
-                      style: TextStyle(
-                        color: _primaryText(isDark),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      data['email']?.toString() ?? '',
-                      style: TextStyle(color: _secondaryText(isDark)),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      "Assign Batches",
-                      style: TextStyle(
-                        color: isDark ? gold : maroon,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: academyBatches.map((batch) {
-                        final selected = selectedBatches.contains(batch);
+      final approveData = {
+        'role': 'Coach',
+        'emailLower': emailLower,
+        'approvalStatus': 'Approved',
+        'status': 'Active',
+        'isApproved': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
 
-                        return FilterChip(
-                          label: Text(
-                            batch,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: selected
-                                  ? (isDark ? Colors.black : gold)
-                                  : _primaryText(isDark),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          selected: selected,
-                          selectedColor: isDark ? gold : maroon,
-                          checkmarkColor: selected
-                              ? (isDark ? Colors.black : gold)
-                              : _primaryText(isDark),
-                          backgroundColor:
-                              isDark ? const Color(0xFF151515) : Colors.white,
-                          side: BorderSide(color: _border(isDark)),
-                          onSelected: (value) {
-                            setDialogState(() {
-                              if (value) {
-                                selectedBatches.add(batch);
-                              } else {
-                                selectedBatches.remove(batch);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    "Cancel",
-                    style: TextStyle(color: isDark ? Colors.white70 : maroon),
-                  ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? red : maroon,
-                    foregroundColor: isDark ? Colors.white : gold,
-                  ),
-                  onPressed: () async {
-                    final batches = selectedBatches.toList();
+      await FirebaseFirestore.instance
+          .collection('coaches')
+          .doc(coachId)
+          .set(approveData, SetOptions(merge: true));
 
-                    if (batches.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please select batch"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(coachId);
+      final userDoc = await userRef.get();
 
-                    try {
-                      final email = data['email']?.toString() ?? '';
-                      final emailLower = _cleanEmail(email);
-
-                      final approveData = {
-                        'role': 'Coach',
-                        'emailLower': emailLower,
-                        'assignedBatches': batches,
-                        'batch': batches.first,
-                        'batchText': batches.join(', '),
-                        'approvalStatus': 'Approved',
-                        'status': 'Active',
-                        'isApproved': true,
-                        'updatedAt': FieldValue.serverTimestamp(),
-                      };
-
-                      await FirebaseFirestore.instance
-                          .collection('coaches')
-                          .doc(coachId)
-                          .set(approveData, SetOptions(merge: true));
-
-                      final userRef = FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(coachId);
-                      final userDoc = await userRef.get();
-
-                      if (userDoc.exists) {
-                        await userRef.set(approveData, SetOptions(merge: true));
-                      } else {
-                        await _syncCoachUserByEmail(
-                          email: email,
-                          data: approveData,
-                        );
-                      }
-
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Coach approved and batch assigned"),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Approve failed: $e"),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text("Approve"),
-                ),
-              ],
-            );
-          },
+      if (userDoc.exists) {
+        await userRef.set(approveData, SetOptions(merge: true));
+      } else {
+        await _syncCoachUserByEmail(
+          email: email,
+          data: approveData,
         );
-      },
-    );
+      }
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Coach approved successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Approve failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   InputDecoration _inputDecoration({
@@ -595,7 +431,7 @@ class CoachManagementScreen extends StatelessWidget {
   ) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: _card(isDark),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: Text(
@@ -611,7 +447,7 @@ class CoachManagementScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               "Cancel",
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
@@ -623,7 +459,7 @@ class CoachManagementScreen extends StatelessWidget {
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.of(dialogContext).pop();
               await _deleteCoach(context, coachId);
             },
             child: const Text("Delete"),
@@ -678,7 +514,14 @@ class CoachManagementScreen extends StatelessWidget {
           floatingActionButton: FloatingActionButton.extended(
             backgroundColor: isDark ? red : maroon,
             foregroundColor: isDark ? Colors.white : gold,
-            onPressed: () => _addCoachDialog(context, isDark),
+            onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const AddCoachScreen(),
+    ),
+  );
+},
             icon: const Icon(Icons.add_rounded),
             label: const Text(
               "Add Coach",
@@ -829,7 +672,7 @@ class CoachManagementScreen extends StatelessWidget {
                                       data['role']?.toString() ?? 'Coach';
                                   final phone =
                                       data['phone']?.toString() ?? 'No Phone';
-                                  final batch = _batchesText(data);
+                                  final batch = _sessionInfoText(data);
                                   final status =
                                       data['status']?.toString() ?? 'Pending';
 
@@ -906,9 +749,7 @@ class CoachManagementScreen extends StatelessWidget {
 
               return _circleButton(
                 isDark: isDark,
-                icon: dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 onTap: ThemeController.toggleTheme,
               );
             },
@@ -930,7 +771,8 @@ class CoachManagementScreen extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF111111) : Colors.white.withOpacity(0.14),
+          color:
+              isDark ? const Color(0xFF111111) : Colors.white.withOpacity(0.14),
           shape: BoxShape.circle,
           border: Border.all(
             color: isDark ? red.withOpacity(0.28) : gold.withOpacity(0.55),
@@ -1216,7 +1058,7 @@ class CoachManagementScreen extends StatelessWidget {
     required String status,
   }) {
     final color = _statusColor(status);
-    final needsApproval = !_isApproved(data) || _batchesFromData(data).isEmpty;
+    final needsApproval = !_isApproved(data);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1339,15 +1181,14 @@ class CoachManagementScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: () => _approveCoachDialog(
+                    onPressed: () => _approveCoach(
                       context: context,
-                      isDark: isDark,
                       coachId: coachId,
                       data: data,
                     ),
                     icon: const Icon(Icons.verified_user_rounded),
                     label: const Text(
-                      "Approve & Assign Batch",
+                      "Approve Coach",
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),

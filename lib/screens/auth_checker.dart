@@ -28,25 +28,6 @@ class AuthChecker extends StatelessWidget {
         isApproved == true;
   }
 
-  bool _hasAssignedBatch(Map<String, dynamic> data) {
-    final rawBatches = data['assignedBatches'];
-
-    if (rawBatches is List) {
-      final validBatches = rawBatches
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-
-      if (validBatches.isNotEmpty) return true;
-    }
-
-    final batch = _safeText(data['batch']);
-    final assignedBatch = _safeText(data['assignedBatch']);
-    final batchText = _safeText(data['batchText']);
-
-    return batch.isNotEmpty || assignedBatch.isNotEmpty || batchText.isNotEmpty;
-  }
-
   Future<Map<String, dynamic>?> _getStudentData(String uid) async {
     final studentDoc =
         await FirebaseFirestore.instance.collection('students').doc(uid).get();
@@ -69,7 +50,6 @@ class AuthChecker extends StatelessWidget {
   }
 
   Future<Widget> _getStartScreen() async {
-    // AuthChecker loading screen after login.
     await Future.delayed(const Duration(seconds: 3));
 
     final user = FirebaseAuth.instance.currentUser;
@@ -93,17 +73,16 @@ class AuthChecker extends StatelessWidget {
 
     switch (role) {
       case 'admin':
-        return  AdminDashboard();
+        return AdminDashboard();
 
       case 'coach':
         final coachApproved = _isApproved(userData);
-        final hasBatch = _hasAssignedBatch(userData);
 
-        if (!coachApproved || !hasBatch) {
+        if (!coachApproved) {
           return const PendingApprovalScreen(
             title: "Waiting for Admin Approval",
             message:
-                "Your coach account is registered successfully. Admin must approve your account and assign batch before you can enter the dashboard.",
+                "Your coach account is registered successfully. Admin must approve your account before you can enter the dashboard.",
           );
         }
 
@@ -183,7 +162,6 @@ class SplashLoadingScreen extends StatelessWidget {
               alignment: Alignment.center,
             ),
           ),
-
           Positioned(
             left: 0,
             right: 0,
@@ -203,7 +181,6 @@ class SplashLoadingScreen extends StatelessWidget {
               ),
             ),
           ),
-
           Positioned(
             left: 0,
             right: 0,

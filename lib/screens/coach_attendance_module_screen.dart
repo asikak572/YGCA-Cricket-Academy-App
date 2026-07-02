@@ -59,11 +59,11 @@ class _CoachAttendanceModuleScreenState
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Mark today attendance for assigned batches";
+        return "Mark today attendance for weekly assigned sessions";
       case 1:
-        return "Review student attendance history";
+        return "Review assigned student attendance history";
       case 2:
-        return "Track student-wise attendance calendar";
+        return "Track assigned student-wise attendance calendar";
       default:
         return "";
     }
@@ -95,7 +95,7 @@ class _CoachAttendanceModuleScreenState
         _InfoItem(
           icon: Icons.check_circle_rounded,
           title: "Mark Attendance",
-          subtitle: "Take today attendance batch-wise",
+          subtitle: "Take today attendance for current week sessions",
           color: Colors.green,
           screen: const AttendanceScreen(),
         ),
@@ -107,7 +107,7 @@ class _CoachAttendanceModuleScreenState
         _InfoItem(
           icon: Icons.history_rounded,
           title: "Attendance History",
-          subtitle: "View previous attendance records",
+          subtitle: "View previous attendance records of assigned students",
           color: Colors.redAccent,
           screen: const AttendanceHistoryScreen(),
         ),
@@ -118,7 +118,7 @@ class _CoachAttendanceModuleScreenState
       _InfoItem(
         icon: Icons.calendar_month_rounded,
         title: "Attendance Calendar",
-        subtitle: "View student-wise attendance calendar",
+        subtitle: "View assigned student-wise attendance calendar",
         color: Colors.orange,
         screen: const AttendanceCalendarScreen(),
       ),
@@ -284,90 +284,64 @@ class _CoachAttendanceModuleScreenState
         border: Border.all(
           color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.75),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? red.withOpacity(0.16) : maroon.withOpacity(0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
       ),
-      child: Stack(
+      child: Row(
         children: [
-          Positioned(
-            right: -18,
-            bottom: -26,
-            child: Icon(
+          Container(
+            width: 66,
+            height: 66,
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.30),
+              shape: BoxShape.circle,
+              border: Border.all(color: gold.withOpacity(0.85)),
+            ),
+            child: const Icon(
               Icons.fact_check_rounded,
-              color: Colors.white.withOpacity(0.08),
-              size: 115,
+              color: gold,
+              size: 35,
             ),
           ),
-          Row(
-            children: [
-              Container(
-                width: 66,
-                height: 66,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.30),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: gold.withOpacity(0.85)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: gold.withOpacity(0.16),
-                      blurRadius: 18,
-                    ),
-                  ],
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "ATTENDANCE MODULE",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.fact_check_rounded,
-                  color: gold,
-                  size: 35,
+                const SizedBox(height: 5),
+                Text(
+                  "Mark, review and track attendance",
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: gold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    height: 1.25,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "ATTENDANCE MODULE",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "Mark, review and track student attendance",
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: gold,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Coach can manage attendance for assigned batches",
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.78),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        height: 1.25,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 4),
+                Text(
+                  "Coach can manage attendance for current weekly assigned sessions",
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.78),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -383,15 +357,6 @@ class _CoachAttendanceModuleScreenState
         border: Border.all(
           color: isDark ? gold.withOpacity(0.42) : gold.withOpacity(0.75),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.25)
-                : Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -405,7 +370,7 @@ class _CoachAttendanceModuleScreenState
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Mark Attendance is for Coach/Admin. History and Calendar are filtered by role and assigned students.",
+              "History and Calendar now use coach_session_assignments for coach role filtering.",
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -424,21 +389,7 @@ class _CoachAttendanceModuleScreenState
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  const Color(0xFF120202),
-                  const Color(0xFF1A0505),
-                  red.withOpacity(0.22),
-                ]
-              : [
-                  Colors.white,
-                  const Color(0xFFFFF7F7),
-                  gold.withOpacity(0.20),
-                ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
           color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.75),
@@ -549,15 +500,6 @@ class _CoachAttendanceModuleScreenState
                         ? red.withOpacity(0.25)
                         : const Color(0xFFE5E7EB),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark
-                          ? item.color.withOpacity(0.07)
-                          : Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: Row(
                   children: [
@@ -565,14 +507,7 @@ class _CoachAttendanceModuleScreenState
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            item.color.withOpacity(isDark ? 0.38 : 0.20),
-                            item.color.withOpacity(isDark ? 0.16 : 0.08),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: item.color.withOpacity(isDark ? 0.16 : 0.08),
                         borderRadius: BorderRadius.circular(15),
                         border: Border.all(
                           color: item.color.withOpacity(0.30),
@@ -630,105 +565,6 @@ class _CoachAttendanceModuleScreenState
   }
 
   Widget _summaryRow(bool isDark) {
-    if (_currentIndex == 0) {
-      return _summaryContainer(
-        isDark: isDark,
-        items: [
-          _MiniStatData(
-            icon: Icons.check_circle_rounded,
-            label: "Mark",
-            value: "Today",
-            color: Colors.green,
-          ),
-          _MiniStatData(
-            icon: Icons.groups_rounded,
-            label: "Batch",
-            value: "Wise",
-            color: Colors.orange,
-          ),
-          _MiniStatData(
-            icon: Icons.verified_rounded,
-            label: "Status",
-            value: "Live",
-            color: Colors.blueAccent,
-          ),
-          _MiniStatData(
-            icon: Icons.person_rounded,
-            label: "Role",
-            value: "Coach",
-            color: Colors.purpleAccent,
-          ),
-        ],
-      );
-    }
-
-    if (_currentIndex == 1) {
-      return _summaryContainer(
-        isDark: isDark,
-        items: [
-          _MiniStatData(
-            icon: Icons.history_rounded,
-            label: "History",
-            value: "View",
-            color: Colors.redAccent,
-          ),
-          _MiniStatData(
-            icon: Icons.check_circle_rounded,
-            label: "Present",
-            value: "Track",
-            color: Colors.green,
-          ),
-          _MiniStatData(
-            icon: Icons.cancel_rounded,
-            label: "Absent",
-            value: "Track",
-            color: Colors.red,
-          ),
-          _MiniStatData(
-            icon: Icons.event_note_rounded,
-            label: "Leave",
-            value: "Track",
-            color: Colors.orange,
-          ),
-        ],
-      );
-    }
-
-    return _summaryContainer(
-      isDark: isDark,
-      items: [
-        _MiniStatData(
-          icon: Icons.calendar_month_rounded,
-          label: "Calendar",
-          value: "View",
-          color: Colors.orange,
-        ),
-        _MiniStatData(
-          icon: Icons.person_rounded,
-          label: "Student",
-          value: "Wise",
-          color: Colors.blueAccent,
-        ),
-        _MiniStatData(
-          icon: Icons.timeline_rounded,
-          label: "Progress",
-          value: "Track",
-          color: Colors.green,
-        ),
-        _MiniStatData(
-          icon: Icons.analytics_rounded,
-          label: "Report",
-          value: "Live",
-          color: Colors.purpleAccent,
-        ),
-      ],
-    );
-  }
-
-  Widget _summaryContainer({
-    required bool isDark,
-    required List<_MiniStatData> items,
-  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -739,17 +575,36 @@ class _CoachAttendanceModuleScreenState
         ),
       ),
       child: Row(
-        children: items.map((item) {
-          return Expanded(
-            child: _miniStat(
-              isDark: isDark,
-              icon: item.icon,
-              label: item.label,
-              value: item.value,
-              color: item.color,
-            ),
-          );
-        }).toList(),
+        children: [
+          _miniStat(
+            isDark: isDark,
+            icon: Icons.fact_check_rounded,
+            label: "Mark",
+            value: "Today",
+            color: Colors.green,
+          ),
+          _miniStat(
+            isDark: isDark,
+            icon: Icons.history_rounded,
+            label: "History",
+            value: "View",
+            color: Colors.redAccent,
+          ),
+          _miniStat(
+            isDark: isDark,
+            icon: Icons.calendar_month_rounded,
+            label: "Calendar",
+            value: "View",
+            color: Colors.orange,
+          ),
+          _miniStat(
+            isDark: isDark,
+            icon: Icons.person_rounded,
+            label: "Role",
+            value: "Coach",
+            color: Colors.purpleAccent,
+          ),
+        ],
       ),
     );
   }
@@ -761,147 +616,120 @@ class _CoachAttendanceModuleScreenState
     required String value,
     required Color color,
   }) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: color,
-          size: 21,
-        ),
-        const SizedBox(height: 5),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: _secondaryText(isDark),
-            fontSize: 9.2,
-            fontWeight: FontWeight.w700,
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 21),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _secondaryText(isDark),
+              fontSize: 9.2,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: _primaryText(isDark),
-            fontSize: 12.5,
-            fontWeight: FontWeight.w900,
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _bottomNavigation(bool isDark) {
-    final items = [
-      _BottomNavItem(
-        icon: Icons.check_circle_rounded,
-        label: "Mark",
-      ),
-      _BottomNavItem(
-        icon: Icons.history_rounded,
-        label: "History",
-      ),
-      _BottomNavItem(
-        icon: Icons.calendar_month_rounded,
-        label: "Calendar",
-      ),
-    ];
-
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(7),
-      height: 76,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF101010) : Colors.white,
+        color: _card(isDark),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
         ),
-        boxShadow: [
-          BoxShadow(
-            color:
-                isDark ? red.withOpacity(0.12) : Colors.black.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
+      ),
+      child: Row(
+        children: [
+          _bottomItem(
+            isDark: isDark,
+            icon: Icons.fact_check_rounded,
+            label: "Mark",
+            selected: _currentIndex == 0,
+            onTap: () => setState(() => _currentIndex = 0),
+          ),
+          _bottomItem(
+            isDark: isDark,
+            icon: Icons.history_rounded,
+            label: "Records",
+            selected: _currentIndex == 1,
+            onTap: () => setState(() => _currentIndex = 1),
+          ),
+          _bottomItem(
+            isDark: isDark,
+            icon: Icons.calendar_month_rounded,
+            label: "Calendar",
+            selected: _currentIndex == 2,
+            onTap: () => setState(() => _currentIndex = 2),
           ),
         ],
       ),
-      child: Row(
-        children: List.generate(items.length, (index) {
-          final selected = index == _currentIndex;
-          final item = items[index];
+    );
+  }
 
-          return Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(23),
-              onTap: () {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: selected
-                      ? LinearGradient(
-                          colors: [
-                            red.withOpacity(isDark ? 0.90 : 0.92),
-                            maroon.withOpacity(isDark ? 0.95 : 0.90),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: selected ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(23),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color: red.withOpacity(isDark ? 0.23 : 0.15),
-                            blurRadius: 12,
-                            offset: const Offset(0, 5),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      item.icon,
-                      color: selected
-                          ? Colors.white
-                          : isDark
-                              ? Colors.white60
-                              : const Color(0xFF6B7280),
-                      size: selected ? 25 : 23,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: selected
-                            ? Colors.white
-                            : isDark
-                                ? Colors.white60
-                                : const Color(0xFF6B7280),
-                        fontSize: 11,
-                        fontWeight:
-                            selected ? FontWeight.w900 : FontWeight.w700,
-                      ),
-                    ),
-                  ],
+  Widget _bottomItem({
+    required bool isDark,
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: selected ? red.withOpacity(0.16) : Colors.transparent,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: selected ? red.withOpacity(0.45) : Colors.transparent,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: selected
+                    ? (isDark ? gold : maroon)
+                    : _secondaryText(isDark),
+                size: 22,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected
+                      ? (isDark ? gold : maroon)
+                      : _secondaryText(isDark),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 10,
                 ),
               ),
-            ),
-          );
-        }),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -914,35 +742,11 @@ class _InfoItem {
   final Color color;
   final Widget screen;
 
-  _InfoItem({
+  const _InfoItem({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.color,
     required this.screen,
-  });
-}
-
-class _BottomNavItem {
-  final IconData icon;
-  final String label;
-
-  _BottomNavItem({
-    required this.icon,
-    required this.label,
-  });
-}
-
-class _MiniStatData {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  _MiniStatData({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
   });
 }

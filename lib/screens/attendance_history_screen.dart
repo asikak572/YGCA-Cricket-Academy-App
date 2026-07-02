@@ -56,9 +56,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (value is List) {
       for (final item in value) {
         final text = _text(item);
-        if (text.isNotEmpty) {
-          result.add(text);
-        }
+        if (text.isNotEmpty) result.add(text);
       }
     }
 
@@ -74,6 +72,47 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     }
 
     return chunks;
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day - (date.weekday - 1),
+    );
+  }
+
+  String _dateId(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  Future<List<String>> _loadCoachAssignedSessions() async {
+    final weekId = _dateId(_startOfWeek(DateTime.now()));
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('coach_session_assignments')
+        .where('weekStartDate', isEqualTo: weekId)
+        .get();
+
+    final sessions = snapshot.docs
+        .where((doc) {
+          final data = doc.data();
+          final coachId = data['coachId']?.toString().trim() ?? '';
+          final status = data['status']?.toString().toLowerCase().trim() ?? '';
+
+          return coachId == uid && status == 'active';
+        })
+        .map((doc) {
+          final data = doc.data();
+          final session = data['session']?.toString().trim() ?? '';
+          final batch = data['batch']?.toString().trim() ?? '';
+          return session.isNotEmpty ? session : batch;
+        })
+        .where((session) => session.isNotEmpty)
+        .toSet()
+        .toList();
+
+    return sessions;
   }
 
   Future<void> _loadInitialData() async {
@@ -109,6 +148,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (singleAssignedBatch.isNotEmpty &&
         !assignedBatches.contains(singleAssignedBatch)) {
       assignedBatches.add(singleAssignedBatch);
+    }
+
+    if (role == 'Coach') {
+      assignedBatches = await _loadCoachAssignedSessions();
     }
 
     linkedChildrenIds = _listFromDynamic(userData['linkedChildrenIds']);
@@ -281,7 +324,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   DateTime? _parseAttendanceDate(dynamic value) {
     if (value == null) return null;
-
     if (value is Timestamp) return value.toDate();
     if (value is DateTime) return value;
 
@@ -293,10 +335,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     } catch (_) {
       return null;
     }
-  }
-
-  String _dateKey(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
   String _formatDate(dynamic value) {
@@ -381,10 +419,13 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 : Column(
                     children: [
                       _topHeader(context, isDark),
-                      if (role == 'Admin' || role == 'Coach' || role == 'Parent')
+                      if (role == 'Admin' ||
+                          role == 'Coach' ||
+                          role == 'Parent')
                         _studentDropdown(isDark),
                       Expanded(
-                        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        child:
+                            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                           stream: _attendanceQuery().snapshots(),
                           builder: (context, snapshot) {
                             if (snapshot.hasError) {
@@ -410,7 +451,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                               );
                             }
 
-                            final records = _sortRecords(snapshot.data?.docs ?? []);
+                            final records =
+                                _sortRecords(snapshot.data?.docs ?? []);
 
                             int present = 0;
                             int absent = 0;
@@ -430,9 +472,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                             }
 
                             final total = records.length;
-                            final percentage = total == 0
-                                ? 0
-                                : ((present / total) * 100).round();
+                            final percentage =
+                                total == 0 ? 0 : ((present / total) * 100).round();
 
                             return SingleChildScrollView(
                               child: Column(
@@ -449,7 +490,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   const SizedBox(height: 18),
                                   _selectedStudentInfo(isDark),
                                   const SizedBox(height: 18),
-                                  _sectionTitle("ATTENDANCE SUMMARY", isDark),
+                                  _sectionTitle(
+                                      "ATTENDANCE SUMMARY", isDark),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -493,14 +535,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(height: 18),
-                                  _sectionTitle("ATTENDANCE CALENDAR", isDark),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    child: _calendarGraph(records, isDark),
                                   ),
                                   const SizedBox(height: 18),
                                   _sectionTitle("RECENT RECORDS", isDark),
@@ -632,7 +666,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             return DropdownMenuItem<String>(
               value: id,
               child: Text(
-                studentBatch.isEmpty ? studentName : "$studentName • $studentBatch",
+                studentBatch.isEmpty
+                    ? studentName
+                    : "$studentName • $studentBatch",
                 overflow: TextOverflow.ellipsis,
               ),
             );
@@ -755,7 +791,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   ),
                 ),
                 Text(
-                  "History & Calendar Dashboard",
+                  "History Dashboard",
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 11,
@@ -796,15 +832,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           color: _card(isDark),
           shape: BoxShape.circle,
           border: Border.all(color: _border(isDark)),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? red.withOpacity(0.12)
-                  : Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Icon(icon, color: isDark ? Colors.white : maroon, size: 21),
       ),
@@ -821,121 +848,87 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     required int percentage,
   }) {
     return Container(
-      height: 225,
+      height: 205,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      clipBehavior: Clip.antiAlias,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  Colors.black,
+                  darkMaroon,
+                  red.withOpacity(0.35),
+                ]
+              : [
+                  maroon,
+                  red.withOpacity(0.80),
+                  darkMaroon,
+                ],
+        ),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
-      child: Stack(
+      child: Row(
         children: [
-          Positioned.fill(
-            child: Image.asset('assets/images/home_hero_bg.png', fit: BoxFit.cover),
+          const CircleAvatar(
+            radius: 46,
+            backgroundColor: Colors.white,
+            child: Icon(Icons.fact_check_rounded, color: maroon, size: 42),
           ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [
-                          Colors.black.withOpacity(0.90),
-                          darkMaroon.withOpacity(0.88),
-                          red.withOpacity(0.35),
-                        ]
-                      : [
-                          maroon.withOpacity(0.92),
-                          maroon.withOpacity(0.70),
-                          Colors.black.withOpacity(0.25),
-                        ],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: -20,
-            bottom: -20,
-            child: Icon(
-              Icons.fact_check_rounded,
-              color: Colors.white.withOpacity(0.08),
-              size: 150,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 46,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.fact_check_rounded, color: maroon, size: 42),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 230,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            role.toUpperCase(),
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          const Text(
-                            "ATTENDANCE",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
-                          ),
-                          Text(
-                            "DASHBOARD",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _heroChip("Total: $total"),
-                              _heroChip("Present: $present"),
-                              _heroChip("Absent: $absent"),
-                              _heroChip("Leave: $leave"),
-                              _heroChip("Attendance: $percentage%"),
-                            ],
-                          ),
-                        ],
+          const SizedBox(width: 14),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                width: 230,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      role.toUpperCase(),
+                      style: const TextStyle(
+                        color: gold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
                       ),
                     ),
-                  ),
+                    const Text(
+                      "ATTENDANCE",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        height: 1,
+                      ),
+                    ),
+                    const Text(
+                      "HISTORY",
+                      style: TextStyle(
+                        color: gold,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _heroChip("Total: $total"),
+                        _heroChip("Present: $present"),
+                        _heroChip("Absent: $absent"),
+                        _heroChip("Leave: $leave"),
+                        _heroChip("Attendance: $percentage%"),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -956,7 +949,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
+        style: const TextStyle(
           color: gold,
           fontSize: 11,
           fontWeight: FontWeight.w900,
@@ -1001,156 +994,37 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF151515), const Color(0xFF1A0808), color.withOpacity(0.16)]
-              : [Colors.white, const Color(0xFFFFFBF2), color.withOpacity(0.08)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
-        ),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: SizedBox(
-          width: 130,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: color.withOpacity(0.18),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _secondaryText(isDark),
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _calendarGraph(
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> records,
-    bool isDark,
-  ) {
-    final Map<String, String> statusByDate = {};
-
-    for (final doc in records) {
-      final data = doc.data();
-      final parsedDate = _parseAttendanceDate(data['date']);
-      final status = _text(data['status']).isEmpty ? 'Absent' : _text(data['status']);
-
-      if (parsedDate != null) {
-        statusByDate[_dateKey(parsedDate)] = status;
-      }
-    }
-
-    final today = DateTime.now();
-    final days = List.generate(
-      35,
-      (index) => today.subtract(Duration(days: 34 - index)),
-    );
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
         color: _card(isDark),
-        border: Border.all(color: _border(isDark)),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.25) : const Color(0xFFE5E7EB),
+        ),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: days.map((day) {
-              final dateId = _dateKey(day);
-              final status = statusByDate[dateId] ?? 'No Record';
-
-              Color color;
-              if (_isPresent(status)) {
-                color = Colors.green;
-              } else if (_isLeave(status)) {
-                color = Colors.orange;
-              } else if (status == "Absent") {
-                color = Colors.red;
-              } else {
-                color = isDark ? Colors.white12 : Colors.grey.shade300;
-              }
-
-              return Tooltip(
-                message: "$dateId • $status",
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              );
-            }).toList(),
+          Icon(icon, color: color, size: 34),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              _legend("Present", Colors.green, isDark),
-              _legend("Absent", Colors.red, isDark),
-              _legend("Leave", Colors.orange, isDark),
-              _legend("No Record", isDark ? Colors.white12 : Colors.grey.shade300, isDark),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _legend(String title, Color color, bool isDark) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          title,
-          style: TextStyle(
-            color: _secondaryText(isDark),
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
     );
   }
 
@@ -1161,36 +1035,30 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     required String date,
     required String status,
   }) {
-    Color statusColor;
-    IconData icon;
-
-    if (_isPresent(status)) {
-      statusColor = Colors.green;
-      icon = Icons.check_circle_rounded;
-    } else if (_isLeave(status)) {
-      statusColor = Colors.orange;
-      icon = Icons.event_note_rounded;
-    } else {
-      statusColor = Colors.redAccent;
-      icon = Icons.cancel_rounded;
-    }
+    final present = _isPresent(status);
+    final leave = _isLeave(status);
+    final color = present ? Colors.green : leave ? Colors.orange : Colors.red;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
-        border: Border.all(color: _border(isDark)),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.35)),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 25,
-            backgroundColor: maroon,
-            child: Text(
-              studentName.isNotEmpty ? studentName[0].toUpperCase() : "?",
-              style: const TextStyle(color: gold, fontWeight: FontWeight.bold),
+            backgroundColor: color.withOpacity(0.16),
+            child: Icon(
+              present
+                  ? Icons.check_rounded
+                  : leave
+                      ? Icons.event_note_rounded
+                      : Icons.close_rounded,
+              color: color,
             ),
           ),
           const SizedBox(width: 12),
@@ -1221,26 +1089,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: statusColor, size: 14),
-                const SizedBox(width: 4),
-                Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+          Text(
+            status,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],
@@ -1254,21 +1107,16 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: _card(isDark),
-        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _border(isDark)),
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Column(
-        children: [
-          Icon(Icons.history_rounded, size: 38, color: _secondaryText(isDark)),
-          const SizedBox(height: 10),
-          Text(
-            "No attendance records found",
-            style: TextStyle(
-              color: _primaryText(isDark),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+      child: Text(
+        "No attendance records found for this student.",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: _secondaryText(isDark),
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

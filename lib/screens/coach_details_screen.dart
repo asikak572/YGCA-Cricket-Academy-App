@@ -33,12 +33,6 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
   static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  static const List<String> academyBatches = [
-  "Friday: 6:00 PM – 8:00 PM",
-  "Saturday: 7:00 AM – 9:00 AM",
-  "Saturday: 4:00 PM – 6:00 PM",
-  "Saturday: 6:00 PM – 8:00 PM",
-];
   Color _bg(bool isDark) {
     return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
   }
@@ -61,34 +55,82 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
 
   String _cleanEmail(String value) => value.trim().toLowerCase();
 
-  List<String> _assignedBatches(Map<String, dynamic> data) {
-    final raw = data['assignedBatches'];
-
-    if (raw is List && raw.isNotEmpty) {
-      return raw
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-    }
-
-    final oldBatch = data['batch']?.toString().trim() ?? widget.batch.trim();
-
-    if (oldBatch.isNotEmpty && oldBatch != 'No Batch Assigned') {
-      return [oldBatch];
-    }
-
-    return [];
-  }
-
-  String _batchesText(List<String> batches) {
-    if (batches.isEmpty) return "No Batch Assigned";
-    return batches.join(', ');
-  }
-
   String _text(Map<String, dynamic> data, String key, String fallback) {
     final value = data[key];
     if (value == null || value.toString().trim().isEmpty) return fallback;
     return value.toString().trim();
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day - (date.weekday - 1),
+    );
+  }
+
+  String _dateId(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  Future<String> _resolveCoachUid({
+    required String coachUid,
+    required String email,
+  }) async {
+    if (coachUid.trim().isNotEmpty) return coachUid.trim();
+
+    final emailLower = email.trim().toLowerCase();
+
+    if (emailLower.isEmpty) return widget.coachId;
+
+    final userQuery = await FirebaseFirestore.instance
+        .collection('users')
+        .where('emailLower', isEqualTo: emailLower)
+        .limit(1)
+        .get();
+
+    if (userQuery.docs.isNotEmpty) {
+      return userQuery.docs.first.id;
+    }
+
+    return widget.coachId;
+  }
+
+  Future<List<String>> _loadCurrentWeekSessions({
+    required String coachUid,
+    required String email,
+  }) async {
+    final realCoachUid = await _resolveCoachUid(
+      coachUid: coachUid,
+      email: email,
+    );
+
+    final weekId = _dateId(_startOfWeek(DateTime.now()));
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('coach_session_assignments')
+        .where('weekStartDate', isEqualTo: weekId)
+        .get();
+
+    final sessions = snapshot.docs
+        .where((doc) {
+          final data = doc.data();
+          final savedCoachId = data['coachId']?.toString().trim() ?? '';
+          final status = data['status']?.toString().toLowerCase().trim() ?? '';
+
+          return savedCoachId == realCoachUid && status == 'active';
+        })
+        .map((doc) {
+          final data = doc.data();
+          final session = data['session']?.toString().trim() ?? '';
+          final batch = data['batch']?.toString().trim() ?? '';
+          return session.isNotEmpty ? session : batch;
+        })
+        .where((session) => session.isNotEmpty)
+        .toSet()
+        .toList();
+
+    return sessions;
   }
 
   Future<void> _syncCoachUserByEmail({
@@ -143,7 +185,6 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     required String email,
     required String role,
     required String phone,
-    required List<String> assignedBatches,
     required String status,
     required String experience,
     required String specialization,
@@ -154,11 +195,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
       'name': name.trim(),
       'email': email.trim(),
       'emailLower': emailLower,
-      'role': role.trim(),
+      'role': role.trim().isEmpty ? 'Coach' : role.trim(),
       'phone': phone.trim(),
-      'assignedBatches': assignedBatches,
-      'batch': assignedBatches.isEmpty ? '' : assignedBatches.first,
-      'batchText': assignedBatches.join(', '),
       'status': status.trim(),
       'experience': experience.trim(),
       'specialization': specialization.trim(),
@@ -178,9 +216,6 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
         'emailLower': emailLower,
         'role': 'Coach',
         'phone': phone.trim(),
-        'assignedBatches': assignedBatches,
-        'batch': assignedBatches.isEmpty ? '' : assignedBatches.first,
-        'batchText': assignedBatches.join(', '),
         'status': status.trim(),
         'specialization': specialization.trim(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -191,7 +226,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text("Coach updated and batch assigned"),
+        content: Text("Coach updated successfully"),
         backgroundColor: Colors.green,
       ),
     );
@@ -260,12 +295,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
       text: data['experience']?.toString() ?? '5 Years',
     );
 
-    String selectedSpecialization =
-        data['specialization']?.toString() ?? 'Batting Coach';
-
-    final selectedBatches = _assignedBatches(data).toSet();
-
     final specializations = [
+      "Coach",
       "Batting Coach",
       "Bowling Coach",
       "Fielding Coach",
@@ -274,7 +305,20 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
       "Assistant Coach",
     ];
 
+    final rawSpecialization =
+        data['specialization']?.toString().trim() ?? 'Coach';
+
+    String selectedSpecialization =
+        specializations.contains(rawSpecialization)
+            ? rawSpecialization
+            : "Coach";
+
     final statusOptions = ["Active", "Inactive"];
+
+    final rawStatus = statusController.text.trim();
+    if (!statusOptions.contains(rawStatus)) {
+      statusController.text = "Active";
+    }
 
     showDialog(
       context: context,
@@ -348,9 +392,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    value: statusOptions.contains(statusController.text)
-                        ? statusController.text
-                        : "Active",
+                    value: statusController.text,
                     isExpanded: true,
                     dropdownColor:
                         isDark ? const Color(0xFF111111) : Colors.white,
@@ -374,52 +416,36 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     },
                   ),
                   const SizedBox(height: 14),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Assigned Batches",
-                      style: TextStyle(
-                        color: isDark ? gold : maroon,
-                        fontWeight: FontWeight.w900,
-                      ),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.04)
+                          : const Color(0xFFFFFBF2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _border(isDark)),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: academyBatches.map((batch) {
-                      final selected = selectedBatches.contains(batch);
-
-                      return FilterChip(
-                        label: Text(
-                          batch,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: selected
-                                ? (isDark ? Colors.black : gold)
-                                : _primaryText(isDark),
-                            fontWeight: FontWeight.bold,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: isDark ? gold : maroon,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            "Weekly sessions are assigned from Weekly Coach Assignment screen.",
+                            style: TextStyle(
+                              color: _secondaryText(isDark),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              height: 1.35,
+                            ),
                           ),
                         ),
-                        selected: selected,
-                        selectedColor: isDark ? gold : maroon,
-                        checkmarkColor:
-                            selected ? (isDark ? Colors.black : gold) : null,
-                        backgroundColor:
-                            isDark ? const Color(0xFF151515) : Colors.white,
-                        side: BorderSide(color: _border(isDark)),
-                        onSelected: (value) {
-                          setDialogState(() {
-                            if (value) {
-                              selectedBatches.add(batch);
-                            } else {
-                              selectedBatches.remove(batch);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -441,16 +467,12 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                   final name = nameController.text.trim();
                   final email = emailController.text.trim();
                   final phone = phoneController.text.trim();
-                  final batches = selectedBatches.toList();
 
-                  if (name.isEmpty ||
-                      email.isEmpty ||
-                      phone.isEmpty ||
-                      batches.isEmpty) {
+                  if (name.isEmpty || email.isEmpty || phone.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
-                          "Please fill name, email, phone and batches",
+                          "Please fill name, email and phone",
                         ),
                         backgroundColor: Colors.red,
                       ),
@@ -463,7 +485,6 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     email: email,
                     role: roleController.text,
                     phone: phone,
-                    assignedBatches: batches,
                     status: statusController.text,
                     experience: experienceController.text,
                     specialization: selectedSpecialization,
@@ -530,6 +551,183 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     );
   }
 
+  Widget _currentWeekAssignmentsCard({
+    required bool isDark,
+    required String coachUid,
+    required String email,
+  }) {
+    return FutureBuilder<List<String>>(
+      future: _loadCurrentWeekSessions(
+        coachUid: coachUid,
+        email: email,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Current Week Sessions",
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: isDark ? gold : maroon,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final sessions = snapshot.data ?? [];
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  "Current Week Sessions",
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: sessions.isEmpty
+                    ? Text(
+                        "No Session Assigned",
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: _primaryText(isDark),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: sessions.map((session) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 5),
+                            child: Text(
+                              session,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                color: _primaryText(isDark),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _currentWeekSessionsBox({
+    required bool isDark,
+    required String coachUid,
+    required String email,
+  }) {
+    return FutureBuilder<List<String>>(
+      future: _loadCurrentWeekSessions(
+        coachUid: coachUid,
+        email: email,
+      ),
+      builder: (context, snapshot) {
+        final loading = snapshot.connectionState == ConnectionState.waiting;
+        final sessions = snapshot.data ?? [];
+
+        return _infoCard(
+          isDark: isDark,
+          title: "CURRENT WEEK SESSIONS",
+          children: [
+            if (loading)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: isDark ? gold : maroon,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      "Loading sessions...",
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (sessions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  "No session assigned for this coach in the current week.",
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    height: 1.35,
+                  ),
+                ),
+              )
+            else
+              ...sessions.map(
+                (session) => Padding(
+                  padding: const EdgeInsets.only(bottom: 9),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.sports_cricket_rounded,
+                        color: isDark ? gold : maroon,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          session,
+                          style: TextStyle(
+                            color: _primaryText(isDark),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
@@ -550,12 +748,10 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
             final phone = _text(data, 'phone', widget.phone);
             final status = _text(data, 'status', widget.status);
             final experience = _text(data, 'experience', '5 Years');
-            final specialization =
-                _text(data, 'specialization', 'Batting Coach');
+            final specialization = _text(data, 'specialization', 'Coach');
             final email = _text(data, 'email', 'No Email');
+            final coachUid = _text(data, 'uid', widget.coachId);
 
-            final batches = _assignedBatches(data);
-            final batchText = _batchesText(batches);
             final initial = name.isNotEmpty ? name[0].toUpperCase() : "?";
             final isActive = status.toLowerCase() == "active";
 
@@ -585,9 +781,9 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                           [
                             _statCard(
                               isDark: isDark,
-                              icon: Icons.groups_rounded,
-                              title: "BATCHES",
-                              value: batches.length.toString(),
+                              icon: Icons.event_available_rounded,
+                              title: "SESSIONS",
+                              value: "Weekly",
                               subtitle: "Assigned",
                               color: Colors.blue,
                             ),
@@ -654,10 +850,10 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                               title: "Phone Number",
                               value: phone,
                             ),
-                            _infoRow(
+                            _currentWeekAssignmentsCard(
                               isDark: isDark,
-                              title: "Assigned Batches",
-                              value: batchText,
+                              coachUid: coachUid,
+                              email: email,
                             ),
                             _infoRow(
                               isDark: isDark,
@@ -675,6 +871,17 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                               value: status,
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverToBoxAdapter(
+                        child: _currentWeekSessionsBox(
+                          isDark: isDark,
+                          coachUid: coachUid,
+                          email: email,
                         ),
                       ),
                     ),

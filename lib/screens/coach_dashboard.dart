@@ -65,21 +65,85 @@ class _CoachDashboardState extends State<CoachDashboard> {
     return fallback;
   }
 
-  String _assignedBatchesText(Map<String, dynamic> data) {
-    final raw = data['assignedBatches'];
+  DateTime _startOfWeek(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day - (date.weekday - 1),
+    );
+  }
 
-    if (raw is List && raw.isNotEmpty) {
-      final batches = raw
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
+  String _dateId(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
 
-      if (batches.isNotEmpty) {
-        return batches.join(', ');
-      }
+  Future<List<String>> _loadCurrentWeekSessions(String coachUid) async {
+    final weekId = _dateId(_startOfWeek(DateTime.now()));
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('coach_session_assignments')
+        .where('weekStartDate', isEqualTo: weekId)
+        .get();
+
+    final sessions = snapshot.docs
+        .where((doc) {
+          final data = doc.data();
+          final coachId = data['coachId']?.toString().trim() ?? '';
+          final status = data['status']?.toString().toLowerCase().trim() ?? '';
+
+          return coachId == coachUid && status == 'active';
+        })
+        .map((doc) {
+          final data = doc.data();
+          final session = data['session']?.toString().trim() ?? '';
+          final batch = data['batch']?.toString().trim() ?? '';
+          return session.isNotEmpty ? session : batch;
+        })
+        .where((session) => session.isNotEmpty)
+        .toSet()
+        .toList();
+
+    return sessions;
+  }
+
+  Future<int> _loadAssignedStudentCount(List<String> sessions) async {
+    if (sessions.isEmpty) return 0;
+
+    final chunks = <List<String>>[];
+
+    for (var i = 0; i < sessions.length; i += 10) {
+      chunks.add(
+        sessions.sublist(
+          i,
+          i + 10 > sessions.length ? sessions.length : i + 10,
+        ),
+      );
     }
 
-    return _safeText(data, ['batch', 'assignedBatch'], 'Batch not assigned');
+    int count = 0;
+
+    for (final chunk in chunks) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('batch', whereIn: chunk)
+          .get();
+
+      count += snapshot.docs.length;
+    }
+
+    return count;
+  }
+
+  String _sessionsText(List<String> sessions) {
+    if (sessions.isEmpty) return "No session assigned";
+    if (sessions.length == 1) return sessions.first;
+    return "${sessions.length} Sessions";
+  }
+
+  String _shortSessionText(List<String> sessions) {
+    if (sessions.isEmpty) return "Batch not assigned";
+    if (sessions.length == 1) return sessions.first;
+    return "${sessions.length} weekly sessions";
   }
 
   Color _bg(bool isDark) {
@@ -117,7 +181,6 @@ class _CoachDashboardState extends State<CoachDashboard> {
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
 
-          // UPDATED DRAWER
           drawer: YgcaDrawer(
             role: 'Coach',
             username: 'Coach User',
@@ -184,85 +247,111 @@ class _CoachDashboardState extends State<CoachDashboard> {
                   currentUser.email ?? '',
                 );
                 final role = _safeText(data, ['role'], 'Coach');
-                final batch = _assignedBatchesText(data);
-                final assignedStudents =
-                    _safeText(data, ['assignedStudents'], '0');
                 final status = _safeText(data, ['status'], 'Active');
 
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Column(
-                    children: [
-                      _topBar(isDark),
-                      _coachHero(
-                        isDark: isDark,
-                        name: name,
-                        email: email,
-                        role: role,
-                        batch: batch,
-                        assignedStudents: assignedStudents,
-                        status: status,
-                      ),
-                      const SizedBox(height: 14),
-                      _sectionTitle(
-                        title: "COACH OVERVIEW",
-                        isDark: isDark,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 2.35,
-                          children: [
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.groups_rounded,
-                              title: "Students",
-                              value: assignedStudents,
-                              subtitle: "Assigned",
-                              color: Colors.blueAccent,
-                            ),
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.fact_check_rounded,
-                              title: "Attendance",
-                              value: "Today",
-                              subtitle: "Mark now",
-                              color: Colors.green,
-                            ),
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.sports_cricket_rounded,
-                              title: "Batch",
-                              value: batch,
-                              subtitle: "Training",
-                              color: Colors.orange,
-                            ),
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.verified_rounded,
-                              title: "Status",
-                              value: status,
-                              subtitle: role,
-                              color: Colors.purpleAccent,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      _sectionTitle(
-                        title: "QUICK ACTIONS",
-                        isDark: isDark,
-                      ),
-                      _quickActions(isDark),
-                      const SizedBox(height: 6),
-                    ],
-                  ),
+                return FutureBuilder<List<String>>(
+                  future: _loadCurrentWeekSessions(currentUser.uid),
+                  builder: (context, sessionSnapshot) {
+                    final sessions = sessionSnapshot.data ?? [];
+                    final batchText = _shortSessionText(sessions);
+
+                    return FutureBuilder<int>(
+                      future: _loadAssignedStudentCount(sessions),
+                      builder: (context, countSnapshot) {
+                        final assignedStudents =
+                            countSnapshot.data?.toString() ?? "0";
+
+                        return SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Column(
+                            children: [
+                              _topBar(isDark),
+                              _coachHero(
+                                isDark: isDark,
+                                name: name,
+                                email: email,
+                                role: role,
+                                batch: batchText,
+                                assignedStudents: assignedStudents,
+                                status: status,
+                              ),
+                              const SizedBox(height: 14),
+                              _sectionTitle(
+                                title: "COACH OVERVIEW",
+                                isDark: isDark,
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: GridView.count(
+                                  crossAxisCount: 2,
+                                  shrinkWrap: true,
+                                  physics:
+                                      const NeverScrollableScrollPhysics(),
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                  childAspectRatio: 2.35,
+                                  children: [
+                                    _overviewCard(
+                                      isDark: isDark,
+                                      icon: Icons.groups_rounded,
+                                      title: "Students",
+                                      value: assignedStudents,
+                                      subtitle: "Assigned",
+                                      color: Colors.blueAccent,
+                                    ),
+                                    _overviewCard(
+                                      isDark: isDark,
+                                      icon: Icons.fact_check_rounded,
+                                      title: "Attendance",
+                                      value: "Today",
+                                      subtitle: "Mark now",
+                                      color: Colors.green,
+                                    ),
+                                    _overviewCard(
+                                      isDark: isDark,
+                                      icon: Icons.sports_cricket_rounded,
+                                      title: "Session",
+                                      value: _sessionsText(sessions),
+                                      subtitle: "Current Week",
+                                      color: Colors.orange,
+                                    ),
+                                    _overviewCard(
+                                      isDark: isDark,
+                                      icon: Icons.verified_rounded,
+                                      title: "Status",
+                                      value: status,
+                                      subtitle: role,
+                                      color: Colors.purpleAccent,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: _assignedSessionsCard(
+                                  isDark: isDark,
+                                  sessions: sessions,
+                                  loading: sessionSnapshot.connectionState ==
+                                      ConnectionState.waiting,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              _sectionTitle(
+                                title: "QUICK ACTIONS",
+                                isDark: isDark,
+                              ),
+                              _quickActions(isDark),
+                              const SizedBox(height: 6),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
                 );
               },
             ),
@@ -302,6 +391,95 @@ class _CoachDashboardState extends State<CoachDashboard> {
           ),
         );
       },
+    );
+  }
+
+  Widget _assignedSessionsCard({
+    required bool isDark,
+    required List<String> sessions,
+    required bool loading,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: loading
+          ? Row(
+              children: [
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: isDark ? gold : maroon,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "Loading current week sessions...",
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "CURRENT WEEK ASSIGNED SESSIONS",
+                  style: TextStyle(
+                    color: isDark ? gold : maroon,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (sessions.isEmpty)
+                  Text(
+                    "No session assigned for this week.",
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                else
+                  ...sessions.map(
+                    (session) => Padding(
+                      padding: const EdgeInsets.only(bottom: 7),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.sports_cricket_rounded,
+                            color: isDark ? gold : maroon,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              session,
+                              style: TextStyle(
+                                color: _primaryText(isDark),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 
@@ -625,8 +803,8 @@ class _CoachDashboardState extends State<CoachDashboard> {
                 ),
                 const SizedBox(height: 9),
                 Text(
-                  "Batch: $batch",
-                  maxLines: 1,
+                  "Session: $batch",
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? Colors.white60 : const Color(0xFF64748B),
