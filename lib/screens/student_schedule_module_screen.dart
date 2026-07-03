@@ -156,13 +156,7 @@ class _StudentScheduleModuleScreenState
         color: Colors.blueAccent,
         screen: const TrainingScheduleScreen(),
       ),
-      _InfoItem(
-        icon: Icons.campaign_rounded,
-        title: "Schedule Updates",
-        subtitle: "View latest schedule announcements",
-        color: Colors.orange,
-        screen: const TrainingScheduleScreen(),
-      ),
+     
     ];
   }
 
@@ -750,12 +744,7 @@ class _StudentScheduleModuleScreenState
           value: "Plan",
           color: Colors.blueAccent,
         ),
-        _MiniStatData(
-          icon: Icons.campaign_rounded,
-          label: "Updates",
-          value: "News",
-          color: Colors.orange,
-        ),
+      
         _MiniStatData(
           icon: Icons.verified_rounded,
           label: "Status",

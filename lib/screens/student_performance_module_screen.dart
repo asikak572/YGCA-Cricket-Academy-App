@@ -155,13 +155,7 @@ class _StudentPerformanceModuleScreenState
         color: Colors.blueAccent,
         screen: const PerformanceReportScreen(),
       ),
-      _InfoItem(
-        icon: Icons.analytics_rounded,
-        title: "Performance Analytics",
-        subtitle: "Analyze your cricket performance data",
-        color: Colors.purpleAccent,
-        screen: const PerformanceReportScreen(),
-      ),
+      
     ];
   }
 
@@ -749,12 +743,7 @@ class _StudentPerformanceModuleScreenState
           value: "Report",
           color: Colors.blueAccent,
         ),
-        _MiniStatData(
-          icon: Icons.analytics_rounded,
-          label: "Analytics",
-          value: "View",
-          color: Colors.purpleAccent,
-        ),
+        
         _MiniStatData(
           icon: Icons.verified_rounded,
           label: "Status",
