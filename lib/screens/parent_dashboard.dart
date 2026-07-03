@@ -193,26 +193,31 @@ class _ParentDashboardState extends State<ParentDashboard> {
       };
     }
 
-    if (parentUid.isNotEmpty) {
-      await FirebaseFirestore.instance.collection('users').doc(parentUid).set({
-        'linkedChildrenIds': FieldValue.arrayUnion(addedIds.toList()),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    }
+   
 
     final firstChildData = studentDocs.first.data() ?? {};
 
-    final childNames = studentDocs.map((doc) {
-      final data = doc.data() ?? {};
-      return data['name']?.toString().trim() ?? '';
-    }).where((name) => name.isNotEmpty).toList();
+   final childNames = studentDocs.map((doc) {
+  final data = doc.data() ?? {};
 
-    final childNameText = childNames.isEmpty
-        ? 'Child not linked'
-        : childNames.length == 1
-            ? childNames.first
-            : childNames.join(', ');
+  return _safeText(
+    data,
+    [
+      'name',
+      'studentName',
+      'fullName',
+      'childName',
+      'playerName',
+    ],
+    '',
+  );
+}).where((name) => name.isNotEmpty).toList();
 
+final childNameText = childNames.isEmpty
+    ? 'Child linked'
+    : childNames.length == 1
+        ? childNames.first
+        : childNames.join(', ');
     return {
       'childName': childNameText,
       'attendance': _safeText(
@@ -226,14 +231,23 @@ class _ParentDashboardState extends State<ParentDashboard> {
         'Pending',
       ),
       'parentPhone': _safeText(
-        parentData,
-        ['phone', 'phoneNumber', 'mobile', 'parentPhone'],
-        _safeText(
-          firstChildData,
-          ['parentPhone', 'phone'],
-          parentPhone,
-        ),
-      ),
+  parentData,
+  ['phone', 'phoneNumber', 'mobile', 'parentPhone', 'parentMobile'],
+  _safeText(
+    firstChildData,
+    [
+      'parentPhone',
+      'parentMobile',
+      'phone',
+      'phoneNumber',
+      'mobile',
+      'contactNumber',
+      'fatherPhone',
+      'motherPhone',
+    ],
+    parentPhone,
+  ),
+),
       'childCount': studentDocs.length.toString(),
     };
   }
@@ -347,20 +361,56 @@ class _ParentDashboardState extends State<ParentDashboard> {
                 return FutureBuilder<Map<String, String>>(
                   future: _loadLinkedChildInfo(data),
                   builder: (context, childSnapshot) {
-                    final childInfo = childSnapshot.data ?? {};
+                   if (childSnapshot.connectionState == ConnectionState.waiting) {
+  return SingleChildScrollView(
+    physics: const BouncingScrollPhysics(),
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Column(
+      children: [
+        _topBar(isDark),
+        _parentHero(
+          isDark: isDark,
+          name: name,
+          email: email,
+          phone: _safeText(
+            data,
+            ['phone', 'phoneNumber', 'mobile', 'parentPhone', 'parentMobile'],
+            'Loading phone...',
+          ),
+          childName: 'Loading child...',
+        ),
+        const SizedBox(height: 30),
+        const Center(child: CircularProgressIndicator()),
+      ],
+    ),
+  );
+}
 
-                    final phone =
-                        childInfo['parentPhone'] ?? 'Phone not added';
+if (childSnapshot.hasError) {
+  return Center(
+    child: Text(
+      "Child loading error: ${childSnapshot.error}",
+      style: TextStyle(color: _primaryText(isDark)),
+    ),
+  );
+}
 
-                    final childName =
-                        childInfo['childName'] ?? 'Child not linked';
+final childInfo = childSnapshot.data ?? {};
 
-                    final attendance = childInfo['attendance'] ?? '0%';
+final phone = childInfo['parentPhone'] ??
+    _safeText(
+      data,
+      ['phone', 'phoneNumber', 'mobile', 'parentPhone', 'parentMobile'],
+      'Phone not added',
+    );
 
-                    final feeStatus = childInfo['feeStatus'] ?? 'Pending';
+final childName = childInfo['childName'] ?? 'Child not linked';
 
-                    final childrenCount =
-                        childInfo['childCount'] ?? _childrenCount(data);
+final attendance = childInfo['attendance'] ?? '0%';
+
+final feeStatus = childInfo['feeStatus'] ?? 'Pending';
+
+final childrenCount = childInfo['childCount'] ?? '0';
 
                     return SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
