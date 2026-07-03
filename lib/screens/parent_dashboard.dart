@@ -70,6 +70,10 @@ class _ParentDashboardState extends State<ParentDashboard> {
     return fallback;
   }
 
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
+
   String _childrenCount(Map<String, dynamic> data) {
     final linkedChildren = data['linkedChildrenIds'];
 
@@ -104,34 +108,44 @@ class _ParentDashboardState extends State<ParentDashboard> {
   Future<Map<String, String>> _loadLinkedChildInfo(
     Map<String, dynamic> parentData,
   ) async {
-    final childIds = _linkedChildIds(parentData);
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    if (childIds.isEmpty) {
-      return {
-        'childName': _safeText(
-          parentData,
-          ['childName'],
-          'Child not linked',
-        ),
-        'attendance': _safeText(
-          parentData,
-          ['attendancePercentage', 'childAttendance'],
-          '0%',
-        ),
-        'feeStatus': _safeText(
-          parentData,
-          ['feeStatus', 'childFeeStatus'],
-          'Pending',
-        ),
-        'parentPhone': _safeText(
-          parentData,
-          ['phone', 'phoneNumber', 'mobile', 'parentPhone'],
-          'Phone not added',
-        ),
-      };
-    }
+    final parentUid = currentUser?.uid ?? '';
+
+    final parentEmail = _lower(
+      _safeText(
+        parentData,
+        ['email'],
+        currentUser?.email ?? '',
+      ),
+    );
+
+    final parentPhone = _safeText(
+      parentData,
+      ['phone', 'phoneNumber', 'mobile', 'parentPhone'],
+      'Phone not added',
+    );
 
     final studentDocs = <DocumentSnapshot<Map<String, dynamic>>>[];
+    final addedIds = <String>{};
+
+    void addDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+      if (doc.exists && !addedIds.contains(doc.id)) {
+        addedIds.add(doc.id);
+        studentDocs.add(doc);
+      }
+    }
+
+    void addDocs(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+      for (final doc in docs) {
+        if (!addedIds.contains(doc.id)) {
+          addedIds.add(doc.id);
+          studentDocs.add(doc);
+        }
+      }
+    }
+
+    final childIds = _linkedChildIds(parentData);
 
     for (final childId in childIds) {
       final studentDoc = await FirebaseFirestore.instance
@@ -139,9 +153,34 @@ class _ParentDashboardState extends State<ParentDashboard> {
           .doc(childId)
           .get();
 
-      if (studentDoc.exists) {
-        studentDocs.add(studentDoc);
-      }
+      addDoc(studentDoc);
+    }
+
+    if (studentDocs.isEmpty && parentUid.isNotEmpty) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentUid', isEqualTo: parentUid)
+          .get();
+
+      addDocs(snapshot.docs);
+    }
+
+    if (studentDocs.isEmpty && parentEmail.isNotEmpty) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmailLower', isEqualTo: parentEmail)
+          .get();
+
+      addDocs(snapshot.docs);
+    }
+
+    if (studentDocs.isEmpty && parentEmail.isNotEmpty) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentEmail', isEqualTo: parentEmail)
+          .get();
+
+      addDocs(snapshot.docs);
     }
 
     if (studentDocs.isEmpty) {
@@ -149,12 +188,16 @@ class _ParentDashboardState extends State<ParentDashboard> {
         'childName': 'Child not linked',
         'attendance': '0%',
         'feeStatus': 'Pending',
-        'parentPhone': _safeText(
-          parentData,
-          ['phone', 'phoneNumber', 'mobile', 'parentPhone'],
-          'Phone not added',
-        ),
+        'parentPhone': parentPhone,
+        'childCount': '0',
       };
+    }
+
+    if (parentUid.isNotEmpty) {
+      await FirebaseFirestore.instance.collection('users').doc(parentUid).set({
+        'linkedChildrenIds': FieldValue.arrayUnion(addedIds.toList()),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     }
 
     final firstChildData = studentDocs.first.data() ?? {};
@@ -188,9 +231,10 @@ class _ParentDashboardState extends State<ParentDashboard> {
         _safeText(
           firstChildData,
           ['parentPhone', 'phone'],
-          'Phone not added',
+          parentPhone,
         ),
       ),
+      'childCount': studentDocs.length.toString(),
     };
   }
 
@@ -294,8 +338,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   currentUser.email ?? '',
                 );
 
-                final childrenCount = _childrenCount(data);
-
                 final status = _safeText(
                   data,
                   ['status'],
@@ -316,6 +358,9 @@ class _ParentDashboardState extends State<ParentDashboard> {
                     final attendance = childInfo['attendance'] ?? '0%';
 
                     final feeStatus = childInfo['feeStatus'] ?? 'Pending';
+
+                    final childrenCount =
+                        childInfo['childCount'] ?? _childrenCount(data);
 
                     return SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
@@ -1141,5 +1186,5 @@ class _HeroClosedBorderPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
