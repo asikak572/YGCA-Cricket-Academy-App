@@ -4,7 +4,6 @@ import '../theme/theme_controller.dart';
 
 import 'match_schedule_screen.dart';
 import 'training_schedule_screen.dart';
-import 'makeup_session_screen.dart';
 
 class ScheduleModuleScreen extends StatelessWidget {
   const ScheduleModuleScreen({super.key});
@@ -34,6 +33,13 @@ class ScheduleModuleScreen extends StatelessWidget {
     return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
+  void _open(BuildContext context, Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
@@ -45,6 +51,8 @@ class ScheduleModuleScreen extends StatelessWidget {
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 24),
               child: Column(
                 children: [
                   _topHeader(context, isDark),
@@ -53,68 +61,73 @@ class ScheduleModuleScreen extends StatelessWidget {
                   _sectionTitle("SCHEDULE OPTIONS", isDark),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.02,
+                    child: Column(
                       children: [
-                        _moduleCard(
+                        _optionTile(
+                          context: context,
+                          isDark: isDark,
+                          icon: Icons.event_available_rounded,
+                          title: "Training Schedule",
+                          subtitle: "Manage and view training sessions",
+                          color: red,
+                          onTap: () => _open(
+                            context,
+                            const TrainingScheduleScreen(),
+                          ),
+                        ),
+                        _optionTile(
                           context: context,
                           isDark: isDark,
                           icon: Icons.sports_cricket_rounded,
                           title: "Match Schedule",
-                          subtitle: "Upcoming matches",
+                          subtitle: "View and manage match fixtures",
                           color: Colors.orange,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const MatchScheduleScreen(),
-                              ),
-                            );
-                          },
+                          onTap: () => _open(
+                            context,
+                            const MatchScheduleScreen(),
+                          ),
                         ),
-                        _moduleCard(
+                        _optionTile(
+                          context: context,
+                          isDark: isDark,
+                          icon: Icons.today_rounded,
+                          title: "Today Schedule",
+                          subtitle: "Check today's training and matches",
+                          color: Colors.purpleAccent,
+                          onTap: () => _open(
+                            context,
+                            const TrainingScheduleScreen(),
+                          ),
+                        ),
+                        _optionTile(
                           context: context,
                           isDark: isDark,
                           icon: Icons.calendar_month_rounded,
-                          title: "Training Schedule",
-                          subtitle: "Practice sessions",
+                          title: "Monthly Schedule",
+                          subtitle: "View monthly training and match plan",
                           color: Colors.blueAccent,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const TrainingScheduleScreen(),
-                              ),
-                            );
-                          },
+                          onTap: () => _open(
+                            context,
+                            const TrainingScheduleScreen(),
+                          ),
                         ),
-                        _moduleCard(
+                        _optionTile(
                           context: context,
                           isDark: isDark,
-                          icon: Icons.event_repeat_rounded,
-                          title: "Makeup Sessions",
-                          subtitle: "Rescheduled classes",
-                          color: Colors.green,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const MakeupSessionScreen(),
-                              ),
-                            );
-                          },
+                          icon: Icons.history_rounded,
+                          title: "Session History",
+                          subtitle: "View past training and match history",
+                          color: Colors.teal,
+                          onTap: () => _open(
+                            context,
+                            const TrainingScheduleScreen(),
+                          ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 22),
                   _infoCard(isDark),
-                  const SizedBox(height: 30),
                 ],
               ),
             ),
@@ -158,7 +171,7 @@ class ScheduleModuleScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "Matches, training and makeup sessions",
+                  "Matches, training and schedules",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -204,7 +217,9 @@ class ScheduleModuleScreen extends StatelessWidget {
           border: Border.all(color: _border(isDark)),
           boxShadow: [
             BoxShadow(
-              color: isDark ? red.withOpacity(0.12) : Colors.black.withOpacity(0.08),
+              color: isDark
+                  ? red.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.08),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -330,9 +345,9 @@ class ScheduleModuleScreen extends StatelessWidget {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Matches"),
                               _heroChip("Training"),
-                              _heroChip("Makeup"),
+                              _heroChip("Matches"),
+                              _heroChip("Today"),
                             ],
                           ),
                         ],
@@ -396,7 +411,7 @@ class ScheduleModuleScreen extends StatelessWidget {
     );
   }
 
-  Widget _moduleCard({
+  Widget _optionTile({
     required BuildContext context,
     required bool isDark,
     required IconData icon,
@@ -405,75 +420,91 @@ class ScheduleModuleScreen extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [
-                    const Color(0xFF151515),
-                    const Color(0xFF1A0808),
-                    color.withOpacity(0.16),
-                  ]
-                : [
-                    Colors.white,
-                    const Color(0xFFFFFBF2),
-                    color.withOpacity(0.08),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: _card(isDark),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isDark ? red.withOpacity(0.25) : const Color(0xFFE5E7EB),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? color.withOpacity(0.07)
+                    : Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      color.withOpacity(isDark ? 0.38 : 0.20),
+                      color.withOpacity(isDark ? 0.16 : 0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: color.withOpacity(0.30),
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 12,
+                        height: 1.25,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.65),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? color.withOpacity(0.10) : Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: SizedBox(
-            width: 135,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: color.withOpacity(0.18),
-                  child: Icon(icon, color: color, size: 28),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: isDark ? Colors.white38 : Colors.black38,
+                size: 28,
+              ),
+            ],
           ),
         ),
       ),
@@ -502,7 +533,7 @@ class ScheduleModuleScreen extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                "Manage all academy schedules from one place: matches, regular training sessions and makeup sessions.",
+                "All schedules are organised and updated regularly. Makeup sessions and cancelled sessions are managed inside the Attendance Module.",
                 style: TextStyle(
                   color: _secondaryText(isDark),
                   fontSize: 12,
