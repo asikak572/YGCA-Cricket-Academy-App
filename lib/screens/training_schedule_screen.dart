@@ -381,47 +381,75 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   }
 
   Future<void> _showAddTrainingDialog(BuildContext context, bool isDark) async {
-    if (!_canManageTraining) return;
+  if (!_canManageTraining) return;
 
-    final dateController = TextEditingController();
-    final dayController = TextEditingController();
-    final timeController = TextEditingController();
-    final batchController = TextEditingController();
-    final typeController = TextEditingController();
-    final statusController = TextEditingController(text: "Upcoming");
+  final dateController = TextEditingController();
+  final dayController = TextEditingController();
+  final timeController = TextEditingController();
+  final batchController = TextEditingController();
+  final typeController = TextEditingController();
+  final statusController = TextEditingController(text: "Upcoming");
 
-    Future<void> pickDate() async {
-      final now = DateTime.now();
+  DateTime? selectedDate;
 
-      final selected = await showDatePicker(
-        context: context,
-        initialDate: now,
-        firstDate: DateTime(now.year - 2),
-        lastDate: DateTime(now.year + 2),
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
-                primary: maroon,
-                onPrimary: Colors.white,
-                onSurface: isDark ? Colors.white : Colors.black,
+  Future<void> pickDate(BuildContext dialogContext) async {
+    final now = DateTime.now();
+
+    final picked = await showDatePicker(
+      context: dialogContext,
+      initialDate: selectedDate ?? now,
+      firstDate: DateTime(now.year - 2),
+      lastDate: DateTime(now.year + 2),
+      builder: (pickerContext, child) {
+        final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
+
+        return Theme(
+          data: baseTheme.copyWith(
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: red,
+                    onPrimary: Colors.white,
+                    surface: Color(0xFF111111),
+                    onSurface: Colors.white,
+                  )
+                : const ColorScheme.light(
+                    primary: maroon,
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Color(0xFF111827),
+                  ),
+            dialogBackgroundColor:
+                isDark ? const Color(0xFF111111) : Colors.white,
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? gold : maroon,
               ),
             ),
-            child: child!,
-          );
-        },
-      );
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
 
-      if (selected != null) {
-        dateController.text = _dateKey(selected);
-        dayController.text = _dayName(selected);
-      }
+    if (picked != null) {
+      selectedDate = picked;
+      dateController.text = _dateKey(picked);
+      dayController.text = _dayName(picked);
     }
+  }
 
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return AlertDialog(
         backgroundColor: _card(isDark),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(
+            color: isDark ? red.withOpacity(0.35) : maroon.withOpacity(0.25),
+          ),
+        ),
         title: Text(
           "Add Training",
           style: TextStyle(
@@ -438,42 +466,50 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 controller: dateController,
                 readOnly: true,
                 icon: Icons.calendar_today_rounded,
-                onTap: pickDate,
+                onTap: () => pickDate(dialogContext),
               ),
               _input(
                 isDark: isDark,
                 label: "Day",
                 controller: dayController,
+                readOnly: true,
               ),
               _input(
                 isDark: isDark,
                 label: "Time",
                 controller: timeController,
+                hintText: "Example: 6:00 AM",
               ),
               _input(
                 isDark: isDark,
                 label: "Batch",
                 controller: batchController,
+                hintText: "Example: Morning Batch",
               ),
               _input(
                 isDark: isDark,
                 label: "Training Type",
                 controller: typeController,
+                hintText: "Example: Batting Practice",
               ),
               _input(
                 isDark: isDark,
                 label: "Status",
                 controller: statusController,
+                hintText: "Upcoming / Completed / Cancelled",
               ),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(
               "Cancel",
-              style: TextStyle(color: isDark ? Colors.white70 : maroon),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : maroon,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           ElevatedButton(
@@ -497,7 +533,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                   batch.isEmpty ||
                   type.isEmpty ||
                   status.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
                   const SnackBar(
                     content: Text("Please fill all fields"),
                     backgroundColor: Colors.red,
@@ -522,8 +558,11 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                   'updatedAt': FieldValue.serverTimestamp(),
                 });
 
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+
                 if (context.mounted) {
-                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text("Training schedule added"),
@@ -532,8 +571,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                   );
                 }
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
                       content: Text("Save failed: $e"),
                       backgroundColor: Colors.red,
@@ -542,58 +581,77 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 }
               }
             },
-            child: const Text("Save"),
+            child: const Text(
+              "Save",
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
           ),
         ],
-      ),
-    );
+      );
+    },
+  );
 
-    dateController.dispose();
-    dayController.dispose();
-    timeController.dispose();
-    batchController.dispose();
-    typeController.dispose();
-    statusController.dispose();
-  }
+  dateController.dispose();
+  dayController.dispose();
+  timeController.dispose();
+  batchController.dispose();
+  typeController.dispose();
+  statusController.dispose();
+}
 
-  Widget _input({
-    required bool isDark,
-    required String label,
-    required TextEditingController controller,
-    bool readOnly = false,
-    IconData? icon,
-    VoidCallback? onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        readOnly: readOnly,
-        onTap: onTap,
-        style: TextStyle(
-          color: _primaryText(isDark),
-          fontWeight: FontWeight.w700,
+ Widget _input({
+  required bool isDark,
+  required String label,
+  required TextEditingController controller,
+  bool readOnly = false,
+  IconData? icon,
+  VoidCallback? onTap,
+  String? hintText,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: TextField(
+      controller: controller,
+      readOnly: readOnly,
+      onTap: onTap,
+      style: TextStyle(
+        color: _primaryText(isDark),
+        fontWeight: FontWeight.w700,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: _secondaryText(isDark).withOpacity(0.65),
+          fontSize: 12,
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: _secondaryText(isDark)),
-          suffixIcon: icon == null
-              ? null
-              : Icon(
-                  icon,
-                  color: isDark ? Colors.white70 : maroon,
-                ),
-          border: const OutlineInputBorder(),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: _border(isDark)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: isDark ? red : maroon),
+        labelStyle: TextStyle(color: _secondaryText(isDark)),
+        suffixIcon: icon == null
+            ? null
+            : Icon(
+                icon,
+                color: isDark ? gold : maroon,
+              ),
+        filled: true,
+        fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: _border(isDark)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: isDark ? red : maroon,
+            width: 1.4,
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _confirmDelete(BuildContext context, String docId, bool isDark) {
     if (!_canManageTraining) return;
