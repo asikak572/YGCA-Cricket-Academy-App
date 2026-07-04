@@ -62,7 +62,7 @@ class _StudentScheduleModuleScreenState
       case 1:
         return "Check regular, makeup and cancelled sessions";
       case 2:
-        return "View schedule history and updates";
+        return "View schedule history and monthly plan";
       default:
         return "";
     }
@@ -718,12 +718,6 @@ class _StudentScheduleModuleScreenState
             label: "Cancel",
             value: "Track",
             color: Colors.redAccent,
-          ),
-          _MiniStatData(
-            icon: Icons.update_rounded,
-            label: "Updates",
-            value: "Live",
-            color: Colors.orange,
           ),
         ],
       );

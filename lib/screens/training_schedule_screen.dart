@@ -64,6 +64,14 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
     return role == 'Admin';
   }
 
+  bool get _needsBatch {
+    return role == 'Coach' || role == 'Student' || role == 'Parent';
+  }
+
+  bool get _hasNoAssignedBatch {
+    return !loadingUser && _needsBatch && allowedBatches.isEmpty;
+  }
+
   List<String> _listFromDynamic(dynamic value) {
     final result = <String>[];
 
@@ -75,6 +83,36 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
     }
 
     return result;
+  }
+
+  void _addBatch(Set<String> batches, dynamic value) {
+    final batch = _text(value);
+    if (batch.isNotEmpty) {
+      batches.add(batch);
+    }
+  }
+
+  Future<void> _loadCoachAssignedBatches(Set<String> batches) async {
+    try {
+      final assignments = await FirebaseFirestore.instance
+          .collection('coach_session_assignments')
+          .where('coachId', isEqualTo: uid)
+          .get();
+
+      for (final doc in assignments.docs) {
+        final data = doc.data();
+
+        _addBatch(batches, data['batch']);
+        _addBatch(batches, data['batchName']);
+        _addBatch(batches, data['assignedBatch']);
+
+        for (final batch in _listFromDynamic(data['assignedBatches'])) {
+          _addBatch(batches, batch);
+        }
+      }
+    } catch (_) {
+      // Keep screen stable even if assignment collection has no data/index.
+    }
   }
 
   Future<void> _loadCurrentUser() async {
@@ -89,112 +127,132 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
     uid = user.uid;
     email = _lower(user.email ?? '');
 
-    final userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    try {
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-    if (!userDoc.exists || userDoc.data() == null) {
+      if (!userDoc.exists || userDoc.data() == null) {
+        if (!mounted) return;
+        setState(() => loadingUser = false);
+        return;
+      }
+
+      final data = userDoc.data() ?? {};
+      final loadedRole = _text(data['role']);
+
+      final batches = <String>{};
+
+      for (final batch in _listFromDynamic(data['assignedBatches'])) {
+        _addBatch(batches, batch);
+      }
+
+      _addBatch(batches, data['assignedBatch']);
+      _addBatch(batches, data['batch']);
+      _addBatch(batches, data['batchName']);
+      _addBatch(batches, data['batchText']);
+
+      if (loadedRole == 'Coach') {
+        await _loadCoachAssignedBatches(batches);
+      }
+
+      if (loadedRole == 'Student') {
+        final studentDoc = await FirebaseFirestore.instance
+            .collection('students')
+            .doc(uid)
+            .get();
+
+        if (studentDoc.exists && studentDoc.data() != null) {
+          final studentData = studentDoc.data() ?? {};
+          _addBatch(batches, studentData['batch']);
+          _addBatch(batches, studentData['batchName']);
+          _addBatch(batches, studentData['batchText']);
+        }
+      }
+
+      if (loadedRole == 'Parent') {
+        final childIds = <String>{};
+
+        for (final id in _listFromDynamic(data['linkedChildrenIds'])) {
+          if (id.isNotEmpty) childIds.add(id);
+        }
+
+        final childId = _text(data['childId']);
+        if (childId.isNotEmpty) childIds.add(childId);
+
+        final studentId = _text(data['studentId']);
+        if (studentId.isNotEmpty) childIds.add(studentId);
+
+        final parentEmail = _lower(
+          _text(data['email']).isNotEmpty ? _text(data['email']) : email,
+        );
+
+        if (parentEmail.isNotEmpty) {
+          final byParentEmailLower = await FirebaseFirestore.instance
+              .collection('students')
+              .where('parentEmailLower', isEqualTo: parentEmail)
+              .get();
+
+          for (final doc in byParentEmailLower.docs) {
+            childIds.add(doc.id);
+            final childData = doc.data();
+            _addBatch(batches, childData['batch']);
+            _addBatch(batches, childData['batchName']);
+            _addBatch(batches, childData['batchText']);
+          }
+
+          final byParentEmail = await FirebaseFirestore.instance
+              .collection('students')
+              .where('parentEmail', isEqualTo: parentEmail)
+              .get();
+
+          for (final doc in byParentEmail.docs) {
+            childIds.add(doc.id);
+            final childData = doc.data();
+            _addBatch(batches, childData['batch']);
+            _addBatch(batches, childData['batchName']);
+            _addBatch(batches, childData['batchText']);
+          }
+        }
+
+        final byParentUid = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentUid', isEqualTo: uid)
+            .get();
+
+        for (final doc in byParentUid.docs) {
+          childIds.add(doc.id);
+          final childData = doc.data();
+          _addBatch(batches, childData['batch']);
+          _addBatch(batches, childData['batchName']);
+          _addBatch(batches, childData['batchText']);
+        }
+
+        for (final id in childIds) {
+          final childDoc = await FirebaseFirestore.instance
+              .collection('students')
+              .doc(id)
+              .get();
+
+          if (childDoc.exists && childDoc.data() != null) {
+            final childData = childDoc.data() ?? {};
+            _addBatch(batches, childData['batch']);
+            _addBatch(batches, childData['batchName']);
+            _addBatch(batches, childData['batchText']);
+          }
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        role = loadedRole;
+        allowedBatches = batches.toList();
+        loadingUser = false;
+      });
+    } catch (_) {
       if (!mounted) return;
       setState(() => loadingUser = false);
-      return;
     }
-
-    final data = userDoc.data() ?? {};
-    final loadedRole = _text(data['role']);
-
-    final batches = <String>{};
-
-    for (final batch in _listFromDynamic(data['assignedBatches'])) {
-      batches.add(batch);
-    }
-
-    final assignedBatch = _text(data['assignedBatch']);
-    if (assignedBatch.isNotEmpty) batches.add(assignedBatch);
-
-    final userBatch = _text(data['batch']);
-    if (userBatch.isNotEmpty) batches.add(userBatch);
-
-    if (loadedRole == 'Student') {
-      final studentDoc =
-          await FirebaseFirestore.instance.collection('students').doc(uid).get();
-
-      if (studentDoc.exists && studentDoc.data() != null) {
-        final studentBatch = _text(studentDoc.data()?['batch']);
-        if (studentBatch.isNotEmpty) batches.add(studentBatch);
-      }
-    }
-
-    if (loadedRole == 'Parent') {
-      final childIds = <String>{};
-
-      for (final id in _listFromDynamic(data['linkedChildrenIds'])) {
-        childIds.add(id);
-      }
-
-      final childId = _text(data['childId']);
-      if (childId.isNotEmpty) childIds.add(childId);
-
-      final studentId = _text(data['studentId']);
-      if (studentId.isNotEmpty) childIds.add(studentId);
-
-      final parentEmail = _lower(
-        _text(data['email']).isNotEmpty ? _text(data['email']) : email,
-      );
-
-      if (parentEmail.isNotEmpty) {
-        final byParentEmailLower = await FirebaseFirestore.instance
-            .collection('students')
-            .where('parentEmailLower', isEqualTo: parentEmail)
-            .get();
-
-        for (final doc in byParentEmailLower.docs) {
-          childIds.add(doc.id);
-          final childBatch = _text(doc.data()['batch']);
-          if (childBatch.isNotEmpty) batches.add(childBatch);
-        }
-
-        final byParentEmail = await FirebaseFirestore.instance
-            .collection('students')
-            .where('parentEmail', isEqualTo: parentEmail)
-            .get();
-
-        for (final doc in byParentEmail.docs) {
-          childIds.add(doc.id);
-          final childBatch = _text(doc.data()['batch']);
-          if (childBatch.isNotEmpty) batches.add(childBatch);
-        }
-      }
-
-      final byParentUid = await FirebaseFirestore.instance
-          .collection('students')
-          .where('parentUid', isEqualTo: uid)
-          .get();
-
-      for (final doc in byParentUid.docs) {
-        childIds.add(doc.id);
-        final childBatch = _text(doc.data()['batch']);
-        if (childBatch.isNotEmpty) batches.add(childBatch);
-      }
-
-      for (final childId in childIds) {
-        final childDoc = await FirebaseFirestore.instance
-            .collection('students')
-            .doc(childId)
-            .get();
-
-        if (childDoc.exists && childDoc.data() != null) {
-          final childBatch = _text(childDoc.data()?['batch']);
-          if (childBatch.isNotEmpty) batches.add(childBatch);
-        }
-      }
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      role = loadedRole;
-      allowedBatches = batches.toList();
-      loadingUser = false;
-    });
   }
 
   Query<Map<String, dynamic>> _trainingQuery() {
@@ -204,7 +262,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
       return query;
     }
 
-    if (role == 'Coach' || role == 'Student' || role == 'Parent') {
+    if (_needsBatch) {
       if (allowedBatches.isEmpty) {
         return query.where('batch', isEqualTo: '__NO_ASSIGNED_BATCH__');
       }
@@ -239,6 +297,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   }
 
   Future<void> _deleteTraining(BuildContext context, String docId) async {
+    if (!_canManageTraining) return;
+
     try {
       await FirebaseFirestore.instance
           .collection('training_schedules')
@@ -266,6 +326,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   }
 
   Future<void> _showAddTrainingDialog(BuildContext context, bool isDark) async {
+    if (!_canManageTraining) return;
+
     final dayController = TextEditingController();
     final timeController = TextEditingController();
     final batchController = TextEditingController();
@@ -412,6 +474,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   }
 
   void _confirmDelete(BuildContext context, String docId, bool isDark) {
+    if (!_canManageTraining) return;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -504,117 +568,147 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                       ),
                     ],
                   )
-                : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: _trainingQuery().snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Column(
-                          children: [
-                            _topHeader(context, isDark),
-                            Expanded(
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(18),
-                                  child: Text(
-                                    "Error: ${snapshot.error}",
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Colors.redAccent,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                : _hasNoAssignedBatch
+                    ? Column(
+                        children: [
+                          _topHeader(context, isDark),
+                          Expanded(
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: _messageCard(
+                                  isDark: isDark,
+                                  icon: Icons.groups_rounded,
+                                  title: role == 'Coach'
+                                      ? "No batch assigned."
+                                      : "No batch assigned",
+                                  message: role == 'Coach'
+                                      ? "Please ask Admin to assign a batch or weekly session."
+                                      : "No schedule is available because no batch is linked.",
                                 ),
                               ),
                             ),
-                          ],
-                        );
-                      }
-
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Column(
-                          children: [
-                            _topHeader(context, isDark),
-                            const Expanded(
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                          ],
-                        );
-                      }
-
-                      final schedules = _sortSchedules(snapshot.data?.docs ?? []);
-
-                      int fitnessCount = 0;
-                      int skillCount = 0;
-
-                      for (final doc in schedules) {
-                        final type = _text(doc.data()['type']).toLowerCase();
-
-                        if (type.contains('fitness')) {
-                          fitnessCount++;
-                        } else {
-                          skillCount++;
-                        }
-                      }
-
-                      return SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            _topHeader(context, isDark),
-                            _heroBanner(
-                              isDark: isDark,
-                              total: schedules.length,
-                              fitnessCount: fitnessCount,
-                              skillCount: skillCount,
-                            ),
-                            const SizedBox(height: 18),
-                            _sectionTitle("TRAINING SCHEDULES", isDark),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: schedules.isEmpty
-                                  ? _emptyCard(isDark)
-                                  : Column(
-                                      children: schedules.map((doc) {
-                                        final data = doc.data();
-
-                                        final day = _text(data['day']).isEmpty
-                                            ? 'No Day'
-                                            : _text(data['day']);
-
-                                        final time = _text(data['time']).isEmpty
-                                            ? 'No Time'
-                                            : _text(data['time']);
-
-                                        final batch = _text(data['batch']).isEmpty
-                                            ? 'No Batch'
-                                            : _text(data['batch']);
-
-                                        final type = _text(data['type']).isEmpty
-                                            ? 'Training'
-                                            : _text(data['type']);
-
-                                        return _trainingCard(
-                                          isDark: isDark,
-                                          day: day,
-                                          time: time,
-                                          batch: batch,
-                                          type: type,
-                                          onDelete: () => _confirmDelete(
-                                            context,
-                                            doc.id,
-                                            isDark,
-                                          ),
-                                        );
-                                      }).toList(),
+                          ),
+                        ],
+                      )
+                    : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: _trainingQuery().snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Column(
+                              children: [
+                                _topHeader(context, isDark),
+                                Expanded(
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: _messageCard(
+                                        isDark: isDark,
+                                        icon: Icons.error_outline_rounded,
+                                        title: "Unable to load schedule",
+                                        message: snapshot.error.toString(),
+                                      ),
                                     ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Column(
+                              children: [
+                                _topHeader(context, isDark),
+                                const Expanded(
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          final schedules =
+                              _sortSchedules(snapshot.data?.docs ?? []);
+
+                          int fitnessCount = 0;
+                          int skillCount = 0;
+
+                          for (final doc in schedules) {
+                            final type =
+                                _text(doc.data()['type']).toLowerCase();
+
+                            if (type.contains('fitness')) {
+                              fitnessCount++;
+                            } else {
+                              skillCount++;
+                            }
+                          }
+
+                          return SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                _topHeader(context, isDark),
+                                _heroBanner(
+                                  isDark: isDark,
+                                  total: schedules.length,
+                                  fitnessCount: fitnessCount,
+                                  skillCount: skillCount,
+                                ),
+                                const SizedBox(height: 18),
+                                _sectionTitle("TRAINING SCHEDULES", isDark),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: schedules.isEmpty
+                                      ? _emptyCard(isDark)
+                                      : Column(
+                                          children: schedules.map((doc) {
+                                            final data = doc.data();
+
+                                            final day =
+                                                _text(data['day']).isEmpty
+                                                    ? 'No Day'
+                                                    : _text(data['day']);
+
+                                            final time =
+                                                _text(data['time']).isEmpty
+                                                    ? 'No Time'
+                                                    : _text(data['time']);
+
+                                            final batch =
+                                                _text(data['batch']).isEmpty
+                                                    ? 'No Batch'
+                                                    : _text(data['batch']);
+
+                                            final type =
+                                                _text(data['type']).isEmpty
+                                                    ? 'Training'
+                                                    : _text(data['type']);
+
+                                            return _trainingCard(
+                                              isDark: isDark,
+                                              day: day,
+                                              time: time,
+                                              batch: batch,
+                                              type: type,
+                                              onDelete: () => _confirmDelete(
+                                                context,
+                                                doc.id,
+                                                isDark,
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                ),
+                                const SizedBox(height: 90),
+                              ],
                             ),
-                            const SizedBox(height: 90),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
           ),
         );
       },
@@ -676,9 +770,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
 
               return _circleButton(
                 isDark: isDark,
-                icon: dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 onTap: ThemeController.toggleTheme,
               );
             },
@@ -1025,7 +1117,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No training schedule found",
+            "No Schedule Available",
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1038,6 +1130,53 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 : "No training schedule available for your batch",
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _messageCard({
+    required bool isDark,
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border(isDark)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 42,
+            color: _secondaryText(isDark),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _secondaryText(isDark),
+              fontSize: 12,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
