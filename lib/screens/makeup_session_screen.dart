@@ -451,53 +451,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                               completed: completed,
                               pending: pending,
                             ),
-                            const SizedBox(height: 18),
-                            _sectionTitle("MAKEUP OVERVIEW", isDark),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: GridView.count(
-                                crossAxisCount: 2,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 1.18,
-                                children: [
-                                  _statCard(
-                                    isDark: isDark,
-                                    icon: Icons.event_repeat_rounded,
-                                    title: "TOTAL",
-                                    value: sessions.length.toString(),
-                                    subtitle: "Sessions",
-                                    color: Colors.blueAccent,
-                                  ),
-                                  _statCard(
-                                    isDark: isDark,
-                                    icon: Icons.calendar_month_rounded,
-                                    title: "SCHEDULED",
-                                    value: scheduled.toString(),
-                                    subtitle: "Planned",
-                                    color: Colors.green,
-                                  ),
-                                  _statCard(
-                                    isDark: isDark,
-                                    icon: Icons.pending_actions_rounded,
-                                    title: "PENDING",
-                                    value: pending.toString(),
-                                    subtitle: "Waiting",
-                                    color: Colors.orange,
-                                  ),
-                                  _statCard(
-                                    isDark: isDark,
-                                    icon: Icons.check_circle_rounded,
-                                    title: "COMPLETED",
-                                    value: completed.toString(),
-                                    subtitle: "Done",
-                                    color: Colors.purpleAccent,
-                                  ),
-                                ],
-                              ),
-                            ),
+                           
                             const SizedBox(height: 18),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -882,30 +836,39 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
   }
 
   Widget _sectionTitle(String title, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-            ),
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+    child: Row(
+      children: [
+        Container(
+          width: 5,
+          height: 24,
+          decoration: BoxDecoration(
+            color: red,
+            borderRadius: BorderRadius.circular(10),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Container(
-              height: 1,
-              color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
-            ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: TextStyle(
+            color: isDark ? Colors.white : maroon,
+            fontSize: 17,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.9),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _statCard({
     required bool isDark,
@@ -979,41 +942,51 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
       ),
     );
   }
-
-  Widget _infoBanner(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: _card(isDark),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? gold.withOpacity(0.45) : gold.withOpacity(0.75),
-        ),
+Widget _infoBanner(bool isDark) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: _card(isDark),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: isDark ? gold.withOpacity(0.55) : gold.withOpacity(0.85),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
+      boxShadow: [
+        BoxShadow(
+          color: isDark ? gold.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+          blurRadius: 14,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 22,
+          backgroundColor: gold.withOpacity(0.16),
+          child: Icon(
             Icons.info_outline_rounded,
-            color: isDark ? gold : maroon,
-            size: 26,
+            color: gold,
+            size: 24,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "Makeup sessions are created from approved leave requests. Coaches can schedule and complete sessions for their assigned batches.",
-              style: TextStyle(
-                fontSize: 12,
-                color: _secondaryText(isDark),
-                fontWeight: FontWeight.w700,
-                height: 1.35,
-              ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            "Makeup sessions are created from approved leave requests. Coaches can schedule and complete sessions for their assigned batches.",
+            style: TextStyle(
+              fontSize: 12.5,
+              color: _secondaryText(isDark),
+              fontWeight: FontWeight.w700,
+              height: 1.45,
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _makeupCard({
     required BuildContext context,
@@ -1314,33 +1287,95 @@ class _ScheduleMakeupSessionScreenState
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+  final isDark = ThemeController.themeMode.value == ThemeMode.dark;
+  final now = DateTime.now();
 
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 2),
-    );
+  final picked = await showDatePicker(
+    context: context,
+    initialDate: now,
+    firstDate: DateTime(now.year - 1),
+    lastDate: DateTime(now.year + 2),
+    initialEntryMode: DatePickerEntryMode.calendarOnly,
+    builder: (context, child) {
+      final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
 
-    if (picked == null) return;
+      return Theme(
+        data: baseTheme.copyWith(
+          colorScheme: isDark
+              ? const ColorScheme.dark(
+                  primary: red,
+                  onPrimary: Colors.white,
+                  surface: Color(0xFF111111),
+                  onSurface: Colors.white,
+                )
+              : const ColorScheme.light(
+                  primary: maroon,
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Color(0xFF111827),
+                ),
+          dialogBackgroundColor:
+              isDark ? const Color(0xFF111111) : Colors.white,
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? gold : maroon,
+            ),
+          ),
+        ),
+        child: child ?? const SizedBox.shrink(),
+      );
+    },
+  );
 
-    dateController.text =
-        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-  }
+  if (picked == null) return;
+
+  dateController.text =
+      "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+}
 
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
+  final isDark = ThemeController.themeMode.value == ThemeMode.dark;
 
-    if (picked == null) return;
+  final picked = await showTimePicker(
+    context: context,
+    initialTime: TimeOfDay.now(),
+    initialEntryMode: TimePickerEntryMode.dialOnly,
+    builder: (context, child) {
+      final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
 
-    if (!mounted) return;
+      return Theme(
+        data: baseTheme.copyWith(
+          colorScheme: isDark
+              ? const ColorScheme.dark(
+                  primary: red,
+                  onPrimary: Colors.white,
+                  surface: Color(0xFF111111),
+                  onSurface: Colors.white,
+                )
+              : const ColorScheme.light(
+                  primary: maroon,
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Color(0xFF111827),
+                ),
+          dialogBackgroundColor:
+              isDark ? const Color(0xFF111111) : Colors.white,
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? gold : maroon,
+            ),
+          ),
+        ),
+        child: child ?? const SizedBox.shrink(),
+      );
+    },
+  );
 
-    timeController.text = picked.format(context);
-  }
+  if (picked == null) return;
+  if (!mounted) return;
+
+  timeController.text = picked.format(context);
+}
 
   Future<void> _saveSchedule() async {
     final date = dateController.text.trim();
