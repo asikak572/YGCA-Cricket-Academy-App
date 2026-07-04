@@ -95,6 +95,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   String _dateKey(DateTime date) {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
+
     return '${date.year}-$month-$day';
   }
 
@@ -381,277 +382,327 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   }
 
   Future<void> _showAddTrainingDialog(BuildContext context, bool isDark) async {
-  if (!_canManageTraining) return;
+    if (!_canManageTraining) return;
 
-  final dateController = TextEditingController();
-  final dayController = TextEditingController();
-  final timeController = TextEditingController();
-  final batchController = TextEditingController();
-  final typeController = TextEditingController();
-  final statusController = TextEditingController(text: "Upcoming");
+    final dateController = TextEditingController();
+    final dayController = TextEditingController();
+    final timeController = TextEditingController();
+    final batchController = TextEditingController();
+    final typeController = TextEditingController();
+    final statusController = TextEditingController(text: "Upcoming");
 
-  DateTime? selectedDate;
+    DateTime? selectedDate;
+    TimeOfDay? selectedTime;
 
-  Future<void> pickDate(BuildContext dialogContext) async {
-    final now = DateTime.now();
+    Future<void> pickDate(BuildContext dialogContext) async {
+      final now = DateTime.now();
 
-    final picked = await showDatePicker(
-      context: dialogContext,
-      initialDate: selectedDate ?? now,
-      firstDate: DateTime(now.year - 2),
-      lastDate: DateTime(now.year + 2),
-      builder: (pickerContext, child) {
-        final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
+      final picked = await showDatePicker(
+        context: dialogContext,
+        initialDate: selectedDate ?? now,
+        firstDate: DateTime(now.year - 2),
+        lastDate: DateTime(now.year + 2),
+        initialEntryMode: DatePickerEntryMode.calendarOnly,
+        builder: (pickerContext, child) {
+          final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
 
-        return Theme(
-          data: baseTheme.copyWith(
-            colorScheme: isDark
-                ? const ColorScheme.dark(
-                    primary: red,
-                    onPrimary: Colors.white,
-                    surface: Color(0xFF111111),
-                    onSurface: Colors.white,
-                  )
-                : const ColorScheme.light(
-                    primary: maroon,
-                    onPrimary: Colors.white,
-                    surface: Colors.white,
-                    onSurface: Color(0xFF111827),
-                  ),
-            dialogBackgroundColor:
-                isDark ? const Color(0xFF111111) : Colors.white,
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: isDark ? gold : maroon,
+          return Theme(
+            data: baseTheme.copyWith(
+              colorScheme: isDark
+                  ? const ColorScheme.dark(
+                      primary: red,
+                      onPrimary: Colors.white,
+                      surface: Color(0xFF111111),
+                      onSurface: Colors.white,
+                    )
+                  : const ColorScheme.light(
+                      primary: maroon,
+                      onPrimary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: Color(0xFF111827),
+                    ),
+              dialogBackgroundColor:
+                  isDark ? const Color(0xFF111111) : Colors.white,
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  foregroundColor: isDark ? gold : maroon,
+                ),
               ),
             ),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+      );
+
+      if (picked != null) {
+        selectedDate = picked;
+        dateController.text = _dateKey(picked);
+        dayController.text = _dayName(picked);
+      }
+    }
+
+    Future<void> pickTime(BuildContext dialogContext) async {
+      final picked = await showTimePicker(
+        context: dialogContext,
+        initialTime: selectedTime ?? TimeOfDay.now(),
+        initialEntryMode: TimePickerEntryMode.dialOnly,
+        builder: (pickerContext, child) {
+          final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
+
+          return Theme(
+            data: baseTheme.copyWith(
+              colorScheme: isDark
+                  ? const ColorScheme.dark(
+                      primary: red,
+                      onPrimary: Colors.white,
+                      surface: Color(0xFF111111),
+                      onSurface: Colors.white,
+                    )
+                  : const ColorScheme.light(
+                      primary: maroon,
+                      onPrimary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: Color(0xFF111827),
+                    ),
+              dialogBackgroundColor:
+                  isDark ? const Color(0xFF111111) : Colors.white,
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  foregroundColor: isDark ? gold : maroon,
+                ),
+              ),
+            ),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+      );
+
+      if (picked != null) {
+        selectedTime = picked;
+
+        if (dialogContext.mounted) {
+          timeController.text = picked.format(dialogContext);
+        }
+      }
+    }
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: _card(isDark),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(
+              color: isDark ? red.withOpacity(0.35) : maroon.withOpacity(0.25),
+            ),
           ),
-          child: child ?? const SizedBox.shrink(),
+          title: Text(
+            "Add Training",
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                _input(
+                  isDark: isDark,
+                  label: "Date",
+                  controller: dateController,
+                  readOnly: true,
+                  icon: Icons.calendar_today_rounded,
+                  onTap: () => pickDate(dialogContext),
+                ),
+                _input(
+                  isDark: isDark,
+                  label: "Day",
+                  controller: dayController,
+                  readOnly: true,
+                  icon: Icons.event_rounded,
+                ),
+                _input(
+                  isDark: isDark,
+                  label: "Time",
+                  controller: timeController,
+                  readOnly: true,
+                  icon: Icons.access_time_rounded,
+                  onTap: () => pickTime(dialogContext),
+                ),
+                _input(
+                  isDark: isDark,
+                  label: "Batch",
+                  controller: batchController,
+                  hintText: "Example: Morning Batch",
+                ),
+                _input(
+                  isDark: isDark,
+                  label: "Training Type",
+                  controller: typeController,
+                  hintText: "Example: Batting Practice",
+                ),
+                _input(
+                  isDark: isDark,
+                  label: "Status",
+                  controller: statusController,
+                  hintText: "Upcoming / Completed / Cancelled",
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                "Cancel",
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : maroon,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDark ? red : maroon,
+                foregroundColor: isDark ? Colors.white : gold,
+              ),
+              onPressed: () async {
+                final date = dateController.text.trim();
+                final day = dayController.text.trim();
+                final time = timeController.text.trim();
+                final batch = batchController.text.trim();
+                final type = typeController.text.trim();
+                final status = statusController.text.trim().isEmpty
+                    ? "Upcoming"
+                    : statusController.text.trim();
+
+                if (date.isEmpty ||
+                    day.isEmpty ||
+                    time.isEmpty ||
+                    batch.isEmpty ||
+                    type.isEmpty ||
+                    status.isEmpty) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(
+                      content: Text("Please fill all fields"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('training_schedules')
+                      .add({
+                    'date': date,
+                    'day': day,
+                    'time': time,
+                    'batch': batch,
+                    'type': type,
+                    'status': status,
+                    'createdBy': uid,
+                    'createdByRole': role,
+                    'createdAt': FieldValue.serverTimestamp(),
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
+
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                  }
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Training schedule added"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text("Save failed: $e"),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text(
+                "Save",
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ],
         );
       },
     );
 
-    if (picked != null) {
-      selectedDate = picked;
-      dateController.text = _dateKey(picked);
-      dayController.text = _dayName(picked);
-    }
+    dateController.dispose();
+    dayController.dispose();
+    timeController.dispose();
+    batchController.dispose();
+    typeController.dispose();
+    statusController.dispose();
   }
 
-  await showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      return AlertDialog(
-        backgroundColor: _card(isDark),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color: isDark ? red.withOpacity(0.35) : maroon.withOpacity(0.25),
-          ),
+  Widget _input({
+    required bool isDark,
+    required String label,
+    required TextEditingController controller,
+    bool readOnly = false,
+    IconData? icon,
+    VoidCallback? onTap,
+    String? hintText,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(
+        controller: controller,
+        readOnly: readOnly,
+        onTap: onTap,
+        style: TextStyle(
+          color: _primaryText(isDark),
+          fontWeight: FontWeight.w700,
         ),
-        title: Text(
-          "Add Training",
-          style: TextStyle(
-            color: _primaryText(isDark),
-            fontWeight: FontWeight.w900,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hintText,
+          hintStyle: TextStyle(
+            color: _secondaryText(isDark).withOpacity(0.65),
+            fontSize: 12,
           ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              _input(
-                isDark: isDark,
-                label: "Date",
-                controller: dateController,
-                readOnly: true,
-                icon: Icons.calendar_today_rounded,
-                onTap: () => pickDate(dialogContext),
-              ),
-              _input(
-                isDark: isDark,
-                label: "Day",
-                controller: dayController,
-                readOnly: true,
-              ),
-              _input(
-                isDark: isDark,
-                label: "Time",
-                controller: timeController,
-                hintText: "Example: 6:00 AM",
-              ),
-              _input(
-                isDark: isDark,
-                label: "Batch",
-                controller: batchController,
-                hintText: "Example: Morning Batch",
-              ),
-              _input(
-                isDark: isDark,
-                label: "Training Type",
-                controller: typeController,
-                hintText: "Example: Batting Practice",
-              ),
-              _input(
-                isDark: isDark,
-                label: "Status",
-                controller: statusController,
-                hintText: "Upcoming / Completed / Cancelled",
-              ),
-            ],
+          labelStyle: TextStyle(color: _secondaryText(isDark)),
+          suffixIcon: icon == null
+              ? null
+              : Icon(
+                  icon,
+                  color: isDark ? gold : maroon,
+                ),
+          filled: true,
+          fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(
-              "Cancel",
-              style: TextStyle(
-                color: isDark ? Colors.white70 : maroon,
-                fontWeight: FontWeight.w800,
-              ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: _border(isDark)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: isDark ? red : maroon,
+              width: 1.4,
             ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDark ? red : maroon,
-              foregroundColor: isDark ? Colors.white : gold,
-            ),
-            onPressed: () async {
-              final date = dateController.text.trim();
-              final day = dayController.text.trim();
-              final time = timeController.text.trim();
-              final batch = batchController.text.trim();
-              final type = typeController.text.trim();
-              final status = statusController.text.trim().isEmpty
-                  ? "Upcoming"
-                  : statusController.text.trim();
-
-              if (date.isEmpty ||
-                  day.isEmpty ||
-                  time.isEmpty ||
-                  batch.isEmpty ||
-                  type.isEmpty ||
-                  status.isEmpty) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  const SnackBar(
-                    content: Text("Please fill all fields"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              try {
-                await FirebaseFirestore.instance
-                    .collection('training_schedules')
-                    .add({
-                  'date': date,
-                  'day': day,
-                  'time': time,
-                  'batch': batch,
-                  'type': type,
-                  'status': status,
-                  'createdBy': uid,
-                  'createdByRole': role,
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'updatedAt': FieldValue.serverTimestamp(),
-                });
-
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Training schedule added"),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(
-                      content: Text("Save failed: $e"),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text(
-              "Save",
-              style: TextStyle(fontWeight: FontWeight.w900),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-
-  dateController.dispose();
-  dayController.dispose();
-  timeController.dispose();
-  batchController.dispose();
-  typeController.dispose();
-  statusController.dispose();
-}
-
- Widget _input({
-  required bool isDark,
-  required String label,
-  required TextEditingController controller,
-  bool readOnly = false,
-  IconData? icon,
-  VoidCallback? onTap,
-  String? hintText,
-}) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: TextField(
-      controller: controller,
-      readOnly: readOnly,
-      onTap: onTap,
-      style: TextStyle(
-        color: _primaryText(isDark),
-        fontWeight: FontWeight.w700,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
-        hintStyle: TextStyle(
-          color: _secondaryText(isDark).withOpacity(0.65),
-          fontSize: 12,
-        ),
-        labelStyle: TextStyle(color: _secondaryText(isDark)),
-        suffixIcon: icon == null
-            ? null
-            : Icon(
-                icon,
-                color: isDark ? gold : maroon,
-              ),
-        filled: true,
-        fillColor: isDark ? const Color(0xFF0B0B0B) : Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _border(isDark)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: isDark ? red : maroon,
-            width: 1.4,
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _confirmDelete(BuildContext context, String docId, bool isDark) {
     if (!_canManageTraining) return;
