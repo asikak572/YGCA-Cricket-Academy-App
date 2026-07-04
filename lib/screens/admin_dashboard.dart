@@ -6,15 +6,12 @@ import 'widgets/ygca_bottom_nav.dart';
 import '../theme/theme_controller.dart';
 
 import 'student_list_screen.dart';
-import 'performance_report_screen.dart';
 import 'notification_screen.dart';
 import 'reports_dashboard_screen.dart';
 import 'attendance_module_screen.dart';
 import 'fee_module_screen.dart';
 import 'coach_module_screen.dart';
 import 'schedule_module_screen.dart';
-import 'coach_salary_analytics_screen.dart';
-import 'communication_center_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -75,14 +72,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
-
-          // UPDATED DRAWER
           drawer: YgcaDrawer(
             role: 'Admin',
             username: 'Admin User',
             onLogout: _logout,
           ),
-
           body: SafeArea(
             bottom: false,
             child: SingleChildScrollView(
@@ -174,9 +168,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 onTap: () => _open(const AttendanceModuleScreen()),
               ),
               YgcaBottomNavItem(
-                icon: Icons.analytics_rounded,
-                label: 'Reports',
-                onTap: () => _open(const ReportsDashboardScreen()),
+                icon: Icons.calendar_month_rounded,
+                label: 'Schedule',
+                onTap: () => _open(const ScheduleModuleScreen()),
               ),
               YgcaBottomNavItem(
                 icon: Icons.more_horiz_rounded,
@@ -693,6 +687,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
             title: "Mark\nAttendance",
             color: Colors.blue,
             onTap: () => _open(const AttendanceModuleScreen()),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.calendar_month_rounded,
+            title: "Schedule\nModule",
+            color: Colors.purpleAccent,
+            onTap: () => _open(const ScheduleModuleScreen()),
+          ),
+          _quickActionCard(
+            isDark: isDark,
+            icon: Icons.analytics_rounded,
+            title: "Reports\nCenter",
+            color: Colors.teal,
+            onTap: () => _open(const ReportsDashboardScreen()),
           ),
           _quickActionCard(
             isDark: isDark,

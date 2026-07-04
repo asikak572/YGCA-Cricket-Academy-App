@@ -61,7 +61,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   }
 
   bool get _canManageTraining {
-    return role == 'Admin' || role == 'Coach';
+    return role == 'Admin';
   }
 
   List<String> _listFromDynamic(dynamic value) {
