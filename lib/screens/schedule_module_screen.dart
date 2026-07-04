@@ -4,6 +4,9 @@ import '../theme/theme_controller.dart';
 
 import 'match_schedule_screen.dart';
 import 'training_schedule_screen.dart';
+import 'today_schedule_screen.dart';
+import 'monthly_schedule_screen.dart';
+import 'session_history_screen.dart';
 
 class ScheduleModuleScreen extends StatelessWidget {
   const ScheduleModuleScreen({super.key});
@@ -96,7 +99,7 @@ class ScheduleModuleScreen extends StatelessWidget {
                           color: Colors.purpleAccent,
                           onTap: () => _open(
                             context,
-                            const TrainingScheduleScreen(),
+                            const TodayScheduleScreen(),
                           ),
                         ),
                         _optionTile(
@@ -108,7 +111,7 @@ class ScheduleModuleScreen extends StatelessWidget {
                           color: Colors.blueAccent,
                           onTap: () => _open(
                             context,
-                            const TrainingScheduleScreen(),
+                            const MonthlyScheduleScreen(),
                           ),
                         ),
                         _optionTile(
@@ -120,7 +123,7 @@ class ScheduleModuleScreen extends StatelessWidget {
                           color: Colors.teal,
                           onTap: () => _open(
                             context,
-                            const TrainingScheduleScreen(),
+                            const SessionHistoryScreen(),
                           ),
                         ),
                       ],

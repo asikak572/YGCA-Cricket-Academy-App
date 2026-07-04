@@ -92,6 +92,54 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
     }
   }
 
+  String _dateKey(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
+  }
+
+  String _dayName(DateTime date) {
+    switch (date.weekday) {
+      case DateTime.monday:
+        return 'Monday';
+      case DateTime.tuesday:
+        return 'Tuesday';
+      case DateTime.wednesday:
+        return 'Wednesday';
+      case DateTime.thursday:
+        return 'Thursday';
+      case DateTime.friday:
+        return 'Friday';
+      case DateTime.saturday:
+        return 'Saturday';
+      case DateTime.sunday:
+        return 'Sunday';
+      default:
+        return '';
+    }
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    final text = _text(value);
+    if (text.isEmpty) return null;
+
+    try {
+      return DateTime.parse(text);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _loadCoachAssignedBatches(Set<String> batches) async {
     try {
       final assignments = await FirebaseFirestore.instance
@@ -283,6 +331,13 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
     final sorted = docs.toList();
 
     sorted.sort((a, b) {
+      final aDate = _parseDate(a.data()['date']);
+      final bDate = _parseDate(b.data()['date']);
+
+      if (aDate != null && bDate != null) {
+        return bDate.compareTo(aDate);
+      }
+
       final aTime = a.data()['createdAt'];
       final bTime = b.data()['createdAt'];
 
@@ -328,10 +383,40 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   Future<void> _showAddTrainingDialog(BuildContext context, bool isDark) async {
     if (!_canManageTraining) return;
 
+    final dateController = TextEditingController();
     final dayController = TextEditingController();
     final timeController = TextEditingController();
     final batchController = TextEditingController();
     final typeController = TextEditingController();
+    final statusController = TextEditingController(text: "Upcoming");
+
+    Future<void> pickDate() async {
+      final now = DateTime.now();
+
+      final selected = await showDatePicker(
+        context: context,
+        initialDate: now,
+        firstDate: DateTime(now.year - 2),
+        lastDate: DateTime(now.year + 2),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: maroon,
+                onPrimary: Colors.white,
+                onSurface: isDark ? Colors.white : Colors.black,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (selected != null) {
+        dateController.text = _dateKey(selected);
+        dayController.text = _dayName(selected);
+      }
+    }
 
     await showDialog(
       context: context,
@@ -347,6 +432,14 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
         content: SingleChildScrollView(
           child: Column(
             children: [
+              _input(
+                isDark: isDark,
+                label: "Date",
+                controller: dateController,
+                readOnly: true,
+                icon: Icons.calendar_today_rounded,
+                onTap: pickDate,
+              ),
               _input(
                 isDark: isDark,
                 label: "Day",
@@ -367,6 +460,11 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 label: "Training Type",
                 controller: typeController,
               ),
+              _input(
+                isDark: isDark,
+                label: "Status",
+                controller: statusController,
+              ),
             ],
           ),
         ),
@@ -384,12 +482,21 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
               foregroundColor: isDark ? Colors.white : gold,
             ),
             onPressed: () async {
+              final date = dateController.text.trim();
               final day = dayController.text.trim();
               final time = timeController.text.trim();
               final batch = batchController.text.trim();
               final type = typeController.text.trim();
+              final status = statusController.text.trim().isEmpty
+                  ? "Upcoming"
+                  : statusController.text.trim();
 
-              if (day.isEmpty || time.isEmpty || batch.isEmpty || type.isEmpty) {
+              if (date.isEmpty ||
+                  day.isEmpty ||
+                  time.isEmpty ||
+                  batch.isEmpty ||
+                  type.isEmpty ||
+                  status.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text("Please fill all fields"),
@@ -403,10 +510,12 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 await FirebaseFirestore.instance
                     .collection('training_schedules')
                     .add({
+                  'date': date,
                   'day': day,
                   'time': time,
                   'batch': batch,
                   'type': type,
+                  'status': status,
                   'createdBy': uid,
                   'createdByRole': role,
                   'createdAt': FieldValue.serverTimestamp(),
@@ -439,21 +548,28 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
       ),
     );
 
+    dateController.dispose();
     dayController.dispose();
     timeController.dispose();
     batchController.dispose();
     typeController.dispose();
+    statusController.dispose();
   }
 
   Widget _input({
     required bool isDark,
     required String label,
     required TextEditingController controller,
+    bool readOnly = false,
+    IconData? icon,
+    VoidCallback? onTap,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: controller,
+        readOnly: readOnly,
+        onTap: onTap,
         style: TextStyle(
           color: _primaryText(isDark),
           fontWeight: FontWeight.w700,
@@ -461,6 +577,12 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: _secondaryText(isDark)),
+          suffixIcon: icon == null
+              ? null
+              : Icon(
+                  icon,
+                  color: isDark ? Colors.white70 : maroon,
+                ),
           border: const OutlineInputBorder(),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: _border(isDark)),
@@ -533,6 +655,17 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
     if (lower.contains("bat")) return Colors.orange;
     if (lower.contains("bowl")) return Colors.blueAccent;
     if (lower.contains("field")) return Colors.purpleAccent;
+
+    return Colors.teal;
+  }
+
+  Color _statusColor(String status) {
+    final lower = status.toLowerCase();
+
+    if (lower.contains("complete")) return Colors.green;
+    if (lower.contains("cancel")) return Colors.redAccent;
+    if (lower.contains("pending")) return Colors.orange;
+    if (lower.contains("upcoming")) return Colors.blueAccent;
 
     return Colors.teal;
   }
@@ -673,6 +806,11 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                                                     ? 'No Day'
                                                     : _text(data['day']);
 
+                                            final date =
+                                                _text(data['date']).isEmpty
+                                                    ? 'No Date'
+                                                    : _text(data['date']);
+
                                             final time =
                                                 _text(data['time']).isEmpty
                                                     ? 'No Time'
@@ -688,12 +826,19 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                                                     ? 'Training'
                                                     : _text(data['type']);
 
+                                            final status =
+                                                _text(data['status']).isEmpty
+                                                    ? 'Upcoming'
+                                                    : _text(data['status']);
+
                                             return _trainingCard(
                                               isDark: isDark,
                                               day: day,
+                                              date: date,
                                               time: time,
                                               batch: batch,
                                               type: type,
+                                              status: status,
                                               onDelete: () => _confirmDelete(
                                                 context,
                                                 doc.id,
@@ -999,13 +1144,16 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   Widget _trainingCard({
     required bool isDark,
     required String day,
+    required String date,
     required String time,
     required String batch,
     required String type,
+    required String status,
     required VoidCallback onDelete,
   }) {
     final color = _typeColor(type);
     final icon = _typeIcon(type);
+    final statusColor = _statusColor(status);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1039,7 +1187,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  day,
+                  "$day • $date",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1060,7 +1208,18 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                   ),
                 ),
                 const SizedBox(height: 7),
-                _typeChip(isDark: isDark, type: type, color: color),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _typeChip(isDark: isDark, type: type, color: color),
+                    _typeChip(
+                      isDark: isDark,
+                      type: status,
+                      color: statusColor,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
