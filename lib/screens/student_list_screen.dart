@@ -21,8 +21,35 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   String searchQuery = "";
 
+  late final Stream<QuerySnapshot> _studentsStream;
+  final TextEditingController _searchController = TextEditingController();
+
   bool get isSmallScreen {
     return MediaQuery.of(context).size.width < 370;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _studentsStream = FirebaseFirestore.instance
+        .collection('students')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+
+    _searchController.addListener(() {
+      if (!mounted) return;
+
+      setState(() {
+        searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Color _bg(bool isDark) {
@@ -64,23 +91,26 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   bool _matchesSearch(Map<String, dynamic> data) {
-    if (searchQuery.trim().isEmpty) return true;
+    final query = searchQuery.trim().toLowerCase();
 
-    final query = searchQuery.toLowerCase();
+    if (query.isEmpty) return true;
 
-    final name = data['name']?.toString().toLowerCase() ?? '';
-    final phone = data['phone']?.toString().toLowerCase() ?? '';
-    final parentName = data['parentName']?.toString().toLowerCase() ?? '';
-    final parentEmail = data['parentEmail']?.toString().toLowerCase() ?? '';
-    final batch = data['batch']?.toString().toLowerCase() ?? '';
-    final rollNo = data['rollNo']?.toString().toLowerCase() ?? '';
+    final searchableText = [
+      data['name'],
+      data['phone'],
+      data['parentName'],
+      data['parentEmail'],
+      data['parentPhone'],
+      data['batch'],
+      data['rollNo'],
+      data['feeStatus'],
+      data['status'],
+      data['approvalStatus'],
+    ].whereType<Object>().map((value) {
+      return value.toString().toLowerCase();
+    }).join(' ');
 
-    return name.contains(query) ||
-        phone.contains(query) ||
-        parentName.contains(query) ||
-        parentEmail.contains(query) ||
-        batch.contains(query) ||
-        rollNo.contains(query);
+    return searchableText.contains(query);
   }
 
   Future<String> _generateRollNumber(String studentName) async {
@@ -669,10 +699,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
           ),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('students')
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
+              stream: _studentsStream,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return _messageCard(
@@ -1196,16 +1223,20 @@ class _StudentListScreenState extends State<StudentListScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark ? gold : maroon,
-                fontSize: small ? 13 : 15,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.7,
+          Expanded(
+            child: FittedBox(
+              alignment: Alignment.centerLeft,
+              fit: BoxFit.scaleDown,
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: small ? 13 : 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.7,
+                ),
               ),
             ),
           ),
@@ -1227,18 +1258,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
     return SizedBox(
       height: 48,
       child: TextField(
+        controller: _searchController,
         style: TextStyle(
           color: _primaryText(isDark),
           fontSize: 13,
           fontWeight: FontWeight.w700,
         ),
-        onChanged: (value) {
-          setState(() {
-            searchQuery = value;
-          });
-        },
         decoration: InputDecoration(
-          hintText: "Search name, phone, parent, batch",
+          hintText: "Search name, phone, parent, batch, roll no",
           hintStyle: TextStyle(
             color: _secondaryText(isDark),
             fontSize: 12,
@@ -1248,6 +1275,18 @@ class _StudentListScreenState extends State<StudentListScreen> {
             color: isDark ? gold : maroon,
             size: 20,
           ),
+          suffixIcon: searchQuery.trim().isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: _secondaryText(isDark),
+                    size: 18,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                  },
+                )
+              : null,
           filled: true,
           fillColor: _card(isDark),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
