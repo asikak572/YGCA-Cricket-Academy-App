@@ -5,6 +5,14 @@ import 'widgets/ygca_drawer.dart';
 import 'widgets/ygca_bottom_nav.dart';
 import '../theme/theme_controller.dart';
 
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_spacing.dart';
+import '../core/responsive/responsive_grid.dart';
+import '../core/responsive/responsive_size.dart';
+import '../core/responsive/responsive_radius.dart';
+import '../core/responsive/responsive_text.dart';
+
 import 'student_list_screen.dart';
 import 'notification_screen.dart';
 import 'reports_dashboard_screen.dart';
@@ -79,74 +87,91 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           body: SafeArea(
             bottom: false,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Column(
-                children: [
-                  _topBar(isDark),
-                  _heroCard(isDark),
-                  const SizedBox(height: 14),
-                  _sectionTitle(
-                    title: "ACADEMY OVERVIEW",
-                    isDark: isDark,
-                    showViewAll: true,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 2.35,
-                      children: [
-                        _overviewCard(
-                          isDark: isDark,
-                          icon: Icons.groups_rounded,
-                          title: "Total Students",
-                          value: "248",
-                          subtitle: "Registered players",
-                          color: red,
-                        ),
-                        _overviewCard(
-                          isDark: isDark,
-                          icon: Icons.verified_rounded,
-                          title: "Attendance",
-                          value: "75%",
-                          subtitle: "Today average",
-                          color: Colors.green,
-                        ),
-                        _overviewCard(
-                          isDark: isDark,
-                          icon: Icons.receipt_long_rounded,
-                          title: "Pending Fees",
-                          value: "₹2.45L",
-                          subtitle: "28 students",
-                          color: Colors.orange,
-                        ),
-                        _overviewCard(
-                          isDark: isDark,
-                          icon: Icons.calendar_month_rounded,
-                          title: "Sessions",
-                          value: "6",
-                          subtitle: "This week",
-                          color: Colors.purpleAccent,
-                        ),
-                      ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: ResponsiveHelper.maxContentWidth(context),
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Column(
+                        children: [
+                          _topBar(isDark),
+                          _heroCard(isDark),
+                          SizedBox(height: ResponsiveSpacing.medium(context)),
+                          _sectionTitle(
+                            title: "ACADEMY OVERVIEW",
+                            isDark: isDark,
+                            showViewAll: true,
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  ResponsivePadding.horizontal(context),
+                            ),
+                            child: GridView.count(
+                              crossAxisCount:
+                                  ResponsiveGrid.dashboardCount(context),
+                              shrinkWrap: true,
+                              physics:
+                                  const NeverScrollableScrollPhysics(),
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio:
+                                  ResponsiveGrid.dashboardCardRatio(context),
+                              children: [
+                                _overviewCard(
+                                  isDark: isDark,
+                                  icon: Icons.groups_rounded,
+                                  title: "Total Students",
+                                  value: "248",
+                                  subtitle: "Registered players",
+                                  color: red,
+                                ),
+                                _overviewCard(
+                                  isDark: isDark,
+                                  icon: Icons.verified_rounded,
+                                  title: "Attendance",
+                                  value: "75%",
+                                  subtitle: "Today average",
+                                  color: Colors.green,
+                                ),
+                                _overviewCard(
+                                  isDark: isDark,
+                                  icon: Icons.receipt_long_rounded,
+                                  title: "Pending Fees",
+                                  value: "₹2.45L",
+                                  subtitle: "28 students",
+                                  color: Colors.orange,
+                                ),
+                                _overviewCard(
+                                  isDark: isDark,
+                                  icon: Icons.calendar_month_rounded,
+                                  title: "Sessions",
+                                  value: "6",
+                                  subtitle: "This week",
+                                  color: Colors.purpleAccent,
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: ResponsiveSpacing.medium(context)),
+                          _sectionTitle(
+                            title: "QUICK ACTIONS",
+                            isDark: isDark,
+                            showViewAll: false,
+                          ),
+                          _quickActions(isDark),
+                          const SizedBox(height: 6),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  _sectionTitle(
-                    title: "QUICK ACTIONS",
-                    isDark: isDark,
-                    showViewAll: false,
-                  ),
-                  _quickActions(isDark),
-                  const SizedBox(height: 6),
-                ],
-              ),
+                );
+              },
             ),
           ),
           bottomNavigationBar: YgcaBottomNav(
@@ -188,7 +213,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _topBar(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context) - 2,
+        8,
+        ResponsivePadding.horizontal(context) - 2,
+        6,
+      ),
       child: Row(
         children: [
           _circleButton(
@@ -199,8 +229,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           const SizedBox(width: 10),
           Image.asset(
             logoAsset,
-            width: 46,
-            height: 46,
+            width: ResponsiveSize.logo(context),
+            height: ResponsiveSize.logo(context),
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 10),
@@ -214,7 +244,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 21,
+                    fontSize: ResponsiveText.heading(context) + 1,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
                   ),
@@ -226,7 +256,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -277,12 +307,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final size = ResponsiveSize.circleButton(context);
+
     return InkWell(
       borderRadius: BorderRadius.circular(50),
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF111111) : Colors.white,
           shape: BoxShape.circle,
@@ -302,20 +334,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
         child: Icon(
           icon,
           color: isDark ? Colors.white : maroon,
-          size: 21,
+          size: ResponsiveHelper.isDesktop(context) ? 23 : 21,
         ),
       ),
     );
   }
-
-  Widget _heroCard(bool isDark) {
+    Widget _heroCard(bool isDark) {
     return Container(
-      height: 248,
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      height: ResponsiveSize.heroHeight(context),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        8,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF090909) : Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.large(context)),
         border: Border.all(
           color: red.withOpacity(isDark ? 0.60 : 0.75),
           width: 1.15,
@@ -368,7 +404,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
               opacity: isDark ? 0.30 : 0.10,
               child: Icon(
                 Icons.sports_cricket_rounded,
-                size: 170,
+                size: ResponsiveHelper.isDesktop(context)
+                    ? 210
+                    : ResponsiveHelper.isTablet(context)
+                        ? 190
+                        : 170,
                 color: red,
               ),
             ),
@@ -381,17 +421,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
           Positioned(
-            left: 24,
-            top: 58,
+            left: ResponsiveHelper.isMobile(context) ? 24 : 34,
+            top: ResponsiveHelper.isMobile(context) ? 58 : 72,
             child: SizedBox(
-              width: 118,
-              height: 118,
+              width: ResponsiveHelper.isMobile(context) ? 118 : 136,
+              height: ResponsiveHelper.isMobile(context) ? 118 : 136,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Container(
-                    width: 118,
-                    height: 118,
+                    width: ResponsiveHelper.isMobile(context) ? 118 : 136,
+                    height: ResponsiveHelper.isMobile(context) ? 118 : 136,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
@@ -403,8 +443,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ),
                   ),
                   Container(
-                    width: 96,
-                    height: 96,
+                    width: ResponsiveHelper.isMobile(context) ? 96 : 110,
+                    height: ResponsiveHelper.isMobile(context) ? 96 : 110,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
@@ -416,8 +456,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ),
                   ),
                   SizedBox(
-                    width: 72,
-                    height: 72,
+                    width: ResponsiveHelper.isMobile(context) ? 72 : 84,
+                    height: ResponsiveHelper.isMobile(context) ? 72 : 84,
                     child: Image.asset(
                       logoAsset,
                       fit: BoxFit.contain,
@@ -428,8 +468,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
           Positioned(
-            left: 154,
-            top: 44,
+            left: ResponsiveHelper.isMobile(context) ? 154 : 190,
+            top: ResponsiveHelper.isMobile(context) ? 44 : 58,
             right: 18,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,7 +480,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? gold : red,
-                    fontSize: 12,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w900,
                     letterSpacing: 2.2,
                   ),
@@ -452,7 +492,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black,
-                    fontSize: 35,
+                    fontSize: ResponsiveText.title(context),
                     height: 0.95,
                     fontWeight: FontWeight.w900,
                   ),
@@ -464,7 +504,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? gold : red,
-                    fontSize: 18,
+                    fontSize: ResponsiveText.heading(context),
                     height: 1.0,
                     fontWeight: FontWeight.w900,
                   ),
@@ -485,7 +525,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark ? Colors.white70 : const Color(0xFF374151),
-                    fontSize: 12.5,
+                    fontSize: ResponsiveText.small(context),
                     height: 1.28,
                     fontWeight: FontWeight.w700,
                   ),
@@ -504,7 +544,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required bool showViewAll,
   }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context) + 2,
+        0,
+        ResponsivePadding.horizontal(context) + 2,
+        10,
+      ),
       child: Row(
         children: [
           SizedBox(
@@ -518,7 +563,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 softWrap: false,
                 style: TextStyle(
                   color: isDark ? gold : const Color(0xFF111827),
-                  fontSize: 17,
+                  fontSize: ResponsiveText.heading(context) - 1,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.9,
                 ),
@@ -538,7 +583,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               "View all",
               style: TextStyle(
                 color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                fontSize: 12,
+                fontSize: ResponsiveText.small(context),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -563,7 +608,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.isDesktop(context) ? 14 : 10,
+        vertical: ResponsiveHelper.isDesktop(context) ? 10 : 8,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -580,7 +628,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.32) : const Color(0xFFE5E7EB),
         ),
@@ -597,14 +645,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: ResponsiveHelper.isDesktop(context) ? 50 : 44,
+            height: ResponsiveHelper.isDesktop(context) ? 50 : 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color.withOpacity(isDark ? 0.15 : 0.10),
               border: Border.all(color: color.withOpacity(0.35)),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(
+              icon,
+              color: color,
+              size: ResponsiveHelper.isDesktop(context) ? 27 : 24,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -612,7 +664,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: SizedBox(
-                width: 96,
+                width: ResponsiveHelper.isDesktop(context) ? 120 : 96,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -622,7 +674,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _primaryText(isDark),
-                        fontSize: 19,
+                        fontSize: ResponsiveText.heading(context) + 1,
                         height: 1,
                         fontWeight: FontWeight.w900,
                       ),
@@ -634,7 +686,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _primaryText(isDark),
-                        fontSize: 10.5,
+                        fontSize: ResponsiveText.small(context),
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -645,7 +697,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _secondaryText(isDark),
-                        fontSize: 9.5,
+                        fontSize: ResponsiveText.tiny(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -661,11 +713,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _quickActions(bool isDark) {
     return SizedBox(
-      height: 92,
+      height: ResponsiveSize.quickActionHeight(context),
       child: ListView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsivePadding.horizontal(context),
+        ),
         children: [
           _quickActionCard(
             isDark: isDark,
@@ -722,15 +776,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
       onTap: onTap,
       child: Container(
-        width: 92,
+        width: ResponsiveSize.quickActionWidth(context),
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
           color: _card(isDark),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
           border: Border.all(
             color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
           ),
@@ -747,7 +801,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 25),
+            Icon(
+              icon,
+              color: color,
+              size: ResponsiveHelper.isDesktop(context) ? 28 : 25,
+            ),
             const SizedBox(height: 7),
             Text(
               title,
@@ -756,7 +814,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: _primaryText(isDark),
-                fontSize: 10.5,
+                fontSize: ResponsiveText.small(context),
                 height: 1.12,
                 fontWeight: FontWeight.w900,
               ),
