@@ -16,40 +16,34 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
   static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  final TextEditingController batchController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
   final TextEditingController timeController = TextEditingController();
   final TextEditingController reasonController = TextEditingController();
 
   bool submitting = false;
 
+  String cancelType = 'Batch';
+  String? selectedBatch;
+  String? selectedStudentId;
+  String? selectedStudentName;
+
   @override
   void dispose() {
-    batchController.dispose();
     dateController.dispose();
     timeController.dispose();
     reasonController.dispose();
     super.dispose();
   }
 
-  Color _bg(bool isDark) {
-    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
-  }
+  Color _bg(bool isDark) => isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
+  Color _card(bool isDark) => isDark ? const Color(0xFF111111) : Colors.white;
+  Color _border(bool isDark) => isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
+  Color _primaryText(bool isDark) => isDark ? Colors.white : const Color(0xFF111827);
+  Color _secondaryText(bool isDark) => isDark ? Colors.white60 : const Color(0xFF64748B);
 
-  Color _card(bool isDark) {
-    return isDark ? const Color(0xFF111111) : Colors.white;
-  }
-
-  Color _border(bool isDark) {
-    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
-  }
-
-  Color _primaryText(bool isDark) {
-    return isDark ? Colors.white : const Color(0xFF111827);
-  }
-
-  Color _secondaryText(bool isDark) {
-    return isDark ? Colors.white60 : const Color(0xFF64748B);
+  String _text(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
   }
 
   String _dateKey(DateTime date) {
@@ -59,7 +53,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
   }
 
   Future<void> _cancelSession(BuildContext context) async {
-    final batch = batchController.text.trim();
+    final batch = selectedBatch ?? '';
     final date = dateController.text.trim();
     final time = timeController.text.trim();
     final reason = reasonController.text.trim();
@@ -74,20 +68,37 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       return;
     }
 
+    if (cancelType == 'Student' &&
+        ((selectedStudentId ?? '').isEmpty || (selectedStudentName ?? '').isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select student"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() => submitting = true);
 
     try {
-      final notificationMessage =
-          '$batch session on $date at $time has been cancelled. Reason: $reason. Makeup session will be scheduled soon.';
+      final isIndividual = cancelType == 'Student';
+
+      final notificationMessage = isIndividual
+          ? '${selectedStudentName ?? 'Student'} session on $date at $time has been cancelled. Reason: $reason. Makeup session will be scheduled soon.'
+          : '$batch session on $date at $time has been cancelled. Reason: $reason. Makeup session will be scheduled soon.';
 
       final cancelledDoc =
           await FirebaseFirestore.instance.collection('cancelled_sessions').add({
+        'cancelType': cancelType,
         'batch': batch,
         'date': date,
         'cancelledDate': date,
         'time': time,
         'cancelledTime': time,
         'reason': reason,
+        'studentId': isIndividual ? selectedStudentId : '',
+        'studentName': isIndividual ? selectedStudentName : '',
         'makeup': 'Not scheduled',
         'status': 'Cancelled',
         'makeupStatus': 'Pending',
@@ -97,8 +108,11 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
 
       await FirebaseFirestore.instance.collection('makeup_sessions').add({
         'cancelledSessionId': cancelledDoc.id,
+        'cancelType': cancelType,
         'batch': batch,
         'originalBatch': batch,
+        'studentId': isIndividual ? selectedStudentId : '',
+        'studentName': isIndividual ? selectedStudentName : '',
         'cancelledDate': date,
         'cancelledTime': time,
         'reason': reason,
@@ -111,9 +125,10 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       });
 
       await FirebaseFirestore.instance.collection('notifications').add({
-        'title': 'Session Cancelled',
+        'title': isIndividual ? 'Student Session Cancelled' : 'Batch Session Cancelled',
         'message': notificationMessage,
-        'targetRole': 'Parent',
+        'targetRole': isIndividual ? 'Student' : 'Student',
+        'targetUserId': isIndividual ? selectedStudentId : '',
         'batch': batch,
         'type': 'session_cancelled',
         'status': 'Unread',
@@ -121,9 +136,10 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       });
 
       await FirebaseFirestore.instance.collection('notifications').add({
-        'title': 'Session Cancelled',
+        'title': isIndividual ? 'Student Session Cancelled' : 'Batch Session Cancelled',
         'message': notificationMessage,
-        'targetRole': 'Student',
+        'targetRole': 'Parent',
+        'targetStudentId': isIndividual ? selectedStudentId : '',
         'batch': batch,
         'type': 'session_cancelled',
         'status': 'Unread',
@@ -134,12 +150,18 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Session cancelled, makeup created and notified"),
+          content: Text("Session cancelled and makeup created"),
           backgroundColor: Colors.green,
         ),
       );
 
-      batchController.clear();
+      setState(() {
+        selectedBatch = null;
+        selectedStudentId = null;
+        selectedStudentName = null;
+        cancelType = 'Batch';
+      });
+
       dateController.clear();
       timeController.clear();
       reasonController.clear();
@@ -153,9 +175,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() => submitting = false);
-      }
+      if (mounted) setState(() => submitting = false);
     }
   }
 
@@ -201,7 +221,6 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     );
 
     if (picked == null) return;
-
     dateController.text = _dateKey(picked);
   }
 
@@ -247,6 +266,39 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     if (!mounted) return;
 
     timeController.text = picked.format(context);
+  }
+
+  Stream<List<String>> _batchStream() {
+    return FirebaseFirestore.instance.collection('students').snapshots().map(
+      (snapshot) {
+        final batches = <String>{};
+
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+          final batch = _text(data['batch']).isNotEmpty
+              ? _text(data['batch'])
+              : _text(data['batchName']);
+
+          if (batch.isNotEmpty) batches.add(batch);
+        }
+
+        final list = batches.toList();
+        list.sort();
+        return list;
+      },
+    );
+  }
+
+  Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _studentStream() {
+    if ((selectedBatch ?? '').isEmpty) {
+      return Stream.value([]);
+    }
+
+    return FirebaseFirestore.instance
+        .collection('students')
+        .where('batch', isEqualTo: selectedBatch)
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
   }
 
   @override
@@ -325,12 +377,14 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                           children: [
                             _warningBox(isDark),
                             const SizedBox(height: 14),
-                            _inputBox(
-                              isDark: isDark,
-                              label: "Select Batch",
-                              controller: batchController,
-                              icon: Icons.groups_rounded,
-                            ),
+                            _cancelTypeSelector(isDark),
+                            const SizedBox(height: 10),
+                            _batchDropdown(isDark),
+                            if (cancelType == 'Student') ...[
+                              const SizedBox(height: 10),
+                              _studentDropdown(isDark),
+                            ],
+                            const SizedBox(height: 10),
                             _inputBox(
                               isDark: isDark,
                               label: "Session Date",
@@ -379,16 +433,16 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Icon(
-                                        Icons.notifications_active_rounded,
-                                      ),
+                                    : const Icon(Icons.notifications_active_rounded),
                                 label: Text(
                                   submitting
                                       ? "CREATING..."
-                                      : "CANCEL & CREATE MAKEUP",
+                                      : cancelType == 'Student'
+                                          ? "CANCEL STUDENT & CREATE MAKEUP"
+                                          : "CANCEL BATCH & CREATE MAKEUP",
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w900,
-                                    letterSpacing: 1,
+                                    letterSpacing: 0.5,
                                   ),
                                 ),
                               ),
@@ -409,9 +463,15 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
 
                                   return _cancelledCard(
                                     isDark: isDark,
+                                    cancelType: data['cancelType']?.toString() ?? 'Batch',
+                                    studentName: data['studentName']?.toString() ?? '',
                                     batch: data['batch']?.toString() ?? '',
-                                    date: data['date']?.toString() ?? '',
-                                    time: data['time']?.toString() ?? '',
+                                    date: data['date']?.toString() ??
+                                        data['cancelledDate']?.toString() ??
+                                        '',
+                                    time: data['time']?.toString() ??
+                                        data['cancelledTime']?.toString() ??
+                                        '',
                                     reason: data['reason']?.toString() ?? '',
                                     makeup: data['makeup']?.toString() ??
                                         'Not scheduled',
@@ -430,7 +490,218 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       },
     );
   }
-    Widget _topHeader(BuildContext context, bool isDark) {
+
+  Widget _cancelTypeSelector(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border(isDark)),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _typeButton(isDark, 'Batch', Icons.groups_rounded)),
+          const SizedBox(width: 8),
+          Expanded(child: _typeButton(isDark, 'Student', Icons.person_rounded)),
+        ],
+      ),
+    );
+  }
+
+  Widget _typeButton(bool isDark, String type, IconData icon) {
+    final selected = cancelType == type;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(13),
+      onTap: () {
+        setState(() {
+          cancelType = type;
+          selectedStudentId = null;
+          selectedStudentName = null;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? red : Colors.transparent,
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: selected ? Colors.white : _secondaryText(isDark), size: 18),
+            const SizedBox(width: 6),
+            Text(
+              type == 'Batch' ? 'Full Batch' : 'Individual',
+              style: TextStyle(
+                color: selected ? Colors.white : _primaryText(isDark),
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _batchDropdown(bool isDark) {
+    return StreamBuilder<List<String>>(
+      stream: _batchStream(),
+      builder: (context, snapshot) {
+        final batches = snapshot.data ?? [];
+
+        return DropdownButtonFormField<String>(
+          value: selectedBatch,
+          isExpanded: true,
+          dropdownColor: _card(isDark),
+          iconEnabledColor: isDark ? gold : maroon,
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w800,
+          ),
+          decoration: _dropdownDecoration(
+            isDark: isDark,
+            label: "Select Batch",
+            icon: Icons.groups_rounded,
+          ),
+          items: batches.map((batch) {
+            return DropdownMenuItem<String>(
+              value: batch,
+              child: Text(
+                batch,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedBatch = value;
+              selectedStudentId = null;
+              selectedStudentName = null;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  Widget _studentDropdown(bool isDark) {
+    if ((selectedBatch ?? '').isEmpty) {
+      return _disabledBox(
+        isDark: isDark,
+        label: "Select Student",
+        text: "Select batch first",
+        icon: Icons.person_rounded,
+      );
+    }
+
+    return StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+      stream: _studentStream(),
+      builder: (context, snapshot) {
+        final students = snapshot.data ?? [];
+
+        return DropdownButtonFormField<String>(
+          value: selectedStudentId,
+          isExpanded: true,
+          dropdownColor: _card(isDark),
+          iconEnabledColor: isDark ? gold : maroon,
+          style: TextStyle(
+            color: _primaryText(isDark),
+            fontWeight: FontWeight.w800,
+          ),
+          decoration: _dropdownDecoration(
+            isDark: isDark,
+            label: "Select Student",
+            icon: Icons.person_rounded,
+          ),
+          items: students.map((doc) {
+            final data = doc.data();
+            final name = _text(data['name']).isEmpty ? 'Unnamed Student' : _text(data['name']);
+
+            return DropdownMenuItem<String>(
+              value: doc.id,
+              child: Text(
+                name,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            final doc = students.firstWhere((student) => student.id == value);
+            final data = doc.data();
+
+            setState(() {
+              selectedStudentId = value;
+              selectedStudentName =
+                  _text(data['name']).isEmpty ? 'Unnamed Student' : _text(data['name']);
+            });
+          },
+        );
+      },
+    );
+  }
+
+  InputDecoration _dropdownDecoration({
+    required bool isDark,
+    required String label,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: _secondaryText(isDark)),
+      prefixIcon: Icon(icon, color: isDark ? gold : maroon),
+      filled: true,
+      fillColor: _card(isDark),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: _border(isDark)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: _border(isDark)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: isDark ? red : maroon),
+      ),
+    );
+  }
+
+  Widget _disabledBox({
+    required bool isDark,
+    required String label,
+    required String text,
+    required IconData icon,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 17),
+      decoration: BoxDecoration(
+        color: _card(isDark),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: _border(isDark)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: isDark ? gold : maroon),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _topHeader(BuildContext context, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
@@ -464,7 +735,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                   ),
                 ),
                 Text(
-                  "Session control and makeup flow",
+                  "Batch or individual session control",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -483,9 +754,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
 
               return _circleButton(
                 isDark: isDark,
-                icon: dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 onTap: ThemeController.toggleTheme,
               );
             },
@@ -512,19 +781,13 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           border: Border.all(color: _border(isDark)),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? red.withOpacity(0.12)
-                  : Colors.black.withOpacity(0.08),
+              color: isDark ? red.withOpacity(0.12) : Colors.black.withOpacity(0.08),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          color: isDark ? Colors.white : maroon,
-          size: 21,
-        ),
+        child: Icon(icon, color: isDark ? Colors.white : maroon, size: 21),
       ),
     );
   }
@@ -541,9 +804,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
-        ),
+        border: Border.all(color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9)),
         boxShadow: [
           BoxShadow(
             color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
@@ -555,10 +816,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/home_hero_bg.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/home_hero_bg.png', fit: BoxFit.cover),
           ),
           Positioned.fill(
             child: Container(
@@ -597,11 +855,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                 CircleAvatar(
                   radius: 46,
                   backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.event_busy_rounded,
-                    color: maroon,
-                    size: 42,
-                  ),
+                  child: Icon(Icons.event_busy_rounded, color: maroon, size: 42),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -689,9 +943,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.red.withOpacity(0.10)
-            : const Color(0xFFFEF2F2),
+        color: isDark ? Colors.red.withOpacity(0.10) : const Color(0xFFFEF2F2),
         border: Border.all(
           color: isDark
               ? Colors.redAccent.withOpacity(0.35)
@@ -706,7 +958,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Cancel a session only when required. Parents and students will be notified immediately. A makeup session will be created automatically.",
+              "Cancel a full batch session or only one student's session. Makeup session will be created automatically.",
               style: TextStyle(
                 fontSize: 12,
                 height: 1.35,
@@ -800,6 +1052,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
 
   Widget _cancelledCard({
     required bool isDark,
+    required String cancelType,
+    required String studentName,
     required String batch,
     required String date,
     required String time,
@@ -807,21 +1061,18 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     required String makeup,
   }) {
     final needsMakeup = makeup == "Not scheduled";
+    final isStudent = cancelType == 'Student';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
-        border: Border.all(
-          color: isDark ? red.withOpacity(0.25) : _border(isDark),
-        ),
+        border: Border.all(color: isDark ? red.withOpacity(0.25) : _border(isDark)),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.28)
-                : Colors.black.withOpacity(0.045),
+            color: isDark ? Colors.black.withOpacity(0.28) : Colors.black.withOpacity(0.045),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -832,8 +1083,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           CircleAvatar(
             radius: 28,
             backgroundColor: Colors.red.withOpacity(0.12),
-            child: const Icon(
-              Icons.event_busy_rounded,
+            child: Icon(
+              isStudent ? Icons.person_off_rounded : Icons.event_busy_rounded,
               color: Colors.redAccent,
             ),
           ),
@@ -843,13 +1094,24 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  batch.isEmpty ? "Unknown Batch" : batch,
+                  isStudent
+                      ? (studentName.isEmpty ? "Individual Student" : studentName)
+                      : (batch.isEmpty ? "Unknown Batch" : batch),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isStudent ? "Individual • $batch" : "Full Batch",
+                  style: TextStyle(
+                    color: isDark ? gold : maroon,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -928,11 +1190,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.event_busy_rounded,
-            size: 40,
-            color: _secondaryText(isDark),
-          ),
+          Icon(Icons.event_busy_rounded, size: 40, color: _secondaryText(isDark)),
           const SizedBox(height: 10),
           Text(
             "No Cancelled Sessions Found",
