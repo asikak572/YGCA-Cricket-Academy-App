@@ -52,6 +52,12 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
+  String _dateKey(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
+  }
+
   Future<void> _cancelSession(BuildContext context) async {
     final batch = batchController.text.trim();
     final date = dateController.text.trim();
@@ -78,24 +84,30 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           await FirebaseFirestore.instance.collection('cancelled_sessions').add({
         'batch': batch,
         'date': date,
+        'cancelledDate': date,
         'time': time,
+        'cancelledTime': time,
         'reason': reason,
         'makeup': 'Not scheduled',
         'status': 'Cancelled',
         'makeupStatus': 'Pending',
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
 
       await FirebaseFirestore.instance.collection('makeup_sessions').add({
         'cancelledSessionId': cancelledDoc.id,
         'batch': batch,
+        'originalBatch': batch,
         'cancelledDate': date,
         'cancelledTime': time,
         'reason': reason,
         'makeupDate': '',
         'makeupTime': '',
+        'makeupBatch': '',
         'status': 'Pending',
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
 
       await FirebaseFirestore.instance.collection('notifications').add({
@@ -148,6 +160,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
   }
 
   Future<void> _pickDate() async {
+    final isDark = ThemeController.themeMode.value == ThemeMode.dark;
     final now = DateTime.now();
 
     final picked = await showDatePicker(
@@ -155,22 +168,82 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       initialDate: now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 2),
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      builder: (context, child) {
+        final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
+
+        return Theme(
+          data: baseTheme.copyWith(
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: red,
+                    onPrimary: Colors.white,
+                    surface: Color(0xFF111111),
+                    onSurface: Colors.white,
+                  )
+                : const ColorScheme.light(
+                    primary: maroon,
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Color(0xFF111827),
+                  ),
+            dialogBackgroundColor:
+                isDark ? const Color(0xFF111111) : Colors.white,
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? gold : maroon,
+              ),
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
 
     if (picked == null) return;
 
-    dateController.text =
-        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+    dateController.text = _dateKey(picked);
   }
 
   Future<void> _pickTime() async {
+    final isDark = ThemeController.themeMode.value == ThemeMode.dark;
+
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      initialEntryMode: TimePickerEntryMode.dialOnly,
+      builder: (context, child) {
+        final baseTheme = isDark ? ThemeData.dark() : ThemeData.light();
+
+        return Theme(
+          data: baseTheme.copyWith(
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: red,
+                    onPrimary: Colors.white,
+                    surface: Color(0xFF111111),
+                    onSurface: Colors.white,
+                  )
+                : const ColorScheme.light(
+                    primary: maroon,
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Color(0xFF111827),
+                  ),
+            dialogBackgroundColor:
+                isDark ? const Color(0xFF111111) : Colors.white,
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? gold : maroon,
+              ),
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
 
     if (picked == null) return;
-
     if (!mounted) return;
 
     timeController.text = picked.format(context);
@@ -324,42 +397,6 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                         ),
                       ),
                       const SizedBox(height: 22),
-                      _sectionTitle("SESSION OVERVIEW", isDark),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: GridView.count(
-                          crossAxisCount: 3,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 1.05,
-                          children: [
-                            _smallStatCard(
-                              isDark: isDark,
-                              icon: Icons.event_busy_rounded,
-                              title: "TOTAL",
-                              value: sessions.length.toString(),
-                              color: Colors.redAccent,
-                            ),
-                            _smallStatCard(
-                              isDark: isDark,
-                              icon: Icons.groups_rounded,
-                              title: "BATCHES",
-                              value: batches.length.toString(),
-                              color: Colors.blueAccent,
-                            ),
-                            _smallStatCard(
-                              isDark: isDark,
-                              icon: Icons.event_repeat_rounded,
-                              title: "MAKEUP",
-                              value: makeupPending.toString(),
-                              color: Colors.orange,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
                       _sectionTitle("RECENTLY CANCELLED", isDark),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -393,8 +430,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       },
     );
   }
-
-  Widget _topHeader(BuildContext context, bool isDark) {
+    Widget _topHeader(BuildContext context, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: Row(
@@ -732,11 +768,20 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
+          Container(
+            width: 5,
+            height: 24,
+            decoration: BoxDecoration(
+              color: red,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          const SizedBox(width: 10),
           Text(
             title,
             style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
+              color: isDark ? Colors.white : maroon,
+              fontSize: 17,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
@@ -749,65 +794,6 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _smallStatCard({
-    required bool isDark,
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _card(isDark),
-        border: Border.all(
-          color: isDark ? color.withOpacity(0.35) : _border(isDark),
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? color.withOpacity(0.10)
-                : Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: SizedBox(
-          width: 92,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                backgroundColor: color.withOpacity(0.18),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  color: _primaryText(isDark),
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(
-                title,
-                style: TextStyle(
-                  color: _secondaryText(isDark),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
