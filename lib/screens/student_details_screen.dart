@@ -7,6 +7,13 @@ import 'package:image_picker/image_picker.dart';
 
 import '../theme/theme_controller.dart';
 
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_spacing.dart';
+import '../core/responsive/responsive_grid.dart';
+import '../core/responsive/responsive_radius.dart';
+import '../core/responsive/responsive_text.dart';
+
 import 'attendance_calendar_screen.dart';
 import 'attendance_history_screen.dart';
 import 'digital_id_card_screen.dart';
@@ -314,10 +321,10 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+              insetPadding: EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
               backgroundColor: _card(isDark),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
               ),
               title: Row(
                 children: [
@@ -574,7 +581,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                       ),
                       const SizedBox(height: 12),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
                         child: _summaryCard(
                           isDark: isDark,
                           attendance: "$attendanceValue%",
@@ -585,7 +592,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                       ),
                       const SizedBox(height: 12),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
                         child: _infoCard(
                           isDark: isDark,
                           title: "STUDENT INFORMATION",
@@ -603,7 +610,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                       ),
                       const SizedBox(height: 12),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
                         child: _infoCard(
                           isDark: isDark,
                           title: "QUICK ACTIONS",
@@ -611,10 +618,10 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                             GridView.count(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              crossAxisCount: 3,
+                              crossAxisCount: ResponsiveHelper.isMobile(context) ? 3 : 4,
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
-                              childAspectRatio: 1.05,
+                              childAspectRatio: ResponsiveHelper.isMobile(context) ? 1.05 : 1.20,
                               children: [
                                 _actionCard(
                                   isDark,
@@ -722,7 +729,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
   Widget _topHeader(BuildContext context, bool isDark) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      margin: EdgeInsets.fromLTRB(ResponsivePadding.horizontal(context) - 2, 12, ResponsivePadding.horizontal(context) - 2, 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -740,7 +747,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.large(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.40) : gold.withOpacity(0.8),
         ),
@@ -761,12 +768,12 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
           const SizedBox(width: 12),
           Image.asset(
             'assets/images/ygca_logo.jpg',
-            width: 52,
-            height: 52,
+            width: ResponsiveHelper.isMobile(context) ? 52 : 58,
+            height: ResponsiveHelper.isMobile(context) ? 52 : 58,
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -776,7 +783,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: gold,
-                    fontSize: 17,
+                    fontSize: ResponsiveText.body(context),
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                   ),
@@ -788,7 +795,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -821,8 +828,8 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       borderRadius: BorderRadius.circular(50),
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
+        width: ResponsiveHelper.isMobile(context) ? 42 : 46,
+        height: ResponsiveHelper.isMobile(context) ? 42 : 46,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.12),
           shape: BoxShape.circle,
@@ -842,11 +849,11 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     required String photoUrl,
   }) {
     return Container(
-      height: 190,
-      margin: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+      height: ResponsiveHelper.isMobile(context) ? 190 : 220,
+      margin: EdgeInsets.fromLTRB(ResponsivePadding.horizontal(context), 2, ResponsivePadding.horizontal(context), 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.large(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.45) : gold.withOpacity(0.75),
         ),
@@ -903,16 +910,16 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 Stack(
                   children: [
                     CircleAvatar(
-                      radius: 45,
+                      radius: ResponsiveHelper.isMobile(context) ? 45 : 55,
                       backgroundColor: Colors.white,
                       backgroundImage:
                           photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
                       child: photoUrl.isEmpty
                           ? Text(
                               initials.isEmpty ? "S" : initials,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: maroon,
-                                fontSize: 28,
+                                fontSize: ResponsiveHelper.isMobile(context) ? 28 : 34,
                                 fontWeight: FontWeight.w900,
                               ),
                             )
@@ -952,7 +959,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: SizedBox(
-                      width: 230,
+                      width: ResponsiveHelper.isMobile(context) ? 230 : 330,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -971,9 +978,9 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 27,
+                              fontSize: ResponsiveHelper.isMobile(context) ? 27 : 36,
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -1013,7 +1020,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(color: gold.withOpacity(0.75)),
       ),
       child: Text(
@@ -1040,7 +1047,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.25) : gold.withOpacity(0.65),
         ),
@@ -1171,7 +1178,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(color: _border(isDark)),
       ),
       child: Column(
@@ -1265,9 +1272,11 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
               Text(
                 title,
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 11,
+                  fontSize: ResponsiveText.small(context),
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1324,7 +1333,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     final progress = (attendanceValue.clamp(0, 100)) / 100;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1340,7 +1349,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   gold.withOpacity(0.18),
                 ],
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.7),
         ),
@@ -1378,7 +1387,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 ),
                 const SizedBox(height: 8),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 8,
