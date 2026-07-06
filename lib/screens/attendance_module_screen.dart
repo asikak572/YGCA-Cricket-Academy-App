@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
 
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_spacing.dart';
+import '../core/responsive/responsive_radius.dart';
+import '../core/responsive/responsive_text.dart';
+
 import 'attendance_screen.dart';
 import 'attendance_history_screen.dart';
 import 'attendance_report_screen.dart';
@@ -27,25 +33,19 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
   static const Color maroon = Color(0xFF7F0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  Color _bg(bool isDark) {
-    return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
-  }
+  Color _bg(bool isDark) =>
+      isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
 
-  Color _card(bool isDark) {
-    return isDark ? const Color(0xFF111111) : Colors.white;
-  }
+  Color _card(bool isDark) => isDark ? const Color(0xFF111111) : Colors.white;
 
-  Color _border(bool isDark) {
-    return isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
-  }
+  Color _border(bool isDark) =>
+      isDark ? const Color(0xFF3A1515) : const Color(0xFFE2E8F0);
 
-  Color _primaryText(bool isDark) {
-    return isDark ? Colors.white : const Color(0xFF111827);
-  }
+  Color _primaryText(bool isDark) =>
+      isDark ? Colors.white : const Color(0xFF111827);
 
-  Color _secondaryText(bool isDark) {
-    return isDark ? Colors.white60 : const Color(0xFF64748B);
-  }
+  Color _secondaryText(bool isDark) =>
+      isDark ? Colors.white60 : const Color(0xFF64748B);
 
   String get _title {
     switch (_currentIndex) {
@@ -182,36 +182,52 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _pageHeader(context, isDark),
-                  const SizedBox(height: 16),
-                  _moduleHeader(isDark),
-                  const SizedBox(height: 18),
-                  _sectionTitle(
-                    title: _title.toUpperCase(),
-                    isDark: isDark,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _subtitle,
-                    style: TextStyle(
-                      color: _secondaryText(isDark),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: ResponsiveHelper.maxContentWidth(context),
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        ResponsivePadding.horizontal(context),
+                        ResponsiveSpacing.medium(context),
+                        ResponsivePadding.horizontal(context),
+                        ResponsiveSpacing.large(context),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _pageHeader(context, isDark),
+                          SizedBox(height: ResponsiveSpacing.medium(context)),
+                          _moduleHeader(isDark),
+                          SizedBox(height: ResponsiveSpacing.large(context)),
+                          _sectionTitle(
+                            title: _title.toUpperCase(),
+                            isDark: isDark,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _subtitle,
+                            style: TextStyle(
+                              color: _secondaryText(isDark),
+                              fontSize: ResponsiveText.small(context),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(height: ResponsiveSpacing.medium(context)),
+                          _contentList(isDark),
+                          SizedBox(height: ResponsiveSpacing.medium(context)),
+                          _summaryRow(isDark),
+                          const SizedBox(height: 90),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  _contentList(isDark),
-                  const SizedBox(height: 12),
-                  _summaryRow(isDark),
-                  const SizedBox(height: 90),
-                ],
-              ),
+                );
+              },
             ),
           ),
           bottomNavigationBar: SafeArea(
@@ -234,8 +250,8 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
         const SizedBox(width: 12),
         Image.asset(
           'assets/images/ygca_logo.jpg',
-          width: 42,
-          height: 42,
+          width: ResponsiveHelper.isMobile(context) ? 42 : 52,
+          height: ResponsiveHelper.isMobile(context) ? 42 : 52,
           fit: BoxFit.contain,
         ),
         const SizedBox(width: 10),
@@ -246,7 +262,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: _primaryText(isDark),
-              fontSize: 18,
+              fontSize: ResponsiveText.heading(context),
               fontWeight: FontWeight.w900,
               letterSpacing: 0.8,
             ),
@@ -256,7 +272,6 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
           valueListenable: ThemeController.themeMode,
           builder: (context, mode, _) {
             final dark = mode == ThemeMode.dark;
-
             return _circleButton(
               isDark: isDark,
               icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
@@ -273,12 +288,14 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final size = ResponsiveHelper.isDesktop(context) ? 46.0 : 42.0;
+
     return InkWell(
       borderRadius: BorderRadius.circular(40),
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF111111) : Colors.white,
           shape: BoxShape.circle,
@@ -296,16 +313,19 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
         child: Icon(
           icon,
           color: isDark ? Colors.white : maroon,
-          size: 21,
+          size: ResponsiveHelper.isDesktop(context) ? 23 : 21,
         ),
       ),
     );
   }
 
   Widget _moduleHeader(bool isDark) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final iconBox = isMobile ? 58.0 : 68.0;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: EdgeInsets.all(ResponsiveSpacing.medium(context)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -322,7 +342,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.large(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.75),
         ),
@@ -343,14 +363,14 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
             child: Icon(
               _headerIcon,
               color: isDark ? red.withOpacity(0.13) : maroon.withOpacity(0.07),
-              size: 118,
+              size: isMobile ? 118 : 145,
             ),
           ),
           Row(
             children: [
               Container(
-                width: 58,
-                height: 58,
+                width: iconBox,
+                height: iconBox,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isDark
@@ -369,10 +389,10 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
                 child: Icon(
                   _headerIcon,
                   color: gold,
-                  size: 30,
+                  size: isMobile ? 30 : 36,
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: ResponsiveSpacing.medium(context)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +403,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _primaryText(isDark),
-                        fontSize: 21,
+                        fontSize: ResponsiveText.heading(context) + 1,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -394,7 +414,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _secondaryText(isDark),
-                        fontSize: 12,
+                        fontSize: ResponsiveText.small(context),
                         height: 1.35,
                         fontWeight: FontWeight.w700,
                       ),
@@ -415,8 +435,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
   }) {
     return Row(
       children: [
-        SizedBox(
-          width: 235,
+        Flexible(
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -426,7 +445,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
               softWrap: false,
               style: TextStyle(
                 color: isDark ? gold : maroon,
-                fontSize: 18,
+                fontSize: ResponsiveText.heading(context),
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.1,
               ),
@@ -456,13 +475,15 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
               onTap: () => _openScreen(item.screen),
               child: Ink(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(ResponsiveSpacing.medium(context)),
                 decoration: BoxDecoration(
                   color: _card(isDark),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveRadius.medium(context),
+                  ),
                   border: Border.all(
                     color: isDark
                         ? red.withOpacity(0.25)
@@ -481,8 +502,8 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
                 child: Row(
                   children: [
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: ResponsiveHelper.isMobile(context) ? 48 : 56,
+                      height: ResponsiveHelper.isMobile(context) ? 48 : 56,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -500,10 +521,10 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
                       child: Icon(
                         item.icon,
                         color: item.color,
-                        size: 25,
+                        size: ResponsiveHelper.isMobile(context) ? 25 : 29,
                       ),
                     ),
-                    const SizedBox(width: 13),
+                    SizedBox(width: ResponsiveSpacing.medium(context)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -514,7 +535,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: _primaryText(isDark),
-                              fontSize: 14.5,
+                              fontSize: ResponsiveText.body(context),
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -525,7 +546,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: _secondaryText(isDark),
-                              fontSize: 11.2,
+                              fontSize: ResponsiveText.small(context),
                               height: 1.25,
                               fontWeight: FontWeight.w600,
                             ),
@@ -649,26 +670,51 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     required List<_MiniStatData> items,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(ResponsiveSpacing.small(context)),
       decoration: BoxDecoration(
         color: _card(isDark),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.25) : const Color(0xFFE5E7EB),
         ),
       ),
-      child: Row(
-        children: items.map((item) {
-          return Expanded(
-            child: _miniStat(
-              isDark: isDark,
-              icon: item.icon,
-              label: item.label,
-              value: item.value,
-              color: item.color,
-            ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = (constraints.maxWidth - 12) / 2;
+
+          if (constraints.maxWidth < 390) {
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: items.map((item) {
+                return SizedBox(
+                  width: itemWidth,
+                  child: _miniStat(
+                    isDark: isDark,
+                    icon: item.icon,
+                    label: item.label,
+                    value: item.value,
+                    color: item.color,
+                  ),
+                );
+              }).toList(),
+            );
+          }
+
+          return Row(
+            children: items.map((item) {
+              return Expanded(
+                child: _miniStat(
+                  isDark: isDark,
+                  icon: item.icon,
+                  label: item.label,
+                  value: item.value,
+                  color: item.color,
+                ),
+              );
+            }).toList(),
           );
-        }).toList(),
+        },
       ),
     );
   }
@@ -685,7 +731,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
         Icon(
           icon,
           color: color,
-          size: 22,
+          size: ResponsiveHelper.isMobile(context) ? 22 : 26,
         ),
         const SizedBox(height: 5),
         Text(
@@ -694,7 +740,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: _secondaryText(isDark),
-            fontSize: 9.5,
+            fontSize: ResponsiveText.tiny(context),
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -703,7 +749,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
           value,
           style: TextStyle(
             color: _primaryText(isDark),
-            fontSize: 17,
+            fontSize: ResponsiveText.heading(context) - 1,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -730,7 +776,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(7),
-      height: 76,
+      height: 74,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF101010) : Colors.white,
         borderRadius: BorderRadius.circular(28),
@@ -795,22 +841,24 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
                           : isDark
                               ? Colors.white60
                               : const Color(0xFF6B7280),
-                      size: selected ? 25 : 23,
+                      size: selected ? 24 : 22,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: selected
-                            ? Colors.white
-                            : isDark
-                                ? Colors.white60
-                                : const Color(0xFF6B7280),
-                        fontSize: 11,
-                        fontWeight:
-                            selected ? FontWeight.w900 : FontWeight.w700,
+                    const SizedBox(height: 3),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: selected
+                              ? Colors.white
+                              : isDark
+                                  ? Colors.white60
+                                  : const Color(0xFF6B7280),
+                          fontSize: 10.5,
+                          fontWeight:
+                              selected ? FontWeight.w900 : FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
