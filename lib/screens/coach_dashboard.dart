@@ -4,6 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_spacing.dart';
+import '../core/responsive/responsive_radius.dart';
+import '../core/responsive/responsive_text.dart';
+import '../core/responsive/responsive_grid.dart';
+import '../core/responsive/responsive_size.dart';
+
 import 'leave_request_screen.dart';
 import 'notification_screen.dart';
 import 'widgets/ygca_drawer.dart';
@@ -261,11 +269,18 @@ class _CoachDashboardState extends State<CoachDashboard> {
                         final assignedStudents =
                             countSnapshot.data?.toString() ?? "0";
 
-                        return SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Column(
-                            children: [
+                        return Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: ResponsiveHelper.maxContentWidth(context),
+                            ),
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              padding: EdgeInsets.only(
+                                bottom: ResponsiveSpacing.small(context),
+                              ),
+                              child: Column(
+                                children: [
                               _topBar(isDark),
                               _coachHero(
                                 isDark: isDark,
@@ -276,22 +291,22 @@ class _CoachDashboardState extends State<CoachDashboard> {
                                 assignedStudents: assignedStudents,
                                 status: status,
                               ),
-                              const SizedBox(height: 14),
+                              SizedBox(height: ResponsiveSpacing.medium(context)),
                               _sectionTitle(
                                 title: "COACH OVERVIEW",
                                 isDark: isDark,
                               ),
                               Padding(
                                 padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
+                                    EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
                                 child: GridView.count(
-                                  crossAxisCount: 2,
+                                  crossAxisCount: ResponsiveGrid.dashboardCount(context),
                                   shrinkWrap: true,
                                   physics:
                                       const NeverScrollableScrollPhysics(),
-                                  crossAxisSpacing: 10,
-                                  mainAxisSpacing: 10,
-                                  childAspectRatio: 2.35,
+                                  crossAxisSpacing: ResponsiveSpacing.small(context) + 2,
+                                  mainAxisSpacing: ResponsiveSpacing.small(context) + 2,
+                                  childAspectRatio: ResponsiveGrid.dashboardCardRatio(context),
                                   children: [
                                     _overviewCard(
                                       isDark: isDark,
@@ -328,10 +343,10 @@ class _CoachDashboardState extends State<CoachDashboard> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 14),
+                              SizedBox(height: ResponsiveSpacing.medium(context)),
                               Padding(
                                 padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
+                                    EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
                                 child: _assignedSessionsCard(
                                   isDark: isDark,
                                   sessions: sessions,
@@ -339,14 +354,16 @@ class _CoachDashboardState extends State<CoachDashboard> {
                                       ConnectionState.waiting,
                                 ),
                               ),
-                              const SizedBox(height: 14),
+                              SizedBox(height: ResponsiveSpacing.medium(context)),
                               _sectionTitle(
                                 title: "QUICK ACTIONS",
                                 isDark: isDark,
                               ),
                               _quickActions(isDark),
-                              const SizedBox(height: 6),
-                            ],
+                                  SizedBox(height: ResponsiveSpacing.small(context)),
+                                ],
+                              ),
+                            ),
                           ),
                         );
                       },
@@ -404,7 +421,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.30) : const Color(0xFFE5E7EB),
         ),
@@ -421,11 +438,15 @@ class _CoachDashboardState extends State<CoachDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  "Loading current week sessions...",
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    "Loading current week sessions...",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -485,7 +506,12 @@ class _CoachDashboardState extends State<CoachDashboard> {
 
   Widget _topBar(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context) - 2,
+        ResponsiveSpacing.small(context),
+        ResponsivePadding.horizontal(context) - 2,
+        6,
+      ),
       child: Row(
         children: [
           _circleButton(
@@ -496,8 +522,8 @@ class _CoachDashboardState extends State<CoachDashboard> {
           const SizedBox(width: 10),
           Image.asset(
             logoAsset,
-            width: 46,
-            height: 46,
+            width: ResponsiveSize.logo(context),
+            height: ResponsiveSize.logo(context),
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 10),
@@ -578,8 +604,8 @@ class _CoachDashboardState extends State<CoachDashboard> {
       borderRadius: BorderRadius.circular(50),
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
+        width: ResponsiveSize.circleButton(context),
+        height: ResponsiveSize.circleButton(context),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF111111) : Colors.white,
           shape: BoxShape.circle,
@@ -617,8 +643,13 @@ class _CoachDashboardState extends State<CoachDashboard> {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : "C";
 
     return Container(
-      height: 248,
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      height: ResponsiveSize.heroHeight(context),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        ResponsiveSpacing.small(context),
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF090909) : Colors.white,
@@ -687,132 +718,160 @@ class _CoachDashboardState extends State<CoachDashboard> {
               ),
             ),
           ),
-          Positioned(
-            left: 24,
-            top: 58,
-            child: SizedBox(
-              width: 118,
-              height: 118,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 118,
-                    height: 118,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark
-                            ? gold.withOpacity(0.65)
-                            : red.withOpacity(0.35),
-                        width: 1.6,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark
-                          ? Colors.black.withOpacity(0.35)
-                          : Colors.white.withOpacity(0.55),
-                      border: Border.all(
-                        color: isDark
-                            ? red.withOpacity(0.45)
-                            : red.withOpacity(0.20),
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: TextStyle(
-                          color: isDark ? gold : maroon,
-                          fontSize: 38,
-                          fontWeight: FontWeight.w900,
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 370;
+                final avatarOuter = compact ? 92.0 : 118.0;
+                final avatarInner = compact ? 74.0 : 96.0;
+                final avatarLeft = compact ? 18.0 : 24.0;
+                final avatarTop = compact ? 64.0 : 58.0;
+                final textLeft = compact ? 120.0 : 154.0;
+
+                return Stack(
+                  children: [
+                    Positioned(
+                      left: avatarLeft,
+                      top: avatarTop,
+                      child: SizedBox(
+                        width: avatarOuter,
+                        height: avatarOuter,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: avatarOuter,
+                              height: avatarOuter,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark
+                                      ? gold.withOpacity(0.65)
+                                      : red.withOpacity(0.35),
+                                  width: 1.6,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: avatarInner,
+                              height: avatarInner,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isDark
+                                    ? Colors.black.withOpacity(0.35)
+                                    : Colors.white.withOpacity(0.55),
+                                border: Border.all(
+                                  color: isDark
+                                      ? red.withOpacity(0.45)
+                                      : red.withOpacity(0.20),
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  initial,
+                                  style: TextStyle(
+                                    color: isDark ? gold : maroon,
+                                    fontSize: compact ? 30 : 38,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 154,
-            top: 38,
-            right: 18,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "GOOD MORNING,",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? gold : red,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2.2,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                    fontSize: 30,
-                    height: 0.98,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  "COACH DASHBOARD",
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? gold : red,
-                    fontSize: 17,
-                    height: 1.0,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 58,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: isDark ? gold : red,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  email,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? Colors.white70 : const Color(0xFF374151),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 9),
-                Text(
-                  "Session: $batch",
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+                    Positioned(
+                      left: textLeft,
+                      top: compact ? 36 : 38,
+                      right: 18,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: SizedBox(
+                          width: compact ? 190 : 230,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "GOOD MORNING,",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isDark ? gold : red,
+                                  fontSize: compact ? 10.5 : 12,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: compact ? 1.7 : 2.2,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black,
+                                  fontSize: compact ? 25 : 30,
+                                  height: 0.98,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                "COACH DASHBOARD",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isDark ? gold : red,
+                                  fontSize: compact ? 15 : 17,
+                                  height: 1.0,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                width: 58,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  color: isDark ? gold : red,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                email,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white70
+                                      : const Color(0xFF374151),
+                                  fontSize: compact ? 10.5 : 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 9),
+                              Text(
+                                "Session: $batch",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white60
+                                      : const Color(0xFF64748B),
+                                  fontSize: compact ? 10 : 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -828,8 +887,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
       child: Row(
         children: [
-          SizedBox(
-            width: 172,
+          Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
@@ -839,7 +897,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                 softWrap: false,
                 style: TextStyle(
                   color: isDark ? gold : const Color(0xFF111827),
-                  fontSize: 17,
+                  fontSize: ResponsiveText.heading(context) - 1,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.9,
                 ),
@@ -884,7 +942,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.32) : const Color(0xFFE5E7EB),
         ),
@@ -901,14 +959,14 @@ class _CoachDashboardState extends State<CoachDashboard> {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: ResponsiveHelper.isMobile(context) ? 40 : 44,
+            height: ResponsiveHelper.isMobile(context) ? 40 : 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color.withOpacity(isDark ? 0.15 : 0.10),
               border: Border.all(color: color.withOpacity(0.35)),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: ResponsiveHelper.isMobile(context) ? 22 : 24),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -926,7 +984,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _primaryText(isDark),
-                        fontSize: 19,
+                        fontSize: ResponsiveText.heading(context),
                         height: 1,
                         fontWeight: FontWeight.w900,
                       ),
@@ -938,7 +996,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _primaryText(isDark),
-                        fontSize: 10.5,
+                        fontSize: ResponsiveText.tiny(context),
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -949,7 +1007,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _secondaryText(isDark),
-                        fontSize: 9.5,
+                        fontSize: ResponsiveText.tiny(context) - 0.5,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -965,11 +1023,11 @@ class _CoachDashboardState extends State<CoachDashboard> {
 
   Widget _quickActions(bool isDark) {
     return SizedBox(
-      height: 92,
+      height: ResponsiveSize.quickActionHeight(context),
       child: ListView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
         children: [
           _quickActionCard(
             isDark: isDark,
@@ -1019,10 +1077,10 @@ class _CoachDashboardState extends State<CoachDashboard> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
       onTap: onTap,
       child: Container(
-        width: 92,
+        width: ResponsiveSize.quickActionWidth(context),
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
@@ -1053,7 +1111,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: _primaryText(isDark),
-                fontSize: 10.5,
+                fontSize: ResponsiveText.tiny(context),
                 height: 1.12,
                 fontWeight: FontWeight.w900,
               ),
