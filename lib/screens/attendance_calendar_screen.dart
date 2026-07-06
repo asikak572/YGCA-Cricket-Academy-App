@@ -758,6 +758,68 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
         ? '-'
         : _text(selectedStudent?['rollNo']);
 
+    final percentBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.green.withOpacity(0.35)),
+      ),
+      child: Text(
+        percent,
+        style: const TextStyle(
+          color: Colors.green,
+          fontWeight: FontWeight.w900,
+          fontSize: 12,
+        ),
+      ),
+    );
+
+    final studentInfo = Row(
+      children: [
+        CircleAvatar(
+          radius: 28,
+          backgroundColor: maroon,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: gold,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                studentName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '$studentBatch • Roll No: $studentRollNo',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -767,65 +829,26 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
         ),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: maroon,
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: gold,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 330) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  studentName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '$studentBatch • Roll No: $studentRollNo',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                studentInfo,
+                const SizedBox(height: 10),
+                percentBadge,
               ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.13),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.green.withOpacity(0.35)),
-            ),
-            child: Text(
-              percent,
-              style: const TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: studentInfo),
+              percentBadge,
+            ],
+          );
+        },
       ),
     );
   }
@@ -865,8 +888,10 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             style: TextStyle(color: Colors.white70, fontSize: 11),
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          Wrap(
+            alignment: WrapAlignment.spaceAround,
+            spacing: 16,
+            runSpacing: 12,
             children: [
               _MiniStat(title: 'Present', value: present.toString()),
               _MiniStat(title: 'Absent', value: absent.toString()),

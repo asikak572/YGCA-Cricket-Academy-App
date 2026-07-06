@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/responsive/responsive_padding.dart';
 import 'notification_service.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -741,6 +742,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           else
             DropdownButtonFormField<String>(
               value: selectedBatch,
+              isExpanded: true,
               dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
               style: TextStyle(
                 color: _primaryText(isDark),
@@ -1087,7 +1089,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     List<QueryDocumentSnapshot<Map<String, dynamic>>> students,
   ) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        10,
+        ResponsivePadding.horizontal(context),
+        16,
+      ),
       decoration: BoxDecoration(
         color: _bg(isDark),
         border: Border(
