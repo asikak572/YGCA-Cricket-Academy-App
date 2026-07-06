@@ -670,51 +670,26 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     required List<_MiniStatData> items,
   }) {
     return Container(
-      padding: EdgeInsets.all(ResponsiveSpacing.small(context)),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: _card(isDark),
-        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark ? red.withOpacity(0.25) : const Color(0xFFE5E7EB),
         ),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final itemWidth = (constraints.maxWidth - 12) / 2;
-
-          if (constraints.maxWidth < 390) {
-            return Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: items.map((item) {
-                return SizedBox(
-                  width: itemWidth,
-                  child: _miniStat(
-                    isDark: isDark,
-                    icon: item.icon,
-                    label: item.label,
-                    value: item.value,
-                    color: item.color,
-                  ),
-                );
-              }).toList(),
-            );
-          }
-
-          return Row(
-            children: items.map((item) {
-              return Expanded(
-                child: _miniStat(
-                  isDark: isDark,
-                  icon: item.icon,
-                  label: item.label,
-                  value: item.value,
-                  color: item.color,
-                ),
-              );
-            }).toList(),
+      child: Row(
+        children: items.map((item) {
+          return Expanded(
+            child: _miniStat(
+              isDark: isDark,
+              icon: item.icon,
+              label: item.label,
+              value: item.value,
+              color: item.color,
+            ),
           );
-        },
+        }).toList(),
       ),
     );
   }
@@ -727,30 +702,36 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     required Color color,
   }) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           icon,
           color: color,
-          size: ResponsiveHelper.isMobile(context) ? 22 : 26,
+          size: 22,
         ),
         const SizedBox(height: 5),
         Text(
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: _secondaryText(isDark),
-            fontSize: ResponsiveText.tiny(context),
+            fontSize: 9.5,
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 3),
-        Text(
-          value,
-          style: TextStyle(
-            color: _primaryText(isDark),
-            fontSize: ResponsiveText.heading(context) - 1,
-            fontWeight: FontWeight.w900,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ],

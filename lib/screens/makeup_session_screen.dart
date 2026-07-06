@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class MakeupSessionScreen extends StatefulWidget {
   const MakeupSessionScreen({super.key});
@@ -741,71 +742,98 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 46,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 300;
+
+                final icon = CircleAvatar(
+                  radius: compact ? 40 : 46,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.event_repeat_rounded,
                     color: maroon,
-                    size: 42,
+                    size: compact ? 36 : 42,
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 230,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "ACADEMY",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
-                            ),
+                );
+
+                final content = FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: compact ? Alignment.center : Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 230,
+                    child: Column(
+                      crossAxisAlignment: compact
+                          ? CrossAxisAlignment.center
+                          : CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "ACADEMY",
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
                           ),
-                          const Text(
-                            "MAKEUP",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
+                        ),
+                        const Text(
+                          "MAKEUP",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
                           ),
-                          Text(
-                            "SESSIONS",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
+                        ),
+                        Text(
+                          "SESSIONS",
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
                           ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _heroChip("Total: $total"),
-                              _heroChip("Scheduled: $scheduled"),
-                              _heroChip("Pending: $pending"),
-                              _heroChip("Completed: $completed"),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          alignment: compact
+                              ? WrapAlignment.center
+                              : WrapAlignment.start,
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _heroChip("Total: $total"),
+                            _heroChip("Scheduled: $scheduled"),
+                            _heroChip("Pending: $pending"),
+                            _heroChip("Completed: $completed"),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                );
+
+                if (compact) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      icon,
+                      const SizedBox(height: 10),
+                      Expanded(child: content),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    icon,
+                    const SizedBox(width: 14),
+                    Expanded(child: content),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -849,13 +877,21 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
           ),
         ),
         const SizedBox(width: 10),
-        Text(
-          title,
-          style: TextStyle(
-            color: isDark ? Colors.white : maroon,
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1,
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              maxLines: 1,
+              softWrap: false,
+              style: TextStyle(
+                color: isDark ? Colors.white : maroon,
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 10),
@@ -1041,28 +1077,51 @@ Widget _infoBanner(bool isDark) {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: maroon,
-                child: Icon(icon, color: gold, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  titleText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 320;
+
+              final titleRow = Row(
+                children: [
+                  CircleAvatar(
+                    radius: 26,
+                    backgroundColor: maroon,
+                    child: Icon(icon, color: gold, size: 22),
                   ),
-                ),
-              ),
-              _statusChip(status, statusColor),
-            ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      titleText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+
+              if (compact) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    titleRow,
+                    const SizedBox(height: 8),
+                    _statusChip(status, statusColor),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: titleRow),
+                  _statusChip(status, statusColor),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 14),
           if (studentName.isNotEmpty) _detailRow(isDark, "Student", studentName),
@@ -1074,46 +1133,47 @@ Widget _infoBanner(bool isDark) {
           _detailRow(isDark, "Makeup Date", makeupText),
           if (_canManage) ...[
             const SizedBox(height: 12),
-            Row(
-              children: [
-                if (isPending)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? red : maroon,
-                        foregroundColor: isDark ? Colors.white : gold,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      onPressed: () => _scheduleMakeup(context, docId),
-                      icon: const Icon(Icons.calendar_month_rounded, size: 16),
-                      label: const Text(
-                        "Schedule",
-                        style: TextStyle(fontWeight: FontWeight.w900),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 320;
+
+                Widget mainAction;
+
+                if (isPending) {
+                  mainAction = ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark ? red : maroon,
+                      foregroundColor: isDark ? Colors.white : gold,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                  )
-                else if (canComplete)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      onPressed: () => _markCompleted(context, docId),
-                      icon: const Icon(Icons.check_circle_rounded, size: 16),
-                      label: const Text(
-                        "Complete",
-                        style: TextStyle(fontWeight: FontWeight.w900),
+                    onPressed: () => _scheduleMakeup(context, docId),
+                    icon: const Icon(Icons.calendar_month_rounded, size: 16),
+                    label: const Text(
+                      "Schedule",
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  );
+                } else if (canComplete) {
+                  mainAction = ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                  )
-                else
-                  const Expanded(
+                    onPressed: () => _markCompleted(context, docId),
+                    icon: const Icon(Icons.check_circle_rounded, size: 16),
+                    label: const Text(
+                      "Complete",
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  );
+                } else {
+                  mainAction = const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
                     child: Text(
                       "Completed",
                       style: TextStyle(
@@ -1121,18 +1181,45 @@ Widget _infoBanner(bool isDark) {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                  ),
-                if (_canDelete) ...[
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.delete_rounded,
-                      color: Colors.redAccent,
-                    ),
-                    onPressed: () => _confirmDelete(context, docId, isDark),
-                  ),
-                ],
-              ],
+                  );
+                }
+
+                final deleteButton = _canDelete
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.delete_rounded,
+                          color: Colors.redAccent,
+                        ),
+                        onPressed: () => _confirmDelete(context, docId, isDark),
+                      )
+                    : null;
+
+                if (compact) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      mainAction,
+                      if (deleteButton != null) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: deleteButton,
+                        ),
+                      ],
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: mainAction),
+                    if (deleteButton != null) ...[
+                      const SizedBox(width: 8),
+                      deleteButton,
+                    ],
+                  ],
+                );
+              },
             ),
           ],
         ],
@@ -1443,7 +1530,12 @@ class _ScheduleMakeupSessionScreenState
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              padding: EdgeInsets.fromLTRB(
+                ResponsivePadding.horizontal(context),
+                0,
+                ResponsivePadding.horizontal(context),
+                24,
+              ),
               child: Column(
                 children: [
                   _topHeader(context, isDark),

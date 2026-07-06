@@ -524,7 +524,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
         return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: _canManage
-              ? FloatingActionButton.extended(
+              ? SafeArea(
+                  child: FloatingActionButton.extended(
                   backgroundColor: isDark ? red : maroon,
                   foregroundColor: isDark ? Colors.white : gold,
                   onPressed: () => _showAddMatchDialog(context, isDark),
@@ -533,8 +534,10 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                     "Add Match",
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
+                  ),
                 )
               : null,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           body: SafeArea(
             child: loadingUser
                 ? Column(
@@ -916,13 +919,21 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),

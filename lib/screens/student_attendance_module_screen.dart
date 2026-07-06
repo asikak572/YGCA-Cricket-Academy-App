@@ -32,7 +32,6 @@ class _StudentAttendanceModuleScreenState
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
-  static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
   Color _bg(bool isDark) {
@@ -55,16 +54,14 @@ class _StudentAttendanceModuleScreenState
     return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
-  int _attendanceNumber() {
-    return int.tryParse(widget.attendance.replaceAll('%', '').trim()) ?? 0;
-  }
-
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Attendance Calendar";
+        return "Attendance Main";
       case 1:
-        return "Attendance History";
+        return "Session Management";
+      case 2:
+        return "Attendance Reports";
       default:
         return "Attendance Module";
     }
@@ -73,9 +70,11 @@ class _StudentAttendanceModuleScreenState
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "View your day-wise attendance calendar";
+        return "Mark attendance, view calendar and history";
       case 1:
-        return "Check your attendance records";
+        return "Manage leave, cancelled sessions and makeup sessions";
+      case 2:
+        return "View attendance reports, summaries and analytics";
       default:
         return "";
     }
@@ -84,11 +83,13 @@ class _StudentAttendanceModuleScreenState
   IconData get _headerIcon {
     switch (_currentIndex) {
       case 0:
-        return Icons.calendar_month_rounded;
-      case 1:
-        return Icons.history_rounded;
-      default:
         return Icons.fact_check_rounded;
+      case 1:
+        return Icons.calendar_month_rounded;
+      case 2:
+        return Icons.bar_chart_rounded;
+      default:
+        return Icons.dashboard_rounded;
     }
   }
 
@@ -103,10 +104,17 @@ class _StudentAttendanceModuleScreenState
     if (_currentIndex == 0) {
       return [
         _InfoItem(
+          icon: Icons.check_circle_rounded,
+          title: "Mark Attendance",
+          subtitle: "Take daily session attendance",
+          color: Colors.green,
+          screen: const AttendanceHistoryScreen(),
+        ),
+        _InfoItem(
           icon: Icons.calendar_month_rounded,
           title: "Attendance Calendar",
-          subtitle: "View your day-wise attendance status",
-          color: const Color(0xFFF97316),
+          subtitle: "Student-wise calendar view",
+          color: Colors.orange,
           screen: AttendanceCalendarScreen(
             studentId: widget.studentId,
             name: widget.name,
@@ -115,15 +123,68 @@ class _StudentAttendanceModuleScreenState
             attendance: widget.attendance,
           ),
         ),
+        _InfoItem(
+          icon: Icons.history_rounded,
+          title: "Attendance History",
+          subtitle: "View past attendance records",
+          color: Colors.blueAccent,
+          screen: AttendanceHistoryScreen(
+            allowedStudentIds: [widget.studentId],
+          ),
+        ),
+      ];
+    }
+
+    if (_currentIndex == 1) {
+      return [
+        _InfoItem(
+          icon: Icons.assignment_rounded,
+          title: "Leave Requests",
+          subtitle: "Approve and manage student leave requests",
+          color: Colors.redAccent,
+          screen: const AttendanceHistoryScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.event_busy_rounded,
+          title: "Cancel Session",
+          subtitle: "Cancel or update class sessions",
+          color: Colors.deepOrange,
+          screen: const AttendanceHistoryScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.event_repeat_rounded,
+          title: "Makeup Sessions",
+          subtitle: "Compensate missed or cancelled sessions",
+          color: Colors.teal,
+          screen: const AttendanceHistoryScreen(),
+        ),
       ];
     }
 
     return [
       _InfoItem(
-        icon: Icons.history_rounded,
-        title: "Attendance History",
-        subtitle: "View your attendance records",
-        color: const Color(0xFFDC2626),
+        icon: Icons.bar_chart_rounded,
+        title: "Attendance Reports",
+        subtitle: "View attendance summary and analytics",
+        color: Colors.purpleAccent,
+        screen: AttendanceHistoryScreen(
+          allowedStudentIds: [widget.studentId],
+        ),
+      ),
+      _InfoItem(
+        icon: Icons.grid_view_rounded,
+        title: "Monthly Summary",
+        subtitle: "View monthly present, absent and leave summary",
+        color: Colors.blueAccent,
+        screen: AttendanceHistoryScreen(
+          allowedStudentIds: [widget.studentId],
+        ),
+      ),
+      _InfoItem(
+        icon: Icons.person_search_rounded,
+        title: "Student Analytics",
+        subtitle: "Check student-wise attendance analytics",
+        color: Colors.orange,
         screen: AttendanceHistoryScreen(
           allowedStudentIds: [widget.studentId],
         ),
@@ -137,7 +198,6 @@ class _StudentAttendanceModuleScreenState
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
         final isDark = mode == ThemeMode.dark;
-        final attendanceNumber = _attendanceNumber();
 
         return Scaffold(
           backgroundColor: _bg(isDark),
@@ -151,13 +211,6 @@ class _StudentAttendanceModuleScreenState
                 children: [
                   _pageHeader(context, isDark),
                   const SizedBox(height: 16),
-                  _studentHeader(isDark),
-                  const SizedBox(height: 16),
-                  _summaryCard(
-                    isDark: isDark,
-                    attendanceNumber: attendanceNumber,
-                  ),
-                  const SizedBox(height: 18),
                   _moduleHeader(isDark),
                   const SizedBox(height: 18),
                   _sectionTitle(
@@ -176,7 +229,7 @@ class _StudentAttendanceModuleScreenState
                   const SizedBox(height: 14),
                   _contentList(isDark),
                   const SizedBox(height: 12),
-                  _miniInfoRow(isDark),
+                  _summaryRow(isDark),
                   const SizedBox(height: 90),
                 ],
               ),
@@ -214,7 +267,7 @@ class _StudentAttendanceModuleScreenState
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: _primaryText(isDark),
-              fontSize: 18,
+              fontSize: 19,
               fontWeight: FontWeight.w900,
               letterSpacing: 0.8,
             ),
@@ -270,211 +323,6 @@ class _StudentAttendanceModuleScreenState
     );
   }
 
-  Widget _studentHeader(bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  Colors.black,
-                  darkMaroon,
-                  red.withOpacity(0.35),
-                ]
-              : [
-                  maroon,
-                  darkMaroon,
-                  Colors.black.withOpacity(0.85),
-                ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.75),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? red.withOpacity(0.16) : maroon.withOpacity(0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -18,
-            bottom: -26,
-            child: Icon(
-              Icons.fact_check_rounded,
-              color: Colors.white.withOpacity(0.08),
-              size: 115,
-            ),
-          ),
-          Row(
-            children: [
-              Container(
-                width: 66,
-                height: 66,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.30),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: gold.withOpacity(0.85)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: gold.withOpacity(0.16),
-                      blurRadius: 18,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.fact_check_rounded,
-                  color: gold,
-                  size: 35,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.name.isEmpty ? "Student" : widget.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      widget.batch.isEmpty ? "No Batch" : widget.batch,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: gold,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Roll No: ${widget.rollNo.isEmpty ? 'Not Assigned' : widget.rollNo}",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.78),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _summaryCard({
-    required bool isDark,
-    required int attendanceNumber,
-  }) {
-    final progress = attendanceNumber.clamp(0, 100) / 100;
-
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: _card(isDark),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? red.withOpacity(0.28) : gold.withOpacity(0.70),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.24)
-                : Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: attendanceNumber >= 75
-                ? Colors.green.withOpacity(0.18)
-                : Colors.orange.withOpacity(0.18),
-            child: Icon(
-              attendanceNumber >= 75
-                  ? Icons.verified_rounded
-                  : Icons.warning_rounded,
-              color: attendanceNumber >= 75 ? Colors.green : Colors.orange,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Your Attendance Summary",
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Attendance: ${widget.attendance}",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: LinearProgressIndicator(
-                    value: progress.toDouble(),
-                    minHeight: 8,
-                    backgroundColor:
-                        isDark ? Colors.white12 : Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      attendanceNumber >= 75 ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            attendanceNumber >= 75 ? "GOOD" : "FOCUS",
-            style: TextStyle(
-              color: attendanceNumber >= 75 ? Colors.green : Colors.orange,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _moduleHeader(bool isDark) {
     return Container(
       width: double.infinity,
@@ -499,47 +347,83 @@ class _StudentAttendanceModuleScreenState
         border: Border.all(
           color: isDark ? red.withOpacity(0.30) : gold.withOpacity(0.75),
         ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                isDark ? red.withOpacity(0.10) : Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
+          ),
+        ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          CircleAvatar(
-            radius: 29,
-            backgroundColor: maroon,
+          Positioned(
+            right: -22,
+            bottom: -30,
             child: Icon(
               _headerIcon,
-              color: gold,
-              size: 30,
+              color: isDark ? red.withOpacity(0.13) : maroon.withOpacity(0.07),
+              size: 118,
             ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? Colors.black.withOpacity(0.30)
+                      : Colors.white.withOpacity(0.75),
+                  border: Border.all(
+                    color: gold.withOpacity(0.85),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gold.withOpacity(0.13),
+                      blurRadius: 14,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  _subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 12,
-                    height: 1.35,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Icon(
+                  _headerIcon,
+                  color: gold,
+                  size: 30,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 12,
+                        height: 1.35,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -553,7 +437,7 @@ class _StudentAttendanceModuleScreenState
     return Row(
       children: [
         SizedBox(
-          width: 230,
+          width: 220,
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -685,7 +569,106 @@ class _StudentAttendanceModuleScreenState
     );
   }
 
-  Widget _miniInfoRow(bool isDark) {
+  Widget _summaryRow(bool isDark) {
+    if (_currentIndex == 0) {
+      return _summaryContainer(
+        isDark: isDark,
+        items: [
+          _MiniStatData(
+            icon: Icons.check_circle_rounded,
+            label: "Present",
+            value: widget.attendance.isEmpty ? "0%" : widget.attendance,
+            color: Colors.green,
+          ),
+          _MiniStatData(
+            icon: Icons.cancel_rounded,
+            label: "Absent",
+            value: "5",
+            color: Colors.redAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.event_busy_rounded,
+            label: "Leave",
+            value: "3",
+            color: Colors.orange,
+          ),
+          _MiniStatData(
+            icon: Icons.history_rounded,
+            label: "History",
+            value: "All",
+            color: Colors.blueAccent,
+          ),
+        ],
+      );
+    }
+
+    if (_currentIndex == 1) {
+      return _summaryContainer(
+        isDark: isDark,
+        items: [
+          _MiniStatData(
+            icon: Icons.assignment_rounded,
+            label: "Leave",
+            value: "4",
+            color: Colors.redAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.event_busy_rounded,
+            label: "Cancel",
+            value: "1",
+            color: Colors.deepOrange,
+          ),
+          _MiniStatData(
+            icon: Icons.event_repeat_rounded,
+            label: "Makeup",
+            value: "3",
+            color: Colors.teal,
+          ),
+          _MiniStatData(
+            icon: Icons.event_available_rounded,
+            label: "Sessions",
+            value: "Live",
+            color: Colors.green,
+          ),
+        ],
+      );
+    }
+
+    return _summaryContainer(
+      isDark: isDark,
+      items: [
+        _MiniStatData(
+          icon: Icons.bar_chart_rounded,
+          label: "Reports",
+          value: "All",
+          color: Colors.purpleAccent,
+        ),
+        _MiniStatData(
+          icon: Icons.grid_view_rounded,
+          label: "Month",
+          value: "30D",
+          color: Colors.blueAccent,
+        ),
+        _MiniStatData(
+          icon: Icons.person_search_rounded,
+          label: "Students",
+          value: "View",
+          color: Colors.orange,
+        ),
+        _MiniStatData(
+          icon: Icons.percent_rounded,
+          label: "Avg",
+          value: widget.attendance.isEmpty ? "0%" : widget.attendance,
+          color: Colors.green,
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryContainer({
+    required bool isDark,
+    required List<_MiniStatData> items,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -696,44 +679,17 @@ class _StudentAttendanceModuleScreenState
         ),
       ),
       child: Row(
-        children: [
-          Expanded(
+        children: items.map((item) {
+          return Expanded(
             child: _miniStat(
               isDark: isDark,
-              icon: Icons.person_rounded,
-              label: "Student",
-              value: widget.name.isEmpty ? "User" : widget.name,
-              color: Colors.blueAccent,
+              icon: item.icon,
+              label: item.label,
+              value: item.value,
+              color: item.color,
             ),
-          ),
-          Expanded(
-            child: _miniStat(
-              isDark: isDark,
-              icon: Icons.groups_rounded,
-              label: "Batch",
-              value: widget.batch.isEmpty ? "N/A" : "Set",
-              color: Colors.purpleAccent,
-            ),
-          ),
-          Expanded(
-            child: _miniStat(
-              isDark: isDark,
-              icon: Icons.confirmation_number_rounded,
-              label: "Roll No",
-              value: widget.rollNo.isEmpty ? "N/A" : widget.rollNo,
-              color: Colors.orange,
-            ),
-          ),
-          Expanded(
-            child: _miniStat(
-              isDark: isDark,
-              icon: Icons.percent_rounded,
-              label: "Attend",
-              value: widget.attendance,
-              color: Colors.green,
-            ),
-          ),
-        ],
+          );
+        }).toList(),
       ),
     );
   }
@@ -750,7 +706,7 @@ class _StudentAttendanceModuleScreenState
         Icon(
           icon,
           color: color,
-          size: 21,
+          size: 22,
         ),
         const SizedBox(height: 5),
         Text(
@@ -759,18 +715,16 @@ class _StudentAttendanceModuleScreenState
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: _secondaryText(isDark),
-            fontSize: 9.2,
+            fontSize: 9.5,
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 3),
         Text(
           value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: _primaryText(isDark),
-            fontSize: 12.5,
+            fontSize: 17,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -781,12 +735,16 @@ class _StudentAttendanceModuleScreenState
   Widget _bottomNavigation(bool isDark) {
     final items = [
       _BottomNavItem(
-        icon: Icons.calendar_month_rounded,
-        label: "Calendar",
+        icon: Icons.fact_check_rounded,
+        label: "Main",
       ),
       _BottomNavItem(
-        icon: Icons.history_rounded,
-        label: "History",
+        icon: Icons.event_available_rounded,
+        label: "Session",
+      ),
+      _BottomNavItem(
+        icon: Icons.bar_chart_rounded,
+        label: "Reports",
       ),
     ];
 
@@ -910,5 +868,19 @@ class _BottomNavItem {
   _BottomNavItem({
     required this.icon,
     required this.label,
+  });
+}
+
+class _MiniStatData {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  _MiniStatData({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
   });
 }

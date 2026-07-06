@@ -434,15 +434,18 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                                         ),
                                       )
                                     : const Icon(Icons.notifications_active_rounded),
-                                label: Text(
-                                  submitting
-                                      ? "CREATING..."
-                                      : cancelType == 'Student'
-                                          ? "CANCEL STUDENT & CREATE MAKEUP"
-                                          : "CANCEL BATCH & CREATE MAKEUP",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.5,
+                                label: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    submitting
+                                        ? "CREATING..."
+                                        : cancelType == 'Student'
+                                            ? "CANCEL STUDENT & CREATE MAKEUP"
+                                            : "CANCEL BATCH & CREATE MAKEUP",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -850,66 +853,97 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 46,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 300;
+
+                final icon = CircleAvatar(
+                  radius: compact ? 40 : 46,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.event_busy_rounded, color: maroon, size: 42),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 230,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "ACADEMY",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
-                            ),
+                  child: Icon(
+                    Icons.event_busy_rounded,
+                    color: maroon,
+                    size: compact ? 36 : 42,
+                  ),
+                );
+
+                final content = FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: compact ? Alignment.center : Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 230,
+                    child: Column(
+                      crossAxisAlignment: compact
+                          ? CrossAxisAlignment.center
+                          : CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "ACADEMY",
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
                           ),
-                          const Text(
-                            "SESSION",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
+                        ),
+                        const Text(
+                          "SESSION",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
                           ),
-                          Text(
-                            "CONTROL",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
+                        ),
+                        Text(
+                          "CONTROL",
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
                           ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _heroChip("Cancelled: $total"),
-                              _heroChip("Batches: $batches"),
-                              _heroChip("Makeup: $makeupPending"),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          alignment: compact
+                              ? WrapAlignment.center
+                              : WrapAlignment.start,
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _heroChip("Cancelled: $total"),
+                            _heroChip("Batches: $batches"),
+                            _heroChip("Makeup: $makeupPending"),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                );
+
+                if (compact) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      icon,
+                      const SizedBox(height: 10),
+                      Expanded(child: content),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    icon,
+                    const SizedBox(width: 14),
+                    Expanded(child: content),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -1029,13 +1063,21 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? Colors.white : maroon,
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: isDark ? Colors.white : maroon,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),

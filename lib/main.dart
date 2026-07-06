@@ -48,6 +48,15 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'YGCA Management System',
 
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: const TextScaler.linear(1.0),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+
           theme: YGCATheme.lightTheme,
           darkTheme: YGCATheme.darkTheme,
           themeMode: themeMode,
@@ -67,13 +76,9 @@ class MyApp extends StatelessWidget {
             '/student-list': (context) => const StudentListScreen(),
             '/add-student': (context) => const AddStudentScreen(),
 
-            // Admin / Coach mark attendance screen only
             '/mark-attendance': (context) => const AttendanceScreen(),
-
-            // Parent / Coach / Admin attendance history dashboard
-            '/attendance-history': (context) => const AttendanceHistoryScreen(),
-
-            // Keep old attendance route safely as history, not mark attendance
+            '/attendance-history': (context) =>
+                const AttendanceHistoryScreen(),
             '/attendance': (context) => const AttendanceHistoryScreen(),
 
             '/fees': (context) => const FeeManagementScreen(),

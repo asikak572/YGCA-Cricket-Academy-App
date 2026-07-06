@@ -789,17 +789,20 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
         return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: _canManageTraining
-              ? FloatingActionButton.extended(
-                  backgroundColor: isDark ? red : maroon,
-                  foregroundColor: isDark ? Colors.white : gold,
-                  onPressed: () => _showAddTrainingDialog(context, isDark),
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text(
-                    "Add Training",
-                    style: TextStyle(fontWeight: FontWeight.w900),
+              ? SafeArea(
+                  child: FloatingActionButton.extended(
+                    backgroundColor: isDark ? red : maroon,
+                    foregroundColor: isDark ? Colors.white : gold,
+                    onPressed: () => _showAddTrainingDialog(context, isDark),
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text(
+                      "Add Training",
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
                   ),
                 )
               : null,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           body: SafeArea(
             child: loadingUser
                 ? Column(
@@ -1131,70 +1134,97 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 46,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 300;
+
+                final icon = CircleAvatar(
+                  radius: compact ? 40 : 46,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.fitness_center_rounded,
                     color: maroon,
-                    size: 42,
+                    size: compact ? 36 : 42,
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 235,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "YGCA",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
-                            ),
+                );
+
+                final content = FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: compact ? Alignment.center : Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 235,
+                    child: Column(
+                      crossAxisAlignment: compact
+                          ? CrossAxisAlignment.center
+                          : CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "YGCA",
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
                           ),
-                          const Text(
-                            "TRAINING",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
+                        ),
+                        const Text(
+                          "TRAINING",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
                           ),
-                          Text(
-                            "CENTER",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
+                        ),
+                        Text(
+                          "CENTER",
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
                           ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _heroChip("Schedules: $total"),
-                              _heroChip("Fitness: $fitnessCount"),
-                              _heroChip("Skills: $skillCount"),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          alignment: compact
+                              ? WrapAlignment.center
+                              : WrapAlignment.start,
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _heroChip("Schedules: $total"),
+                            _heroChip("Fitness: $fitnessCount"),
+                            _heroChip("Skills: $skillCount"),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                );
+
+                if (compact) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      icon,
+                      const SizedBox(height: 10),
+                      Expanded(child: content),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    icon,
+                    const SizedBox(width: 14),
+                    Expanded(child: content),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -1229,13 +1259,21 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1283,61 +1321,95 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "$day • $date",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "$time • $batch",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 330;
+
+          final contentRow = Row(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: color,
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _typeChip(isDark: isDark, type: type, color: color),
-                    _typeChip(
-                      isDark: isDark,
-                      type: status,
-                      color: statusColor,
+                    Text(
+                      "$day • $date",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "$time • $batch",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _typeChip(isDark: isDark, type: type, color: color),
+                        _typeChip(
+                          isDark: isDark,
+                          type: status,
+                          color: statusColor,
+                        ),
+                      ],
                     ),
                   ],
                 ),
+              ),
+            ],
+          );
+
+          if (compact && _canManageTraining) {
+            return Column(
+              children: [
+                contentRow,
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.delete_rounded,
+                      color: Colors.redAccent,
+                    ),
+                    onPressed: onDelete,
+                  ),
+                ),
               ],
-            ),
-          ),
-          if (_canManageTraining)
-            IconButton(
-              icon: const Icon(Icons.delete_rounded, color: Colors.redAccent),
-              onPressed: onDelete,
-            ),
-        ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: contentRow),
+              if (_canManageTraining)
+                IconButton(
+                  icon: const Icon(
+                    Icons.delete_rounded,
+                    color: Colors.redAccent,
+                  ),
+                  onPressed: onDelete,
+                ),
+            ],
+          );
+        },
       ),
     );
   }

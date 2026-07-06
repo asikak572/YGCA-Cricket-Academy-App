@@ -547,17 +547,20 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
         return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: _canAddPayment
-              ? FloatingActionButton.extended(
-                  backgroundColor: isDark ? red : maroon,
-                  foregroundColor: isDark ? Colors.white : gold,
-                  onPressed: () => _addPaymentDialog(context, isDark),
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text(
-                    "Add Payment",
-                    style: TextStyle(fontWeight: FontWeight.w900),
+              ? SafeArea(
+                  child: FloatingActionButton.extended(
+                    backgroundColor: isDark ? red : maroon,
+                    foregroundColor: isDark ? Colors.white : gold,
+                    onPressed: () => _addPaymentDialog(context, isDark),
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text(
+                      "Add Payment",
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
                   ),
                 )
               : null,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           body: SafeArea(
             child: loadingUser
                 ? Column(
@@ -846,70 +849,97 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 46,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 300;
+
+                final icon = CircleAvatar(
+                  radius: compact ? 40 : 46,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.currency_rupee_rounded,
                     color: maroon,
-                    size: 42,
+                    size: compact ? 36 : 42,
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 235,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "TOTAL COLLECTION",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
-                            ),
+                );
+
+                final content = FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: compact ? Alignment.center : Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 235,
+                    child: Column(
+                      crossAxisAlignment: compact
+                          ? CrossAxisAlignment.center
+                          : CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "TOTAL COLLECTION",
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
                           ),
-                          Text(
-                            "₹$totalCollection",
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1,
-                            ),
+                        ),
+                        Text(
+                          "₹$totalCollection",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            height: 1.1,
                           ),
-                          Text(
-                            "Fee Records",
-                            style: TextStyle(
-                              color: gold,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                            ),
+                        ),
+                        Text(
+                          "Fee Records",
+                          textAlign: compact ? TextAlign.center : TextAlign.left,
+                          style: TextStyle(
+                            color: gold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
                           ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _heroChip("Pending: ₹$totalPending"),
-                              _heroChip("Records: $records"),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          alignment: compact
+                              ? WrapAlignment.center
+                              : WrapAlignment.start,
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _heroChip("Pending: ₹$totalPending"),
+                            _heroChip("Records: $records"),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                );
+
+                if (compact) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      icon,
+                      const SizedBox(height: 10),
+                      Expanded(child: content),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    icon,
+                    const SizedBox(width: 14),
+                    Expanded(child: content),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -1079,33 +1109,75 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
             ],
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _amountBox(
-                  isDark: isDark,
-                  title: "Total",
-                  amount: total,
-                  color: Colors.blueAccent,
-                ),
-              ),
-              Expanded(
-                child: _amountBox(
-                  isDark: isDark,
-                  title: "Paid",
-                  amount: paid,
-                  color: Colors.green,
-                ),
-              ),
-              Expanded(
-                child: _amountBox(
-                  isDark: isDark,
-                  title: "Pending",
-                  amount: pending,
-                  color: Colors.orange,
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 310) {
+                final boxWidth = (constraints.maxWidth - 8) / 2;
+
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    SizedBox(
+                      width: boxWidth,
+                      child: _amountBox(
+                        isDark: isDark,
+                        title: "Total",
+                        amount: total,
+                        color: Colors.blueAccent,
+                      ),
+                    ),
+                    SizedBox(
+                      width: boxWidth,
+                      child: _amountBox(
+                        isDark: isDark,
+                        title: "Paid",
+                        amount: paid,
+                        color: Colors.green,
+                      ),
+                    ),
+                    SizedBox(
+                      width: boxWidth,
+                      child: _amountBox(
+                        isDark: isDark,
+                        title: "Pending",
+                        amount: pending,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: _amountBox(
+                      isDark: isDark,
+                      title: "Total",
+                      amount: total,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                  Expanded(
+                    child: _amountBox(
+                      isDark: isDark,
+                      title: "Paid",
+                      amount: paid,
+                      color: Colors.green,
+                    ),
+                  ),
+                  Expanded(
+                    child: _amountBox(
+                      isDark: isDark,
+                      title: "Pending",
+                      amount: pending,
+                      color: Colors.orange,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
