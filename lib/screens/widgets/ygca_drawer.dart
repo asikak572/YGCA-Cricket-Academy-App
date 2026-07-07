@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../theme/theme_controller.dart';
+import '../../core/language/app_strings.dart';
 import '../edit_profile_screen.dart';
 
 class YgcaNavItem {
@@ -326,64 +327,64 @@ class YgcaDrawer extends StatelessWidget {
                                 _sheetHeader(
                                   isDark: isDark,
                                   icon: Icons.settings_rounded,
-                                  title: "Settings",
-                                  subtitle: "App preferences and security",
+                                  title: AppStrings.settings,
+                                  subtitle: AppStrings.appPreferences,
                                 ),
                                 const SizedBox(height: 18),
 
-                                _sheetSectionTitle("APPEARANCE", isDark),
+                                _sheetSectionTitle(AppStrings.appearance, isDark),
                                 _settingsTile(
                                   isDark: isDark,
                                   icon: isDark
                                       ? Icons.light_mode_rounded
                                       : Icons.dark_mode_rounded,
                                   title: isDark
-                                      ? "Switch to Light Mode"
-                                      : "Switch to Dark Mode",
-                                  subtitle: "Change app appearance",
+                                      ? AppStrings.switchToLight
+                                      : AppStrings.switchToDark,
+                                  subtitle: AppStrings.changeAppearance,
                                   trailing: isDark ? "Dark" : "Light",
                                   onTap: ThemeController.toggleTheme,
                                 ),
 
                                 SizedBox(height: gap),
-                                _sheetSectionTitle("LANGUAGE", isDark),
+                                _sheetSectionTitle(AppStrings.language, isDark),
                                 _settingsTile(
                                   isDark: isDark,
                                   icon: Icons.language_rounded,
-                                  title: "Language",
-                                  subtitle: "English / தமிழ்",
+                                  title: AppStrings.language,
+                                  subtitle: "English / தமிழ் / हिन्दी",
                                   trailing: language,
                                   onTap: () => _toggleLanguage(context),
                                 ),
 
                                 SizedBox(height: gap),
-                                _sheetSectionTitle("APP PREFERENCES", isDark),
+                                _sheetSectionTitle(AppStrings.appPreferencesTitle, isDark),
                                 _settingsTile(
                                   isDark: isDark,
                                   icon: Icons.view_compact_rounded,
-                                  title: "Compact Mode",
-                                  subtitle: "Reduce spacing and scrolling",
-                                  trailing: compact ? "On" : "Off",
+                                  title: AppStrings.compactMode,
+                                  subtitle: AppStrings.reduceSpacing,
+                                  trailing: compact ? AppStrings.on : AppStrings.off,
                                   onTap: () => _toggleCompactMode(context),
                                 ),
                                 const SizedBox(height: 10),
                                 _settingsTile(
                                   isDark: isDark,
                                   icon: Icons.text_fields_rounded,
-                                  title: "Large Text Mode",
-                                  subtitle: "Better readability for users",
-                                  trailing: largeText ? "On" : "Off",
+                                  title: AppStrings.largeTextMode,
+                                  subtitle: AppStrings.betterReadability,
+                                  trailing: largeText ? AppStrings.on : AppStrings.off,
                                   onTap: () => _toggleLargeTextMode(context),
                                 ),
 
                                 SizedBox(height: gap),
-                                _sheetSectionTitle("PRIVACY & SECURITY", isDark),
+                                _sheetSectionTitle(AppStrings.privacySecurity, isDark),
                                 _settingsTile(
                                   isDark: isDark,
                                   icon: Icons.lock_reset_rounded,
-                                  title: "Change Password",
-                                  subtitle: "Send reset link to registered email",
-                                  trailing: "Email",
+                                  title: AppStrings.changePassword,
+                                  subtitle: AppStrings.resetLink,
+                                  trailing: AppStrings.email,
                                   onTap: () =>
                                       _confirmPasswordReset(context, isDark),
                                 ),
@@ -391,10 +392,10 @@ class YgcaDrawer extends StatelessWidget {
                                 _settingsTile(
                                   isDark: isDark,
                                   icon: Icons.verified_user_rounded,
-                                  title: "Login Status",
+                                  title: AppStrings.loginStatus,
                                   subtitle:
                                       "Signed in as ${role.toUpperCase()}",
-                                  trailing: "Active",
+                                  trailing: AppStrings.active,
                                   onTap: () {
                                     _showMessage(
                                       context,
@@ -404,11 +405,11 @@ class YgcaDrawer extends StatelessWidget {
                                 ),
 
                                 SizedBox(height: gap),
-                                _sheetSectionTitle("ABOUT", isDark),
+                                _sheetSectionTitle(AppStrings.about, isDark),
                                 _settingsTile(
                                   isDark: isDark,
                                   icon: Icons.info_rounded,
-                                  title: "App Version",
+                                  title: AppStrings.appVersion,
                                   subtitle: "YGCA Management System",
                                   trailing: "1.0.0",
                                   onTap: () {

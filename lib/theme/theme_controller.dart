@@ -26,9 +26,15 @@ class ThemeController {
     largeTextMode.value = !largeTextMode.value;
   }
 
-  static void toggleLanguage() {
-    language.value = language.value == "English" ? "தமிழ்" : "English";
+ static void toggleLanguage() {
+  if (language.value == "English") {
+    language.value = "தமிழ்";
+  } else if (language.value == "தமிழ்") {
+    language.value = "हिन्दी";
+  } else {
+    language.value = "English";
   }
+}
 
   static bool get isDark => themeMode.value == ThemeMode.dark;
   static bool get isCompact => compactMode.value;
