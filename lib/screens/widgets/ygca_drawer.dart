@@ -42,11 +42,6 @@ class YgcaDrawer extends StatelessWidget {
   static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  static final ValueNotifier<String> selectedLanguage =
-      ValueNotifier<String>("English");
-  static final ValueNotifier<bool> compactMode = ValueNotifier<bool>(false);
-  static final ValueNotifier<bool> largeTextMode = ValueNotifier<bool>(false);
-
   String get initials {
     final name = username ?? role;
     final parts = name.trim().split(' ').where((e) => e.isNotEmpty).toList();
@@ -265,27 +260,31 @@ class YgcaDrawer extends StatelessWidget {
   }
 
   void _toggleLanguage(BuildContext context) {
-    selectedLanguage.value =
-        selectedLanguage.value == "English" ? "தமிழ்" : "English";
-
-    _showMessage(context, "Language changed to ${selectedLanguage.value}");
-  }
-
-  void _toggleCompactMode(BuildContext context) {
-    compactMode.value = !compactMode.value;
+    ThemeController.toggleLanguage();
 
     _showMessage(
       context,
-      compactMode.value ? "Compact Mode enabled" : "Compact Mode disabled",
+      "Language changed to ${ThemeController.language.value}",
+    );
+  }
+
+  void _toggleCompactMode(BuildContext context) {
+    ThemeController.toggleCompactMode();
+
+    _showMessage(
+      context,
+      ThemeController.compactMode.value
+          ? "Compact Mode enabled"
+          : "Compact Mode disabled",
     );
   }
 
   void _toggleLargeTextMode(BuildContext context) {
-    largeTextMode.value = !largeTextMode.value;
+    ThemeController.toggleLargeTextMode();
 
     _showMessage(
       context,
-      largeTextMode.value
+      ThemeController.largeTextMode.value
           ? "Large Text Mode enabled"
           : "Large Text Mode disabled",
     );
@@ -309,13 +308,13 @@ class YgcaDrawer extends StatelessWidget {
               return _bottomSheetContainer(
                 isDark: isDark,
                 child: ValueListenableBuilder<String>(
-                  valueListenable: selectedLanguage,
+                  valueListenable: ThemeController.language,
                   builder: (context, language, _) {
                     return ValueListenableBuilder<bool>(
-                      valueListenable: compactMode,
+                      valueListenable: ThemeController.compactMode,
                       builder: (context, compact, _) {
                         return ValueListenableBuilder<bool>(
-                          valueListenable: largeTextMode,
+                          valueListenable: ThemeController.largeTextMode,
                           builder: (context, largeText, _) {
                             final gap = compact ? 8.0 : 12.0;
 
@@ -672,7 +671,7 @@ class YgcaDrawer extends StatelessWidget {
                           isDark: isDark,
                           icon: Icons.settings_rounded,
                           label: "Settings",
-                          subtitle: "Theme, language and security",
+                          subtitle: "Theme, language, password and security",
                           onTap: () => _openSettings(context),
                         ),
                         _drawerTile(
