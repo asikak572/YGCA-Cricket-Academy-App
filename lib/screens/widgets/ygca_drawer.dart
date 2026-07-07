@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../theme/theme_controller.dart';
 import '../edit_profile_screen.dart';
@@ -40,6 +41,11 @@ class YgcaDrawer extends StatelessWidget {
   static const Color maroon = Color(0xFF7F0000);
   static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
+
+  static final ValueNotifier<String> selectedLanguage =
+      ValueNotifier<String>("English");
+  static final ValueNotifier<bool> compactMode = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> largeTextMode = ValueNotifier<bool>(false);
 
   String get initials {
     final name = username ?? role;
@@ -96,6 +102,195 @@ class YgcaDrawer extends StatelessWidget {
     );
   }
 
+
+  void _showMessage(
+    BuildContext context,
+    String message, {
+    Color color = Colors.green,
+  }) {
+    final isDark = ThemeController.themeMode.value == ThemeMode.dark;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: _card(isDark),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(
+              color: color.withOpacity(0.45),
+            ),
+          ),
+          content: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.w800,
+              height: 1.35,
+            ),
+          ),
+        );
+      },
+    );
+
+    Future.delayed(const Duration(milliseconds: 900), () {
+      final navigator = Navigator.of(context, rootNavigator: true);
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+    });
+  }
+
+  Future<void> _sendPasswordResetEmail(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email?.trim() ?? email?.trim() ?? '';
+
+    if (userEmail.isEmpty) {
+      _showMessage(
+        context,
+        "No registered email found for this account.",
+        color: Colors.red,
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: userEmail);
+
+      if (!context.mounted) return;
+
+      _showMessage(
+        context,
+        "Password reset link sent to $userEmail",
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!context.mounted) return;
+
+      String message = "Unable to send password reset email.";
+
+      if (e.code == 'invalid-email') {
+        message = "The registered email address is invalid.";
+      } else if (e.code == 'user-not-found') {
+        message = "No account found for this email.";
+      } else if (e.message != null && e.message!.trim().isNotEmpty) {
+        message = e.message!;
+      }
+
+      _showMessage(context, message, color: Colors.red);
+    } catch (_) {
+      if (!context.mounted) return;
+
+      _showMessage(
+        context,
+        "Something went wrong. Please try again.",
+        color: Colors.red,
+      );
+    }
+  }
+
+  Future<void> _confirmPasswordReset(BuildContext context, bool isDark) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email?.trim() ?? email?.trim() ?? '';
+
+    if (userEmail.isEmpty) {
+      _showMessage(
+        context,
+        "No registered email found for this account.",
+        color: Colors.red,
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: _card(isDark),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: isDark ? red.withOpacity(0.35) : gold.withOpacity(0.75),
+            ),
+          ),
+          title: Text(
+            "Change Password",
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Text(
+            "A password reset link will be sent to:\n$userEmail",
+            style: TextStyle(
+              color: _secondaryText(isDark),
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(
+                "Cancel",
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDark ? red : maroon,
+                foregroundColor: isDark ? Colors.white : gold,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text(
+                "Send Link",
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      await _sendPasswordResetEmail(context);
+    }
+  }
+
+  void _toggleLanguage(BuildContext context) {
+    selectedLanguage.value =
+        selectedLanguage.value == "English" ? "தமிழ்" : "English";
+
+    _showMessage(context, "Language changed to ${selectedLanguage.value}");
+  }
+
+  void _toggleCompactMode(BuildContext context) {
+    compactMode.value = !compactMode.value;
+
+    _showMessage(
+      context,
+      compactMode.value ? "Compact Mode enabled" : "Compact Mode disabled",
+    );
+  }
+
+  void _toggleLargeTextMode(BuildContext context) {
+    largeTextMode.value = !largeTextMode.value;
+
+    _showMessage(
+      context,
+      largeTextMode.value
+          ? "Large Text Mode enabled"
+          : "Large Text Mode disabled",
+    );
+  }
+
   void _openSettings(BuildContext context) {
     final navigator = Navigator.of(context);
     navigator.pop();
@@ -113,86 +308,125 @@ class YgcaDrawer extends StatelessWidget {
 
               return _bottomSheetContainer(
                 isDark: isDark,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _bottomSheetHandle(isDark),
-                    const SizedBox(height: 18),
-                    _sheetHeader(
-                      isDark: isDark,
-                      icon: Icons.settings_rounded,
-                      title: "Settings",
-                      subtitle: "App preferences and security",
-                    ),
-                    const SizedBox(height: 18),
+                child: ValueListenableBuilder<String>(
+                  valueListenable: selectedLanguage,
+                  builder: (context, language, _) {
+                    return ValueListenableBuilder<bool>(
+                      valueListenable: compactMode,
+                      builder: (context, compact, _) {
+                        return ValueListenableBuilder<bool>(
+                          valueListenable: largeTextMode,
+                          builder: (context, largeText, _) {
+                            final gap = compact ? 8.0 : 12.0;
 
-                    _sheetSectionTitle("APPEARANCE", isDark),
-                    _settingsTile(
-                      isDark: isDark,
-                      icon: isDark
-                          ? Icons.light_mode_rounded
-                          : Icons.dark_mode_rounded,
-                      title: isDark
-                          ? "Switch to Light Mode"
-                          : "Switch to Dark Mode",
-                      subtitle: "Change app appearance",
-                      trailing: isDark ? "Dark" : "Light",
-                      onTap: ThemeController.toggleTheme,
-                    ),
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _bottomSheetHandle(isDark),
+                                const SizedBox(height: 18),
+                                _sheetHeader(
+                                  isDark: isDark,
+                                  icon: Icons.settings_rounded,
+                                  title: "Settings",
+                                  subtitle: "App preferences and security",
+                                ),
+                                const SizedBox(height: 18),
 
-                    const SizedBox(height: 12),
-                    _sheetSectionTitle("LANGUAGE", isDark),
-                    _settingsTile(
-                      isDark: isDark,
-                      icon: Icons.language_rounded,
-                      title: "Language",
-                      subtitle: "English / தமிழ்",
-                      trailing: "English",
-                      onTap: () {},
-                    ),
+                                _sheetSectionTitle("APPEARANCE", isDark),
+                                _settingsTile(
+                                  isDark: isDark,
+                                  icon: isDark
+                                      ? Icons.light_mode_rounded
+                                      : Icons.dark_mode_rounded,
+                                  title: isDark
+                                      ? "Switch to Light Mode"
+                                      : "Switch to Dark Mode",
+                                  subtitle: "Change app appearance",
+                                  trailing: isDark ? "Dark" : "Light",
+                                  onTap: ThemeController.toggleTheme,
+                                ),
 
-                    const SizedBox(height: 12),
-                    _sheetSectionTitle("APP PREFERENCES", isDark),
-                    _settingsTile(
-                      isDark: isDark,
-                      icon: Icons.view_compact_rounded,
-                      title: "Compact Mode",
-                      subtitle: "Reduce spacing and scrolling",
-                      trailing: "Soon",
-                      onTap: () {},
-                    ),
-                    const SizedBox(height: 10),
-                    _settingsTile(
-                      isDark: isDark,
-                      icon: Icons.text_fields_rounded,
-                      title: "Large Text Mode",
-                      subtitle: "Better readability for users",
-                      trailing: "Soon",
-                      onTap: () {},
-                    ),
+                                SizedBox(height: gap),
+                                _sheetSectionTitle("LANGUAGE", isDark),
+                                _settingsTile(
+                                  isDark: isDark,
+                                  icon: Icons.language_rounded,
+                                  title: "Language",
+                                  subtitle: "English / தமிழ்",
+                                  trailing: language,
+                                  onTap: () => _toggleLanguage(context),
+                                ),
 
-                    const SizedBox(height: 12),
-                    _sheetSectionTitle("PRIVACY & SECURITY", isDark),
-                    _settingsTile(
-                      isDark: isDark,
-                      icon: Icons.verified_user_rounded,
-                      title: "Login Status",
-                      subtitle: "Signed in as ${role.toUpperCase()}",
-                      trailing: "Active",
-                      onTap: () {},
-                    ),
+                                SizedBox(height: gap),
+                                _sheetSectionTitle("APP PREFERENCES", isDark),
+                                _settingsTile(
+                                  isDark: isDark,
+                                  icon: Icons.view_compact_rounded,
+                                  title: "Compact Mode",
+                                  subtitle: "Reduce spacing and scrolling",
+                                  trailing: compact ? "On" : "Off",
+                                  onTap: () => _toggleCompactMode(context),
+                                ),
+                                const SizedBox(height: 10),
+                                _settingsTile(
+                                  isDark: isDark,
+                                  icon: Icons.text_fields_rounded,
+                                  title: "Large Text Mode",
+                                  subtitle: "Better readability for users",
+                                  trailing: largeText ? "On" : "Off",
+                                  onTap: () => _toggleLargeTextMode(context),
+                                ),
 
-                    const SizedBox(height: 12),
-                    _sheetSectionTitle("ABOUT", isDark),
-                    _settingsTile(
-                      isDark: isDark,
-                      icon: Icons.info_rounded,
-                      title: "App Version",
-                      subtitle: "YGCA Management System",
-                      trailing: "1.0.0",
-                      onTap: () {},
-                    ),
-                  ],
+                                SizedBox(height: gap),
+                                _sheetSectionTitle("PRIVACY & SECURITY", isDark),
+                                _settingsTile(
+                                  isDark: isDark,
+                                  icon: Icons.lock_reset_rounded,
+                                  title: "Change Password",
+                                  subtitle: "Send reset link to registered email",
+                                  trailing: "Email",
+                                  onTap: () =>
+                                      _confirmPasswordReset(context, isDark),
+                                ),
+                                const SizedBox(height: 10),
+                                _settingsTile(
+                                  isDark: isDark,
+                                  icon: Icons.verified_user_rounded,
+                                  title: "Login Status",
+                                  subtitle:
+                                      "Signed in as ${role.toUpperCase()}",
+                                  trailing: "Active",
+                                  onTap: () {
+                                    _showMessage(
+                                      context,
+                                      "Your account is currently active.",
+                                    );
+                                  },
+                                ),
+
+                                SizedBox(height: gap),
+                                _sheetSectionTitle("ABOUT", isDark),
+                                _settingsTile(
+                                  isDark: isDark,
+                                  icon: Icons.info_rounded,
+                                  title: "App Version",
+                                  subtitle: "YGCA Management System",
+                                  trailing: "1.0.0",
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Future.delayed(
+                                      const Duration(milliseconds: 180),
+                                      () => _openAboutApp(navigator.context),
+                                    );
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
                 ),
               );
             },
@@ -1035,13 +1269,71 @@ class YgcaDrawer extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(14, 4, 14, 0),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: () {
-          final navigator = Navigator.of(context);
-          navigator.pop();
+        onTap: () async {
+          final shouldLogout = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) {
+              return AlertDialog(
+                backgroundColor: _card(isDark),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color:
+                        isDark ? red.withOpacity(0.35) : gold.withOpacity(0.75),
+                  ),
+                ),
+                title: Text(
+                  "Logout",
+                  style: TextStyle(
+                    color: _primaryText(isDark),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                content: Text(
+                  "Are you sure you want to logout?",
+                  style: TextStyle(
+                    color: _secondaryText(isDark),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: Text(
+                      "Cancel",
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: red,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: const Text(
+                      "Logout",
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
 
-          Future.delayed(const Duration(milliseconds: 180), () {
-            onLogout!();
-          });
+          if (shouldLogout == true) {
+            final navigator = Navigator.of(context);
+            navigator.pop();
+
+            Future.delayed(const Duration(milliseconds: 180), () {
+              onLogout!();
+            });
+          }
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
