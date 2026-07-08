@@ -45,86 +45,93 @@ class YgcaBottomNav extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
-        final bottomInset = MediaQuery.of(context).padding.bottom;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
+            final bottomInset = MediaQuery.of(context).padding.bottom;
 
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-            child: Container(
-              height: bottomInset > 0 ? 72 : 76,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-              decoration: BoxDecoration(
-                color: _navBg(isDark),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: _border(isDark)),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? red.withOpacity(0.16)
-                        : Colors.black.withOpacity(0.08),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: List.generate(items.length, (index) {
-                  final item = items[index];
-                  final selected = index == currentIndex;
-
-                  return Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(22),
-                      onTap: item.onTap,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        padding: const EdgeInsets.symmetric(vertical: 5),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? red.withOpacity(isDark ? 0.22 : 0.10)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(22),
-                          border: selected
-                              ? Border.all(
-                                  color:
-                                      red.withOpacity(isDark ? 0.55 : 0.25),
-                                )
-                              : null,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              item.icon,
-                              color: selected ? red : _inactive(isDark),
-                              size: selected ? 24 : 22,
-                            ),
-                            const SizedBox(height: 3),
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                item.label,
-                                maxLines: 1,
-                                style: TextStyle(
-                                  color: selected ? red : _inactive(isDark),
-                                  fontSize: 10,
-                                  fontWeight: selected
-                                      ? FontWeight.w900
-                                      : FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                child: Container(
+                  height: bottomInset > 0 ? 72 : 76,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: _navBg(isDark),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: _border(isDark)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark
+                            ? red.withOpacity(0.16)
+                            : Colors.black.withOpacity(0.08),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                  );
-                }),
+                    ],
+                  ),
+                  child: Row(
+                    children: List.generate(items.length, (index) {
+                      final item = items[index];
+                      final selected = index == currentIndex;
+
+                      return Expanded(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(22),
+                          onTap: item.onTap,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? red.withOpacity(isDark ? 0.22 : 0.10)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(22),
+                              border: selected
+                                  ? Border.all(
+                                      color: red.withOpacity(
+                                        isDark ? 0.55 : 0.25,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  item.icon,
+                                  color: selected ? red : _inactive(isDark),
+                                  size: selected ? 24 : 22,
+                                ),
+                                const SizedBox(height: 3),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    item.label,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      color: selected ? red : _inactive(isDark),
+                                      fontSize: 10,
+                                      fontWeight: selected
+                                          ? FontWeight.w900
+                                          : FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );

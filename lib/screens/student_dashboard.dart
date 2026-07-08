@@ -14,6 +14,7 @@ import '../core/responsive/responsive_size.dart';
 
 import 'widgets/ygca_drawer.dart';
 import 'widgets/ygca_bottom_nav.dart';
+import '../core/language/app_strings.dart';
 
 import 'notification_screen.dart';
 import 'student_attendance_module_screen.dart';
@@ -169,9 +170,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
          drawer: YgcaDrawer(
@@ -292,7 +296,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       ),
                       SizedBox(height: ResponsiveSpacing.medium(context)),
                       _sectionTitle(
-                        title: "STUDENT OVERVIEW",
+                        title: AppStrings.studentOverview,
                         isDark: isDark,
                       ),
                       Padding(
@@ -308,31 +312,31 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             _overviewCard(
                               isDark: isDark,
                               icon: Icons.fact_check_rounded,
-                              title: "Attendance",
+                              title: AppStrings.attendance,
                               value: attendance,
-                              subtitle: "Overall",
+                              subtitle: AppStrings.overall,
                               color: Colors.green,
                             ),
                             _overviewCard(
                               isDark: isDark,
                               icon: Icons.sports_cricket_rounded,
-                              title: "Batch",
+                              title: AppStrings.batch,
                               value: batch,
-                              subtitle: "Training",
+                              subtitle: AppStrings.training,
                               color: Colors.orange,
                             ),
                             _overviewCard(
                               isDark: isDark,
                               icon: Icons.badge_rounded,
-                              title: "Roll No",
+                              title: AppStrings.rollNo,
                               value: rollNo,
-                              subtitle: "Student ID",
+                              subtitle: AppStrings.studentId,
                               color: Colors.blueAccent,
                             ),
                             _overviewCard(
                               isDark: isDark,
                               icon: Icons.verified_rounded,
-                              title: "Status",
+                              title: AppStrings.status,
                               value: approvalStatus,
                               subtitle: feeStatus,
                               color: Colors.purpleAccent,
@@ -342,7 +346,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       ),
                       SizedBox(height: ResponsiveSpacing.medium(context)),
                       _sectionTitle(
-                        title: "QUICK ACTIONS",
+                        title: AppStrings.quickActions,
                         isDark: isDark,
                       ),
                       _quickActions(isDark),
@@ -360,35 +364,37 @@ class _StudentDashboardState extends State<StudentDashboard> {
             items: [
               YgcaBottomNavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: AppStrings.home,
                 onTap: () {},
               ),
               YgcaBottomNavItem(
                 icon: Icons.fact_check_rounded,
-                label: 'Attendance',
+                label: AppStrings.attendance,
                 onTap: _openStudentAttendanceModule,
               ),
               YgcaBottomNavItem(
                 icon: Icons.analytics_rounded,
-                label: 'Performance',
+                label: AppStrings.performance,
                 onTap: () => _open(
                   const StudentPerformanceModuleScreen(),
                 ),
               ),
               YgcaBottomNavItem(
                 icon: Icons.payments_rounded,
-                label: 'Fees',
+                label: AppStrings.fees,
                 onTap: () => _openRoute('/fees'),
               ),
               YgcaBottomNavItem(
                 icon: Icons.more_horiz_rounded,
-                label: 'More',
+                label: AppStrings.more,
                 onTap: () {
                   _scaffoldKey.currentState?.openDrawer();
                 },
               ),
             ],
           ),
+            );
+          },
         );
       },
     );
@@ -434,7 +440,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  "Student Control Center",
+                  AppStrings.studentControlCenter,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -683,7 +689,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "GOOD MORNING,",
+                                AppStrings.goodMorning,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -707,7 +713,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                "STUDENT DASHBOARD",
+                                AppStrings.studentDashboard,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -741,7 +747,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               ),
                               const SizedBox(height: 9),
                               Text(
-                                "Batch: $batch",
+                                "${AppStrings.batch}: $batch",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -754,7 +760,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               ),
                               const SizedBox(height: 3),
                               Text(
-                                "Roll No: $rollNo",
+                                "${AppStrings.rollNo}: $rollNo",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -932,14 +938,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
           _quickActionCard(
             isDark: isDark,
             icon: Icons.fact_check_rounded,
-            title: "My\nAttendance",
+            title: AppStrings.myAttendance,
             color: Colors.green,
             onTap: _openStudentAttendanceModule,
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.analytics_rounded,
-            title: "My\nPerformance",
+            title: AppStrings.myPerformance,
             color: Colors.blue,
             onTap: () => _open(
               const StudentPerformanceModuleScreen(),
@@ -948,7 +954,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           _quickActionCard(
             isDark: isDark,
             icon: Icons.calendar_month_rounded,
-            title: "My\nSchedule",
+            title: AppStrings.mySchedule,
             color: Colors.purpleAccent,
             onTap: () => _open(
               const StudentScheduleModuleScreen(),
@@ -957,14 +963,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
           _quickActionCard(
             isDark: isDark,
             icon: Icons.payments_rounded,
-            title: "Fee\nStatus",
+            title: AppStrings.feeStatus,
             color: Colors.orange,
             onTap: () => _openRoute('/fees'),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.notifications_rounded,
-            title: "Academy\nUpdates",
+            title: AppStrings.academyUpdates,
             color: Colors.redAccent,
             onTap: () => _open(const NotificationScreen()),
           ),

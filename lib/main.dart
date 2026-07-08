@@ -44,50 +44,60 @@ class MyApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, themeMode, _) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'YGCA Management System',
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            return ValueListenableBuilder<bool>(
+              valueListenable: ThemeController.largeTextMode,
+              builder: (context, largeText, ___) {
+                return MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  title: 'YGCA Management System',
 
-         builder: (context, child) {
-  return ValueListenableBuilder<bool>(
-    valueListenable: ThemeController.largeTextMode,
-    builder: (context, largeText, _) {
-      return MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(largeText ? 1.15 : 1.0),
-        ),
-        child: child ?? const SizedBox.shrink(),
-      );
-    },
-  );
-},
+                  builder: (context, child) {
+                    return MediaQuery(
+                      data: MediaQuery.of(context).copyWith(
+                        textScaler: TextScaler.linear(
+                          largeText ? 1.15 : 1.0,
+                        ),
+                      ),
+                      child: child ?? const SizedBox.shrink(),
+                    );
+                  },
 
-          theme: YGCATheme.lightTheme,
-          darkTheme: YGCATheme.darkTheme,
-          themeMode: themeMode,
+                  theme: YGCATheme.lightTheme,
+                  darkTheme: YGCATheme.darkTheme,
+                  themeMode: themeMode,
 
-          home: const InitialSplashScreen(),
+                  home: const InitialSplashScreen(),
 
-          routes: {
-            '/login': (context) => const LoginScreen(),
-            '/register': (context) => const RegisterScreen(),
-            '/auth-checker': (context) => const AuthChecker(),
+                  routes: {
+                    '/login': (context) => const LoginScreen(),
+                    '/register': (context) => const RegisterScreen(),
+                    '/auth-checker': (context) => const AuthChecker(),
 
-            '/admin': (context) => AdminDashboard(),
-            '/coach': (context) => const CoachDashboard(),
-            '/parent': (context) => const ParentDashboard(),
-            '/student': (context) => const StudentDashboard(),
+                    '/admin': (context) => AdminDashboard(),
+                    '/coach': (context) => const CoachDashboard(),
+                    '/parent': (context) => const ParentDashboard(),
+                    '/student': (context) => const StudentDashboard(),
 
-            '/student-list': (context) => const StudentListScreen(),
-            '/add-student': (context) => const AddStudentScreen(),
+                    '/student-list': (context) => const StudentListScreen(),
+                    '/add-student': (context) => const AddStudentScreen(),
 
-            '/mark-attendance': (context) => const AttendanceScreen(),
-            '/attendance-history': (context) =>
-                const AttendanceHistoryScreen(),
-            '/attendance': (context) => const AttendanceHistoryScreen(),
+                    '/mark-attendance': (context) =>
+                        const AttendanceScreen(),
+                    '/attendance-history': (context) =>
+                        const AttendanceHistoryScreen(),
+                    '/attendance': (context) =>
+                        const AttendanceHistoryScreen(),
 
-            '/fees': (context) => const FeeManagementScreen(),
-            '/notifications': (context) => const NotificationScreen(),
+                    '/fees': (context) => const FeeManagementScreen(),
+                    '/notifications': (context) =>
+                        const NotificationScreen(),
+                  },
+                );
+              },
+            );
           },
         );
       },
