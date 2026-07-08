@@ -333,14 +333,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               subtitle: AppStrings.studentId,
                               color: Colors.blueAccent,
                             ),
-                            _overviewCard(
-                              isDark: isDark,
-                              icon: Icons.verified_rounded,
-                              title: AppStrings.status,
-                              value: approvalStatus,
-                              subtitle: feeStatus,
-                              color: Colors.purpleAccent,
-                            ),
+                           _overviewCard(
+  isDark: isDark,
+  icon: Icons.verified_rounded,
+  title: AppStrings.status,
+  value: approvalStatus.toLowerCase() == "approved"
+      ? AppStrings.approved
+      : approvalStatus,
+  subtitle: feeStatus,
+  color: Colors.purpleAccent,
+),
                           ],
                         ),
                       ),

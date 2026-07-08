@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import '../core/responsive/responsive_helper.dart';
 import '../core/responsive/responsive_padding.dart';
@@ -183,9 +184,12 @@ class _CoachDashboardState extends State<CoachDashboard> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
 
@@ -293,7 +297,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                               ),
                               SizedBox(height: ResponsiveSpacing.medium(context)),
                               _sectionTitle(
-                                title: "COACH OVERVIEW",
+                                title: AppStrings.coachOverview,
                                 isDark: isDark,
                               ),
                               Padding(
@@ -311,35 +315,37 @@ class _CoachDashboardState extends State<CoachDashboard> {
                                     _overviewCard(
                                       isDark: isDark,
                                       icon: Icons.groups_rounded,
-                                      title: "Students",
+                                      title: AppStrings.students,
                                       value: assignedStudents,
-                                      subtitle: "Assigned",
+                                      subtitle: AppStrings.assigned,
                                       color: Colors.blueAccent,
                                     ),
                                     _overviewCard(
                                       isDark: isDark,
                                       icon: Icons.fact_check_rounded,
-                                      title: "Attendance",
-                                      value: "Today",
-                                      subtitle: "Mark now",
+                                      title: AppStrings.attendance,
+                                      value: AppStrings.today,
+                                      subtitle: AppStrings.markNow,
                                       color: Colors.green,
                                     ),
                                     _overviewCard(
                                       isDark: isDark,
                                       icon: Icons.sports_cricket_rounded,
-                                      title: "Session",
+                                      title: AppStrings.session,
                                       value: _sessionsText(sessions),
-                                      subtitle: "Current Week",
+                                      subtitle: AppStrings.currentWeek,
                                       color: Colors.orange,
                                     ),
                                     _overviewCard(
-                                      isDark: isDark,
-                                      icon: Icons.verified_rounded,
-                                      title: "Status",
-                                      value: status,
-                                      subtitle: role,
-                                      color: Colors.purpleAccent,
-                                    ),
+  isDark: isDark,
+  icon: Icons.verified_rounded,
+  title: AppStrings.status,
+  value: status.toLowerCase() == "active"
+      ? AppStrings.active
+      : status,
+  subtitle: role,
+  color: Colors.purpleAccent,
+),
                                   ],
                                 ),
                               ),
@@ -356,7 +362,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                               ),
                               SizedBox(height: ResponsiveSpacing.medium(context)),
                               _sectionTitle(
-                                title: "QUICK ACTIONS",
+                                title: AppStrings.quickActions,
                                 isDark: isDark,
                               ),
                               _quickActions(isDark),
@@ -379,33 +385,35 @@ class _CoachDashboardState extends State<CoachDashboard> {
             items: [
               YgcaBottomNavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: AppStrings.home,
                 onTap: () {},
               ),
               YgcaBottomNavItem(
                 icon: Icons.people_rounded,
-                label: 'Students',
+                label: AppStrings.students,
                 onTap: () => _open(const CoachStudentModuleScreen()),
               ),
               YgcaBottomNavItem(
                 icon: Icons.fact_check_rounded,
-                label: 'Attendance',
+                label: AppStrings.attendance,
                 onTap: () => _open(const CoachAttendanceModuleScreen()),
               ),
               YgcaBottomNavItem(
                 icon: Icons.analytics_rounded,
-                label: 'Reports',
+                label: AppStrings.reports,
                 onTap: () => _open(const CoachPerformanceModuleScreen()),
               ),
               YgcaBottomNavItem(
                 icon: Icons.more_horiz_rounded,
-                label: 'More',
+                label: AppStrings.more,
                 onTap: () {
                   _scaffoldKey.currentState?.openDrawer();
                 },
               ),
             ],
           ),
+            );
+          },
         );
       },
     );
@@ -440,7 +448,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    "Loading current week sessions...",
+                    AppStrings.loadingCurrentWeekSessions,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -455,7 +463,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "CURRENT WEEK ASSIGNED SESSIONS",
+                  AppStrings.currentWeekAssignedSessions,
                   style: TextStyle(
                     color: isDark ? gold : maroon,
                     fontSize: 12,
@@ -466,7 +474,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                 const SizedBox(height: 10),
                 if (sessions.isEmpty)
                   Text(
-                    "No session assigned for this week.",
+                    AppStrings.noSessionAssignedThisWeek,
                     style: TextStyle(
                       color: _secondaryText(isDark),
                       fontSize: 12,
@@ -544,7 +552,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  "Coach Control Center",
+                  AppStrings.coachControlCenter,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -795,7 +803,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "GOOD MORNING,",
+                                "${AppStrings.goodMorning},",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -819,7 +827,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                "COACH DASHBOARD",
+                                AppStrings.coachDashboard,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -853,7 +861,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                               ),
                               const SizedBox(height: 9),
                               Text(
-                                "Session: $batch",
+                                "${AppStrings.session}: $batch",
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -1032,35 +1040,35 @@ class _CoachDashboardState extends State<CoachDashboard> {
           _quickActionCard(
             isDark: isDark,
             icon: Icons.fact_check_rounded,
-            title: "Mark\nAttendance",
+            title: AppStrings.markAttendance,
             color: Colors.green,
             onTap: () => _open(const CoachAttendanceModuleScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.people_rounded,
-            title: "View\nStudents",
+            title: AppStrings.viewStudents,
             color: Colors.orange,
             onTap: () => _open(const CoachStudentModuleScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.bar_chart_rounded,
-            title: "Performance\nReports",
+            title: AppStrings.performanceReports,
             color: Colors.blue,
             onTap: () => _open(const CoachPerformanceModuleScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.event_note_rounded,
-            title: "Leave\nRequests",
+            title: AppStrings.leaveRequests,
             color: Colors.brown,
             onTap: () => _open(const LeaveRequestScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.calendar_month_rounded,
-            title: "Schedule\nModule",
+            title: AppStrings.scheduleModule,
             color: Colors.teal,
             onTap: () => _open(const CoachScheduleModuleScreen()),
           ),

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import '../core/responsive/responsive_helper.dart';
 import '../core/responsive/responsive_padding.dart';
@@ -95,6 +96,30 @@ class _ParentDashboardState extends State<ParentDashboard> {
     }
 
     return "0";
+  }
+
+  String _localizedStatus(String value) {
+    final normalized = value.trim().toLowerCase();
+
+    if (normalized == 'active') return AppStrings.active;
+    if (normalized == 'inactive') return AppStrings.inactive;
+    if (normalized == 'pending') return AppStrings.pending;
+    if (normalized == 'approved') return AppStrings.approved;
+
+    return value;
+  }
+
+  String _localizedFeeStatus(String value) {
+    final normalized = value.trim().toLowerCase();
+
+    if (normalized == 'paid') return AppStrings.paid;
+    if (normalized == 'pending') return AppStrings.pending;
+    if (normalized == 'unpaid') return AppStrings.unpaid;
+    if (normalized == 'partial' || normalized == 'partially paid') {
+      return AppStrings.partiallyPaid;
+    }
+
+    return value;
   }
 
   List<String> _linkedChildIds(Map<String, dynamic> data) {
@@ -289,9 +314,12 @@ final childNameText = childNames.isEmpty
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
           drawer: YgcaDrawer(
@@ -435,7 +463,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
                           ),
                           SizedBox(height: ResponsiveSpacing.medium(context)),
                           _sectionTitle(
-                            title: "PARENT OVERVIEW",
+                            title: AppStrings.parentOverview,
                             isDark: isDark,
                           ),
                           Padding(
@@ -451,33 +479,33 @@ final childrenCount = childInfo['childCount'] ?? '0';
                                 _overviewCard(
                                   isDark: isDark,
                                   icon: Icons.child_care_rounded,
-                                  title: "Children",
+                                  title: AppStrings.children,
                                   value: childrenCount,
-                                  subtitle: "Linked",
+                                  subtitle: AppStrings.linked,
                                   color: Colors.blueAccent,
                                 ),
                                 _overviewCard(
                                   isDark: isDark,
                                   icon: Icons.fact_check_rounded,
-                                  title: "Attendance",
+                                  title: AppStrings.attendance,
                                   value: attendance,
-                                  subtitle: "Child overall",
+                                  subtitle: AppStrings.childOverall,
                                   color: Colors.green,
                                 ),
                                 _overviewCard(
                                   isDark: isDark,
                                   icon: Icons.payments_rounded,
-                                  title: "Fee Status",
-                                  value: feeStatus,
-                                  subtitle: "Current",
+                                  title: AppStrings.feeStatus,
+                                  value: _localizedFeeStatus(feeStatus),
+                                  subtitle: AppStrings.current,
                                   color: Colors.orange,
                                 ),
                                 _overviewCard(
                                   isDark: isDark,
                                   icon: Icons.verified_rounded,
-                                  title: "Status",
-                                  value: status,
-                                  subtitle: "Parent account",
+                                  title: AppStrings.status,
+                                  value: _localizedStatus(status),
+                                  subtitle: AppStrings.parentAccount,
                                   color: Colors.purpleAccent,
                                 ),
                               ],
@@ -485,7 +513,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
                           ),
                           SizedBox(height: ResponsiveSpacing.medium(context)),
                           _sectionTitle(
-                            title: "QUICK ACTIONS",
+                            title: AppStrings.quickActions,
                             isDark: isDark,
                           ),
                           _quickActions(isDark),
@@ -503,37 +531,39 @@ final childrenCount = childInfo['childCount'] ?? '0';
             items: [
               YgcaBottomNavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: AppStrings.home,
                 onTap: () {},
               ),
               YgcaBottomNavItem(
                 icon: Icons.fact_check_rounded,
-                label: 'Attendance',
+                label: AppStrings.attendance,
                 onTap: () => _open(
                   const AttendanceHistoryScreen(),
                 ),
               ),
               YgcaBottomNavItem(
                 icon: Icons.analytics_rounded,
-                label: 'Performance',
+                label: AppStrings.performance,
                 onTap: () => _open(
                   const StudentPerformanceModuleScreen(),
                 ),
               ),
               YgcaBottomNavItem(
                 icon: Icons.payments_rounded,
-                label: 'Fees',
+                label: AppStrings.fees,
                 onTap: () => _openRoute('/fees'),
               ),
               YgcaBottomNavItem(
                 icon: Icons.more_horiz_rounded,
-                label: 'More',
+                label: AppStrings.more,
                 onTap: () {
                   _scaffoldKey.currentState?.openDrawer();
                 },
               ),
             ],
           ),
+            );
+          },
         );
       },
     );
@@ -579,7 +609,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  "Parent Control Center",
+                  AppStrings.parentControlCenter,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -828,7 +858,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "GOOD MORNING,",
+                                "${AppStrings.goodMorning},",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -852,7 +882,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                "PARENT DASHBOARD",
+                                AppStrings.parentDashboard,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -899,7 +929,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
                               ),
                               const SizedBox(height: 3),
                               Text(
-                                "Child: $childName",
+                                "${AppStrings.child}: $childName",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -1078,7 +1108,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
           _quickActionCard(
             isDark: isDark,
             icon: Icons.fact_check_rounded,
-            title: "Child\nAttendance",
+            title: AppStrings.childAttendance,
             color: Colors.green,
             onTap: () => _open(
               const AttendanceHistoryScreen(),
@@ -1087,7 +1117,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
           _quickActionCard(
             isDark: isDark,
             icon: Icons.analytics_rounded,
-            title: "Child\nPerformance",
+            title: AppStrings.childPerformance,
             color: Colors.blue,
             onTap: () => _open(
               const StudentPerformanceModuleScreen(),
@@ -1096,7 +1126,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
           _quickActionCard(
             isDark: isDark,
             icon: Icons.calendar_month_rounded,
-            title: "Child\nSchedule",
+            title: AppStrings.childSchedule,
             color: Colors.purpleAccent,
             onTap: () => _open(
               const StudentScheduleModuleScreen(),
@@ -1105,14 +1135,14 @@ final childrenCount = childInfo['childCount'] ?? '0';
           _quickActionCard(
             isDark: isDark,
             icon: Icons.payments_rounded,
-            title: "Fee\nStatus",
+            title: AppStrings.feeStatus,
             color: Colors.orange,
             onTap: () => _openRoute('/fees'),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.notifications_rounded,
-            title: "Academy\nUpdates",
+            title: AppStrings.academyUpdates,
             color: Colors.redAccent,
             onTap: () => _open(const NotificationScreen()),
           ),
