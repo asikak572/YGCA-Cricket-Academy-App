@@ -107,4 +107,21 @@ class AppStrings {
   static String get scheduleModule => text("Schedule\nModule", "அட்டவணை\nமாட்யூல்", "कार्यक्रम\nमॉड्यूल");
 
   static String get academyUpdates => text("Academy\nUpdates", "அகாடமி\nஅறிவிப்புகள்", "अकादमी\nअपडेट");
+
+static String get adminControlCenter => text("Admin Control Center", "அட்மின் கட்டுப்பாட்டு மையம்", "एडमिन नियंत्रण केंद्र");
+static String get academyOverview => text("ACADEMY OVERVIEW", "அகாடமி விவரம்", "अकादमी अवलोकन");
+static String get admin => text("ADMIN", "அட்மின்", "एडमिन");
+static String get adminControlDashboard => text("CONTROL DASHBOARD", "கட்டுப்பாட்டு டாஷ்போர்டு", "कंट्रोल डैशबोर्ड");
+static String get adminHeroDescription => text("Manage students, coaches,\nattendance and growth.", "மாணவர்கள், பயிற்சியாளர்கள்,\nவருகை மற்றும் வளர்ச்சியை நிர்வகிக்கவும்.", "छात्रों, कोचों,\nउपस्थिति और विकास को प्रबंधित करें।");
+static String get viewAll => text("View all", "அனைத்தையும் பார்", "सभी देखें");
+static String get totalStudents => text("Total Students", "மொத்த மாணவர்கள்", "कुल छात्र");
+static String get registeredPlayers => text("Registered players", "பதிவு செய்யப்பட்ட வீரர்கள்", "पंजीकृत खिलाड़ी");
+static String get todayAverage => text("Today average", "இன்றைய சராசரி", "आज का औसत");
+static String get pendingFees => text("Pending Fees", "நிலுவை கட்டணம்", "लंबित शुल्क");
+static String get sessions => text("Sessions", "அமர்வுகள்", "सेशन");
+static String get thisWeek => text("This week", "இந்த வாரம்", "इस सप्ताह");
+static String get studentApproval => text("Student\nApproval", "மாணவர்\nஅனுமதி", "छात्र\nस्वीकृति");
+static String get coachCenter => text("Coach\nCenter", "பயிற்சியாளர்\nமையம்", "कोच\nसेंटर");
+static String get reportsCenter => text("Reports\nCenter", "அறிக்கை\nமையம்", "रिपोर्ट\nसेंटर");
+static String get feesAndDues => text("Fees\n& Dues", "கட்டணம்\n& நிலுவை", "शुल्क\nऔर बकाया");
 }

@@ -14,6 +14,7 @@ import '../core/responsive/responsive_radius.dart';
 import '../core/responsive/responsive_text.dart';
 
 import 'student_list_screen.dart';
+import '../core/language/app_strings.dart';
 import 'notification_screen.dart';
 import 'reports_dashboard_screen.dart';
 import 'attendance_module_screen.dart';
@@ -75,9 +76,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
           drawer: YgcaDrawer(
@@ -103,7 +107,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           _heroCard(isDark),
                           SizedBox(height: ResponsiveSpacing.medium(context)),
                           _sectionTitle(
-                            title: "ACADEMY OVERVIEW",
+                            title: AppStrings.academyOverview,
                             isDark: isDark,
                             showViewAll: true,
                           ),
@@ -126,23 +130,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 _overviewCard(
                                   isDark: isDark,
                                   icon: Icons.groups_rounded,
-                                  title: "Total Students",
+                                  title: AppStrings.totalStudents,
                                   value: "248",
-                                  subtitle: "Registered players",
+                                  subtitle: AppStrings.registeredPlayers,
                                   color: red,
                                 ),
                                 _overviewCard(
                                   isDark: isDark,
                                   icon: Icons.verified_rounded,
-                                  title: "Attendance",
+                                  title: AppStrings.attendance,
                                   value: "75%",
-                                  subtitle: "Today average",
+                                  subtitle: AppStrings.todayAverage,
                                   color: Colors.green,
                                 ),
                                 _overviewCard(
                                   isDark: isDark,
                                   icon: Icons.receipt_long_rounded,
-                                  title: "Pending Fees",
+                                  title: AppStrings.pendingFees,
                                   value: "₹2.45L",
                                   subtitle: "28 students",
                                   color: Colors.orange,
@@ -150,9 +154,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 _overviewCard(
                                   isDark: isDark,
                                   icon: Icons.calendar_month_rounded,
-                                  title: "Sessions",
+                                  title: AppStrings.sessions,
                                   value: "6",
-                                  subtitle: "This week",
+                                  subtitle: AppStrings.thisWeek,
                                   color: Colors.purpleAccent,
                                 ),
                               ],
@@ -160,7 +164,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ),
                           SizedBox(height: ResponsiveSpacing.medium(context)),
                           _sectionTitle(
-                            title: "QUICK ACTIONS",
+                            title: AppStrings.quickActions,
                             isDark: isDark,
                             showViewAll: false,
                           ),
@@ -179,33 +183,35 @@ class _AdminDashboardState extends State<AdminDashboard> {
             items: [
               YgcaBottomNavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: AppStrings.home,
                 onTap: () {},
               ),
               YgcaBottomNavItem(
                 icon: Icons.people_rounded,
-                label: 'Students',
+                label: AppStrings.students,
                 onTap: () => _open(const StudentListScreen()),
               ),
               YgcaBottomNavItem(
                 icon: Icons.fact_check_rounded,
-                label: 'Attendance',
+                label: AppStrings.attendance,
                 onTap: () => _open(const AttendanceModuleScreen()),
               ),
               YgcaBottomNavItem(
                 icon: Icons.calendar_month_rounded,
-                label: 'Schedule',
+                label: AppStrings.schedule,
                 onTap: () => _open(const ScheduleModuleScreen()),
               ),
               YgcaBottomNavItem(
                 icon: Icons.more_horiz_rounded,
-                label: 'More',
+                label: AppStrings.more,
                 onTap: () {
                   _scaffoldKey.currentState?.openDrawer();
                 },
               ),
             ],
           ),
+            );
+          },
         );
       },
     );
@@ -251,7 +257,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  "Admin Control Center",
+                  AppStrings.adminControlCenter,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -475,7 +481,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "GOOD MORNING,",
+                  "${AppStrings.goodMorning},",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -487,7 +493,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "ADMIN",
+                  AppStrings.admin,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -499,7 +505,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "CONTROL DASHBOARD",
+                  AppStrings.adminControlDashboard,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -520,7 +526,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Manage students, coaches,\nattendance and growth.",
+                  AppStrings.adminHeroDescription,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -580,7 +586,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           if (showViewAll) ...[
             const SizedBox(width: 8),
             Text(
-              "View all",
+              AppStrings.viewAll,
               style: TextStyle(
                 color: isDark ? Colors.white60 : const Color(0xFF64748B),
                 fontSize: ResponsiveText.small(context),
@@ -724,42 +730,42 @@ class _AdminDashboardState extends State<AdminDashboard> {
           _quickActionCard(
             isDark: isDark,
             icon: Icons.person_add_alt_1_rounded,
-            title: "Student\nApproval",
+            title: AppStrings.studentApproval,
             color: Colors.green,
             onTap: () => _open(const StudentListScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.sports_rounded,
-            title: "Coach\nCenter",
+            title: AppStrings.coachCenter,
             color: Colors.redAccent,
             onTap: () => _open(CoachModuleScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.fact_check_rounded,
-            title: "Mark\nAttendance",
+            title: AppStrings.markAttendance,
             color: Colors.blue,
             onTap: () => _open(const AttendanceModuleScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.calendar_month_rounded,
-            title: "Schedule\nModule",
+            title: AppStrings.scheduleModule,
             color: Colors.purpleAccent,
             onTap: () => _open(const ScheduleModuleScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.analytics_rounded,
-            title: "Reports\nCenter",
+            title: AppStrings.reportsCenter,
             color: Colors.teal,
             onTap: () => _open(const ReportsDashboardScreen()),
           ),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.account_balance_wallet_rounded,
-            title: "Fees\n& Dues",
+            title: AppStrings.feesAndDues,
             color: Colors.orange,
             onTap: () => _open(FeeModuleScreen()),
           ),
