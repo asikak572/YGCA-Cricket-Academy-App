@@ -35,6 +35,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
   static const Color gold = Color(0xFFD4AF37);
+  String _timeGreeting() {
+  final hour = DateTime.now().hour;
+
+  if (hour < 12) {
+    return AppStrings.goodMorning;
+  } else if (hour < 17) {
+    return AppStrings.goodAfternoon;
+  } else {
+    return AppStrings.goodEvening;
+  }
+}
 
   static const String logoAsset = 'assets/images/ygca_logo.jpg';
 
@@ -481,7 +492,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${AppStrings.goodMorning},",
+                  "${_timeGreeting()},",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

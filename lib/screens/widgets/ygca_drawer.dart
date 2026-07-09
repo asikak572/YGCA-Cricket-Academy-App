@@ -291,6 +291,73 @@ class YgcaDrawer extends StatelessWidget {
     );
   }
 
+  void _showFontStyleSelector(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) {
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.fontFamily,
+          builder: (context, selectedFont, _) {
+            return _bottomSheetContainer(
+              isDark: isDark,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _bottomSheetHandle(isDark),
+                  const SizedBox(height: 18),
+                  _sheetHeader(
+                    isDark: isDark,
+                    icon: Icons.font_download_rounded,
+                    title: "Font Style",
+                    subtitle: "Choose your preferred app font",
+                  ),
+                  const SizedBox(height: 18),
+                  _settingsTile(
+                    isDark: isDark,
+                    icon: Icons.text_fields_rounded,
+                    title: "Default",
+                    subtitle: "System default font",
+                    trailing: selectedFont == "Default" ? "Selected" : "",
+                    onTap: () {
+                      ThemeController.setFontFamily("Default");
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _settingsTile(
+                    isDark: isDark,
+                    icon: Icons.text_fields_rounded,
+                    title: "Poppins",
+                    subtitle: "Modern rounded font",
+                    trailing: selectedFont == "Poppins" ? "Selected" : "",
+                    onTap: () {
+                      ThemeController.setFontFamily("Poppins");
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _settingsTile(
+                    isDark: isDark,
+                    icon: Icons.text_fields_rounded,
+                    title: "Noto Sans",
+                    subtitle: "Best for English, Tamil and Hindi",
+                    trailing: selectedFont == "NotoSans" ? "Selected" : "",
+                    onTap: () {
+                      ThemeController.setFontFamily("NotoSans");
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _openSettings(BuildContext context) {
     final navigator = Navigator.of(context);
     navigator.pop();
@@ -317,9 +384,12 @@ class YgcaDrawer extends StatelessWidget {
                         return ValueListenableBuilder<bool>(
                           valueListenable: ThemeController.largeTextMode,
                           builder: (context, largeText, _) {
-                            final gap = compact ? 8.0 : 12.0;
+                            return ValueListenableBuilder<String>(
+                              valueListenable: ThemeController.fontFamily,
+                              builder: (context, fontFamily, _) {
+                                final gap = compact ? 8.0 : 12.0;
 
-                            return Column(
+                                return Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 _bottomSheetHandle(isDark),
@@ -376,6 +446,17 @@ class YgcaDrawer extends StatelessWidget {
                                   trailing: largeText ? AppStrings.on : AppStrings.off,
                                   onTap: () => _toggleLargeTextMode(context),
                                 ),
+                                const SizedBox(height: 10),
+_settingsTile(
+  isDark: isDark,
+  icon: Icons.font_download_rounded,
+  title: "Font Style",
+  subtitle: "Default / Poppins / Noto Sans",
+  trailing: ThemeController.fontFamily.value == "NotoSans"
+      ? "Noto Sans"
+      : ThemeController.fontFamily.value,
+  onTap: () => _showFontStyleSelector(context, isDark),
+),
 
                                 SizedBox(height: gap),
                                 _sheetSectionTitle(AppStrings.privacySecurity, isDark),
@@ -421,6 +502,8 @@ class YgcaDrawer extends StatelessWidget {
                                   },
                                 ),
                               ],
+                            );
+                              },
                             );
                           },
                         );
