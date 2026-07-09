@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class AttendanceCalendarScreen extends StatefulWidget {
   final String studentId;
@@ -279,7 +280,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
       return _dedupeStudents(allStudents);
     }
 
-    if (role == 'Student') {
+    if (role == AppStrings.student) {
       final doc =
           await FirebaseFirestore.instance.collection('students').doc(uid).get();
 
@@ -414,9 +415,12 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        if (isLoading) {
+            if (isLoading) {
           return Scaffold(
             backgroundColor: _bg(isDark),
             body: SafeArea(
@@ -459,7 +463,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Text(
-                                    'Error: ${snapshot.error}',
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: _primaryText(isDark),
@@ -553,6 +557,8 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                     ],
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -581,7 +587,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Attendance Calendar',
+                  AppStrings.attendanceCalendar,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -591,7 +597,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                   ),
                 ),
                 Text(
-                  'Student-wise monthly view',
+                  AppStrings.studentWiseMonthlyView,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -665,7 +671,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'No students found',
+              AppStrings.noStudentsFound,
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontWeight: FontWeight.bold,
@@ -673,7 +679,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             ),
             const SizedBox(height: 5),
             Text(
-              'No approved or assigned students are available for this account.',
+              AppStrings.noApprovedAssignedStudents,
               textAlign: TextAlign.center,
               style: TextStyle(color: _secondaryText(isDark)),
             ),
@@ -701,7 +707,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           dropdownColor: _card(isDark),
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: gold),
           hint: Text(
-            'Select Student',
+            AppStrings.selectStudent,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
           style: TextStyle(
@@ -712,7 +718,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           items: students.map((student) {
             final id = _text(student['studentId']);
             final studentName = _text(student['name']).isEmpty
-                ? 'Unnamed Student'
+                ? AppStrings.unnamedStudent
                 : _text(student['name']);
             final studentBatch = _text(student['batch']);
 
@@ -747,11 +753,11 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
     required String percent,
   }) {
     final studentName = _text(selectedStudent?['name']).isEmpty
-        ? 'Student'
+        ? AppStrings.student
         : _text(selectedStudent?['name']);
 
     final studentBatch = _text(selectedStudent?['batch']).isEmpty
-        ? 'No Batch'
+        ? AppStrings.noBatch
         : _text(selectedStudent?['batch']);
 
     final studentRollNo = _text(selectedStudent?['rollNo']).isEmpty
@@ -805,7 +811,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
               ),
               const SizedBox(height: 3),
               Text(
-                '$studentBatch • Roll No: $studentRollNo',
+                "$studentBatch • ${AppStrings.rollNo}: $studentRollNo",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -874,18 +880,18 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
       ),
       child: Column(
         children: [
-          const Text(
-            'Firebase Attendance',
-            style: TextStyle(
+          Text(
+            AppStrings.firebaseAttendance,
+            style: const TextStyle(
               color: gold,
               fontSize: 19,
               fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Student-wise attendance calendar',
-            style: TextStyle(color: Colors.white70, fontSize: 11),
+          Text(
+            AppStrings.studentWiseAttendanceCalendar,
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
           ),
           const SizedBox(height: 16),
           Wrap(
@@ -893,10 +899,10 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             spacing: 16,
             runSpacing: 12,
             children: [
-              _MiniStat(title: 'Present', value: present.toString()),
-              _MiniStat(title: 'Absent', value: absent.toString()),
-              _MiniStat(title: 'Leave', value: leave.toString()),
-              _MiniStat(title: 'Percent', value: '$percent%'),
+              _MiniStat(title: AppStrings.present, value: present.toString()),
+              _MiniStat(title: AppStrings.absent, value: absent.toString()),
+              _MiniStat(title: AppStrings.leave, value: leave.toString()),
+              _MiniStat(title: AppStrings.percent, value: '$percent%'),
             ],
           ),
         ],
@@ -918,10 +924,10 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
         spacing: 10,
         runSpacing: 8,
         children: [
-          _LegendItem(label: 'Present', color: Colors.green, isDark: isDark),
-          _LegendItem(label: 'Absent', color: Colors.red, isDark: isDark),
-          _LegendItem(label: 'Leave', color: Colors.orange, isDark: isDark),
-          _LegendItem(label: 'No Record', color: Colors.grey, isDark: isDark),
+          _LegendItem(label: AppStrings.present, color: Colors.green, isDark: isDark),
+          _LegendItem(label: AppStrings.absent, color: Colors.red, isDark: isDark),
+          _LegendItem(label: AppStrings.leave, color: Colors.orange, isDark: isDark),
+          _LegendItem(label: AppStrings.noRecord, color: Colors.grey, isDark: isDark),
         ],
       ),
     );
@@ -999,7 +1005,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Calendar shows current month attendance for the selected student.",
+              AppStrings.calendarCurrentMonthNote,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,

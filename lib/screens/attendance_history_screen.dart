@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   final List<String> allowedStudentIds;
@@ -339,7 +340,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   String _formatDate(dynamic value) {
     final date = _parseAttendanceDate(value);
-    if (date == null) return _text(value).isEmpty ? "No Date" : _text(value);
+    if (date == null) return _text(value).isEmpty ? AppStrings.noDate : _text(value);
 
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
   }
@@ -351,6 +352,20 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   bool _isLeave(String status) {
     final s = status.toLowerCase().trim();
     return s == 'leave' || s == 'leave approved' || s == 'approved leave';
+  }
+
+  String _localizedStatus(String status) {
+    final normalized = status.trim().toLowerCase();
+
+    if (normalized == 'present') return AppStrings.present;
+    if (normalized == 'absent') return AppStrings.absent;
+    if (normalized == 'leave' ||
+        normalized == 'leave approved' ||
+        normalized == 'approved leave') {
+      return AppStrings.leave;
+    }
+
+    return status;
   }
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortRecords(
@@ -397,9 +412,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        if (isLoading) {
+            if (isLoading) {
           return Scaffold(
             backgroundColor: _bg(isDark),
             body: const Center(child: CircularProgressIndicator()),
@@ -433,7 +451,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: _primaryText(isDark),
@@ -491,7 +509,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   _selectedStudentInfo(isDark),
                                   const SizedBox(height: 18),
                                   _sectionTitle(
-                                      "ATTENDANCE SUMMARY", isDark),
+                                      AppStrings.attendanceSummary, isDark),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -508,28 +526,28 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         _summaryCard(
                                           isDark: isDark,
                                           icon: Icons.calendar_month_rounded,
-                                          title: "TOTAL DAYS",
+                                          title: AppStrings.totalDays,
                                           value: total.toString(),
                                           color: Colors.blueAccent,
                                         ),
                                         _summaryCard(
                                           isDark: isDark,
                                           icon: Icons.check_circle_rounded,
-                                          title: "PRESENT",
+                                          title: AppStrings.present.toUpperCase(),
                                           value: present.toString(),
                                           color: Colors.green,
                                         ),
                                         _summaryCard(
                                           isDark: isDark,
                                           icon: Icons.cancel_rounded,
-                                          title: "ABSENT",
+                                          title: AppStrings.absent.toUpperCase(),
                                           value: absent.toString(),
                                           color: Colors.redAccent,
                                         ),
                                         _summaryCard(
                                           isDark: isDark,
                                           icon: Icons.percent_rounded,
-                                          title: "ATTENDANCE",
+                                          title: AppStrings.attendance.toUpperCase(),
                                           value: "$percentage%",
                                           color: Colors.orange,
                                         ),
@@ -537,7 +555,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 18),
-                                  _sectionTitle("RECENT RECORDS", isDark),
+                                  _sectionTitle(AppStrings.recentRecords, isDark),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -559,7 +577,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                                             .isNotEmpty
                                                         ? _text(selectedStudent?[
                                                             'name'])
-                                                        : 'Unknown Student',
+                                                        : AppStrings.unknownStudent,
                                                 batch: _text(data['batch'])
                                                         .isNotEmpty
                                                     ? _text(data['batch'])
@@ -568,11 +586,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                                             .isNotEmpty
                                                         ? _text(selectedStudent?[
                                                             'batch'])
-                                                        : 'Unknown Batch',
+                                                        : AppStrings.unknownBatch,
                                                 date: _formatDate(data['date']),
                                                 status:
                                                     _text(data['status']).isEmpty
-                                                        ? 'Absent'
+                                                        ? AppStrings.absent
                                                         : _text(data['status']),
                                               );
                                             }).toList(),
@@ -588,6 +606,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     ],
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -613,7 +633,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              "No students found",
+              AppStrings.noStudentsFound,
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontWeight: FontWeight.w900,
@@ -621,7 +641,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             ),
             const SizedBox(height: 5),
             Text(
-              "No approved or assigned students are available for this account.",
+              AppStrings.noApprovedAssignedStudents,
               textAlign: TextAlign.center,
               style: TextStyle(color: _secondaryText(isDark)),
             ),
@@ -649,7 +669,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           dropdownColor: _card(isDark),
           icon: Icon(Icons.keyboard_arrow_down, color: isDark ? gold : maroon),
           hint: Text(
-            "Select Student",
+            AppStrings.selectStudent,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
           style: TextStyle(
@@ -659,7 +679,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           items: students.map((student) {
             final id = _text(student['studentId']);
             final studentName = _text(student['name']).isEmpty
-                ? "Unnamed Student"
+                ? AppStrings.unnamedStudent
                 : _text(student['name']);
             final studentBatch = _text(student['batch']);
 
@@ -692,11 +712,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   Widget _selectedStudentInfo(bool isDark) {
     final studentName = _text(selectedStudent?['name']).isEmpty
-        ? "Student"
+        ? AppStrings.student
         : _text(selectedStudent?['name']);
 
     final studentBatch = _text(selectedStudent?['batch']).isEmpty
-        ? "No Batch"
+        ? AppStrings.noBatch
         : _text(selectedStudent?['batch']);
 
     final studentRollNo = _text(selectedStudent?['rollNo']).isEmpty
@@ -742,7 +762,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "$studentBatch • Roll No: $studentRollNo",
+                    "$studentBatch • ${AppStrings.rollNo}: $studentRollNo",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -782,7 +802,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "ATTENDANCE",
+                  AppStrings.attendance.toUpperCase(),
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
@@ -791,7 +811,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   ),
                 ),
                 Text(
-                  "History Dashboard",
+                  AppStrings.historyDashboard,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 11,
@@ -896,18 +916,18 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         letterSpacing: 1,
                       ),
                     ),
-                    const Text(
-                      "ATTENDANCE",
-                      style: TextStyle(
+                    Text(
+                      AppStrings.attendance.toUpperCase(),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
                         height: 1,
                       ),
                     ),
-                    const Text(
-                      "HISTORY",
-                      style: TextStyle(
+                    Text(
+                      AppStrings.history.toUpperCase(),
+                      style: const TextStyle(
                         color: gold,
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -919,11 +939,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       spacing: 8,
                       runSpacing: 6,
                       children: [
-                        _heroChip("Total: $total"),
-                        _heroChip("Present: $present"),
-                        _heroChip("Absent: $absent"),
-                        _heroChip("Leave: $leave"),
-                        _heroChip("Attendance: $percentage%"),
+                        _heroChip("${AppStrings.total}: $total"),
+                        _heroChip("${AppStrings.present}: $present"),
+                        _heroChip("${AppStrings.absent}: $absent"),
+                        _heroChip("${AppStrings.leave}: $leave"),
+                        _heroChip("${AppStrings.attendance}: $percentage%"),
                       ],
                     ),
                   ],
@@ -1090,7 +1110,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             ),
           ),
           Text(
-            status,
+            _localizedStatus(status),
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w900,
@@ -1111,7 +1131,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
-        "No attendance records found for this student.",
+        AppStrings.noAttendanceRecordsFound,
         textAlign: TextAlign.center,
         style: TextStyle(
           color: _secondaryText(isDark),

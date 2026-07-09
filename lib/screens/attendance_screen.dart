@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 import '../core/responsive/responsive_padding.dart';
 import 'notification_service.dart';
 
@@ -194,8 +195,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   ) async {
     if (selectedBatch.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No assigned session found"),
+        SnackBar(
+          content: Text(AppStrings.noAssignedSessionFound),
           backgroundColor: Colors.red,
         ),
       );
@@ -204,7 +205,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     if (students.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No students found in this session")),
+        SnackBar(content: Text(AppStrings.noStudentsInSession)),
       );
       return;
     }
@@ -279,8 +280,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Attendance saved successfully"),
+        SnackBar(
+          content: Text(AppStrings.attendanceSaved),
           backgroundColor: Colors.green,
         ),
       );
@@ -289,7 +290,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error saving attendance: $e"),
+          content: Text("${AppStrings.errorSavingAttendance}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -317,9 +318,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -405,7 +409,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                           Expanded(
                                             child: _summaryCard(
                                               isDark: isDark,
-                                              title: "Students",
+                                              title: AppStrings.students,
                                               value:
                                                   students.length.toString(),
                                               icon: Icons.groups_rounded,
@@ -416,7 +420,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                           Expanded(
                                             child: _summaryCard(
                                               isDark: isDark,
-                                              title: "Present",
+                                              title: AppStrings.present,
                                               value: presentCount.toString(),
                                               icon:
                                                   Icons.check_circle_rounded,
@@ -427,7 +431,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                           Expanded(
                                             child: _summaryCard(
                                               isDark: isDark,
-                                              title: "Absent",
+                                              title: AppStrings.absent,
                                               value: absentCount.toString(),
                                               icon: Icons.cancel_rounded,
                                               color: Colors.redAccent,
@@ -489,6 +493,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         ],
                       ),
           ),
+            );
+          },
         );
       },
     );
@@ -541,12 +547,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "MARK ATTENDANCE",
+                  AppStrings.markAttendanceTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -556,9 +562,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     letterSpacing: 0.8,
                   ),
                 ),
-                SizedBox(height: 3),
+                const SizedBox(height: 3),
                 Text(
-                  "Weekly assigned session attendance",
+                  AppStrings.attendanceSubtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -652,8 +658,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Expanded(
                 child: Text(
                   isCoach
-                      ? "Current Week Assigned Session"
-                      : "Select Training Session",
+                      ? AppStrings.currentWeekAssignedSession
+                      : AppStrings.selectTrainingSession,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -676,8 +682,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       color: Colors.blue.withOpacity(0.10),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      "Refresh",
+                    child: Text(
+                      AppStrings.refresh,
                       style: TextStyle(
                         color: Colors.blueAccent,
                         fontSize: 10,
@@ -727,8 +733,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         color: Colors.green.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        "Assigned",
+                      child: Text(
+                        AppStrings.assigned,
                         style: TextStyle(
                           color: Colors.green,
                           fontSize: 10,
@@ -798,10 +804,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _noAccessState(bool isDark) {
-    final title = role == 'Coach' ? "No Session Assigned" : "No Access";
+    final title = role == 'Coach' ? AppStrings.noSessionAssigned : AppStrings.noAccess;
     final message = role == 'Coach'
-        ? "Admin has not assigned any session to this coach for the current week."
-        : "Only Admin and assigned Coach can mark attendance.";
+        ? AppStrings.noSessionAssignedThisWeek
+        : AppStrings.noAccessMessage;
 
     return Center(
       child: Padding(
@@ -872,7 +878,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                "No students found",
+                AppStrings.noStudentsFound,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _primaryText(isDark),
@@ -1025,7 +1031,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "$rollNo • Current: $attendance",
+                  "$rollNo • ${AppStrings.currentAttendance}: $attendance",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1052,7 +1058,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isPresent ? "Present" : "Absent",
+                  isPresent ? AppStrings.present : AppStrings.absent,
                   style: TextStyle(
                     color: isPresent ? Colors.green : Colors.redAccent,
                     fontSize: 11,
@@ -1123,9 +1129,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   color: isDark ? Colors.white : gold,
                   strokeWidth: 2,
                 )
-              : const Text(
-                  "SAVE ATTENDANCE",
-                  style: TextStyle(
+              : Text(
+                  AppStrings.saveAttendanceButton,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),

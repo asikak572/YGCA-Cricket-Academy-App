@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import '../core/responsive/responsive_helper.dart';
 import '../core/responsive/responsive_padding.dart';
@@ -50,24 +51,24 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Attendance Main";
+        return AppStrings.attendanceMain;
       case 1:
-        return "Session Management";
+        return AppStrings.sessionManagement;
       case 2:
-        return "Attendance Reports";
+        return AppStrings.attendanceReports;
       default:
-        return "Attendance Module";
+        return AppStrings.attendanceModule;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Mark attendance, view calendar and history";
+        return AppStrings.markAttendanceViewCalendarHistory;
       case 1:
-        return "Manage leave, cancelled sessions and makeup sessions";
+        return AppStrings.manageLeaveCancelledMakeup;
       case 2:
-        return "View attendance reports, summaries and analytics";
+        return AppStrings.viewAttendanceReportsAnalytics;
       default:
         return "";
     }
@@ -98,22 +99,22 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.check_circle_rounded,
-          title: "Mark Attendance",
-          subtitle: "Take daily session attendance",
+          title: AppStrings.markAttendance,
+          subtitle: AppStrings.takeDailySessionAttendance,
           color: Colors.green,
           screen: const AttendanceScreen(),
         ),
         _InfoItem(
           icon: Icons.calendar_month_rounded,
-          title: "Attendance Calendar",
-          subtitle: "Student-wise calendar view",
+          title: AppStrings.attendanceCalendar,
+          subtitle: AppStrings.studentWiseCalendarView,
           color: Colors.orange,
           screen: const AttendanceCalendarScreen(),
         ),
         _InfoItem(
           icon: Icons.history_rounded,
-          title: "Attendance History",
-          subtitle: "View past attendance records",
+          title: AppStrings.attendanceHistory,
+          subtitle: AppStrings.viewPastAttendanceRecords,
           color: Colors.blueAccent,
           screen: const AttendanceHistoryScreen(),
         ),
@@ -124,22 +125,22 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.assignment_rounded,
-          title: "Leave Requests",
-          subtitle: "Approve and manage student leave requests",
+          title: AppStrings.leaveRequestsSingleLine,
+          subtitle: AppStrings.approveManageLeaveRequests,
           color: Colors.redAccent,
           screen: const LeaveRequestScreen(),
         ),
         _InfoItem(
           icon: Icons.event_busy_rounded,
-          title: "Cancel Session",
-          subtitle: "Cancel or update class sessions",
+          title: AppStrings.cancelSession,
+          subtitle: AppStrings.cancelUpdateClassSessions,
           color: Colors.deepOrange,
           screen: const CancelSessionScreen(),
         ),
         _InfoItem(
           icon: Icons.event_repeat_rounded,
-          title: "Makeup Sessions",
-          subtitle: "Compensate missed or cancelled sessions",
+          title: AppStrings.makeupSessions,
+          subtitle: AppStrings.compensateMissedSessions,
           color: Colors.teal,
           screen: const MakeupSessionScreen(),
         ),
@@ -149,22 +150,22 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     return [
       _InfoItem(
         icon: Icons.analytics_rounded,
-        title: "Attendance Reports",
-        subtitle: "View attendance summary and analytics",
+        title: AppStrings.attendanceReports,
+        subtitle: AppStrings.viewAttendanceSummaryAnalytics,
         color: Colors.purpleAccent,
         screen: const AttendanceReportScreen(),
       ),
       _InfoItem(
         icon: Icons.calendar_view_month_rounded,
-        title: "Monthly Summary",
-        subtitle: "View monthly present, absent and leave summary",
+        title: AppStrings.monthlySummary,
+        subtitle: AppStrings.viewMonthlySummary,
         color: Colors.blueAccent,
         screen: const MonthlyAttendanceSummaryScreen(),
       ),
       _InfoItem(
         icon: Icons.person_search_rounded,
-        title: "Student Analytics",
-        subtitle: "Check student-wise attendance analytics",
+        title: AppStrings.studentAnalytics,
+        subtitle: AppStrings.checkStudentAnalytics,
         color: Colors.orange,
         screen: const StudentAttendanceAnalyticsScreen(),
       ),
@@ -176,9 +177,12 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -234,6 +238,8 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -257,7 +263,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            "ATTENDANCE MODULE",
+            AppStrings.attendanceModule.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -576,26 +582,26 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
         items: [
           _MiniStatData(
             icon: Icons.check_circle_rounded,
-            label: "Present",
+            label: AppStrings.present,
             value: "92%",
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.cancel_rounded,
-            label: "Absent",
+            label: AppStrings.absent,
             value: "5",
             color: Colors.redAccent,
           ),
           _MiniStatData(
             icon: Icons.event_busy_rounded,
-            label: "Leave",
+            label: AppStrings.leave,
             value: "3",
             color: Colors.orange,
           ),
           _MiniStatData(
             icon: Icons.history_rounded,
-            label: "History",
-            value: "All",
+            label: AppStrings.history,
+            value: AppStrings.all,
             color: Colors.blueAccent,
           ),
         ],
@@ -608,26 +614,26 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
         items: [
           _MiniStatData(
             icon: Icons.assignment_rounded,
-            label: "Leave",
+            label: AppStrings.leave,
             value: "4",
             color: Colors.redAccent,
           ),
           _MiniStatData(
             icon: Icons.event_busy_rounded,
-            label: "Cancel",
+            label: AppStrings.cancel,
             value: "1",
             color: Colors.deepOrange,
           ),
           _MiniStatData(
             icon: Icons.event_repeat_rounded,
-            label: "Makeup",
+            label: AppStrings.makeup,
             value: "3",
             color: Colors.teal,
           ),
           _MiniStatData(
             icon: Icons.event_available_rounded,
-            label: "Sessions",
-            value: "Live",
+            label: AppStrings.sessions,
+            value: AppStrings.live,
             color: Colors.green,
           ),
         ],
@@ -639,25 +645,25 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
       items: [
         _MiniStatData(
           icon: Icons.analytics_rounded,
-          label: "Reports",
-          value: "All",
+          label: AppStrings.reportsTab,
+          value: AppStrings.all,
           color: Colors.purpleAccent,
         ),
         _MiniStatData(
           icon: Icons.calendar_view_month_rounded,
-          label: "Month",
+          label: AppStrings.month,
           value: "30D",
           color: Colors.blueAccent,
         ),
         _MiniStatData(
           icon: Icons.person_search_rounded,
-          label: "Students",
-          value: "View",
+          label: AppStrings.students,
+          value: AppStrings.view,
           color: Colors.orange,
         ),
         _MiniStatData(
           icon: Icons.percent_rounded,
-          label: "Avg",
+          label: AppStrings.avg,
           value: "86%",
           color: Colors.green,
         ),
@@ -742,15 +748,15 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     final items = [
       _BottomNavItem(
         icon: Icons.fact_check_rounded,
-        label: "Main",
+        label: AppStrings.main,
       ),
       _BottomNavItem(
         icon: Icons.event_available_rounded,
-        label: "Session",
+        label: AppStrings.session,
       ),
       _BottomNavItem(
         icon: Icons.analytics_rounded,
-        label: "Reports",
+        label: AppStrings.reportsTab,
       ),
     ];
 
