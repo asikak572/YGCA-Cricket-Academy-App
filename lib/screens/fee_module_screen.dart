@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'fee_management_screen.dart';
 import 'payment_history_screen.dart';
@@ -49,24 +50,24 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Fee Collection";
+        return AppStrings.feeCollection;
       case 1:
-        return "Payments";
+        return AppStrings.payments;
       case 2:
-        return "Fee Reports";
+        return AppStrings.feeReports;
       default:
-        return "Fee Module";
+        return AppStrings.feeModule;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Collect fees and track pending student dues";
+        return AppStrings.collectFeesTrackDues;
       case 1:
-        return "View transactions, status and fee receipts";
+        return AppStrings.viewTransactionsStatusReceipts;
       case 2:
-        return "Analyze fee collection and pending fee reports";
+        return AppStrings.analyzeFeeReports;
       default:
         return "";
     }
@@ -97,15 +98,15 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.payments_rounded,
-          title: "Collect Fee",
-          subtitle: "Record student fee payment",
+          title: AppStrings.collectFee,
+          subtitle: AppStrings.recordStudentFeePayment,
           color: Colors.green,
           screen: const FeeManagementScreen(),
         ),
         _InfoItem(
           icon: Icons.warning_amber_rounded,
-          title: "Pending Fees",
-          subtitle: "Track pending student dues",
+          title: AppStrings.pendingFees,
+          subtitle: AppStrings.trackPendingStudentDues,
           color: Colors.orange,
           screen: const PendingFeesScreen(),
         ),
@@ -116,22 +117,22 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.receipt_long_rounded,
-          title: "Payment History",
-          subtitle: "View all fee transactions",
+          title: AppStrings.paymentHistory,
+          subtitle: AppStrings.viewAllFeeTransactions,
           color: Colors.blueAccent,
           screen: const PaymentHistoryScreen(),
         ),
         _InfoItem(
           icon: Icons.verified_rounded,
-          title: "Payment Status",
-          subtitle: "Track paid and pending payment status",
+          title: AppStrings.paymentStatus,
+          subtitle: AppStrings.trackPaymentStatus,
           color: Colors.green,
           screen: const PaymentStatusScreen(),
         ),
         _InfoItem(
           icon: Icons.description_rounded,
-          title: "Fee Receipts",
-          subtitle: "View student fee receipts",
+          title: AppStrings.feeReceipts,
+          subtitle: AppStrings.viewStudentFeeReceipts,
           color: Colors.purpleAccent,
           screen: const FeeReceiptsScreen(),
         ),
@@ -141,22 +142,22 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
     return [
       _InfoItem(
         icon: Icons.analytics_rounded,
-        title: "Fee Reports",
-        subtitle: "Analyze fee collection status",
+        title: AppStrings.feeReports,
+        subtitle: AppStrings.analyzeFeeCollectionStatus,
         color: Colors.purpleAccent,
         screen: const FeeReportScreen(),
       ),
       _InfoItem(
         icon: Icons.calendar_month_rounded,
-        title: "Monthly Collection",
-        subtitle: "View monthly fee collection summary",
+        title: AppStrings.monthlyCollection,
+        subtitle: AppStrings.viewMonthlyFeeCollectionSummary,
         color: Colors.blueAccent,
         screen: const MonthlyFeeCollectionScreen(),
       ),
       _InfoItem(
         icon: Icons.warning_rounded,
-        title: "Due Fee Analytics",
-        subtitle: "Analyze student-wise pending fees",
+        title: AppStrings.dueFeeAnalytics,
+        subtitle: AppStrings.analyzeStudentPendingFees,
         color: Colors.orange,
         screen: const DueFeeAnalyticsScreen(),
       ),
@@ -168,9 +169,12 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -210,6 +214,8 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -232,15 +238,19 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(
-            "FEE MODULE",
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: _primaryText(isDark),
-              fontSize: 19,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.8,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              AppStrings.feeModule.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontSize: 19,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+              ),
             ),
           ),
         ),
@@ -369,14 +379,18 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: _primaryText(isDark),
-                        fontSize: 21,
-                        fontWeight: FontWeight.w900,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _primaryText(isDark),
+                          fontSize: 21,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -547,26 +561,26 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
         items: [
           _MiniStatData(
             icon: Icons.payments_rounded,
-            label: "Collect",
-            value: "Fee",
+            label: AppStrings.collect,
+            value: AppStrings.fee,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.warning_amber_rounded,
-            label: "Pending",
-            value: "Dues",
+            label: AppStrings.pending,
+            value: AppStrings.dues,
             color: Colors.orange,
           ),
           _MiniStatData(
             icon: Icons.school_rounded,
-            label: "Students",
-            value: "All",
+            label: AppStrings.students,
+            value: AppStrings.all,
             color: Colors.blueAccent,
           ),
           _MiniStatData(
             icon: Icons.currency_rupee_rounded,
-            label: "Finance",
-            value: "Live",
+            label: AppStrings.finance,
+            value: AppStrings.live,
             color: Colors.purpleAccent,
           ),
         ],
@@ -579,26 +593,26 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
         items: [
           _MiniStatData(
             icon: Icons.receipt_long_rounded,
-            label: "History",
-            value: "All",
+            label: AppStrings.history,
+            value: AppStrings.all,
             color: Colors.blueAccent,
           ),
           _MiniStatData(
             icon: Icons.verified_rounded,
-            label: "Status",
-            value: "Track",
+            label: AppStrings.status,
+            value: AppStrings.track,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.description_rounded,
-            label: "Receipt",
-            value: "View",
+            label: AppStrings.receipt,
+            value: AppStrings.view,
             color: Colors.purpleAccent,
           ),
           _MiniStatData(
             icon: Icons.payment_rounded,
-            label: "Payments",
-            value: "Live",
+            label: AppStrings.payments,
+            value: AppStrings.live,
             color: Colors.orange,
           ),
         ],
@@ -610,26 +624,26 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
       items: [
         _MiniStatData(
           icon: Icons.analytics_rounded,
-          label: "Reports",
-          value: "All",
+          label: AppStrings.reportsTab,
+          value: AppStrings.all,
           color: Colors.purpleAccent,
         ),
         _MiniStatData(
           icon: Icons.calendar_month_rounded,
-          label: "Month",
+          label: AppStrings.month,
           value: "30D",
           color: Colors.blueAccent,
         ),
         _MiniStatData(
           icon: Icons.warning_rounded,
-          label: "Dues",
-          value: "Track",
+          label: AppStrings.dues,
+          value: AppStrings.track,
           color: Colors.orange,
         ),
         _MiniStatData(
           icon: Icons.trending_up_rounded,
-          label: "Growth",
-          value: "Live",
+          label: AppStrings.growth,
+          value: AppStrings.live,
           color: Colors.green,
         ),
       ],
@@ -641,7 +655,7 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
     required List<_MiniStatData> items,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: _card(isDark),
         borderRadius: BorderRadius.circular(18),
@@ -672,34 +686,36 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
     required String value,
     required Color color,
   }) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: color,
-          size: 22,
-        ),
-        const SizedBox(height: 5),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: _secondaryText(isDark),
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 22,
           ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: TextStyle(
-            color: _primaryText(isDark),
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _secondaryText(isDark),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -707,15 +723,15 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
     final items = [
       _BottomNavItem(
         icon: Icons.currency_rupee_rounded,
-        label: "Main",
+        label: AppStrings.main,
       ),
       _BottomNavItem(
         icon: Icons.receipt_long_rounded,
-        label: "Payments",
+        label: AppStrings.payments,
       ),
       _BottomNavItem(
         icon: Icons.analytics_rounded,
-        label: "Reports",
+        label: AppStrings.reportsTab,
       ),
     ];
 
@@ -790,19 +806,25 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
                       size: selected ? 25 : 23,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: selected
-                            ? Colors.white
-                            : isDark
-                                ? Colors.white60
-                                : const Color(0xFF6B7280),
-                        fontSize: 11,
-                        fontWeight:
-                            selected ? FontWeight.w900 : FontWeight.w700,
+                    SizedBox(
+                      width: double.infinity,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          item.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: selected
+                                ? Colors.white
+                                : isDark
+                                    ? Colors.white60
+                                    : const Color(0xFF6B7280),
+                            fontSize: 11,
+                            fontWeight:
+                                selected ? FontWeight.w900 : FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class AddStudentScreen extends StatefulWidget {
   const AddStudentScreen({super.key});
@@ -178,7 +179,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Student saved successfully. Roll No: $generatedRollNo'),
+          content: Text("${AppStrings.studentSavedSuccessfully}. ${AppStrings.rollNo}: $generatedRollNo"),
           backgroundColor: Colors.green,
         ),
       );
@@ -188,7 +189,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error saving student: $e'),
+          content: Text("${AppStrings.errorSavingStudent}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -216,9 +217,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -230,46 +234,46 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     _topHeader(context, isDark),
                     _heroBanner(isDark),
                     const SizedBox(height: 18),
-                    _sectionTitle('STUDENT INFORMATION', isDark),
+                    _sectionTitle(AppStrings.studentInformation, isDark),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
                           _field(
                             isDark: isDark,
-                            label: 'Student Name *',
+                            label: "${AppStrings.studentName} *",
                             controller: nameController,
                             icon: Icons.person_rounded,
                             validator: (value) =>
                                 value == null || value.trim().isEmpty
-                                    ? 'Enter student name'
+                                    ? AppStrings.enterStudentName
                                     : null,
                           ),
                           _field(
                             isDark: isDark,
-                            label: 'Age *',
+                            label: "${AppStrings.age} *",
                             controller: ageController,
                             icon: Icons.cake_rounded,
                             keyboardType: TextInputType.number,
                             validator: (value) =>
                                 value == null || value.trim().isEmpty
-                                    ? 'Enter age'
+                                    ? AppStrings.enterAge
                                     : null,
                           ),
                           _field(
                             isDark: isDark,
-                            label: 'Phone Number *',
+                            label: "${AppStrings.phoneNumber} *",
                             controller: phoneController,
                             icon: Icons.phone_rounded,
                             keyboardType: TextInputType.phone,
                             validator: (value) =>
                                 value == null || value.trim().isEmpty
-                                    ? 'Enter phone number'
+                                    ? AppStrings.enterPhoneNumber
                                     : null,
                           ),
                           _field(
                             isDark: isDark,
-                            label: 'Student Email',
+                            label: AppStrings.studentEmail,
                             controller: emailController,
                             icon: Icons.email_rounded,
                             keyboardType: TextInputType.emailAddress,
@@ -279,41 +283,41 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _sectionTitle('PARENT / GUARDIAN', isDark),
+                    _sectionTitle(AppStrings.parentGuardian, isDark),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
                           _field(
                             isDark: isDark,
-                            label: 'Parent Name',
+                            label: AppStrings.parentName,
                             controller: parentNameController,
                             icon: Icons.family_restroom_rounded,
                           ),
                           _field(
                             isDark: isDark,
-                            label: 'Parent Phone',
+                            label: AppStrings.parentPhone,
                             controller: parentPhoneController,
                             icon: Icons.call_rounded,
                             keyboardType: TextInputType.phone,
                           ),
                           _field(
                             isDark: isDark,
-                            label: 'Parent Email',
+                            label: AppStrings.parentEmail,
                             controller: parentEmailController,
                             icon: Icons.alternate_email_rounded,
                             keyboardType: TextInputType.emailAddress,
                           ),
                           _field(
                             isDark: isDark,
-                            label: 'Aadhaar Number',
+                            label: AppStrings.aadhaarNumber,
                             controller: aadhaarController,
                             icon: Icons.badge_rounded,
                             keyboardType: TextInputType.number,
                           ),
                           _field(
                             isDark: isDark,
-                            label: 'Address',
+                            label: AppStrings.address,
                             controller: addressController,
                             icon: Icons.location_on_rounded,
                             maxLines: 3,
@@ -330,6 +334,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               ),
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -382,24 +388,24 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ADD STUDENT',
+                  AppStrings.addStudentTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: gold,
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                   ),
                 ),
-                SizedBox(height: 3),
+                const SizedBox(height: 3),
                 Text(
-                  'Create new academy player profile',
+                  AppStrings.createNewAcademyPlayerProfile,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -527,7 +533,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'NEW PLAYER',
+                            AppStrings.newPlayer,
                             style: TextStyle(
                               color: gold,
                               fontSize: 14,
@@ -535,9 +541,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                               letterSpacing: 0.6,
                             ),
                           ),
-                          const Text(
-                            'STUDENT',
-                            style: TextStyle(
+                          Text(
+                            AppStrings.student.toUpperCase(),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 31,
                               fontWeight: FontWeight.w900,
@@ -545,7 +551,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                             ),
                           ),
                           Text(
-                            'REGISTRATION',
+                            AppStrings.registration.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 23,
@@ -558,9 +564,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip('Auto Roll No'),
-                              _heroChip('Parent Link'),
-                              _heroChip('Approved Profile'),
+                              _heroChip(AppStrings.autoRollNo),
+                              _heroChip(AppStrings.parentLink),
+                              _heroChip(AppStrings.approvedProfile),
                             ],
                           ),
                         ],
@@ -683,7 +689,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           fontSize: 13,
         ),
         decoration: InputDecoration(
-          labelText: 'Session Batch',
+          labelText: AppStrings.sessionBatch,
           labelStyle: TextStyle(color: _secondaryText(isDark), fontSize: 12),
           prefixIcon: Icon(
             Icons.groups_rounded,
@@ -736,7 +742,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           fontSize: 13,
         ),
         decoration: InputDecoration(
-          labelText: 'Fee Status',
+          labelText: AppStrings.feeStatus.replaceAll('\n', ' '),
           labelStyle: TextStyle(color: _secondaryText(isDark), fontSize: 12),
           prefixIcon: Icon(Icons.payments_rounded, color: isDark ? gold : maroon),
           filled: true,
@@ -754,10 +760,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             borderSide: BorderSide(color: isDark ? red : maroon),
           ),
         ),
-        items: const [
-          DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-          DropdownMenuItem(value: 'Paid', child: Text('Paid')),
-          DropdownMenuItem(value: 'Partial', child: Text('Partial')),
+        items: [
+          DropdownMenuItem(value: 'Pending', child: Text(AppStrings.pending)),
+          DropdownMenuItem(value: 'Paid', child: Text(AppStrings.paid)),
+          DropdownMenuItem(value: 'Partial', child: Text(AppStrings.partiallyPaid)),
         ],
         onChanged: isLoading
             ? null
@@ -794,9 +800,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                   color: isDark ? Colors.white : gold,
                   strokeWidth: 2,
                 )
-              : const Text(
-                  'SAVE STUDENT',
-                  style: TextStyle(
+              : Text(
+                  AppStrings.saveStudent,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),

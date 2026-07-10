@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'notification_service.dart';
 
@@ -48,6 +49,19 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     if (value is int) return value;
     if (value is double) return value.toInt();
     return int.tryParse(value.toString()) ?? 0;
+  }
+
+  String _localizedFeeStatus(String value) {
+    final normalized = value.trim().toLowerCase();
+
+    if (normalized == 'paid') return AppStrings.paid;
+    if (normalized == 'pending') return AppStrings.pending;
+    if (normalized == 'unpaid') return AppStrings.unpaid;
+    if (normalized == 'partial' || normalized == 'partially paid') {
+      return AppStrings.partiallyPaid;
+    }
+
+    return value;
   }
 
   Color _bg(bool isDark) {
@@ -264,7 +278,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
             return AlertDialog(
               backgroundColor: isDark ? const Color(0xFF111111) : Colors.white,
               title: Text(
-                "Add Fee Payment",
+                AppStrings.addFeePayment,
                 style: TextStyle(
                   color: _primaryText(isDark),
                   fontWeight: FontWeight.w900,
@@ -289,7 +303,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                           return Text(
-                            "No students found",
+                            AppStrings.noStudentsFound,
                             style: TextStyle(color: _secondaryText(isDark)),
                           );
                         }
@@ -306,7 +320,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                           decoration: InputDecoration(
-                            labelText: "Select Student",
+                            labelText: AppStrings.selectStudent,
                             labelStyle: TextStyle(
                               color: _secondaryText(isDark),
                             ),
@@ -326,11 +340,11 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                                 ? _text(data['name'])
                                 : _text(data['studentName']).isNotEmpty
                                     ? _text(data['studentName'])
-                                    : 'No Name';
+                                    : AppStrings.noName;
 
                             final batch = _text(data['batch']).isNotEmpty
                                 ? _text(data['batch'])
-                                : 'No Batch';
+                                : AppStrings.noBatch;
 
                             return DropdownMenuItem<String>(
                               value: doc.id,
@@ -369,13 +383,13 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     const SizedBox(height: 12),
                     _dialogField(
                       isDark: isDark,
-                      label: "Total Fee",
+                      label: AppStrings.totalFee,
                       controller: totalFeeController,
                       keyboardType: TextInputType.number,
                     ),
                     _dialogField(
                       isDark: isDark,
-                      label: "Paid Amount",
+                      label: AppStrings.paidAmount,
                       controller: paidAmountController,
                       keyboardType: TextInputType.number,
                     ),
@@ -386,7 +400,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
-                    "Cancel",
+                    AppStrings.cancel,
                     style: TextStyle(color: isDark ? Colors.white70 : maroon),
                   ),
                 ),
@@ -398,8 +412,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                   onPressed: () async {
                     if (selectedStudentId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please select a student"),
+                        SnackBar(
+                          content: Text(AppStrings.pleaseSelectStudent),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -414,8 +428,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
                     if (totalFee <= 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please enter valid total fee"),
+                        SnackBar(
+                          content: Text(AppStrings.enterValidTotalFee),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -424,8 +438,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
                     if (paidAmount < 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please enter valid paid amount"),
+                        SnackBar(
+                          content: Text(AppStrings.enterValidPaidAmount),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -434,7 +448,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
                     final pending = totalFee - paidAmount;
                     final safePending = pending < 0 ? 0 : pending;
-                    final status = safePending <= 0 ? 'Paid' : 'Pending';
+                    final status = safePending <= 0 ? 'Paid' : AppStrings.pending;
 
                     try {
                       await FirebaseFirestore.instance.collection('fees').add({
@@ -477,8 +491,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                       if (context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Fee payment saved"),
+                          SnackBar(
+                            content: Text(AppStrings.feePaymentSaved),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -487,14 +501,14 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Save failed: $e"),
+                            content: Text("${AppStrings.saveFailed}: $e"),
                             backgroundColor: Colors.red,
                           ),
                         );
                       }
                     }
                   },
-                  child: const Text("Save"),
+                  child: Text(AppStrings.save),
                 ),
               ],
             );
@@ -542,9 +556,12 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: _canAddPayment
               ? SafeArea(
@@ -553,8 +570,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     foregroundColor: isDark ? Colors.white : gold,
                     onPressed: () => _addPaymentDialog(context, isDark),
                     icon: const Icon(Icons.add_rounded),
-                    label: const Text(
-                      "Add Payment",
+                    label: Text(
+                      AppStrings.addPayment,
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
@@ -583,7 +600,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(18),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -630,7 +647,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                               records: fees.length,
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("FEE RECORDS", isDark),
+                            _sectionTitle(AppStrings.feeRecords, isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -643,7 +660,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
                                         final name =
                                             _text(data['studentName']).isEmpty
-                                                ? 'Unknown Student'
+                                                ? AppStrings.unknownStudent
                                                 : _text(data['studentName']);
 
                                         final batch = _text(data['batch']);
@@ -655,8 +672,11 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
                                         final status =
                                             _text(data['status']).isEmpty
-                                                ? 'Pending'
+                                                ? AppStrings.pending
                                                 : _text(data['status']);
+
+                                        final localizedStatus =
+                                            _localizedFeeStatus(status);
 
                                         return _feeTile(
                                           isDark: isDark,
@@ -666,7 +686,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                                           paid: "₹$paid",
                                           pending: "₹$pending",
                                           status: status,
-                                          statusColor: status == "Paid"
+                                          statusColor: status == AppStrings.paid
                                               ? Colors.green
                                               : Colors.orange,
                                         );
@@ -680,6 +700,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -708,7 +730,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "FEE MANAGEMENT",
+                  AppStrings.feeManagementTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -720,8 +742,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                 ),
                 Text(
                   _canAddPayment
-                      ? "Collect and manage student fees"
-                      : "View fee payment records",
+                      ? AppStrings.collectManageStudentFees
+                      : AppStrings.viewFeePaymentRecords,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -874,7 +896,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                           : CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "TOTAL COLLECTION",
+                          AppStrings.totalCollection,
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
@@ -896,7 +918,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                           ),
                         ),
                         Text(
-                          "Fee Records",
+                          AppStrings.feeRecordsTitle,
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
@@ -912,8 +934,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                           spacing: 8,
                           runSpacing: 6,
                           children: [
-                            _heroChip("Pending: ₹$totalPending"),
-                            _heroChip("Records: $records"),
+                            _heroChip("${AppStrings.pending}: ₹$totalPending"),
+                            _heroChip("${AppStrings.records}: $records"),
                           ],
                         ),
                       ],
@@ -1013,7 +1035,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No fee records found",
+            AppStrings.noFeeRecordsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1022,8 +1044,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
           const SizedBox(height: 4),
           Text(
             _canAddPayment
-                ? "Click Add Payment to create one"
-                : "No fee records available for your account",
+                ? AppStrings.clickAddPaymentCreateOne
+                : AppStrings.noFeeRecordsAvailable,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
@@ -1093,7 +1115,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      batch.isEmpty ? "No batch" : batch,
+                      batch.isEmpty ? AppStrings.noBatch : batch,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1122,7 +1144,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                       width: boxWidth,
                       child: _amountBox(
                         isDark: isDark,
-                        title: "Total",
+                        title: AppStrings.total,
                         amount: total,
                         color: Colors.blueAccent,
                       ),
@@ -1131,7 +1153,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                       width: boxWidth,
                       child: _amountBox(
                         isDark: isDark,
-                        title: "Paid",
+                        title: AppStrings.paid,
                         amount: paid,
                         color: Colors.green,
                       ),
@@ -1140,7 +1162,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                       width: boxWidth,
                       child: _amountBox(
                         isDark: isDark,
-                        title: "Pending",
+                        title: AppStrings.pending,
                         amount: pending,
                         color: Colors.orange,
                       ),
@@ -1154,7 +1176,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                   Expanded(
                     child: _amountBox(
                       isDark: isDark,
-                      title: "Total",
+                      title: AppStrings.total,
                       amount: total,
                       color: Colors.blueAccent,
                     ),
@@ -1162,7 +1184,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                   Expanded(
                     child: _amountBox(
                       isDark: isDark,
-                      title: "Paid",
+                      title: AppStrings.paid,
                       amount: paid,
                       color: Colors.green,
                     ),
@@ -1170,7 +1192,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                   Expanded(
                     child: _amountBox(
                       isDark: isDark,
-                      title: "Pending",
+                      title: AppStrings.pending,
                       amount: pending,
                       color: Colors.orange,
                     ),

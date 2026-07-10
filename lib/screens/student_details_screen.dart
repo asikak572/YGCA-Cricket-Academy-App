@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import '../core/responsive/responsive_helper.dart';
 import '../core/responsive/responsive_padding.dart';
@@ -70,6 +71,19 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     if (value is int) return value;
     if (value is double) return value.round();
     return int.tryParse(value.toString().replaceAll(',', '').trim()) ?? 0;
+  }
+
+  String _localizedFeeStatus(String value) {
+    final normalized = value.trim().toLowerCase();
+
+    if (normalized == 'paid') return AppStrings.paid;
+    if (normalized == 'pending') return AppStrings.pending;
+    if (normalized == 'unpaid') return AppStrings.unpaid;
+    if (normalized == 'partial' || normalized == 'partially paid') {
+      return AppStrings.partiallyPaid;
+    }
+
+    return value;
   }
 
   String _feeAmount(Map<String, dynamic> data) {
@@ -149,8 +163,8 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Student photo uploaded"),
+        SnackBar(
+          content: Text(AppStrings.studentPhotoUploaded),
           backgroundColor: Colors.green,
         ),
       );
@@ -159,7 +173,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Photo upload failed: $e"),
+          content: Text("${AppStrings.photoUploadFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -183,8 +197,8 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Student deleted successfully"),
+        SnackBar(
+          content: Text(AppStrings.studentDeletedSuccessfully),
           backgroundColor: Colors.green,
         ),
       );
@@ -195,7 +209,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Delete failed: $e"),
+          content: Text("${AppStrings.deleteFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -245,8 +259,8 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Student updated successfully"),
+      SnackBar(
+        content: Text(AppStrings.studentUpdatedSuccessfully),
         backgroundColor: Colors.green,
       ),
     );
@@ -259,20 +273,20 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
         backgroundColor: _card(isDark),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
-          "Delete Student",
+          AppStrings.deleteStudent,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete $name?",
+          "${AppStrings.deleteStudentConfirm} $name?",
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: deleting ? null : () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(AppStrings.cancel),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
@@ -286,7 +300,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                     await _deleteStudent();
                   },
             icon: const Icon(Icons.delete_outline_rounded, size: 18),
-            label: const Text("Delete"),
+            label: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -335,7 +349,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      "Edit Student",
+                      AppStrings.editStudent,
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontWeight: FontWeight.w900,
@@ -351,39 +365,39 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   children: [
                     _editField(
                       isDark,
-                      "Student Name",
+                      AppStrings.studentName,
                       nameController,
                       Icons.person_rounded,
                     ),
                     _editField(
                       isDark,
-                      "Age",
+                      AppStrings.age,
                       ageController,
                       Icons.cake_rounded,
                       keyboardType: TextInputType.number,
                     ),
                     _editField(
                       isDark,
-                      "Batch",
+                      AppStrings.batch,
                       batchController,
                       Icons.groups_rounded,
                     ),
                     _editField(
                       isDark,
-                      "Parent Name",
+                      AppStrings.parentName,
                       parentNameController,
                       Icons.family_restroom_rounded,
                     ),
                     _editField(
                       isDark,
-                      "Phone Number",
+                      AppStrings.phoneNumber,
                       phoneController,
                       Icons.phone_rounded,
                       keyboardType: TextInputType.phone,
                     ),
                     _editField(
                       isDark,
-                      "Roll No",
+                      AppStrings.rollNo,
                       rollNoController,
                       Icons.tag_rounded,
                     ),
@@ -395,7 +409,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                       decoration: InputDecoration(
-                        labelText: "Fee Status",
+                        labelText: AppStrings.feeStatus.replaceAll('\n', ' '),
                         labelStyle: TextStyle(color: _secondaryText(isDark)),
                         prefixIcon: Icon(Icons.payments_rounded, color: isDark ? gold : maroon),
                         filled: true,
@@ -413,10 +427,19 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                           borderSide: BorderSide(color: isDark ? red : maroon),
                         ),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: "Pending", child: Text("Pending")),
-                        DropdownMenuItem(value: "Paid", child: Text("Paid")),
-                        DropdownMenuItem(value: "Partial", child: Text("Partial")),
+                      items: [
+                        DropdownMenuItem(
+                          value: "Pending",
+                          child: Text(AppStrings.pending),
+                        ),
+                        DropdownMenuItem(
+                          value: "Paid",
+                          child: Text(AppStrings.paid),
+                        ),
+                        DropdownMenuItem(
+                          value: "Partial",
+                          child: Text(AppStrings.partiallyPaid),
+                        ),
                       ],
                       onChanged: isSaving
                           ? null
@@ -431,7 +454,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
               actions: [
                 TextButton(
                   onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
-                  child: const Text("Cancel"),
+                  child: Text(AppStrings.cancel),
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
@@ -465,7 +488,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Update failed: $e"),
+                                content: Text("${AppStrings.updateFailed}: $e"),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -481,7 +504,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                           ),
                         )
                       : const Icon(Icons.save_rounded, size: 18),
-                  label: Text(isSaving ? "Saving..." : "Update"),
+                  label: Text(isSaving ? AppStrings.saving : AppStrings.update),
                 ),
               ],
             );
@@ -503,9 +526,12 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
           stream: FirebaseFirestore.instance
               .collection('students')
               .doc(widget.studentId)
@@ -516,7 +542,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 backgroundColor: _bg(isDark),
                 body: Center(
                   child: Text(
-                    "Something went wrong",
+                    AppStrings.somethingWentWrong,
                     style: TextStyle(color: _primaryText(isDark)),
                   ),
                 ),
@@ -535,7 +561,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 backgroundColor: _bg(isDark),
                 body: Center(
                   child: Text(
-                    "Student not found",
+                    AppStrings.studentNotFound,
                     style: TextStyle(color: _primaryText(isDark)),
                   ),
                 ),
@@ -585,7 +611,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                         child: _summaryCard(
                           isDark: isDark,
                           attendance: "$attendanceValue%",
-                          fee: feeStatus == "Paid" ? "Paid" : feeAmount,
+                          fee: feeStatus == "Paid" ? AppStrings.paid : feeAmount,
                           batch: batch,
                           rollNo: rollNo,
                         ),
@@ -595,15 +621,15 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                         padding: EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
                         child: _infoCard(
                           isDark: isDark,
-                          title: "STUDENT INFORMATION",
+                          title: AppStrings.studentInformation,
                           children: [
-                            _infoRow(isDark, "Full Name", name),
-                            _infoRow(isDark, "Age", "$age Years"),
-                            _infoRow(isDark, "Parent", parentName),
+                            _infoRow(isDark, AppStrings.fullName, name),
+                            _infoRow(isDark, AppStrings.age, "$age ${AppStrings.years}"),
+                            _infoRow(isDark, AppStrings.parent, parentName),
                             _infoRow(
                               isDark,
-                              "Phone",
-                              phone.isEmpty ? "Not Added" : phone,
+                              AppStrings.phone,
+                              phone.isEmpty ? AppStrings.notAdded : phone,
                             ),
                           ],
                         ),
@@ -613,7 +639,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                         padding: EdgeInsets.symmetric(horizontal: ResponsivePadding.horizontal(context)),
                         child: _infoCard(
                           isDark: isDark,
-                          title: "QUICK ACTIONS",
+                          title: AppStrings.quickActions,
                           children: [
                             GridView.count(
                               shrinkWrap: true,
@@ -626,7 +652,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                                 _actionCard(
                                   isDark,
                                   Icons.calendar_month_rounded,
-                                  "Calendar",
+                                  AppStrings.calendar,
                                   Colors.orange,
                                   () {
                                     Navigator.push(
@@ -646,7 +672,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                                 _actionCard(
                                   isDark,
                                   Icons.history_rounded,
-                                  "History",
+                                  AppStrings.history,
                                   Colors.red,
                                   () {
                                     Navigator.push(
@@ -661,14 +687,14 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                                 _actionCard(
                                   isDark,
                                   Icons.edit_rounded,
-                                  "Edit",
+                                  AppStrings.edit,
                                   Colors.blue,
                                   () => _showEditDialog(data, isDark),
                                 ),
                                 _actionCard(
                                   isDark,
                                   Icons.badge_rounded,
-                                  "ID Card",
+                                  AppStrings.idCard,
                                   Colors.green,
                                   () {
                                     Navigator.push(
@@ -689,14 +715,14 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                                 _actionCard(
                                   isDark,
                                   Icons.upload_rounded,
-                                  photoUrl.isEmpty ? "Photo" : "Change",
+                                  photoUrl.isEmpty ? AppStrings.photo : AppStrings.change,
                                   Colors.purple,
                                   uploading ? null : _uploadPhoto,
                                 ),
                                 _actionCard(
                                   isDark,
                                   Icons.delete_rounded,
-                                  "Delete",
+                                  AppStrings.delete,
                                   Colors.redAccent,
                                   deleting
                                       ? null
@@ -719,6 +745,8 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   ),
                 ),
               ),
+            );
+          },
             );
           },
         );
@@ -778,7 +806,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "STUDENT DETAILS",
+                  AppStrings.studentDetailsTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -790,7 +818,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 ),
                 SizedBox(height: 3),
                 Text(
-                  "Profile • Attendance • ID Card",
+                  AppStrings.profileAttendanceIdCard,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -965,7 +993,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "YGCA STUDENT",
+                            AppStrings.ygcaStudent,
                             style: TextStyle(
                               color: gold,
                               fontSize: 12,
@@ -986,14 +1014,14 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          _heroChip("Roll No: $rollNo"),
+                          _heroChip("${AppStrings.rollNo}: $rollNo"),
                           const SizedBox(height: 7),
-                          _heroChip("Batch: $batch"),
+                          _heroChip("${AppStrings.batch}: $batch"),
                           const SizedBox(height: 8),
                           GestureDetector(
                             onTap: uploading ? null : _uploadPhoto,
                             child: Text(
-                              photoUrl.isEmpty ? "Upload Photo" : "Change Photo",
+                              photoUrl.isEmpty ? AppStrings.uploadPhoto : AppStrings.changePhoto,
                               style: TextStyle(
                                 color: gold,
                                 fontWeight: FontWeight.w900,
@@ -1067,7 +1095,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 child: _summaryItem(
                   isDark,
                   Icons.verified_rounded,
-                  "Attendance",
+                  AppStrings.attendance,
                   attendance,
                   Colors.green,
                 ),
@@ -1077,7 +1105,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 child: _summaryItem(
                   isDark,
                   Icons.currency_rupee_rounded,
-                  "Fee",
+                  AppStrings.fee,
                   fee,
                   Colors.orange,
                 ),
@@ -1091,7 +1119,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 child: _summaryItem(
                   isDark,
                   Icons.groups_rounded,
-                  "Batch",
+                  AppStrings.batch,
                   batch,
                   Colors.blue,
                 ),
@@ -1101,7 +1129,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 child: _summaryItem(
                   isDark,
                   Icons.tag_rounded,
-                  "Roll No",
+                  AppStrings.rollNo,
                   rollNo,
                   Colors.purple,
                 ),
@@ -1367,7 +1395,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Student Progress",
+                  AppStrings.studentProgress,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 11,
@@ -1376,7 +1404,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "Attendance $attendance • Fee $feeStatus",
+                  "${AppStrings.attendance} $attendance • ${AppStrings.fee} ${_localizedFeeStatus(feeStatus)}",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1402,7 +1430,7 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
           ),
           const SizedBox(width: 12),
           Text(
-            attendanceValue >= 75 ? "GOOD" : "FOCUS",
+            attendanceValue >= 75 ? AppStrings.good : AppStrings.focus,
             style: TextStyle(
               color: attendanceValue >= 75 ? Colors.green : Colors.orange,
               fontSize: 12,
