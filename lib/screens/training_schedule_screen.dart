@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class TrainingScheduleScreen extends StatefulWidget {
   const TrainingScheduleScreen({super.key});
@@ -38,6 +39,40 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
 
   String _lower(String value) {
     return value.trim().toLowerCase();
+  }
+
+  String _localizedDay(String value) {
+    switch (value) {
+      case 'Monday':
+        return AppStrings.monday;
+      case 'Tuesday':
+        return AppStrings.tuesday;
+      case 'Wednesday':
+        return AppStrings.wednesday;
+      case 'Thursday':
+        return AppStrings.thursday;
+      case 'Friday':
+        return AppStrings.friday;
+      case 'Saturday':
+        return AppStrings.saturday;
+      case 'Sunday':
+        return AppStrings.sunday;
+      default:
+        return value;
+    }
+  }
+
+  String _localizedStatus(String value) {
+    final lower = value.trim().toLowerCase();
+
+    if (lower == 'upcoming') return AppStrings.upcoming;
+    if (lower == 'completed') return AppStrings.completed;
+    if (lower == 'cancelled' || lower == 'canceled') {
+      return AppStrings.cancelled;
+    }
+    if (lower == 'pending') return AppStrings.pending;
+
+    return value;
   }
 
   Color _bg(bool isDark) {
@@ -363,8 +398,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Training schedule deleted"),
+          SnackBar(
+            content: Text(AppStrings.trainingScheduleDeleted),
             backgroundColor: Colors.green,
           ),
         );
@@ -373,7 +408,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Delete failed: $e"),
+            content: Text("${AppStrings.deleteFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -389,7 +424,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
     final timeController = TextEditingController();
     final batchController = TextEditingController();
     final typeController = TextEditingController();
-    final statusController = TextEditingController(text: "Upcoming");
+    final statusController = TextEditingController(text: AppStrings.upcoming);
 
     DateTime? selectedDate;
     TimeOfDay? selectedTime;
@@ -499,7 +534,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
             ),
           ),
           title: Text(
-            "Add Training",
+            AppStrings.addTraining,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.w900,
@@ -510,7 +545,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
               children: [
                 _input(
                   isDark: isDark,
-                  label: "Date",
+                  label: AppStrings.date,
                   controller: dateController,
                   readOnly: true,
                   icon: Icons.calendar_today_rounded,
@@ -518,14 +553,14 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Day",
+                  label: AppStrings.day,
                   controller: dayController,
                   readOnly: true,
                   icon: Icons.event_rounded,
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Time",
+                  label: AppStrings.time,
                   controller: timeController,
                   readOnly: true,
                   icon: Icons.access_time_rounded,
@@ -533,21 +568,21 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Batch",
+                  label: AppStrings.batch,
                   controller: batchController,
-                  hintText: "Example: Morning Batch",
+                  hintText: AppStrings.exampleMorningBatch,
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Training Type",
+                  label: AppStrings.trainingType,
                   controller: typeController,
-                  hintText: "Example: Batting Practice",
+                  hintText: AppStrings.exampleBattingPractice,
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Status",
+                  label: AppStrings.status,
                   controller: statusController,
-                  hintText: "Upcoming / Completed / Cancelled",
+                  hintText: AppStrings.trainingStatusHint,
                 ),
               ],
             ),
@@ -556,7 +591,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               child: Text(
-                "Cancel",
+                AppStrings.cancel,
                 style: TextStyle(
                   color: isDark ? Colors.white70 : maroon,
                   fontWeight: FontWeight.w800,
@@ -575,7 +610,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 final batch = batchController.text.trim();
                 final type = typeController.text.trim();
                 final status = statusController.text.trim().isEmpty
-                    ? "Upcoming"
+                    ? AppStrings.upcoming
                     : statusController.text.trim();
 
                 if (date.isEmpty ||
@@ -585,8 +620,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                     type.isEmpty ||
                     status.isEmpty) {
                   ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(
-                      content: Text("Please fill all fields"),
+                    SnackBar(
+                      content: Text(AppStrings.pleaseFillAllFields),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -615,8 +650,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
 
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Training schedule added"),
+                      SnackBar(
+                        content: Text(AppStrings.trainingScheduleAdded),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -625,15 +660,15 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                   if (dialogContext.mounted) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(
-                        content: Text("Save failed: $e"),
+                        content: Text("${AppStrings.saveFailed}: $e"),
                         backgroundColor: Colors.red,
                       ),
                     );
                   }
                 }
               },
-              child: const Text(
-                "Save",
+              child: Text(
+                AppStrings.save,
                 style: TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
@@ -712,21 +747,21 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: _card(isDark),
         title: Text(
-          "Delete Training",
+          AppStrings.deleteTraining,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete this training schedule?",
+          AppStrings.deleteTrainingConfirm,
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Cancel",
+              AppStrings.cancel,
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
             ),
           ),
@@ -739,7 +774,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
               Navigator.pop(context);
               await _deleteTraining(context, docId);
             },
-            child: const Text("Delete"),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -784,9 +819,12 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: _canManageTraining
               ? SafeArea(
@@ -795,8 +833,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                     foregroundColor: isDark ? Colors.white : gold,
                     onPressed: () => _showAddTrainingDialog(context, isDark),
                     icon: const Icon(Icons.add_rounded),
-                    label: const Text(
-                      "Add Training",
+                    label: Text(
+                      AppStrings.addTraining,
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
@@ -825,11 +863,11 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                                   isDark: isDark,
                                   icon: Icons.groups_rounded,
                                   title: role == 'Coach'
-                                      ? "No batch assigned."
-                                      : "No batch assigned",
+                                      ? AppStrings.noBatchAssigned
+                                      : AppStrings.noBatchAssigned,
                                   message: role == 'Coach'
-                                      ? "Please ask Admin to assign a batch or weekly session."
-                                      : "No schedule is available because no batch is linked.",
+                                      ? AppStrings.askAdminAssignBatchSession
+                                      : AppStrings.noScheduleBecauseNoBatch,
                                 ),
                               ),
                             ),
@@ -850,7 +888,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                                       child: _messageCard(
                                         isDark: isDark,
                                         icon: Icons.error_outline_rounded,
-                                        title: "Unable to load schedule",
+                                        title: AppStrings.unableLoadSchedule,
                                         message: snapshot.error.toString(),
                                       ),
                                     ),
@@ -902,7 +940,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                                   skillCount: skillCount,
                                 ),
                                 const SizedBox(height: 18),
-                                _sectionTitle("TRAINING SCHEDULES", isDark),
+                                _sectionTitle(AppStrings.trainingSchedules, isDark),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -915,42 +953,42 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
 
                                             final day =
                                                 _text(data['day']).isEmpty
-                                                    ? 'No Day'
+                                                    ? AppStrings.noDay
                                                     : _text(data['day']);
 
                                             final date =
                                                 _text(data['date']).isEmpty
-                                                    ? 'No Date'
+                                                    ? AppStrings.noDate
                                                     : _text(data['date']);
 
                                             final time =
                                                 _text(data['time']).isEmpty
-                                                    ? 'No Time'
+                                                    ? AppStrings.noTime
                                                     : _text(data['time']);
 
                                             final batch =
                                                 _text(data['batch']).isEmpty
-                                                    ? 'No Batch'
+                                                    ? AppStrings.noBatch
                                                     : _text(data['batch']);
 
                                             final type =
                                                 _text(data['type']).isEmpty
-                                                    ? 'Training'
+                                                    ? AppStrings.training
                                                     : _text(data['type']);
 
                                             final status =
                                                 _text(data['status']).isEmpty
-                                                    ? 'Upcoming'
+                                                    ? AppStrings.upcoming
                                                     : _text(data['status']);
 
                                             return _trainingCard(
                                               isDark: isDark,
-                                              day: day,
+                                              day: _localizedDay(day),
                                               date: date,
                                               time: time,
                                               batch: batch,
                                               type: type,
-                                              status: status,
+                                              status: _localizedStatus(status),
                                               onDelete: () => _confirmDelete(
                                                 context,
                                                 doc.id,
@@ -967,6 +1005,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                         },
                       ),
           ),
+            );
+          },
         );
       },
     );
@@ -994,21 +1034,25 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "TRAINING SCHEDULE",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.trainingSchedule.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
                   _canManageTraining
-                      ? "Manage academy training sessions"
-                      : "View your assigned training sessions",
+                      ? AppStrings.manageAcademyTrainingSessions
+                      : AppStrings.viewAssignedTrainingSessions,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1168,8 +1212,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                             letterSpacing: 1,
                           ),
                         ),
-                        const Text(
-                          "TRAINING",
+                        Text(
+                          AppStrings.training.toUpperCase(),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
@@ -1179,7 +1223,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                           ),
                         ),
                         Text(
-                          "CENTER",
+                          AppStrings.center.toUpperCase(),
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
@@ -1196,9 +1240,9 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                           spacing: 8,
                           runSpacing: 6,
                           children: [
-                            _heroChip("Schedules: $total"),
-                            _heroChip("Fitness: $fitnessCount"),
-                            _heroChip("Skills: $skillCount"),
+                            _heroChip("${AppStrings.schedulesLabel}: $total"),
+                            _heroChip("${AppStrings.fitness}: $fitnessCount"),
+                            _heroChip("${AppStrings.skills}: $skillCount"),
                           ],
                         ),
                       ],
@@ -1457,7 +1501,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Schedule Available",
+            AppStrings.noScheduleAvailable,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1466,8 +1510,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
           const SizedBox(height: 4),
           Text(
             _canManageTraining
-                ? "Click Add Training to create one"
-                : "No training schedule available for your batch",
+                ? AppStrings.clickAddTrainingCreateOne
+                : AppStrings.noTrainingScheduleForBatch,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'match_schedule_screen.dart';
 import 'training_schedule_screen.dart';
@@ -48,9 +49,12 @@ class ScheduleModuleScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -61,7 +65,7 @@ class ScheduleModuleScreen extends StatelessWidget {
                   _topHeader(context, isDark),
                   _heroBanner(isDark),
                   const SizedBox(height: 18),
-                  _sectionTitle("SCHEDULE OPTIONS", isDark),
+                  _sectionTitle(AppStrings.scheduleOptions, isDark),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
@@ -70,8 +74,8 @@ class ScheduleModuleScreen extends StatelessWidget {
                           context: context,
                           isDark: isDark,
                           icon: Icons.event_available_rounded,
-                          title: "Training Schedule",
-                          subtitle: "Manage and view training sessions",
+                          title: AppStrings.trainingSchedule,
+                          subtitle: AppStrings.manageViewTrainingSessions,
                           color: red,
                           onTap: () => _open(
                             context,
@@ -82,8 +86,8 @@ class ScheduleModuleScreen extends StatelessWidget {
                           context: context,
                           isDark: isDark,
                           icon: Icons.sports_cricket_rounded,
-                          title: "Match Schedule",
-                          subtitle: "View and manage match fixtures",
+                          title: AppStrings.matchSchedule,
+                          subtitle: AppStrings.viewManageMatchFixtures,
                           color: Colors.orange,
                           onTap: () => _open(
                             context,
@@ -94,8 +98,8 @@ class ScheduleModuleScreen extends StatelessWidget {
                           context: context,
                           isDark: isDark,
                           icon: Icons.today_rounded,
-                          title: "Today Schedule",
-                          subtitle: "Check today's training and matches",
+                          title: AppStrings.todaySchedule,
+                          subtitle: AppStrings.checkTodayTrainingMatches,
                           color: Colors.purpleAccent,
                           onTap: () => _open(
                             context,
@@ -106,8 +110,8 @@ class ScheduleModuleScreen extends StatelessWidget {
                           context: context,
                           isDark: isDark,
                           icon: Icons.calendar_month_rounded,
-                          title: "Monthly Schedule",
-                          subtitle: "View monthly training and match plan",
+                          title: AppStrings.monthlySchedule,
+                          subtitle: AppStrings.viewMonthlyTrainingMatchPlan,
                           color: Colors.blueAccent,
                           onTap: () => _open(
                             context,
@@ -118,8 +122,8 @@ class ScheduleModuleScreen extends StatelessWidget {
                           context: context,
                           isDark: isDark,
                           icon: Icons.history_rounded,
-                          title: "Session History",
-                          subtitle: "View past training and match history",
+                          title: AppStrings.sessionHistory,
+                          subtitle: AppStrings.viewPastTrainingMatchRecords,
                           color: Colors.teal,
                           onTap: () => _open(
                             context,
@@ -135,6 +139,8 @@ class ScheduleModuleScreen extends StatelessWidget {
               ),
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -163,7 +169,7 @@ class ScheduleModuleScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "SCHEDULE MODULE",
+                  AppStrings.scheduleModuleTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -174,7 +180,7 @@ class ScheduleModuleScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "Matches, training and schedules",
+                  AppStrings.matchesTrainingSchedules,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -325,9 +331,9 @@ class ScheduleModuleScreen extends StatelessWidget {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "SCHEDULE",
-                            style: TextStyle(
+                          Text(
+                            AppStrings.schedule.toUpperCase(),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 30,
                               fontWeight: FontWeight.w900,
@@ -335,7 +341,7 @@ class ScheduleModuleScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "MANAGEMENT",
+                            AppStrings.management.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 23,
@@ -348,9 +354,9 @@ class ScheduleModuleScreen extends StatelessWidget {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Training"),
-                              _heroChip("Matches"),
-                              _heroChip("Today"),
+                              _heroChip(AppStrings.training),
+                              _heroChip(AppStrings.matches),
+                              _heroChip(AppStrings.today),
                             ],
                           ),
                         ],
@@ -536,7 +542,7 @@ class ScheduleModuleScreen extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                "All schedules are organised and updated regularly. Makeup sessions and cancelled sessions are managed inside the Attendance Module.",
+                AppStrings.scheduleInfoMessage,
                 style: TextStyle(
                   color: _secondaryText(isDark),
                   fontSize: 12,

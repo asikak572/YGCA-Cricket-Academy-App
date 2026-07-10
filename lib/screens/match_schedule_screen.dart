@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class MatchScheduleScreen extends StatefulWidget {
   const MatchScheduleScreen({super.key});
@@ -28,6 +29,18 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
   }
 
   String _text(dynamic value) => value == null ? '' : value.toString().trim();
+
+  String _localizedStatus(String value) {
+    final lower = value.trim().toLowerCase();
+
+    if (lower == 'upcoming') return AppStrings.upcoming;
+    if (lower == 'completed') return AppStrings.completed;
+    if (lower == 'cancelled' || lower == 'canceled') {
+      return AppStrings.cancelled;
+    }
+
+    return value;
+  }
 
   bool get _canManage => role == 'Admin';
 
@@ -127,8 +140,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Match deleted"),
+          SnackBar(
+            content: Text(AppStrings.matchDeleted),
             backgroundColor: Colors.green,
           ),
         );
@@ -137,7 +150,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Delete failed: $e"),
+            content: Text("${AppStrings.deleteFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -260,7 +273,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
             ),
           ),
           title: Text(
-            "Add Match",
+            AppStrings.addMatch,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.w900,
@@ -271,19 +284,19 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
               children: [
                 _input(
                   isDark: isDark,
-                  label: "Match Title",
+                  label: AppStrings.matchTitle,
                   controller: titleController,
-                  hintText: "Example: Friendly Match",
+                  hintText: AppStrings.exampleFriendlyMatch,
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Opponent",
+                  label: AppStrings.opponent,
                   controller: opponentController,
-                  hintText: "Example: ABC Academy",
+                  hintText: AppStrings.exampleAbcAcademy,
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Date",
+                  label: AppStrings.date,
                   controller: dateController,
                   readOnly: true,
                   icon: Icons.calendar_today_rounded,
@@ -291,7 +304,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Time",
+                  label: AppStrings.time,
                   controller: timeController,
                   readOnly: true,
                   icon: Icons.access_time_rounded,
@@ -299,21 +312,21 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Venue",
+                  label: AppStrings.venue,
                   controller: venueController,
-                  hintText: "Example: YGCA Ground",
+                  hintText: AppStrings.exampleYgcaGround,
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Batch",
+                  label: AppStrings.batch,
                   controller: batchController,
-                  hintText: "Example: Morning Batch",
+                  hintText: AppStrings.exampleMorningBatch,
                 ),
                 _input(
                   isDark: isDark,
-                  label: "Status",
+                  label: AppStrings.status,
                   controller: statusController,
-                  hintText: "Upcoming / Completed / Cancelled",
+                  hintText: AppStrings.trainingStatusHint,
                 ),
               ],
             ),
@@ -322,7 +335,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               child: Text(
-                "Cancel",
+                AppStrings.cancel,
                 style: TextStyle(
                   color: isDark ? Colors.white70 : maroon,
                   fontWeight: FontWeight.w800,
@@ -353,8 +366,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                     batch.isEmpty ||
                     status.isEmpty) {
                   ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(
-                      content: Text("Please fill all fields"),
+                    SnackBar(
+                      content: Text(AppStrings.pleaseFillAllFields),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -382,8 +395,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
 
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Match added"),
+                      SnackBar(
+                        content: Text(AppStrings.matchAdded),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -392,15 +405,15 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                   if (dialogContext.mounted) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(
-                        content: Text("Save failed: $e"),
+                        content: Text("${AppStrings.saveFailed}: $e"),
                         backgroundColor: Colors.red,
                       ),
                     );
                   }
                 }
               },
-              child: const Text(
-                "Save",
+              child: Text(
+                AppStrings.save,
                 style: TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
@@ -480,21 +493,21 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: _card(isDark),
         title: Text(
-          "Delete Match",
+          AppStrings.deleteMatch,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete this match?",
+          AppStrings.deleteMatchConfirm,
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Cancel",
+              AppStrings.cancel,
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
             ),
           ),
@@ -507,7 +520,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
               Navigator.pop(context);
               _deleteMatch(docId);
             },
-            child: const Text("Delete"),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -519,9 +532,12 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: _canManage
               ? SafeArea(
@@ -530,8 +546,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                   foregroundColor: isDark ? Colors.white : gold,
                   onPressed: () => _showAddMatchDialog(context, isDark),
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text(
-                    "Add Match",
+                  label: Text(
+                    AppStrings.addMatch,
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   ),
@@ -562,7 +578,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(18),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -596,7 +612,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                       for (final doc in matches) {
                         final data = doc.data();
                         final status = _text(data['status']).isEmpty
-                            ? 'Upcoming'
+                            ? AppStrings.upcoming
                             : _text(data['status']);
 
                         final lower = status.toLowerCase();
@@ -622,7 +638,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                               cancelled: cancelled,
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("MATCH SCHEDULES", isDark),
+                            _sectionTitle(AppStrings.matchSchedules, isDark),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -635,15 +651,17 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                                         return _matchCard(
                                           isDark: isDark,
                                           title: _text(data['title']).isEmpty
-                                              ? 'No Title'
+                                              ? AppStrings.noTitle
                                               : _text(data['title']),
                                           opponent: _text(data['opponent']),
                                           date: _formatDate(data['date']),
                                           time: _text(data['time']),
                                           venue: _text(data['venue']),
-                                          status: _text(data['status']).isEmpty
-                                              ? 'Upcoming'
-                                              : _text(data['status']),
+                                          status: _localizedStatus(
+                                            _text(data['status']).isEmpty
+                                                ? 'Upcoming'
+                                                : _text(data['status']),
+                                          ),
                                           onDelete: () => _confirmDelete(
                                             context,
                                             doc.id,
@@ -660,6 +678,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -687,21 +707,25 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "MATCH SCHEDULE",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.matchSchedule.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
                   _canManage
-                      ? "Manage academy match updates"
-                      : "View academy match updates",
+                      ? AppStrings.manageAcademyMatchUpdates
+                      : AppStrings.viewAcademyMatchUpdates,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -850,8 +874,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "MATCH",
+                          Text(
+                            AppStrings.match.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -859,8 +883,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                               height: 1,
                             ),
                           ),
-                          const Text(
-                            "CENTER",
+                          Text(
+                            AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -873,10 +897,10 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Total: $total"),
-                              _heroChip("Upcoming: $upcoming"),
-                              _heroChip("Completed: $completed"),
-                              _heroChip("Cancelled: $cancelled"),
+                              _heroChip("${AppStrings.total}: $total"),
+                              _heroChip("${AppStrings.upcoming}: $upcoming"),
+                              _heroChip("${AppStrings.completed}: $completed"),
+                              _heroChip("${AppStrings.cancelled}: $cancelled"),
                             ],
                           ),
                         ],
@@ -1002,7 +1026,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                 if (opponent.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
-                    "vs $opponent",
+                    "${AppStrings.vs} $opponent",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -1088,7 +1112,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
           Icon(Icons.sports_cricket_rounded, size: 38, color: _secondaryText(isDark)),
           const SizedBox(height: 10),
           Text(
-            "No matches scheduled",
+            AppStrings.noMatchesScheduled,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1096,7 +1120,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            _canManage ? "Click Add Match to create one" : "Match updates will appear here",
+            _canManage ? AppStrings.clickAddMatchCreateOne : AppStrings.matchUpdatesAppearHere,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

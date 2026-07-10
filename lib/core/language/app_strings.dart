@@ -341,4 +341,207 @@ class AppStrings {
   static String get track => text("Track", "கண்காணி", "ट्रैक");
   static String get receipt => text("Receipt", "ரசீது", "रसीद");
   static String get growth => text("Growth", "வளர்ச்சி", "विकास");
+
+// Add before the final } in app_strings.dart. Do not duplicate existing getters.
+
+static String get scheduleOptions => text("SCHEDULE OPTIONS", "அட்டவணை விருப்பங்கள்", "कार्यक्रम विकल्प");
+static String get trainingSchedule => text("Training Schedule", "பயிற்சி அட்டவணை", "प्रशिक्षण कार्यक्रम");
+static String get manageViewTrainingSessions => text("Manage and view training sessions", "பயிற்சி அமர்வுகளை நிர்வகித்து பாருங்கள்", "प्रशिक्षण सेशन प्रबंधित करें और देखें");
+static String get viewManageMatchFixtures => text("View and manage match fixtures", "போட்டி அட்டவணைகளை பார்த்து நிர்வகிக்கவும்", "मैच फिक्स्चर देखें और प्रबंधित करें");
+static String get todaySchedule => text("Today Schedule", "இன்றைய அட்டவணை", "आज का कार्यक्रम");
+static String get checkTodayTrainingMatches => text("Check only today's training and matches", "இன்றைய பயிற்சி மற்றும் போட்டிகளை மட்டும் பாருங்கள்", "केवल आज का प्रशिक्षण और मैच देखें");
+static String get monthlySchedule => text("Monthly Schedule", "மாதாந்திர அட்டவணை", "मासिक कार्यक्रम");
+static String get viewMonthlyTrainingMatchPlan => text("View this month's training and match plan", "இந்த மாத பயிற்சி மற்றும் போட்டித் திட்டத்தை பாருங்கள்", "इस महीने का प्रशिक्षण और मैच प्लान देखें");
+static String get sessionHistory => text("Session History", "அமர்வு வரலாறு", "सेशन इतिहास");
+static String get viewPastTrainingMatchRecords => text("View past training and match records", "முந்தைய பயிற்சி மற்றும் போட்டி பதிவுகளை பாருங்கள்", "पिछले प्रशिक्षण और मैच रिकॉर्ड देखें");
+static String get scheduleModuleTitle => text("SCHEDULE MODULE", "அட்டவணை மாட்யூல்", "कार्यक्रम मॉड्यूल");
+static String get matchesTrainingSchedules => text("Matches, training and schedules", "போட்டிகள், பயிற்சி மற்றும் அட்டவணைகள்", "मैच, प्रशिक्षण और कार्यक्रम");
+static String get management => text("Management", "மேலாண்மை", "प्रबंधन");
+static String get matches => text("Matches", "போட்டிகள்", "मैच");
+static String get scheduleInfoMessage => text(
+  "All schedules are organised and updated regularly. Makeup sessions and cancelled sessions are managed inside the Attendance Module.",
+  "அனைத்து அட்டவணைகளும் ஒழுங்குபடுத்தப்பட்டு தொடர்ந்து புதுப்பிக்கப்படுகின்றன. மேக்கப் மற்றும் ரத்து செய்யப்பட்ட அமர்வுகள் வருகை மாட்யூலில் நிர்வகிக்கப்படுகின்றன.",
+  "सभी कार्यक्रम व्यवस्थित हैं और नियमित रूप से अपडेट किए जाते हैं। मेकअप और रद्द सेशन उपस्थिति मॉड्यूल में प्रबंधित किए जाते हैं।");
+static String get matchSchedule =>
+    text("Match Schedule", "போட்டி அட்டவணை", "मैच कार्यक्रम");
+
+// Add these before the last } in app_strings.dart.
+// Skip a getter if it already exists.
+
+static String get addTraining =>
+    text("Add Training", "பயிற்சியை சேர்", "प्रशिक्षण जोड़ें");
+
+static String get date =>
+    text("Date", "தேதி", "तारीख");
+
+static String get day =>
+    text("Day", "நாள்", "दिन");
+
+static String get time =>
+    text("Time", "நேரம்", "समय");
+
+static String get trainingType =>
+    text("Training Type", "பயிற்சி வகை", "प्रशिक्षण प्रकार");
+
+static String get exampleMorningBatch =>
+    text("Example: Morning Batch", "உதாரணம்: காலை பேட்ச்", "उदाहरण: सुबह बैच");
+
+static String get exampleBattingPractice =>
+    text("Example: Batting Practice", "உதாரணம்: பேட்டிங் பயிற்சி", "उदाहरण: बल्लेबाजी अभ्यास");
+
+static String get trainingStatusHint =>
+    text("Upcoming / Completed / Cancelled", "வரவுள்ளது / முடிந்தது / ரத்து", "आगामी / पूर्ण / रद्द");
+
+static String get pleaseFillAllFields =>
+    text("Please fill all fields", "அனைத்து புலங்களையும் நிரப்பவும்", "कृपया सभी फ़ील्ड भरें");
+
+static String get trainingScheduleAdded =>
+    text("Training schedule added", "பயிற்சி அட்டவணை சேர்க்கப்பட்டது", "प्रशिक्षण कार्यक्रम जोड़ा गया");
+
+static String get trainingScheduleDeleted =>
+    text("Training schedule deleted", "பயிற்சி அட்டவணை நீக்கப்பட்டது", "प्रशिक्षण कार्यक्रम हटाया गया");
+
+static String get deleteTraining =>
+    text("Delete Training", "பயிற்சியை நீக்கு", "प्रशिक्षण हटाएं");
+
+static String get deleteTrainingConfirm =>
+    text("Are you sure you want to delete this training schedule?", "இந்த பயிற்சி அட்டவணையை நீக்க விரும்புகிறீர்களா?", "क्या आप यह प्रशिक्षण कार्यक्रम हटाना चाहते हैं?");
+
+static String get noBatchAssigned =>
+    text("No batch assigned", "பேட்ச் ஒதுக்கப்படவில்லை", "कोई बैच असाइन नहीं");
+
+static String get askAdminAssignBatchSession =>
+    text("Please ask Admin to assign a batch or weekly session.", "பேட்ச் அல்லது வாராந்திர அமர்வை ஒதுக்க அட்மினிடம் கேளுங்கள்.", "कृपया एडमिन से बैच या साप्ताहिक सेशन असाइन करने को कहें।");
+
+static String get noScheduleBecauseNoBatch =>
+    text("No schedule is available because no batch is linked.", "பேட்ச் இணைக்கப்படாததால் அட்டவணை கிடைக்கவில்லை.", "बैच लिंक न होने के कारण कोई कार्यक्रम उपलब्ध नहीं है।");
+
+static String get unableLoadSchedule =>
+    text("Unable to load schedule", "அட்டவணையை ஏற்ற முடியவில்லை", "कार्यक्रम लोड नहीं हो सका");
+
+static String get trainingSchedules =>
+    text("TRAINING SCHEDULES", "பயிற்சி அட்டவணைகள்", "प्रशिक्षण कार्यक्रम");
+
+static String get noDay =>
+    text("No Day", "நாள் இல்லை", "दिन उपलब्ध नहीं");
+
+static String get noTime =>
+    text("No Time", "நேரம் இல்லை", "समय उपलब्ध नहीं");
+
+static String get manageAcademyTrainingSessions =>
+    text("Manage academy training sessions", "அகாடமி பயிற்சி அமர்வுகளை நிர்வகிக்கவும்", "अकादमी प्रशिक्षण सेशन प्रबंधित करें");
+
+static String get viewAssignedTrainingSessions =>
+    text("View your assigned training sessions", "உங்களுக்கு ஒதுக்கப்பட்ட பயிற்சி அமர்வுகளை பாருங்கள்", "अपने असाइन किए गए प्रशिक्षण सेशन देखें");
+
+static String get schedulesLabel =>
+    text("Schedules", "அட்டவணைகள்", "कार्यक्रम");
+
+static String get fitness =>
+    text("Fitness", "உடற்பயிற்சி", "फिटनेस");
+
+static String get skills =>
+    text("Skills", "திறன்கள்", "कौशल");
+
+static String get noScheduleAvailable =>
+    text("No Schedule Available", "அட்டவணை இல்லை", "कोई कार्यक्रम उपलब्ध नहीं");
+
+static String get clickAddTrainingCreateOne =>
+    text("Click Add Training to create one", "புதியதை உருவாக்க Add Training அழுத்தவும்", "नया बनाने के लिए Add Training दबाएं");
+
+static String get noTrainingScheduleForBatch =>
+    text("No training schedule available for your batch", "உங்கள் பேட்சிற்கு பயிற்சி அட்டவணை இல்லை", "आपके बैच के लिए कोई प्रशिक्षण कार्यक्रम उपलब्ध नहीं है");
+
+static String get upcoming =>
+    text("Upcoming", "வரவுள்ளது", "आगामी");
+
+static String get completed =>
+    text("Completed", "முடிந்தது", "पूर्ण");
+
+static String get cancelled =>
+    text("Cancelled", "ரத்து செய்யப்பட்டது", "रद्द");
+
+static String get monday =>
+    text("Monday", "திங்கள்", "सोमवार");
+
+static String get tuesday =>
+    text("Tuesday", "செவ்வாய்", "मंगलवार");
+
+static String get wednesday =>
+    text("Wednesday", "புதன்", "बुधवार");
+
+static String get thursday =>
+    text("Thursday", "வியாழன்", "गुरुवार");
+
+static String get friday =>
+    text("Friday", "வெள்ளி", "शुक्रवार");
+
+static String get saturday =>
+    text("Saturday", "சனி", "शनिवार");
+
+static String get sunday =>
+    text("Sunday", "ஞாயிறு", "रविवार");
+static String get center =>
+    text("Center", "மையம்", "केंद्र");
+// Add these before the last } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get addMatch =>
+    text("Add Match", "போட்டியை சேர்", "मैच जोड़ें");
+
+static String get matchTitle =>
+    text("Match Title", "போட்டி தலைப்பு", "मैच शीर्षक");
+
+static String get exampleFriendlyMatch =>
+    text("Example: Friendly Match", "உதாரணம்: நட்பு போட்டி", "उदाहरण: मैत्री मैच");
+
+static String get opponent =>
+    text("Opponent", "எதிரணி", "प्रतिद्वंद्वी");
+
+static String get exampleAbcAcademy =>
+    text("Example: ABC Academy", "உதாரணம்: ABC அகாடமி", "उदाहरण: ABC अकादमी");
+
+static String get venue =>
+    text("Venue", "இடம்", "स्थान");
+
+static String get exampleYgcaGround =>
+    text("Example: YGCA Ground", "உதாரணம்: YGCA மைதானம்", "उदाहरण: YGCA मैदान");
+
+static String get matchAdded =>
+    text("Match added", "போட்டி சேர்க்கப்பட்டது", "मैच जोड़ा गया");
+
+static String get matchDeleted =>
+    text("Match deleted", "போட்டி நீக்கப்பட்டது", "मैच हटाया गया");
+
+static String get deleteMatch =>
+    text("Delete Match", "போட்டியை நீக்கு", "मैच हटाएं");
+
+static String get deleteMatchConfirm =>
+    text("Are you sure you want to delete this match?", "இந்த போட்டியை நீக்க விரும்புகிறீர்களா?", "क्या आप यह मैच हटाना चाहते हैं?");
+
+static String get matchSchedules =>
+    text("MATCH SCHEDULES", "போட்டி அட்டவணைகள்", "मैच कार्यक्रम");
+
+static String get manageAcademyMatchUpdates =>
+    text("Manage academy match updates", "அகாடமி போட்டி புதுப்பிப்புகளை நிர்வகிக்கவும்", "अकादमी मैच अपडेट प्रबंधित करें");
+
+static String get viewAcademyMatchUpdates =>
+    text("View academy match updates", "அகாடமி போட்டி புதுப்பிப்புகளை பாருங்கள்", "अकादमी मैच अपडेट देखें");
+
+static String get match =>
+    text("Match", "போட்டி", "मैच");
+
+static String get vs =>
+    text("vs", "எதிராக", "बनाम");
+
+static String get noMatchesScheduled =>
+    text("No matches scheduled", "போட்டிகள் திட்டமிடப்படவில்லை", "कोई मैच निर्धारित नहीं");
+
+static String get clickAddMatchCreateOne =>
+    text("Click Add Match to create one", "புதிய போட்டி உருவாக்க Add Match அழுத்தவும்", "नया मैच बनाने के लिए Add Match दबाएं");
+
+static String get matchUpdatesAppearHere =>
+    text("Match updates will appear here", "போட்டி புதுப்பிப்புகள் இங்கே தோன்றும்", "मैच अपडेट यहां दिखाई देंगे");
+static String get noTitle =>
+    text("No Title", "தலைப்பு இல்லை", "कोई शीर्षक नहीं");
 }
