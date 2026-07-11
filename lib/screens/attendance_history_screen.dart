@@ -418,13 +418,13 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             final isDark = mode == ThemeMode.dark;
 
             if (isLoading) {
-          return Scaffold(
-            backgroundColor: _bg(isDark),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
+              return Scaffold(
+                backgroundColor: _bg(isDark),
+                body: const Center(child: CircularProgressIndicator()),
+              );
+            }
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: students.isEmpty
@@ -605,7 +605,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       ),
                     ],
                   ),
-          ),
+              ),
             );
           },
         );
@@ -801,21 +801,33 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  AppStrings.attendance.toUpperCase(),
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.attendance.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _primaryText(isDark),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
-                Text(
-                  AppStrings.historyDashboard,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.historyDashboard,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _secondaryText(isDark),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -983,13 +995,21 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1025,13 +1045,20 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         children: [
           Icon(icon, color: color, size: 34),
           const SizedBox(height: 10),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                title,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -1109,11 +1136,19 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               ],
             ),
           ),
-          Text(
-            _localizedStatus(status),
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 96),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                _localizedStatus(status),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ),
         ],

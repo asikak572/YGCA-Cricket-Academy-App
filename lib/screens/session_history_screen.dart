@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class SessionHistoryScreen extends StatefulWidget {
   const SessionHistoryScreen({super.key});
@@ -39,6 +40,38 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
 
   String _lower(String value) {
     return value.trim().toLowerCase();
+  }
+
+  String _localizedStatus(String value) {
+    final lower = value.trim().toLowerCase();
+
+    if (lower == 'completed') return AppStrings.completed;
+    if (lower == 'cancelled' || lower == 'canceled') {
+      return AppStrings.cancelled;
+    }
+
+    return value;
+  }
+
+  String _localizedShortDay(DateTime date) {
+    switch (date.weekday) {
+      case DateTime.monday:
+        return AppStrings.mon;
+      case DateTime.tuesday:
+        return AppStrings.tue;
+      case DateTime.wednesday:
+        return AppStrings.wed;
+      case DateTime.thursday:
+        return AppStrings.thu;
+      case DateTime.friday:
+        return AppStrings.fri;
+      case DateTime.saturday:
+        return AppStrings.sat;
+      case DateTime.sunday:
+        return AppStrings.sun;
+      default:
+        return '';
+    }
   }
 
   List<String> _listFromDynamic(dynamic value) {
@@ -296,7 +329,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Unable to load session history: $e"),
+          content: Text("${AppStrings.unableLoadSessionHistory}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -330,19 +363,19 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
         if (date == null) continue;
         if (date.isAfter(_now)) continue;
 
-        final time = _text(data['time']).isEmpty ? 'No Time' : _text(data['time']);
+        final time = _text(data['time']).isEmpty ? AppStrings.noTime : _text(data['time']);
         final batch =
-            _text(data['batch']).isEmpty ? 'No Batch' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.noBatch : _text(data['batch']);
         final type =
-            _text(data['type']).isEmpty ? 'Training Session' : _text(data['type']);
+            _text(data['type']).isEmpty ? AppStrings.trainingSession : _text(data['type']);
 
         result.add(
           _HistoryItem(
             title: type,
-            subtitle: "Training session completed for $batch",
+            subtitle: "${AppStrings.trainingSessionCompletedFor} $batch",
             time: time,
             batch: batch,
-            category: "Training",
+            category: AppStrings.training,
             status: "Completed",
             date: date,
             icon: _trainingIcon(type),
@@ -377,20 +410,20 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
         if (date.isAfter(_now)) continue;
 
         final title =
-            _text(data['title']).isEmpty ? 'Match Schedule' : _text(data['title']);
+            _text(data['title']).isEmpty ? AppStrings.matchSchedule : _text(data['title']);
 
         final opponent = _text(data['opponent']);
         final venue = _text(data['venue']);
         final status = _text(data['status']).isEmpty
-            ? 'Completed'
+            ? AppStrings.completed
             : _text(data['status']);
-        final time = _text(data['time']).isEmpty ? 'No Time' : _text(data['time']);
+        final time = _text(data['time']).isEmpty ? AppStrings.noTime : _text(data['time']);
         final batch =
-            _text(data['batch']).isEmpty ? 'All Batches' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.allBatches : _text(data['batch']);
 
         final subtitleParts = <String>[];
 
-        if (opponent.isNotEmpty) subtitleParts.add("vs $opponent");
+        if (opponent.isNotEmpty) subtitleParts.add("${AppStrings.vs} $opponent");
         if (venue.isNotEmpty) subtitleParts.add(venue);
         subtitleParts.add(batch);
 
@@ -442,22 +475,22 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
             ? _text(data['time'])
             : _text(data['cancelledTime']).isNotEmpty
                 ? _text(data['cancelledTime'])
-                : 'No Time';
+                : AppStrings.noTime;
 
         final batch =
-            _text(data['batch']).isEmpty ? 'No Batch' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.noBatch : _text(data['batch']);
 
         final reason = _text(data['reason']).isEmpty
-            ? 'Session cancelled'
+            ? AppStrings.sessionCancelled
             : _text(data['reason']);
 
         final status = _text(data['status']).isEmpty
-            ? 'Cancelled'
+            ? AppStrings.cancelled
             : _text(data['status']);
 
         result.add(
           _HistoryItem(
-            title: "Cancelled Session",
+            title: AppStrings.cancelledSession,
             subtitle: reason,
             time: time,
             batch: batch,
@@ -585,9 +618,12 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loading
@@ -613,25 +649,25 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                           const SizedBox(height: 18),
                           _summaryRow(isDark),
                           const SizedBox(height: 18),
-                          _sectionTitle("SESSION HISTORY", isDark),
+                          _sectionTitle(AppStrings.sessionHistory.toUpperCase(), isDark),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: _hasNoAssignedBatch
                                 ? _messageCard(
                                     isDark: isDark,
                                     icon: Icons.groups_rounded,
-                                    title: "No batch assigned",
+                                    title: AppStrings.noBatchAssigned,
                                     message: role == 'Coach'
-                                        ? "Please ask Admin to assign a batch or weekly session."
-                                        : "No history is available because no batch is linked.",
+                                        ? AppStrings.askAdminAssignBatchSession
+                                        : AppStrings.noHistoryBecauseNoBatch,
                                   )
                                 : historyItems.isEmpty
                                     ? _messageCard(
                                         isDark: isDark,
                                         icon: Icons.history_rounded,
-                                        title: "No Session History Available",
+                                        title: AppStrings.noSessionHistoryAvailable,
                                         message:
-                                            "There are no past training sessions or matches available yet.",
+                                            AppStrings.noPastTrainingOrMatches,
                                       )
                                     : Column(
                                         children: historyItems.map((item) {
@@ -647,6 +683,8 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                     ),
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -674,19 +712,23 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "SESSION HISTORY",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.sessionHistory.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
-                  "Past training, match and cancelled sessions",
+                  AppStrings.pastTrainingMatchCancelledSessions,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -843,8 +885,8 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "SESSION",
+                          Text(
+                            AppStrings.session.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -853,7 +895,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                             ),
                           ),
                           Text(
-                            "HISTORY",
+                            AppStrings.history.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -866,9 +908,9 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Records: ${historyItems.length}"),
-                              _heroChip("Training"),
-                              _heroChip("Matches"),
+                              _heroChip("${AppStrings.records}: ${historyItems.length}"),
+                              _heroChip(AppStrings.training),
+                              _heroChip(AppStrings.matches),
                             ],
                           ),
                         ],
@@ -908,7 +950,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
 
   Widget _summaryRow(bool isDark) {
     final trainingCount =
-        historyItems.where((item) => item.category == "Training").length;
+        historyItems.where((item) => item.category == AppStrings.training).length;
     final matchCount =
         historyItems.where((item) => item.category == "Match").length;
     final cancelledCount =
@@ -921,7 +963,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Training",
+              title: AppStrings.training,
               value: trainingCount.toString(),
               icon: Icons.event_available_rounded,
               color: Colors.green,
@@ -931,7 +973,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Matches",
+              title: AppStrings.matches,
               value: matchCount.toString(),
               icon: Icons.sports_cricket_rounded,
               color: Colors.orange,
@@ -941,7 +983,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Cancelled",
+              title: AppStrings.cancelled,
               value: cancelledCount.toString(),
               icon: Icons.cancel_rounded,
               color: Colors.redAccent,
@@ -1001,13 +1043,19 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                style: TextStyle(
               color: isDark ? gold : maroon,
               fontSize: 15,
               fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1108,7 +1156,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                     ),
                     _smallChip(
                       isDark: isDark,
-                      text: _shortDay(item.date),
+                      text: _localizedShortDay(item.date),
                       icon: Icons.today_rounded,
                       color: item.color,
                     ),
@@ -1120,7 +1168,7 @@ class _SessionHistoryScreenState extends State<SessionHistoryScreen> {
                     ),
                     _smallChip(
                       isDark: isDark,
-                      text: item.status,
+                      text: _localizedStatus(item.status),
                       icon: Icons.verified_rounded,
                       color: item.color,
                     ),

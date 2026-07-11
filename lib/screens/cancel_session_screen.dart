@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CancelSessionScreen extends StatefulWidget {
   const CancelSessionScreen({super.key});
@@ -60,8 +61,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
 
     if (batch.isEmpty || date.isEmpty || time.isEmpty || reason.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fill all fields"),
+        SnackBar(
+          content: Text(AppStrings.pleaseFillAllFields),
           backgroundColor: Colors.red,
         ),
       );
@@ -71,8 +72,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     if (cancelType == 'Student' &&
         ((selectedStudentId ?? '').isEmpty || (selectedStudentName ?? '').isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select student"),
+        SnackBar(
+          content: Text(AppStrings.pleaseSelectStudent),
           backgroundColor: Colors.red,
         ),
       );
@@ -149,8 +150,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Session cancelled and makeup created"),
+        SnackBar(
+          content: Text(AppStrings.sessionCancelledMakeupCreated),
           backgroundColor: Colors.green,
         ),
       );
@@ -170,7 +171,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Cancel session failed: $e"),
+          content: Text("${AppStrings.cancelSessionFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -306,9 +307,12 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot>(
@@ -325,7 +329,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.error_outline_rounded,
-                          title: "Something went wrong",
+                          title: AppStrings.somethingWentWrong,
                           message: snapshot.error.toString(),
                         ),
                       ),
@@ -370,7 +374,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                         batches: batches.length,
                       ),
                       const SizedBox(height: 18),
-                      _sectionTitle("CANCEL SESSION FORM", isDark),
+                      _sectionTitle(AppStrings.cancelSessionForm, isDark),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Column(
@@ -387,7 +391,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                             const SizedBox(height: 10),
                             _inputBox(
                               isDark: isDark,
-                              label: "Session Date",
+                              label: AppStrings.sessionDate,
                               controller: dateController,
                               icon: Icons.calendar_month_rounded,
                               readOnly: true,
@@ -395,7 +399,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                             ),
                             _inputBox(
                               isDark: isDark,
-                              label: "Session Time",
+                              label: AppStrings.sessionTime,
                               controller: timeController,
                               icon: Icons.access_time_rounded,
                               readOnly: true,
@@ -403,7 +407,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                             ),
                             _inputBox(
                               isDark: isDark,
-                              label: "Reason",
+                              label: AppStrings.reason,
                               controller: reasonController,
                               icon: Icons.warning_amber_rounded,
                               maxLines: 2,
@@ -438,10 +442,10 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                                   fit: BoxFit.scaleDown,
                                   child: Text(
                                     submitting
-                                        ? "CREATING..."
+                                        ? AppStrings.creating
                                         : cancelType == 'Student'
-                                            ? "CANCEL STUDENT & CREATE MAKEUP"
-                                            : "CANCEL BATCH & CREATE MAKEUP",
+                                            ? AppStrings.cancelStudentCreateMakeup
+                                            : AppStrings.cancelBatchCreateMakeup,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: 0.5,
@@ -454,7 +458,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                         ),
                       ),
                       const SizedBox(height: 22),
-                      _sectionTitle("RECENTLY CANCELLED", isDark),
+                      _sectionTitle(AppStrings.recentlyCancelled, isDark),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: sessions.isEmpty
@@ -489,6 +493,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -536,7 +542,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             Icon(icon, color: selected ? Colors.white : _secondaryText(isDark), size: 18),
             const SizedBox(width: 6),
             Text(
-              type == 'Batch' ? 'Full Batch' : 'Individual',
+              type == 'Batch' ? AppStrings.fullBatch : AppStrings.individual,
               style: TextStyle(
                 color: selected ? Colors.white : _primaryText(isDark),
                 fontWeight: FontWeight.w900,
@@ -566,7 +572,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           ),
           decoration: _dropdownDecoration(
             isDark: isDark,
-            label: "Select Batch",
+            label: AppStrings.selectBatch,
             icon: Icons.groups_rounded,
           ),
           items: batches.map((batch) {
@@ -594,8 +600,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     if ((selectedBatch ?? '').isEmpty) {
       return _disabledBox(
         isDark: isDark,
-        label: "Select Student",
-        text: "Select batch first",
+        label: AppStrings.selectStudent,
+        text: AppStrings.selectBatchFirst,
         icon: Icons.person_rounded,
       );
     }
@@ -616,12 +622,12 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           ),
           decoration: _dropdownDecoration(
             isDark: isDark,
-            label: "Select Student",
+            label: AppStrings.selectStudent,
             icon: Icons.person_rounded,
           ),
           items: students.map((doc) {
             final data = doc.data();
-            final name = _text(data['name']).isEmpty ? 'Unnamed Student' : _text(data['name']);
+            final name = _text(data['name']).isEmpty ? AppStrings.unnamedStudent : _text(data['name']);
 
             return DropdownMenuItem<String>(
               value: doc.id,
@@ -638,7 +644,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             setState(() {
               selectedStudentId = value;
               selectedStudentName =
-                  _text(data['name']).isEmpty ? 'Unnamed Student' : _text(data['name']);
+                  _text(data['name']).isEmpty ? AppStrings.unnamedStudent : _text(data['name']);
             });
           },
         );
@@ -726,19 +732,23 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "CANCEL SESSION",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.cancelSession.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
-                  "Batch or individual session control",
+                  AppStrings.batchOrIndividualControl,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -878,7 +888,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                           : CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "ACADEMY",
+                          AppStrings.academy.toUpperCase(),
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
@@ -887,8 +897,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                             letterSpacing: 1,
                           ),
                         ),
-                        const Text(
-                          "SESSION",
+                        Text(
+                          AppStrings.session.toUpperCase(),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
@@ -898,7 +908,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                           ),
                         ),
                         Text(
-                          "CONTROL",
+                          AppStrings.control.toUpperCase(),
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
@@ -915,9 +925,9 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                           spacing: 8,
                           runSpacing: 6,
                           children: [
-                            _heroChip("Cancelled: $total"),
-                            _heroChip("Batches: $batches"),
-                            _heroChip("Makeup: $makeupPending"),
+                            _heroChip("${AppStrings.cancelled}: $total"),
+                            _heroChip("${AppStrings.batches}: $batches"),
+                            _heroChip("${AppStrings.makeup}: $makeupPending"),
                           ],
                         ),
                       ],
@@ -992,7 +1002,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Cancel a full batch session or only one student's session. Makeup session will be created automatically.",
+              AppStrings.cancelSessionWarning,
               style: TextStyle(
                 fontSize: 12,
                 height: 1.35,
@@ -1137,8 +1147,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
               children: [
                 Text(
                   isStudent
-                      ? (studentName.isEmpty ? "Individual Student" : studentName)
-                      : (batch.isEmpty ? "Unknown Batch" : batch),
+                      ? (studentName.isEmpty ? AppStrings.individualStudent : studentName)
+                      : (batch.isEmpty ? AppStrings.unknownBatch : batch),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1149,7 +1159,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isStudent ? "Individual • $batch" : "Full Batch",
+                  isStudent ? "${AppStrings.individual} • $batch" : AppStrings.fullBatch,
                   style: TextStyle(
                     color: isDark ? gold : maroon,
                     fontSize: 12,
@@ -1207,7 +1217,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              text.isEmpty ? "Not added" : text,
+              text.isEmpty ? AppStrings.notAdded : text,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: color,
@@ -1235,7 +1245,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           Icon(Icons.event_busy_rounded, size: 40, color: _secondaryText(isDark)),
           const SizedBox(height: 10),
           Text(
-            "No Cancelled Sessions Found",
+            AppStrings.noCancelledSessionsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1243,7 +1253,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "Cancelled sessions will appear here",
+            AppStrings.cancelledSessionsAppearHere,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
         ],

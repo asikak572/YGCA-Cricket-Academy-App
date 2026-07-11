@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class TodayScheduleScreen extends StatefulWidget {
   const TodayScheduleScreen({super.key});
@@ -39,6 +40,28 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
 
   String _lower(String value) {
     return value.trim().toLowerCase();
+  }
+
+  String _localizedDay(String value) {
+    switch (value) {
+      case 'Monday': return AppStrings.monday;
+      case 'Tuesday': return AppStrings.tuesday;
+      case 'Wednesday': return AppStrings.wednesday;
+      case 'Thursday': return AppStrings.thursday;
+      case 'Friday': return AppStrings.friday;
+      case 'Saturday': return AppStrings.saturday;
+      case 'Sunday': return AppStrings.sunday;
+      default: return value;
+    }
+  }
+
+  String _localizedCategory(String value) {
+    switch (value) {
+      case 'Training': return AppStrings.training;
+      case 'Match': return AppStrings.match;
+      case 'Cancelled': return AppStrings.cancelled;
+      default: return value;
+    }
   }
 
   List<String> _listFromDynamic(dynamic value) {
@@ -324,7 +347,7 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Unable to load today's schedule: $e"),
+          content: Text("${AppStrings.unableLoadTodaySchedule}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -355,16 +378,16 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
         if (!_canShowBatchItem(loadedRole, batches, data)) continue;
         if (!_isTodayTraining(data)) continue;
 
-        final time = _text(data['time']).isEmpty ? 'No Time' : _text(data['time']);
+        final time = _text(data['time']).isEmpty ? AppStrings.noTime : _text(data['time']);
         final batch =
-            _text(data['batch']).isEmpty ? 'No Batch' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.noBatch : _text(data['batch']);
         final type =
-            _text(data['type']).isEmpty ? 'Training Session' : _text(data['type']);
+            _text(data['type']).isEmpty ? AppStrings.trainingSession : _text(data['type']);
 
         result.add(
           _TodayScheduleItem(
             title: type,
-            subtitle: "Training session for $batch",
+            subtitle: "${AppStrings.trainingSessionFor} $batch",
             time: time,
             batch: batch,
             category: "Training",
@@ -397,17 +420,17 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
         if (!_isTodayDate(data['date'])) continue;
 
         final title =
-            _text(data['title']).isEmpty ? 'Match Schedule' : _text(data['title']);
+            _text(data['title']).isEmpty ? AppStrings.matchSchedule : _text(data['title']);
 
         final opponent = _text(data['opponent']);
         final venue = _text(data['venue']);
-        final time = _text(data['time']).isEmpty ? 'No Time' : _text(data['time']);
+        final time = _text(data['time']).isEmpty ? AppStrings.noTime : _text(data['time']);
         final batch =
-            _text(data['batch']).isEmpty ? 'All Batches' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.allBatches : _text(data['batch']);
 
         final subtitleParts = <String>[];
 
-        if (opponent.isNotEmpty) subtitleParts.add("vs $opponent");
+        if (opponent.isNotEmpty) subtitleParts.add("${AppStrings.vs} $opponent");
         if (venue.isNotEmpty) subtitleParts.add(venue);
         subtitleParts.add(batch);
 
@@ -455,18 +478,18 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
             ? _text(data['time'])
             : _text(data['cancelledTime']).isNotEmpty
                 ? _text(data['cancelledTime'])
-                : 'No Time';
+                : AppStrings.noTime;
 
         final batch =
-            _text(data['batch']).isEmpty ? 'No Batch' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.noBatch : _text(data['batch']);
 
         final reason = _text(data['reason']).isEmpty
-            ? 'Session cancelled'
+            ? AppStrings.sessionCancelled
             : _text(data['reason']);
 
         result.add(
           _TodayScheduleItem(
-            title: "Cancelled Session",
+            title: AppStrings.cancelledSession,
             subtitle: reason,
             time: time,
             batch: batch,
@@ -572,9 +595,12 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loading
@@ -600,25 +626,25 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
                           const SizedBox(height: 18),
                           _summaryRow(isDark),
                           const SizedBox(height: 18),
-                          _sectionTitle("TODAY'S SCHEDULE", isDark),
+                          _sectionTitle(AppStrings.todaysSchedule, isDark),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: _hasNoAssignedBatch
                                 ? _messageCard(
                                     isDark: isDark,
                                     icon: Icons.groups_rounded,
-                                    title: "No batch assigned",
+                                    title: AppStrings.noBatchAssigned,
                                     message: role == 'Coach'
-                                        ? "Please ask Admin to assign a batch or weekly session."
-                                        : "No schedule is available because no batch is linked.",
+                                        ? AppStrings.askAdminAssignBatchSession
+                                        : AppStrings.noScheduleBecauseNoBatch,
                                   )
                                 : todayItems.isEmpty
                                     ? _messageCard(
                                         isDark: isDark,
                                         icon: Icons.today_rounded,
-                                        title: "No Today Schedule Available",
+                                        title: AppStrings.noTodayScheduleAvailable,
                                         message:
-                                            "There are no training sessions or matches scheduled for today.",
+                                            AppStrings.noTrainingOrMatchesToday,
                                       )
                                     : Column(
                                         children: todayItems.map((item) {
@@ -634,6 +660,8 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
                     ),
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -662,7 +690,7 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "TODAY SCHEDULE",
+                  AppStrings.todaySchedule.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -673,7 +701,7 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
                   ),
                 ),
                 Text(
-                  "$_todayDayName • $_todayKey",
+                  "${_localizedDay(_todayDayName)} • $_todayKey",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -830,8 +858,8 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "TODAY",
+                          Text(
+                            AppStrings.today.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -840,7 +868,7 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
                             ),
                           ),
                           Text(
-                            "SCHEDULE",
+                            AppStrings.schedule.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -853,8 +881,8 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Items: ${todayItems.length}"),
-                              _heroChip(_todayDayName),
+                              _heroChip("${AppStrings.items}: ${todayItems.length}"),
+                              _heroChip(_localizedDay(_todayDayName)),
                               _heroChip(_todayKey),
                             ],
                           ),
@@ -907,7 +935,7 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Training",
+              title: AppStrings.training,
               value: trainingCount.toString(),
               icon: Icons.event_available_rounded,
               color: Colors.green,
@@ -917,7 +945,7 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Matches",
+              title: AppStrings.matches,
               value: matchCount.toString(),
               icon: Icons.sports_cricket_rounded,
               color: Colors.orange,
@@ -927,7 +955,7 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Cancelled",
+              title: AppStrings.cancelled,
               value: cancelledCount.toString(),
               icon: Icons.cancel_rounded,
               color: Colors.redAccent,
@@ -1094,7 +1122,7 @@ class _TodayScheduleScreenState extends State<TodayScheduleScreen> {
                     ),
                     _smallChip(
                       isDark: isDark,
-                      text: item.category,
+                      text: _localizedCategory(item.category),
                       icon: Icons.label_rounded,
                       color: item.color,
                     ),

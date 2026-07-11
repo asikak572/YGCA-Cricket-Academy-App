@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class MonthlyScheduleScreen extends StatefulWidget {
   const MonthlyScheduleScreen({super.key});
@@ -39,6 +40,71 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
 
   String _lower(String value) {
     return value.trim().toLowerCase();
+  }
+
+  String _localizedCategory(String value) {
+    switch (value) {
+      case 'Training':
+        return AppStrings.training;
+      case 'Match':
+        return AppStrings.match;
+      case 'Cancelled':
+        return AppStrings.cancelled;
+      default:
+        return value;
+    }
+  }
+
+  String _localizedShortDay(DateTime date) {
+    switch (date.weekday) {
+      case DateTime.monday:
+        return AppStrings.mon;
+      case DateTime.tuesday:
+        return AppStrings.tue;
+      case DateTime.wednesday:
+        return AppStrings.wed;
+      case DateTime.thursday:
+        return AppStrings.thu;
+      case DateTime.friday:
+        return AppStrings.fri;
+      case DateTime.saturday:
+        return AppStrings.sat;
+      case DateTime.sunday:
+        return AppStrings.sun;
+      default:
+        return '';
+    }
+  }
+
+  String _localizedMonthName(int month) {
+    switch (month) {
+      case 1:
+        return AppStrings.january;
+      case 2:
+        return AppStrings.february;
+      case 3:
+        return AppStrings.march;
+      case 4:
+        return AppStrings.april;
+      case 5:
+        return AppStrings.may;
+      case 6:
+        return AppStrings.june;
+      case 7:
+        return AppStrings.july;
+      case 8:
+        return AppStrings.august;
+      case 9:
+        return AppStrings.september;
+      case 10:
+        return AppStrings.october;
+      case 11:
+        return AppStrings.november;
+      case 12:
+        return AppStrings.december;
+      default:
+        return '';
+    }
   }
 
   List<String> _listFromDynamic(dynamic value) {
@@ -92,22 +158,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
   DateTime get _now => DateTime.now();
 
   String get _monthTitle {
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-
-    return '${months[_now.month - 1]} ${_now.year}';
+    return '${_localizedMonthName(_now.month)} ${_now.year}';
   }
 
   String _dateKey(DateTime date) {
@@ -332,7 +383,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Unable to load monthly schedule: $e"),
+          content: Text("${AppStrings.unableLoadMonthlySchedule}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -365,16 +416,16 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
         final date = _trainingDateForThisMonth(data);
         if (date == null) continue;
 
-        final time = _text(data['time']).isEmpty ? 'No Time' : _text(data['time']);
+        final time = _text(data['time']).isEmpty ? AppStrings.noTime : _text(data['time']);
         final batch =
-            _text(data['batch']).isEmpty ? 'No Batch' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.noBatch : _text(data['batch']);
         final type =
-            _text(data['type']).isEmpty ? 'Training Session' : _text(data['type']);
+            _text(data['type']).isEmpty ? AppStrings.trainingSession : _text(data['type']);
 
         result.add(
           _MonthlyScheduleItem(
             title: type,
-            subtitle: "Training session for $batch",
+            subtitle: "${AppStrings.trainingSessionFor} $batch",
             time: time,
             batch: batch,
             category: "Training",
@@ -410,17 +461,17 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
         if (date == null || !_isCurrentMonth(date)) continue;
 
         final title =
-            _text(data['title']).isEmpty ? 'Match Schedule' : _text(data['title']);
+            _text(data['title']).isEmpty ? AppStrings.matchSchedule : _text(data['title']);
 
         final opponent = _text(data['opponent']);
         final venue = _text(data['venue']);
-        final time = _text(data['time']).isEmpty ? 'No Time' : _text(data['time']);
+        final time = _text(data['time']).isEmpty ? AppStrings.noTime : _text(data['time']);
         final batch =
-            _text(data['batch']).isEmpty ? 'All Batches' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.allBatches : _text(data['batch']);
 
         final subtitleParts = <String>[];
 
-        if (opponent.isNotEmpty) subtitleParts.add("vs $opponent");
+        if (opponent.isNotEmpty) subtitleParts.add("${AppStrings.vs} $opponent");
         if (venue.isNotEmpty) subtitleParts.add(venue);
         subtitleParts.add(batch);
 
@@ -470,18 +521,18 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
             ? _text(data['time'])
             : _text(data['cancelledTime']).isNotEmpty
                 ? _text(data['cancelledTime'])
-                : 'No Time';
+                : AppStrings.noTime;
 
         final batch =
-            _text(data['batch']).isEmpty ? 'No Batch' : _text(data['batch']);
+            _text(data['batch']).isEmpty ? AppStrings.noBatch : _text(data['batch']);
 
         final reason = _text(data['reason']).isEmpty
-            ? 'Session cancelled'
+            ? AppStrings.sessionCancelled
             : _text(data['reason']);
 
         result.add(
           _MonthlyScheduleItem(
-            title: "Cancelled Session",
+            title: AppStrings.cancelledSession,
             subtitle: reason,
             time: time,
             batch: batch,
@@ -642,9 +693,12 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loading
@@ -670,25 +724,25 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
                           const SizedBox(height: 18),
                           _summaryRow(isDark),
                           const SizedBox(height: 18),
-                          _sectionTitle("MONTHLY SCHEDULE", isDark),
+                          _sectionTitle(AppStrings.monthlySchedule.toUpperCase(), isDark),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: _hasNoAssignedBatch
                                 ? _messageCard(
                                     isDark: isDark,
                                     icon: Icons.groups_rounded,
-                                    title: "No batch assigned",
+                                    title: AppStrings.noBatchAssigned,
                                     message: role == 'Coach'
-                                        ? "Please ask Admin to assign a batch or weekly session."
-                                        : "No schedule is available because no batch is linked.",
+                                        ? AppStrings.askAdminAssignBatchSession
+                                        : AppStrings.noScheduleBecauseNoBatch,
                                   )
                                 : monthlyItems.isEmpty
                                     ? _messageCard(
                                         isDark: isDark,
                                         icon: Icons.calendar_month_rounded,
-                                        title: "No Monthly Schedule Available",
+                                        title: AppStrings.noMonthlyScheduleAvailable,
                                         message:
-                                            "There are no training sessions or matches scheduled for this month.",
+                                            AppStrings.noTrainingOrMatchesThisMonth,
                                       )
                                     : Column(
                                         children: monthlyItems.map((item) {
@@ -704,6 +758,8 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
                     ),
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -731,15 +787,19 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "MONTHLY SCHEDULE",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.monthlySchedule.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
@@ -900,8 +960,8 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "MONTHLY",
+                          Text(
+                            AppStrings.monthly.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -910,7 +970,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
                             ),
                           ),
                           Text(
-                            "PLAN",
+                            AppStrings.plan.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -923,7 +983,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Items: ${monthlyItems.length}"),
+                              _heroChip("${AppStrings.items}: ${monthlyItems.length}"),
                               _heroChip(_monthTitle),
                             ],
                           ),
@@ -977,7 +1037,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Training",
+              title: AppStrings.training,
               value: trainingCount.toString(),
               icon: Icons.event_available_rounded,
               color: Colors.green,
@@ -987,7 +1047,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Matches",
+              title: AppStrings.matches,
               value: matchCount.toString(),
               icon: Icons.sports_cricket_rounded,
               color: Colors.orange,
@@ -997,7 +1057,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
           Expanded(
             child: _summaryCard(
               isDark: isDark,
-              title: "Cancelled",
+              title: AppStrings.cancelled,
               value: cancelledCount.toString(),
               icon: Icons.cancel_rounded,
               color: Colors.redAccent,
@@ -1057,13 +1117,19 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                style: TextStyle(
               color: isDark ? gold : maroon,
               fontSize: 15,
               fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1164,7 +1230,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
                     ),
                     _smallChip(
                       isDark: isDark,
-                      text: _shortDay(item.date),
+                      text: _localizedShortDay(item.date),
                       icon: Icons.today_rounded,
                       color: item.color,
                     ),
@@ -1176,7 +1242,7 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
                     ),
                     _smallChip(
                       isDark: isDark,
-                      text: item.category,
+                      text: _localizedCategory(item.category),
                       icon: Icons.label_rounded,
                       color: item.color,
                     ),

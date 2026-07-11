@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 import '../core/responsive/responsive_padding.dart';
 
 class MakeupSessionScreen extends StatefulWidget {
@@ -39,6 +40,19 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
 
   String _lower(String value) {
     return value.trim().toLowerCase();
+  }
+
+  String _localizedStatus(String value) {
+    switch (value.trim().toLowerCase()) {
+      case 'pending':
+        return AppStrings.pending;
+      case 'scheduled':
+        return AppStrings.scheduled;
+      case 'completed':
+        return AppStrings.completed;
+      default:
+        return value;
+    }
   }
 
   Color _bg(bool isDark) {
@@ -250,8 +264,8 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
 
     if (scheduled == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Makeup session scheduled"),
+        SnackBar(
+          content: Text(AppStrings.makeupSessionScheduled),
           backgroundColor: Colors.green,
         ),
       );
@@ -271,8 +285,8 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Makeup session marked as completed"),
+          SnackBar(
+            content: Text(AppStrings.makeupSessionMarkedCompleted),
             backgroundColor: Colors.green,
           ),
         );
@@ -281,7 +295,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Update failed: $e"),
+            content: Text("${AppStrings.updateFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -298,8 +312,8 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Makeup session deleted"),
+          SnackBar(
+            content: Text(AppStrings.makeupSessionDeleted),
             backgroundColor: Colors.green,
           ),
         );
@@ -308,7 +322,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Delete failed: $e"),
+            content: Text("${AppStrings.deleteFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -322,21 +336,21 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF111111) : Colors.white,
         title: Text(
-          "Delete Makeup Session",
+          AppStrings.deleteMakeupSession,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete this session?",
+          AppStrings.deleteMakeupSessionConfirm,
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Cancel",
+              AppStrings.cancel,
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
             ),
           ),
@@ -349,7 +363,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
               Navigator.pop(context);
               await _deleteSession(context, docId);
             },
-            child: const Text("Delete"),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -357,14 +371,14 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
   }
 
   Color _statusColor(String status) {
-    if (status == "Completed") return Colors.blueAccent;
+    if (status == AppStrings.completed) return Colors.blueAccent;
     if (status == "Pending") return Colors.orange;
     if (status == "Scheduled") return Colors.green;
     return Colors.purpleAccent;
   }
 
   IconData _statusIcon(String status) {
-    if (status == "Completed") return Icons.check_circle_rounded;
+    if (status == AppStrings.completed) return Icons.check_circle_rounded;
     if (status == "Pending") return Icons.pending_actions_rounded;
     if (status == "Scheduled") return Icons.calendar_month_rounded;
     return Icons.event_repeat_rounded;
@@ -386,7 +400,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
 
     for (final doc in docs) {
       final current =
-          _text(doc.data()['status']).isEmpty ? 'Pending' : _text(doc.data()['status']);
+          _text(doc.data()['status']).isEmpty ? AppStrings.pending : _text(doc.data()['status']);
 
       if (current == status) count++;
     }
@@ -399,9 +413,12 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: isLoadingUser
@@ -438,7 +455,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                       final sessions = _sortSessions(snapshot.data?.docs ?? []);
 
                       final scheduled = _countStatus(sessions, "Scheduled");
-                      final completed = _countStatus(sessions, "Completed");
+                      final completed = _countStatus(sessions, AppStrings.completed);
                       final pending = _countStatus(sessions, "Pending");
 
                       return SingleChildScrollView(
@@ -459,7 +476,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                               child: _infoBanner(isDark),
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("MAKEUP SESSION LIST", isDark),
+                            _sectionTitle(AppStrings.makeupSessionList, isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: sessions.isEmpty
@@ -498,7 +515,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                                         final makeupBatch = _text(data['makeupBatch']);
 
                                         final status = _text(data['status']).isEmpty
-                                            ? 'Pending'
+                                            ? AppStrings.pending
                                             : _text(data['status']);
 
                                         return _makeupCard(
@@ -514,7 +531,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                                           makeupDate: makeupDate,
                                           makeupTime: makeupTime,
                                           makeupBatch: makeupBatch,
-                                          status: status,
+                                          status: _localizedStatus(status),
                                           statusColor: _statusColor(status),
                                           icon: _statusIcon(status),
                                         );
@@ -528,6 +545,8 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -557,7 +576,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    "Unable to load makeup sessions",
+                    AppStrings.unableLoadMakeupSessions,
                     style: TextStyle(
                       color: _primaryText(isDark),
                       fontWeight: FontWeight.bold,
@@ -603,19 +622,23 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "MAKEUP SESSIONS",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.makeupSessionsTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
-                  "Schedule & completion center",
+                  AppStrings.scheduleCompletionCenter,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -767,7 +790,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           : CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "ACADEMY",
+                          AppStrings.academy.toUpperCase(),
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
@@ -776,8 +799,8 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                             letterSpacing: 1,
                           ),
                         ),
-                        const Text(
-                          "MAKEUP",
+                        Text(
+                          AppStrings.makeup.toUpperCase(),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
@@ -787,7 +810,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           ),
                         ),
                         Text(
-                          "SESSIONS",
+                          AppStrings.sessions.toUpperCase(),
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
@@ -804,10 +827,10 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           spacing: 8,
                           runSpacing: 6,
                           children: [
-                            _heroChip("Total: $total"),
-                            _heroChip("Scheduled: $scheduled"),
-                            _heroChip("Pending: $pending"),
-                            _heroChip("Completed: $completed"),
+                            _heroChip("${AppStrings.total}: $total"),
+                            _heroChip("${AppStrings.scheduled}: $scheduled"),
+                            _heroChip("${AppStrings.pending}: $pending"),
+                            _heroChip("${AppStrings.completed}: $completed"),
                           ],
                         ),
                       ],
@@ -1010,7 +1033,7 @@ Widget _infoBanner(bool isDark) {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            "Makeup sessions are created from approved leave requests. Coaches can schedule and complete sessions for their assigned batches.",
+            AppStrings.makeupInfoMessage,
             style: TextStyle(
               fontSize: 12.5,
               color: _secondaryText(isDark),
@@ -1045,7 +1068,7 @@ Widget _infoBanner(bool isDark) {
     final canComplete = status == "Scheduled";
 
     final makeupText = makeupDate.isEmpty
-        ? "Not scheduled"
+        ? AppStrings.notScheduled
         : makeupTime.isEmpty
             ? makeupDate
             : "$makeupDate • $makeupTime";
@@ -1054,7 +1077,7 @@ Widget _infoBanner(bool isDark) {
         ? studentName
         : batch.isNotEmpty
             ? batch
-            : "Makeup Session";
+            : AppStrings.makeupSession;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1124,13 +1147,13 @@ Widget _infoBanner(bool isDark) {
             },
           ),
           const SizedBox(height: 14),
-          if (studentName.isNotEmpty) _detailRow(isDark, "Student", studentName),
-          _detailRow(isDark, "Original Batch", originalBatch),
-          if (makeupBatch.isNotEmpty) _detailRow(isDark, "Makeup Batch", makeupBatch),
-          _detailRow(isDark, "Leave / Cancelled Date", cancelledDate),
-          if (cancelledTime.isNotEmpty) _detailRow(isDark, "Time", cancelledTime),
-          _detailRow(isDark, "Reason", reason),
-          _detailRow(isDark, "Makeup Date", makeupText),
+          if (studentName.isNotEmpty) _detailRow(isDark, AppStrings.student, studentName),
+          _detailRow(isDark, AppStrings.originalBatch, originalBatch),
+          if (makeupBatch.isNotEmpty) _detailRow(isDark, AppStrings.makeupBatch, makeupBatch),
+          _detailRow(isDark, AppStrings.leaveCancelledDate, cancelledDate),
+          if (cancelledTime.isNotEmpty) _detailRow(isDark, AppStrings.time, cancelledTime),
+          _detailRow(isDark, AppStrings.reason, reason),
+          _detailRow(isDark, AppStrings.makeupDate, makeupText),
           if (_canManage) ...[
             const SizedBox(height: 12),
             LayoutBuilder(
@@ -1150,8 +1173,8 @@ Widget _infoBanner(bool isDark) {
                     ),
                     onPressed: () => _scheduleMakeup(context, docId),
                     icon: const Icon(Icons.calendar_month_rounded, size: 16),
-                    label: const Text(
-                      "Schedule",
+                    label: Text(
+                      AppStrings.schedule,
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   );
@@ -1166,22 +1189,22 @@ Widget _infoBanner(bool isDark) {
                     ),
                     onPressed: () => _markCompleted(context, docId),
                     icon: const Icon(Icons.check_circle_rounded, size: 16),
-                    label: const Text(
-                      "Complete",
+                    label: Text(
+                      AppStrings.complete,
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   );
                 } else {
-                  mainAction = const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    child: Text(
-                      "Completed",
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
+                 mainAction = Padding(
+  padding: const EdgeInsets.symmetric(vertical: 10),
+  child: Text(
+    AppStrings.completed,
+    style: const TextStyle(
+      color: Colors.green,
+      fontWeight: FontWeight.w900,
+    ),
+  ),
+);
                 }
 
                 final deleteButton = _canDelete
@@ -1250,7 +1273,7 @@ Widget _infoBanner(bool isDark) {
           ),
           Flexible(
             child: Text(
-              value.isEmpty ? "Not added" : value,
+              value.isEmpty ? AppStrings.notAdded : value,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -1302,7 +1325,7 @@ Widget _infoBanner(bool isDark) {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Makeup Sessions Found",
+            AppStrings.noMakeupSessionsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1310,7 +1333,7 @@ Widget _infoBanner(bool isDark) {
           ),
           const SizedBox(height: 4),
           Text(
-            "Approved leave requests will automatically create makeup sessions.",
+            AppStrings.approvedLeaveCreatesMakeup,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
@@ -1470,8 +1493,8 @@ class _ScheduleMakeupSessionScreenState
 
     if (date.isEmpty || time.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fill date and time"),
+        SnackBar(
+          content: Text(AppStrings.pleaseFillDateTime),
           backgroundColor: Colors.red,
         ),
       );
@@ -1510,7 +1533,7 @@ class _ScheduleMakeupSessionScreenState
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Schedule failed: $e"),
+          content: Text("${AppStrings.scheduleFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -1524,9 +1547,12 @@ class _ScheduleMakeupSessionScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -1543,18 +1569,18 @@ class _ScheduleMakeupSessionScreenState
                   const SizedBox(height: 18),
                   _input(
                     isDark: isDark,
-                    label: "Makeup Date",
+                    label: AppStrings.makeupDate,
                     controller: dateController,
-                    hint: "Select date",
+                    hint: AppStrings.selectDate,
                     icon: Icons.calendar_month_rounded,
                     onTap: _pickDate,
                   ),
                   const SizedBox(height: 14),
                   _input(
                     isDark: isDark,
-                    label: "Makeup Time",
+                    label: AppStrings.makeupTime,
                     controller: timeController,
-                    hint: "Select time",
+                    hint: AppStrings.selectTime,
                     icon: Icons.access_time_rounded,
                     onTap: _pickTime,
                   ),
@@ -1582,7 +1608,7 @@ class _ScheduleMakeupSessionScreenState
                             )
                           : const Icon(Icons.save_rounded),
                       label: Text(
-                        saving ? "Saving..." : "Save Schedule",
+                        saving ? AppStrings.saving : AppStrings.saveSchedule,
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                     ),
@@ -1591,6 +1617,8 @@ class _ScheduleMakeupSessionScreenState
               ),
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -1619,7 +1647,7 @@ class _ScheduleMakeupSessionScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "SCHEDULE MAKEUP",
+                  AppStrings.scheduleMakeupTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1630,7 +1658,7 @@ class _ScheduleMakeupSessionScreenState
                   ),
                 ),
                 Text(
-                  "Add date and time",
+                  AppStrings.addDateAndTime,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1705,7 +1733,7 @@ class _ScheduleMakeupSessionScreenState
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Select makeup session date and time. Parents and students will receive the schedule notification.",
+              AppStrings.selectMakeupDateTimeInfo,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,

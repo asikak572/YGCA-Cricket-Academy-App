@@ -544,4 +544,259 @@ static String get matchUpdatesAppearHere =>
     text("Match updates will appear here", "போட்டி புதுப்பிப்புகள் இங்கே தோன்றும்", "मैच अपडेट यहां दिखाई देंगे");
 static String get noTitle =>
     text("No Title", "தலைப்பு இல்லை", "कोई शीर्षक नहीं");
+// Add before the final } in app_strings.dart. Skip getters that already exist.
+
+static String get unableLoadTodaySchedule =>
+    text("Unable to load today's schedule", "இன்றைய அட்டவணையை ஏற்ற முடியவில்லை", "आज का कार्यक्रम लोड नहीं हो सका");
+
+static String get trainingSession =>
+    text("Training Session", "பயிற்சி அமர்வு", "प्रशिक्षण सेशन");
+
+static String get trainingSessionFor =>
+    text("Training session for", "பயிற்சி அமர்வு:", "प्रशिक्षण सेशन:");
+
+static String get allBatches =>
+    text("All Batches", "அனைத்து பேட்ச்கள்", "सभी बैच");
+
+static String get cancelledSession =>
+    text("Cancelled Session", "ரத்து செய்யப்பட்ட அமர்வு", "रद्द सेशन");
+
+static String get todaysSchedule =>
+    text("TODAY'S SCHEDULE", "இன்றைய அட்டவணை", "आज का कार्यक्रम");
+
+static String get noTodayScheduleAvailable =>
+    text("No Today Schedule Available", "இன்றைய அட்டவணை இல்லை", "आज का कोई कार्यक्रम उपलब्ध नहीं");
+
+static String get noTrainingOrMatchesToday =>
+    text("There are no training sessions or matches scheduled for today.", "இன்று பயிற்சி அமர்வுகள் அல்லது போட்டிகள் திட்டமிடப்படவில்லை.", "आज कोई प्रशिक्षण सेशन या मैच निर्धारित नहीं है।");
+
+static String get items =>
+    text("Items", "உருப்படிகள்", "आइटम");
+static String get sessionCancelled =>
+    text(
+      "Session cancelled",
+      "அமர்வு ரத்து செய்யப்பட்டது",
+      "सेशन रद्द किया गया",
+    );
+// Add these before the last } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get unableLoadMonthlySchedule =>
+    text("Unable to load monthly schedule", "மாதாந்திர அட்டவணையை ஏற்ற முடியவில்லை", "मासिक कार्यक्रम लोड नहीं हो सका");
+
+static String get noMonthlyScheduleAvailable =>
+    text("No Monthly Schedule Available", "மாதாந்திர அட்டவணை இல்லை", "कोई मासिक कार्यक्रम उपलब्ध नहीं");
+
+static String get noTrainingOrMatchesThisMonth =>
+    text("There are no training sessions or matches scheduled for this month.", "இந்த மாதம் பயிற்சி அமர்வுகள் அல்லது போட்டிகள் திட்டமிடப்படவில்லை.", "इस महीने कोई प्रशिक्षण सेशन या मैच निर्धारित नहीं है।");
+
+static String get monthly =>
+    text("Monthly", "மாதாந்திர", "मासिक");
+
+static String get plan =>
+    text("Plan", "திட்டம்", "योजना");
+
+static String get january => text("January", "ஜனவரி", "जनवरी");
+static String get february => text("February", "பிப்ரவரி", "फ़रवरी");
+static String get march => text("March", "மார்ச்", "मार्च");
+static String get april => text("April", "ஏப்ரல்", "अप्रैल");
+static String get may => text("May", "மே", "मई");
+static String get june => text("June", "ஜூன்", "जून");
+static String get july => text("July", "ஜூலை", "जुलाई");
+static String get august => text("August", "ஆகஸ்ட்", "अगस्त");
+static String get september => text("September", "செப்டம்பர்", "सितंबर");
+static String get october => text("October", "அக்டோபர்", "अक्टूबर");
+static String get november => text("November", "நவம்பர்", "नवंबर");
+static String get december => text("December", "டிசம்பர்", "दिसंबर");
+
+static String get mon => text("Mon", "தி", "सोम");
+static String get tue => text("Tue", "செ", "मंगल");
+static String get wed => text("Wed", "பு", "बुध");
+static String get thu => text("Thu", "வி", "गुरु");
+static String get fri => text("Fri", "வெ", "शुक्र");
+static String get sat => text("Sat", "ச", "शनि");
+static String get sun => text("Sun", "ஞா", "रवि");
+
+// Add these before the last } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get unableLoadSessionHistory =>
+    text("Unable to load session history", "அமர்வு வரலாற்றை ஏற்ற முடியவில்லை", "सेशन इतिहास लोड नहीं हो सका");
+
+static String get trainingSessionCompletedFor =>
+    text("Training session completed for", "பயிற்சி அமர்வு முடிந்தது:", "प्रशिक्षण सेशन पूर्ण हुआ:");
+
+static String get noHistoryBecauseNoBatch =>
+    text("No history is available because no batch is linked.", "பேட்ச் இணைக்கப்படாததால் வரலாறு கிடைக்கவில்லை.", "बैच लिंक न होने के कारण इतिहास उपलब्ध नहीं है।");
+
+static String get noSessionHistoryAvailable =>
+    text("No Session History Available", "அமர்வு வரலாறு இல்லை", "कोई सेशन इतिहास उपलब्ध नहीं");
+
+static String get noPastTrainingOrMatches =>
+    text("There are no past training sessions or matches available yet.", "முந்தைய பயிற்சி அமர்வுகள் அல்லது போட்டிகள் இன்னும் இல்லை.", "अभी कोई पिछला प्रशिक्षण सेशन या मैच उपलब्ध नहीं है।");
+
+static String get pastTrainingMatchCancelledSessions =>
+    text("Past training, match and cancelled sessions", "முந்தைய பயிற்சி, போட்டி மற்றும் ரத்து அமர்வுகள்", "पिछले प्रशिक्षण, मैच और रद्द सेशन");
+// Add these before the final } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get makeupSessionScheduled =>
+    text("Makeup session scheduled", "மேக்கப் அமர்வு திட்டமிடப்பட்டது", "मेकअप सेशन निर्धारित किया गया");
+
+static String get makeupSessionMarkedCompleted =>
+    text("Makeup session marked as completed", "மேக்கப் அமர்வு முடிந்ததாக குறிக்கப்பட்டது", "मेकअप सेशन पूर्ण चिह्नित किया गया");
+
+static String get makeupSessionDeleted =>
+    text("Makeup session deleted", "மேக்கப் அமர்வு நீக்கப்பட்டது", "मेकअप सेशन हटाया गया");
+
+static String get deleteMakeupSession =>
+    text("Delete Makeup Session", "மேக்கப் அமர்வை நீக்கு", "मेकअप सेशन हटाएं");
+
+static String get deleteMakeupSessionConfirm =>
+    text("Are you sure you want to delete this session?", "இந்த அமர்வை நீக்க விரும்புகிறீர்களா?", "क्या आप यह सेशन हटाना चाहते हैं?");
+
+static String get makeupSessionList =>
+    text("MAKEUP SESSION LIST", "மேக்கப் அமர்வு பட்டியல்", "मेकअप सेशन सूची");
+
+static String get makeupSessionsTitle =>
+    text("MAKEUP SESSIONS", "மேக்கப் அமர்வுகள்", "मेकअप सेशन");
+
+static String get scheduleCompletionCenter =>
+    text("Schedule & completion center", "அட்டவணை மற்றும் நிறைவு மையம்", "कार्यक्रम और पूर्णता केंद्र");
+
+static String get scheduled =>
+    text("Scheduled", "திட்டமிடப்பட்டது", "निर्धारित");
+
+static String get complete =>
+    text("Complete", "முடிக்க", "पूर्ण करें");
+
+static String get makeupInfoMessage =>
+    text("Makeup sessions are created from approved leave requests. Coaches can schedule and complete sessions for their assigned batches.", "அங்கீகரிக்கப்பட்ட விடுப்பு கோரிக்கைகளில் இருந்து மேக்கப் அமர்வுகள் உருவாக்கப்படுகின்றன. பயிற்சியாளர்கள் தங்களுக்கு ஒதுக்கப்பட்ட பேட்ச்களுக்கு அமர்வுகளை திட்டமிட்டு முடிக்கலாம்.", "स्वीकृत छुट्टी अनुरोधों से मेकअप सेशन बनाए जाते हैं। कोच अपने असाइन किए गए बैचों के लिए सेशन निर्धारित और पूर्ण कर सकते हैं।");
+
+static String get notScheduled =>
+    text("Not scheduled", "திட்டமிடப்படவில்லை", "निर्धारित नहीं");
+
+static String get makeupSession =>
+    text("Makeup Session", "மேக்கப் அமர்வு", "मेकअप सेशन");
+
+static String get originalBatch =>
+    text("Original Batch", "மூல பேட்ச்", "मूल बैच");
+
+static String get makeupBatch =>
+    text("Makeup Batch", "மேக்கப் பேட்ச்", "मेकअप बैच");
+
+static String get leaveCancelledDate =>
+    text("Leave / Cancelled Date", "விடுப்பு / ரத்து தேதி", "छुट्टी / रद्द तारीख");
+
+static String get reason =>
+    text("Reason", "காரணம்", "कारण");
+
+static String get makeupDate =>
+    text("Makeup Date", "மேக்கப் தேதி", "मेकअप तारीख");
+
+static String get noMakeupSessionsFound =>
+    text("No Makeup Sessions Found", "மேக்கப் அமர்வுகள் இல்லை", "कोई मेकअप सेशन नहीं मिला");
+
+static String get approvedLeaveCreatesMakeup =>
+    text("Approved leave requests will automatically create makeup sessions.", "அங்கீகரிக்கப்பட்ட விடுப்பு கோரிக்கைகள் தானாக மேக்கப் அமர்வுகளை உருவாக்கும்.", "स्वीकृत छुट्टी अनुरोध अपने आप मेकअप सेशन बनाएंगे।");
+
+static String get unableLoadMakeupSessions =>
+    text("Unable to load makeup sessions", "மேக்கப் அமர்வுகளை ஏற்ற முடியவில்லை", "मेकअप सेशन लोड नहीं हो सके");
+
+static String get pleaseFillDateTime =>
+    text("Please fill date and time", "தேதி மற்றும் நேரத்தை நிரப்பவும்", "कृपया तारीख और समय भरें");
+
+static String get scheduleFailed =>
+    text("Schedule failed", "அட்டவணை தோல்வியடைந்தது", "कार्यक्रम विफल");
+
+static String get scheduleMakeupTitle =>
+    text("SCHEDULE MAKEUP", "மேக்கப் அட்டவணை", "मेकअप निर्धारित करें");
+
+static String get addDateAndTime =>
+    text("Add date and time", "தேதி மற்றும் நேரத்தை சேர்க்கவும்", "तारीख और समय जोड़ें");
+
+static String get selectMakeupDateTimeInfo =>
+    text("Select makeup session date and time. Parents and students will receive the schedule notification.", "மேக்கப் அமர்வின் தேதி மற்றும் நேரத்தை தேர்வு செய்க. பெற்றோரும் மாணவர்களும் அட்டவணை அறிவிப்பைப் பெறுவார்கள்.", "मेकअप सेशन की तारीख और समय चुनें। अभिभावक और छात्र कार्यक्रम सूचना प्राप्त करेंगे।");
+
+static String get selectDate =>
+    text("Select date", "தேதியை தேர்வு செய்க", "तारीख चुनें");
+
+static String get makeupTime =>
+    text("Makeup Time", "மேக்கப் நேரம்", "मेकअप समय");
+
+static String get selectTime =>
+    text("Select time", "நேரத்தை தேர்வு செய்க", "समय चुनें");
+
+static String get saveSchedule =>
+    text("Save Schedule", "அட்டவணையை சேமி", "कार्यक्रम सेव करें");
+static String get academy =>
+    text("Academy", "அகாடமி", "अकादमी");
+// Add these before the final } in app_strings.dart.
+// Skip any getter that already exists.
+
+
+
+static String get sessionCancelledMakeupCreated =>
+    text("Session cancelled and makeup created", "அமர்வு ரத்து செய்யப்பட்டு மேக்கப் உருவாக்கப்பட்டது", "सेशन रद्द हुआ और मेकअप बनाया गया");
+
+static String get cancelSessionFailed =>
+    text("Cancel session failed", "அமர்வை ரத்து செய்வது தோல்வியடைந்தது", "सेशन रद्द करना विफल");
+
+static String get cancelSessionForm =>
+    text("CANCEL SESSION FORM", "அமர்வு ரத்து படிவம்", "सेशन रद्द फ़ॉर्म");
+
+static String get sessionDate =>
+    text("Session Date", "அமர்வு தேதி", "सेशन तारीख");
+
+static String get sessionTime =>
+    text("Session Time", "அமர்வு நேரம்", "सेशन समय");
+
+static String get creating =>
+    text("CREATING...", "உருவாக்கப்படுகிறது...", "बनाया जा रहा है...");
+
+static String get cancelStudentCreateMakeup =>
+    text("CANCEL STUDENT & CREATE MAKEUP", "மாணவர் அமர்வை ரத்து செய்து மேக்கப் உருவாக்கு", "छात्र सेशन रद्द करें और मेकअप बनाएं");
+
+static String get cancelBatchCreateMakeup =>
+    text("CANCEL BATCH & CREATE MAKEUP", "பேட்ச் அமர்வை ரத்து செய்து மேக்கப் உருவாக்கு", "बैच सेशन रद्द करें और मेकअप बनाएं");
+
+static String get recentlyCancelled =>
+    text("RECENTLY CANCELLED", "சமீபத்தில் ரத்து செய்யப்பட்டவை", "हाल ही में रद्द");
+
+static String get fullBatch =>
+    text("Full Batch", "முழு பேட்ச்", "पूरा बैच");
+
+static String get individual =>
+    text("Individual", "தனிப்பட்ட", "व्यक्तिगत");
+
+static String get selectBatch =>
+    text("Select Batch", "பேட்சை தேர்வு செய்க", "बैच चुनें");
+
+static String get selectBatchFirst =>
+    text("Select batch first", "முதலில் பேட்சை தேர்வு செய்க", "पहले बैच चुनें");
+
+static String get batchOrIndividualControl =>
+    text("Batch or individual session control", "பேட்ச் அல்லது தனிப்பட்ட அமர்வு கட்டுப்பாடு", "बैच या व्यक्तिगत सेशन नियंत्रण");
+
+static String get control =>
+    text("Control", "கட்டுப்பாடு", "नियंत्रण");
+
+static String get batches =>
+    text("Batches", "பேட்ச்கள்", "बैच");
+
+static String get cancelSessionWarning =>
+    text("Cancel a full batch session or only one student's session. Makeup session will be created automatically.", "முழு பேட்ச் அமர்வையோ அல்லது ஒரே மாணவரின் அமர்வையோ ரத்து செய்யலாம். மேக்கப் அமர்வு தானாக உருவாகும்.", "पूरा बैच सेशन या केवल एक छात्र का सेशन रद्द करें। मेकअप सेशन अपने आप बनेगा।");
+
+static String get individualStudent =>
+    text("Individual Student", "தனிப்பட்ட மாணவர்", "व्यक्तिगत छात्र");
+
+static String get noCancelledSessionsFound =>
+    text("No Cancelled Sessions Found", "ரத்து செய்யப்பட்ட அமர்வுகள் இல்லை", "कोई रद्द सेशन नहीं मिला");
+
+static String get cancelledSessionsAppearHere =>
+    text(
+      "Cancelled sessions will appear here",
+      "ரத்து செய்யப்பட்ட அமர்வுகள் இங்கே தோன்றும்",
+      "रद्द सेशन यहां दिखाई देंगे",
+    );
 }
