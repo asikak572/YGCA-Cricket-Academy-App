@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'notification_service.dart';
 
@@ -35,6 +36,19 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
 
   String _lower(String value) {
     return value.trim().toLowerCase();
+  }
+
+  String _localizedStatus(String value) {
+    switch (value.trim().toLowerCase()) {
+      case 'pending':
+        return AppStrings.pending;
+      case 'approved':
+        return AppStrings.approved;
+      case 'rejected':
+        return AppStrings.rejected;
+      default:
+        return value;
+    }
   }
 
   List<String> _stringList(dynamic value) {
@@ -393,8 +407,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
         SnackBar(
           content: Text(
             status == "Approved"
-                ? "Leave approved and makeup session created"
-                : "Leave rejected",
+                ? AppStrings.leaveApprovedMakeupCreated
+                : AppStrings.leaveRejected,
           ),
           backgroundColor: status == "Approved" ? Colors.green : Colors.red,
         ),
@@ -404,7 +418,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Update failed: $e"),
+          content: Text("${AppStrings.updateFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -417,8 +431,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Leave request deleted"),
+      SnackBar(
+        content: Text(AppStrings.leaveRequestDeleted),
         backgroundColor: Colors.green,
       ),
     );
@@ -430,21 +444,21 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF111111) : Colors.white,
         title: Text(
-          "Delete Leave Request",
+          AppStrings.deleteLeaveRequest,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete this leave request?",
+          AppStrings.deleteLeaveRequestConfirm,
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Cancel",
+              AppStrings.cancel,
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
             ),
           ),
@@ -457,7 +471,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               Navigator.pop(context);
               await _deleteLeave(context, docId);
             },
-            child: const Text("Delete"),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -499,8 +513,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
 
     if (submitted == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Leave request submitted"),
+        SnackBar(
+          content: Text(AppStrings.leaveRequestSubmitted),
           backgroundColor: Colors.green,
         ),
       );
@@ -528,10 +542,13 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
-        final role = _text(userData['role']);
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
+            final role = _text(userData['role']);
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: _canCreate(role)
               ? FloatingActionButton.extended(
@@ -539,8 +556,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   foregroundColor: isDark ? Colors.white : gold,
                   onPressed: _openLeaveForm,
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text(
-                    "New Leave",
+                  label: Text(
+                    AppStrings.newLeave,
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                 )
@@ -562,7 +579,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                           Expanded(
                             child: _messageCard(
                               isDark,
-                              "User data not found",
+                              AppStrings.userDataNotFound,
                               Icons.person_off_rounded,
                             ),
                           ),
@@ -580,7 +597,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(16),
                                       child: Text(
-                                        "Error: ${snapshot.error}",
+                                        "${AppStrings.error}: ${snapshot.error}",
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                           color: Colors.redAccent,
@@ -629,7 +646,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                         rejected: rejected,
                                       ),
                                       const SizedBox(height: 14),
-                                      _sectionTitle("LEAVE REQUESTS", isDark),
+                                      _sectionTitle(AppStrings.leaveRequestsTitle, isDark),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 16,
@@ -695,7 +712,9 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                           );
                         },
                       ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -724,7 +743,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "LEAVE REQUESTS",
+                  AppStrings.leaveRequestsTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -735,7 +754,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   ),
                 ),
                 Text(
-                  "Approval & makeup session flow",
+                  AppStrings.approvalMakeupFlow,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -884,7 +903,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "ACADEMY",
+                            AppStrings.academy.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 13,
@@ -892,8 +911,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "LEAVE",
+                          Text(
+                            AppStrings.leave.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -902,7 +921,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             ),
                           ),
                           Text(
-                            "CENTER",
+                            AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -915,10 +934,10 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Total: $total"),
-                              _heroChip("Pending: $pending"),
-                              _heroChip("Approved: $approved"),
-                              _heroChip("Rejected: $rejected"),
+                              _heroChip("${AppStrings.total}: $total"),
+                              _heroChip("${AppStrings.pending}: $pending"),
+                              _heroChip("${AppStrings.approved}: $approved"),
+                              _heroChip("${AppStrings.rejected}: $rejected"),
                             ],
                           ),
                         ],
@@ -961,13 +980,21 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1037,7 +1064,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name.isEmpty ? "Unknown Student" : name,
+                      name.isEmpty ? AppStrings.unknownStudent : name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1048,7 +1075,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      batch.isEmpty ? "No batch" : batch,
+                      batch.isEmpty ? AppStrings.noBatch : batch,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1060,7 +1087,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   ],
                 ),
               ),
-              _statusChip(status, statusColor),
+              _statusChip(_localizedStatus(status), statusColor),
               if (_canDelete(role))
                 IconButton(
                   icon: const Icon(
@@ -1073,15 +1100,15 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          _row(isDark, "Leave Date", date.isEmpty ? "-" : date),
-          _row(isDark, "Reason", reason.isEmpty ? "-" : reason),
-          _row(isDark, "Requested By", requestedBy),
+          _row(isDark, AppStrings.leaveDate, date.isEmpty ? "-" : date),
+          _row(isDark, AppStrings.reason, reason.isEmpty ? "-" : reason),
+          _row(isDark, AppStrings.requestedBy, requestedBy),
           if (_showMakeupInfo(data))
             _row(
               isDark,
-              "Makeup Batch",
+              AppStrings.makeupBatch,
               _text(data['makeupBatch']).isEmpty
-                  ? "Created"
+                  ? AppStrings.created
                   : _text(data['makeupBatch']),
             ),
           if (status == "Pending" && _canApprove(role)) ...[
@@ -1106,8 +1133,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       );
                     },
                     icon: const Icon(Icons.close_rounded),
-                    label: const Text(
-                      "Reject",
+                    label: Text(
+                      AppStrings.reject,
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
@@ -1131,8 +1158,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       );
                     },
                     icon: const Icon(Icons.check_rounded),
-                    label: const Text(
-                      "Approve",
+                    label: Text(
+                      AppStrings.approve,
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                   ),
@@ -1213,7 +1240,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No leave requests found",
+            AppStrings.noLeaveRequestsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1221,7 +1248,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "Leave requests will appear here",
+            AppStrings.leaveRequestsAppearHere,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
@@ -1531,8 +1558,8 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
 
     if (name.isEmpty || batch.isEmpty || leaveDate.isEmpty || reason.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fill all fields"),
+        SnackBar(
+          content: Text(AppStrings.pleaseFillAllFields),
           backgroundColor: Colors.red,
         ),
       );
@@ -1546,8 +1573,8 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
     if (role == 'Parent') {
       if (selectedChild == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please select linked student"),
+          SnackBar(
+            content: Text(AppStrings.pleaseSelectLinkedStudent),
             backgroundColor: Colors.red,
           ),
         );
@@ -1564,8 +1591,8 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
 
       if (studentId.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Student ID not found"),
+          SnackBar(
+            content: Text(AppStrings.studentIdNotFound),
             backgroundColor: Colors.red,
           ),
         );
@@ -1608,7 +1635,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Submit failed: $e"),
+          content: Text("${AppStrings.submitFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -1626,9 +1653,12 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingChildren
@@ -1647,7 +1677,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                           Expanded(
                             child: _messageCard(
                               isDark,
-                              "You cannot create leave request",
+                              AppStrings.cannotCreateLeaveRequest,
                               Icons.block_rounded,
                             ),
                           ),
@@ -1660,7 +1690,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                               Expanded(
                                 child: _messageCard(
                                   isDark,
-                                  "No linked student found for this parent",
+                                  AppStrings.noLinkedStudentForParent,
                                   Icons.person_search_rounded,
                                 ),
                               ),
@@ -1679,34 +1709,34 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                                   const SizedBox(height: 12),
                                 _field(
                                   isDark: isDark,
-                                  label: "Student Name",
+                                  label: AppStrings.studentName,
                                   controller: nameController,
                                   readOnly: true,
                                 ),
                                 const SizedBox(height: 12),
                                 _field(
                                   isDark: isDark,
-                                  label: "Batch",
+                                  label: AppStrings.batch,
                                   controller: batchController,
                                   readOnly: true,
                                 ),
                                 const SizedBox(height: 12),
                                 _field(
                                   isDark: isDark,
-                                  label: "Leave Date",
+                                  label: AppStrings.leaveDate,
                                   controller: leaveDateController,
                                   readOnly: true,
-                                  hint: "Select leave date",
+                                  hint: AppStrings.selectLeaveDate,
                                   suffixIcon: Icons.calendar_month_rounded,
                                   onTap: _pickDate,
                                 ),
                                 const SizedBox(height: 12),
                                 _field(
                                   isDark: isDark,
-                                  label: "Reason",
+                                  label: AppStrings.reason,
                                   controller: reasonController,
                                   maxLines: 3,
-                                  hint: "Enter leave reason",
+                                  hint: AppStrings.enterLeaveReason,
                                 ),
                                 const SizedBox(height: 22),
                                 SizedBox(
@@ -1734,8 +1764,8 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                                         : const Icon(Icons.send_rounded),
                                     label: Text(
                                       submitting
-                                          ? "Submitting..."
-                                          : "Submit Leave",
+                                          ? AppStrings.submitting
+                                          : AppStrings.submitLeave,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w900,
                                       ),
@@ -1745,7 +1775,9 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                               ],
                             ),
                           ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -1774,7 +1806,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "NEW LEAVE",
+                  AppStrings.newLeave.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1785,7 +1817,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                   ),
                 ),
                 Text(
-                  "Submit leave request",
+                  AppStrings.submitLeaveRequest,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1869,7 +1901,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Submit your leave request. Admin or Coach will approve it, then a makeup session will be created automatically.",
+              AppStrings.leaveInfoMessage,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -1893,7 +1925,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
         fontWeight: FontWeight.w700,
       ),
       decoration: InputDecoration(
-        labelText: "Select Student",
+        labelText: AppStrings.selectStudent,
         labelStyle: TextStyle(color: _secondaryText(isDark)),
         filled: true,
         fillColor: _card(isDark),

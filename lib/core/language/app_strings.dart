@@ -799,4 +799,138 @@ static String get cancelledSessionsAppearHere =>
       "ரத்து செய்யப்பட்ட அமர்வுகள் இங்கே தோன்றும்",
       "रद्द सेशन यहां दिखाई देंगे",
     );
+    static String get leaveApprovedMakeupCreated =>
+    text("Leave approved and makeup session created", "விடுப்பு அங்கீகரிக்கப்பட்டு மேக்கப் அமர்வு உருவாக்கப்பட்டது", "छुट्टी स्वीकृत हुई और मेकअप सेशन बनाया गया");
+
+static String get leaveRejected =>
+    text("Leave rejected", "விடுப்பு நிராகரிக்கப்பட்டது", "छुट्टी अस्वीकृत");
+
+static String get leaveRequestDeleted =>
+    text("Leave request deleted", "விடுப்பு கோரிக்கை நீக்கப்பட்டது", "छुट्टी अनुरोध हटाया गया");
+
+static String get deleteLeaveRequest =>
+    text("Delete Leave Request", "விடுப்பு கோரிக்கையை நீக்கு", "छुट्टी अनुरोध हटाएं");
+
+static String get deleteLeaveRequestConfirm =>
+    text("Are you sure you want to delete this leave request?", "இந்த விடுப்பு கோரிக்கையை நீக்க விரும்புகிறீர்களா?", "क्या आप यह छुट्टी अनुरोध हटाना चाहते हैं?");
+
+static String get leaveRequestSubmitted =>
+    text("Leave request submitted", "விடுப்பு கோரிக்கை சமர்ப்பிக்கப்பட்டது", "छुट्टी अनुरोध जमा हुआ");
+
+static String get newLeave =>
+    text("New Leave", "புதிய விடுப்பு", "नई छुट्टी");
+
+static String get userDataNotFound =>
+    text("User data not found", "பயனர் தகவல் கிடைக்கவில்லை", "उपयोगकर्ता डेटा नहीं मिला");
+
+static String get leaveRequestsTitle =>
+    text("LEAVE REQUESTS", "விடுப்பு கோரிக்கைகள்", "छुट्टी अनुरोध");
+
+static String get approvalMakeupFlow =>
+    text("Approval & makeup session flow", "அங்கீகாரம் மற்றும் மேக்கப் அமர்வு நடைமுறை", "स्वीकृति और मेकअप सेशन प्रक्रिया");
+
+static String get leaveDate =>
+    text("Leave Date", "விடுப்பு தேதி", "छुट्टी की तारीख");
+
+static String get requestedBy =>
+    text("Requested By", "கோரியவர்", "अनुरोधकर्ता");
+
+static String get created =>
+    text("Created", "உருவாக்கப்பட்டது", "बनाया गया");
+
+static String get noLeaveRequestsFound =>
+    text("No leave requests found", "விடுப்பு கோரிக்கைகள் இல்லை", "कोई छुट्टी अनुरोध नहीं मिला");
+
+static String get leaveRequestsAppearHere =>
+    text("Leave requests will appear here", "விடுப்பு கோரிக்கைகள் இங்கே தோன்றும்", "छुट्टी अनुरोध यहां दिखाई देंगे");
+
+static String get pleaseSelectLinkedStudent =>
+    text("Please select linked student", "இணைக்கப்பட்ட மாணவரை தேர்வு செய்யவும்", "कृपया लिंक किए गए छात्र को चुनें");
+
+static String get studentIdNotFound =>
+    text("Student ID not found", "மாணவர் ஐடி கிடைக்கவில்லை", "छात्र आईडी नहीं मिली");
+
+static String get submitFailed =>
+    text("Submit failed", "சமர்ப்பிப்பு தோல்வியடைந்தது", "जमा करना विफल");
+
+static String get cannotCreateLeaveRequest =>
+    text("You cannot create leave request", "நீங்கள் விடுப்பு கோரிக்கை உருவாக்க முடியாது", "आप छुट्टी अनुरोध नहीं बना सकते");
+
+static String get noLinkedStudentForParent =>
+    text("No linked student found for this parent", "இந்த பெற்றோருக்கு இணைக்கப்பட்ட மாணவர் இல்லை", "इस अभिभावक के लिए कोई लिंक छात्र नहीं मिला");
+
+static String get selectLeaveDate =>
+    text("Select leave date", "விடுப்பு தேதியை தேர்வு செய்க", "छुट्टी की तारीख चुनें");
+
+static String get enterLeaveReason =>
+    text("Enter leave reason", "விடுப்பு காரணத்தை உள்ளிடவும்", "छुट्टी का कारण दर्ज करें");
+
+static String get submitting =>
+    text("Submitting...", "சமர்ப்பிக்கப்படுகிறது...", "जमा किया जा रहा है...");
+
+static String get submitLeave =>
+    text("Submit Leave", "விடுப்பை சமர்ப்பிக்க", "छुट्टी जमा करें");
+
+static String get submitLeaveRequest =>
+    text("Submit leave request", "விடுப்பு கோரிக்கையை சமர்ப்பிக்க", "छुट्टी अनुरोध जमा करें");
+
+static String get leaveInfoMessage =>
+    text("Submit your leave request. Admin or Coach will approve it, then a makeup session will be created automatically.", "உங்கள் விடுப்பு கோரிக்கையை சமர்ப்பிக்கவும். அட்மின் அல்லது பயிற்சியாளர் அங்கீகரித்த பின் மேக்கப் அமர்வு தானாக உருவாகும்.", "अपना छुट्टी अनुरोध जमा करें। एडमिन या कोच की स्वीकृति के बाद मेकअप सेशन अपने आप बनेगा।");
+// Add these before the final } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get totalRecords =>
+    text("Total Records", "மொத்த பதிவுகள்", "कुल रिकॉर्ड");
+
+static String get attendancePercentage =>
+    text("Attendance %", "வருகை %", "उपस्थिति %");
+
+static String get batchWiseSummary =>
+    text("BATCH WISE SUMMARY", "பேட்ச் வாரியான சுருக்கம்", "बैच-वार सारांश");
+
+static String get noBatchReportAvailable =>
+    text("No batch report available", "பேட்ச் அறிக்கை இல்லை", "कोई बैच रिपोर्ट उपलब्ध नहीं");
+
+static String get topAttendanceStudents =>
+    text("TOP ATTENDANCE STUDENTS", "சிறந்த வருகை மாணவர்கள்", "शीर्ष उपस्थिति छात्र");
+
+static String get noStudentDataAvailable =>
+    text("No student data available", "மாணவர் தகவல் இல்லை", "कोई छात्र डेटा उपलब्ध नहीं");
+
+static String get studentAttendanceSummary =>
+    text("STUDENT ATTENDANCE SUMMARY", "மாணவர் வருகை சுருக்கம்", "छात्र उपस्थिति सारांश");
+
+static String get noAttendanceDataAvailable =>
+    text("No attendance data available", "வருகை தகவல் இல்லை", "कोई उपस्थिति डेटा उपलब्ध नहीं");
+
+static String get lowAttendanceAlert =>
+    text("LOW ATTENDANCE ALERT", "குறைந்த வருகை எச்சரிக்கை", "कम उपस्थिति अलर्ट");
+
+static String get needsAttention =>
+    text("Needs Attention", "கவனம் தேவை", "ध्यान आवश्यक");
+
+static String get excellent =>
+    text("Excellent", "மிகச் சிறப்பு", "उत्कृष्ट");
+
+static String get report =>
+    text("Report", "அறிக்கை", "रिपोर्ट");
+
+static String get overallAttendance =>
+    text("overall attendance", "மொத்த வருகை", "कुल उपस्थिति");
+
+static String get pdfExportLater =>
+    text("PDF export will be added later", "PDF ஏற்றுமதி பின்னர் சேர்க்கப்படும்", "PDF निर्यात बाद में जोड़ा जाएगा");
+
+static String get export =>
+    text("Export", "ஏற்றுமதி", "निर्यात");
+
+static String get unknown =>
+    text("Unknown", "தெரியாது", "अज्ञात");
+
+static String get noLowAttendanceStudents =>
+    text("No low attendance students", "குறைந்த வருகை மாணவர்கள் இல்லை", "कम उपस्थिति वाले छात्र नहीं हैं");
+
+static String get allStudentsAbove75 =>
+    text("All students are above 75%", "அனைத்து மாணவர்களும் 75%க்கு மேல் உள்ளனர்", "सभी छात्र 75% से ऊपर हैं");
+
 }

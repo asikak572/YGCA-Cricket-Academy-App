@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'widgets/ygca_app_bar.dart';
 
@@ -43,11 +44,14 @@ class AttendanceReportScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
-          appBar: const YgcaAppBar(title: "Attendance Reports"),
+          appBar: YgcaAppBar(title: AppStrings.attendanceReports),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -59,7 +63,7 @@ class AttendanceReportScreen extends StatelessWidget {
                   return _messageCard(
                     isDark: isDark,
                     icon: Icons.error_outline_rounded,
-                    title: "Something went wrong",
+                    title: AppStrings.somethingWentWrong,
                     message: snapshot.error.toString(),
                   );
                 }
@@ -82,11 +86,11 @@ class AttendanceReportScreen extends StatelessWidget {
 
                   final studentId = data['studentId']?.toString() ?? '';
                   final studentName =
-                      data['studentName']?.toString() ?? 'No Name';
-                  final batch = data['batch']?.toString() ?? 'No Batch';
-                  final status = data['status']?.toString() ?? 'Absent';
+                      data['studentName']?.toString() ?? AppStrings.noName;
+                  final batch = data['batch']?.toString() ?? AppStrings.noBatch;
+                  final status = data['status']?.toString() ?? AppStrings.absent;
 
-                  if (status == "Present") {
+                  if (status == AppStrings.present) {
                     presentCount++;
                   } else {
                     absentCount++;
@@ -104,7 +108,7 @@ class AttendanceReportScreen extends StatelessWidget {
 
                   studentSummary[studentId]!['total']++;
 
-                  if (status == "Present") {
+                  if (status == AppStrings.present) {
                     studentSummary[studentId]!['present']++;
                   } else {
                     studentSummary[studentId]!['absent']++;
@@ -117,7 +121,7 @@ class AttendanceReportScreen extends StatelessWidget {
                   batchSummary[batch]!['total'] =
                       (batchSummary[batch]!['total'] ?? 0) + 1;
 
-                  if (status == "Present") {
+                  if (status == AppStrings.present) {
                     batchSummary[batch]!['present'] =
                         (batchSummary[batch]!['present'] ?? 0) + 1;
                   } else {
@@ -173,28 +177,28 @@ class AttendanceReportScreen extends StatelessWidget {
                           [
                             _statCard(
                               isDark: isDark,
-                              title: "Total Records",
+                              title: AppStrings.totalRecords,
                               value: totalRecords.toString(),
                               icon: Icons.list_alt_rounded,
                               color: gold,
                             ),
                             _statCard(
                               isDark: isDark,
-                              title: "Present",
+                              title: AppStrings.present,
                               value: presentCount.toString(),
                               icon: Icons.check_circle_rounded,
                               color: Colors.green,
                             ),
                             _statCard(
                               isDark: isDark,
-                              title: "Absent",
+                              title: AppStrings.absent,
                               value: absentCount.toString(),
                               icon: Icons.cancel_rounded,
                               color: Colors.redAccent,
                             ),
                             _statCard(
                               isDark: isDark,
-                              title: "Attendance %",
+                              title: AppStrings.attendancePercentage,
                               value: "$attendancePercent%",
                               icon: Icons.percent_rounded,
                               color: Colors.blueAccent,
@@ -212,7 +216,7 @@ class AttendanceReportScreen extends StatelessWidget {
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 20)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("BATCH WISE SUMMARY", isDark),
+                      child: _sectionTitle(AppStrings.batchWiseSummary, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -222,7 +226,7 @@ class AttendanceReportScreen extends StatelessWidget {
                               ? [
                                   _emptySmall(
                                     isDark,
-                                    "No batch report available",
+                                    AppStrings.noBatchReportAvailable,
                                   ),
                                 ]
                               : batchSummary.entries.map((entry) {
@@ -245,7 +249,7 @@ class AttendanceReportScreen extends StatelessWidget {
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 20)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("TOP ATTENDANCE STUDENTS", isDark),
+                      child: _sectionTitle(AppStrings.topAttendanceStudents, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -255,7 +259,7 @@ class AttendanceReportScreen extends StatelessWidget {
                               ? [
                                   _emptySmall(
                                     isDark,
-                                    "No student data available",
+                                    AppStrings.noStudentDataAvailable,
                                   ),
                                 ]
                               : topStudents.map((student) {
@@ -276,7 +280,7 @@ class AttendanceReportScreen extends StatelessWidget {
                     const SliverToBoxAdapter(child: SizedBox(height: 20)),
                     SliverToBoxAdapter(
                       child: _sectionTitle(
-                        "STUDENT ATTENDANCE SUMMARY",
+                        AppStrings.studentAttendanceSummary,
                         isDark,
                       ),
                     ),
@@ -288,7 +292,7 @@ class AttendanceReportScreen extends StatelessWidget {
                               ? [
                                   _emptySmall(
                                     isDark,
-                                    "No attendance data available",
+                                    AppStrings.noAttendanceDataAvailable,
                                   ),
                                 ]
                               : studentSummary.values.map((student) {
@@ -311,7 +315,7 @@ class AttendanceReportScreen extends StatelessWidget {
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 20)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("LOW ATTENDANCE ALERT", isDark),
+                      child: _sectionTitle(AppStrings.lowAttendanceAlert, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -340,6 +344,8 @@ class AttendanceReportScreen extends StatelessWidget {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -353,14 +359,14 @@ class AttendanceReportScreen extends StatelessWidget {
     required int presentCount,
     required int absentCount,
   }) {
-    String health = "Needs Attention";
+    String health = AppStrings.needsAttention;
     Color healthColor = Colors.redAccent;
 
     if (attendancePercent >= 90) {
-      health = "Excellent";
+      health = AppStrings.excellent;
       healthColor = Colors.green;
     } else if (attendancePercent >= 75) {
-      health = "Good";
+      health = AppStrings.good;
       healthColor = Colors.orange;
     }
 
@@ -445,7 +451,7 @@ class AttendanceReportScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "ACADEMY",
+                            AppStrings.academy.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 13,
@@ -453,8 +459,8 @@ class AttendanceReportScreen extends StatelessWidget {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "ATTENDANCE",
+                          Text(
+                            AppStrings.attendance.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 28,
@@ -463,7 +469,7 @@ class AttendanceReportScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "REPORT",
+                            AppStrings.report.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -483,7 +489,7 @@ class AttendanceReportScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            "$attendancePercent% overall attendance",
+                            "$attendancePercent% ${AppStrings.overallAttendance}",
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
@@ -495,9 +501,9 @@ class AttendanceReportScreen extends StatelessWidget {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Total: $totalRecords"),
-                              _heroChip("Present: $presentCount"),
-                              _heroChip("Absent: $absentCount"),
+                              _heroChip("${AppStrings.total}: $totalRecords"),
+                              _heroChip("${AppStrings.present}: $presentCount"),
+                              _heroChip("${AppStrings.absent}: $absentCount"),
                               _statusChip(health, healthColor),
                             ],
                           ),
@@ -516,8 +522,8 @@ class AttendanceReportScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("PDF export will be added later"),
+                  SnackBar(
+                    content: Text(AppStrings.pdfExportLater),
                   ),
                 );
               },
@@ -532,12 +538,12 @@ class AttendanceReportScreen extends StatelessWidget {
                   border: Border.all(color: gold.withOpacity(0.7)),
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.download_rounded, color: gold, size: 15),
-                    SizedBox(width: 5),
+                  children: [
+                    const Icon(Icons.download_rounded, color: gold, size: 15),
+                    const SizedBox(width: 5),
                     Text(
-                      "Export",
-                      style: TextStyle(
+                      AppStrings.export,
+                      style: const TextStyle(
                         color: gold,
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
@@ -562,14 +568,17 @@ class AttendanceReportScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: gold.withOpacity(0.75)),
       ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: gold,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: gold,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ),
     );
@@ -657,13 +666,21 @@ class AttendanceReportScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -690,7 +707,7 @@ class AttendanceReportScreen extends StatelessWidget {
       leadingColor: maroon,
       leading: const Icon(Icons.groups_rounded, color: gold),
       title: batch,
-      subtitle: "Present: $present • Absent: $absent",
+      subtitle: "${AppStrings.present}: $present • ${AppStrings.absent}: $absent",
       trailing: _percentChip(percent),
     );
   }
@@ -730,7 +747,7 @@ class AttendanceReportScreen extends StatelessWidget {
         ),
       ),
       title: name,
-      subtitle: "$batch\nPresent: $present • Absent: $absent",
+      subtitle: "$batch\n${AppStrings.present}: $present • ${AppStrings.absent}: $absent",
       trailing: _percentChip(percent),
       isThreeLine: true,
     );
@@ -796,7 +813,7 @@ class AttendanceReportScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title.isEmpty ? "Unknown" : title,
+                  title.isEmpty ? AppStrings.unknown : title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -863,14 +880,17 @@ class AttendanceReportScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.35)),
       ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ),
     );
@@ -918,7 +938,7 @@ class AttendanceReportScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "No low attendance students",
+                  AppStrings.noLowAttendanceStudents,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
@@ -926,7 +946,7 @@ class AttendanceReportScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "All students are above 75%",
+                  AppStrings.allStudentsAbove75,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 12,
