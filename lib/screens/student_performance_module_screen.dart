@@ -1,6 +1,7 @@
   import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'performance_report_screen.dart';
 
@@ -44,24 +45,24 @@ class _StudentPerformanceModuleScreenState
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Performance";
+        return AppStrings.performance;
       case 1:
-        return "Progress";
+        return AppStrings.progress;
       case 2:
-        return "Reports";
+        return AppStrings.reports;
       default:
-        return "Performance Module";
+        return AppStrings.performanceModule;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "View your cricket skill performance";
+        return AppStrings.viewCricketSkillPerformance;
       case 1:
-        return "Track fitness and skill development";
+        return AppStrings.trackFitnessSkillDevelopment;
       case 2:
-        return "View performance reports and analytics";
+        return AppStrings.viewPerformanceReportsAnalytics;
       default:
         return "";
     }
@@ -92,22 +93,22 @@ class _StudentPerformanceModuleScreenState
       return [
         _InfoItem(
           icon: Icons.dashboard_rounded,
-          title: "Performance Overview",
-          subtitle: "View complete performance summary",
+          title: AppStrings.performanceOverview,
+          subtitle: AppStrings.viewCompletePerformanceSummary,
           color: Colors.green,
           screen: const PerformanceReportScreen(),
         ),
         _InfoItem(
           icon: Icons.sports_cricket_rounded,
-          title: "Batting Performance",
-          subtitle: "Check batting progress and score analysis",
+          title: AppStrings.battingPerformance,
+          subtitle: AppStrings.checkBattingProgressScoreAnalysis,
           color: Colors.orange,
           screen: const PerformanceReportScreen(),
         ),
         _InfoItem(
           icon: Icons.sports_baseball_rounded,
-          title: "Bowling Performance",
-          subtitle: "Check bowling progress and skill report",
+          title: AppStrings.bowlingPerformance,
+          subtitle: AppStrings.checkBowlingProgressSkillReport,
           color: Colors.blueAccent,
           screen: const PerformanceReportScreen(),
         ),
@@ -118,22 +119,22 @@ class _StudentPerformanceModuleScreenState
       return [
         _InfoItem(
           icon: Icons.fitness_center_rounded,
-          title: "Fitness Progress",
-          subtitle: "View strength, stamina and fitness updates",
+          title: AppStrings.fitnessProgress,
+          subtitle: AppStrings.viewStrengthStaminaFitnessUpdates,
           color: Colors.redAccent,
           screen: const PerformanceReportScreen(),
         ),
         _InfoItem(
           icon: Icons.psychology_rounded,
-          title: "Skill Development",
-          subtitle: "Track cricket skill improvement",
+          title: AppStrings.skillDevelopment,
+          subtitle: AppStrings.trackCricketSkillImprovement,
           color: Colors.purpleAccent,
           screen: const PerformanceReportScreen(),
         ),
         _InfoItem(
           icon: Icons.timeline_rounded,
-          title: "Progress Report",
-          subtitle: "View your overall progress report",
+          title: AppStrings.progressReport,
+          subtitle: AppStrings.viewOverallProgressReport,
           color: Colors.green,
           screen: const PerformanceReportScreen(),
         ),
@@ -143,15 +144,15 @@ class _StudentPerformanceModuleScreenState
     return [
       _InfoItem(
         icon: Icons.rate_review_rounded,
-        title: "Coach Feedback",
-        subtitle: "View coach remarks and improvement notes",
+        title: AppStrings.coachFeedback,
+        subtitle: AppStrings.viewCoachRemarksImprovementNotes,
         color: Colors.orange,
         screen: const PerformanceReportScreen(),
       ),
       _InfoItem(
         icon: Icons.calendar_month_rounded,
-        title: "Monthly Report",
-        subtitle: "View monthly performance report",
+        title: AppStrings.monthlyReport,
+        subtitle: AppStrings.viewMonthlyPerformanceReport,
         color: Colors.blueAccent,
         screen: const PerformanceReportScreen(),
       ),
@@ -164,9 +165,12 @@ class _StudentPerformanceModuleScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -210,6 +214,8 @@ class _StudentPerformanceModuleScreenState
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -232,15 +238,19 @@ class _StudentPerformanceModuleScreenState
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(
-            "PERFORMANCE MODULE",
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: _primaryText(isDark),
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.8,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              AppStrings.performanceModule.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+              ),
             ),
           ),
         ),
@@ -364,8 +374,8 @@ class _StudentPerformanceModuleScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "PERFORMANCE MODULE",
+                    Text(
+                      AppStrings.performanceModule.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -376,7 +386,7 @@ class _StudentPerformanceModuleScreenState
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Cricket progress and skill analytics",
+                      AppStrings.cricketProgressSkillAnalytics,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -388,7 +398,7 @@ class _StudentPerformanceModuleScreenState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Report updates are controlled by Coach/Admin",
+                      AppStrings.reportUpdatesControlledByCoachAdmin,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -439,7 +449,7 @@ class _StudentPerformanceModuleScreenState
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Students can view their own performance reports only. Later we can connect each row to separate dynamic screens.",
+              AppStrings.studentsViewOwnPerformanceOnly,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -670,26 +680,26 @@ class _StudentPerformanceModuleScreenState
         items: [
           _MiniStatData(
             icon: Icons.dashboard_rounded,
-            label: "Overview",
-            value: "View",
+            label: AppStrings.overview,
+            value: AppStrings.view,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.sports_cricket_rounded,
-            label: "Batting",
-            value: "Track",
+            label: AppStrings.batting,
+            value: AppStrings.track,
             color: Colors.orange,
           ),
           _MiniStatData(
             icon: Icons.sports_baseball_rounded,
-            label: "Bowling",
-            value: "Track",
+            label: AppStrings.bowling,
+            value: AppStrings.track,
             color: Colors.blueAccent,
           ),
           _MiniStatData(
             icon: Icons.analytics_rounded,
-            label: "Score",
-            value: "Live",
+            label: AppStrings.score,
+            value: AppStrings.live,
             color: Colors.purpleAccent,
           ),
         ],
@@ -702,26 +712,26 @@ class _StudentPerformanceModuleScreenState
         items: [
           _MiniStatData(
             icon: Icons.fitness_center_rounded,
-            label: "Fitness",
-            value: "View",
+            label: AppStrings.fitness,
+            value: AppStrings.view,
             color: Colors.redAccent,
           ),
           _MiniStatData(
             icon: Icons.psychology_rounded,
-            label: "Skills",
-            value: "Grow",
+            label: AppStrings.skills,
+            value: AppStrings.grow,
             color: Colors.purpleAccent,
           ),
           _MiniStatData(
             icon: Icons.timeline_rounded,
-            label: "Progress",
-            value: "Track",
+            label: AppStrings.progress,
+            value: AppStrings.track,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.trending_up_rounded,
-            label: "Growth",
-            value: "Live",
+            label: AppStrings.growth,
+            value: AppStrings.live,
             color: Colors.blueAccent,
           ),
         ],
@@ -733,21 +743,21 @@ class _StudentPerformanceModuleScreenState
       items: [
         _MiniStatData(
           icon: Icons.rate_review_rounded,
-          label: "Feedback",
-          value: "Coach",
+          label: AppStrings.feedback,
+          value: AppStrings.coach,
           color: Colors.orange,
         ),
         _MiniStatData(
           icon: Icons.calendar_month_rounded,
-          label: "Monthly",
-          value: "Report",
+          label: AppStrings.monthly,
+          value: AppStrings.report,
           color: Colors.blueAccent,
         ),
         
         _MiniStatData(
           icon: Icons.verified_rounded,
-          label: "Status",
-          value: "Active",
+          label: AppStrings.status,
+          value: AppStrings.active,
           color: Colors.green,
         ),
       ],
@@ -798,25 +808,31 @@ class _StudentPerformanceModuleScreenState
           size: 21,
         ),
         const SizedBox(height: 5),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: _secondaryText(isDark),
-            fontSize: 9.2,
-            fontWeight: FontWeight.w700,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _secondaryText(isDark),
+              fontSize: 9.2,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         const SizedBox(height: 3),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: _primaryText(isDark),
-            fontSize: 12.5,
-            fontWeight: FontWeight.w900,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _primaryText(isDark),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ],
@@ -827,15 +843,15 @@ class _StudentPerformanceModuleScreenState
     final items = [
       _BottomNavItem(
         icon: Icons.analytics_rounded,
-        label: "Main",
+        label: AppStrings.main,
       ),
       _BottomNavItem(
         icon: Icons.trending_up_rounded,
-        label: "Progress",
+        label: AppStrings.progress,
       ),
       _BottomNavItem(
         icon: Icons.bar_chart_rounded,
-        label: "Reports",
+        label: AppStrings.reports,
       ),
     ];
 
@@ -910,19 +926,22 @@ class _StudentPerformanceModuleScreenState
                       size: selected ? 25 : 23,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
                         color: selected
                             ? Colors.white
                             : isDark
                                 ? Colors.white60
                                 : const Color(0xFF6B7280),
                         fontSize: 11,
-                        fontWeight:
-                            selected ? FontWeight.w900 : FontWeight.w700,
+                          fontWeight:
+                              selected ? FontWeight.w900 : FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],

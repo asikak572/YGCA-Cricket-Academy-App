@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class PerformanceChartScreen extends StatefulWidget {
   const PerformanceChartScreen({super.key});
@@ -199,9 +200,9 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
   }
 
   String _topPerformer(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
-    if (docs.isEmpty) return "No Data";
+    if (docs.isEmpty) return AppStrings.noData;
 
-    String topName = "No Data";
+    String topName = AppStrings.noData;
     double topScore = -1;
 
     for (final doc in docs) {
@@ -220,7 +221,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
             ? _text(data['studentName'])
             : _text(data['name']).isNotEmpty
                 ? _text(data['name'])
-                : 'Unknown';
+                : AppStrings.unknown;
       }
     }
 
@@ -278,18 +279,26 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
   }
 
   String _ratingText(int avg) {
-    if (avg >= 90) return "ELITE";
-    if (avg >= 75) return "EXCELLENT";
-    if (avg >= 60) return "GOOD";
-    if (avg >= 40) return "AVERAGE";
-    return "NEEDS WORK";
+    if (avg >= 90) return AppStrings.elite.toUpperCase();
+    if (avg >= 75) return AppStrings.excellent.toUpperCase();
+    if (avg >= 60) return AppStrings.good.toUpperCase();
+    if (avg >= 40) return AppStrings.average.toUpperCase();
+    return AppStrings.needsWork.toUpperCase();
   }
 
   Color _ratingColor(String rating) {
-    if (rating == "ELITE") return Colors.purpleAccent;
-    if (rating == "EXCELLENT") return Colors.green;
-    if (rating == "GOOD") return Colors.blueAccent;
-    if (rating == "AVERAGE") return Colors.orange;
+    if (rating == AppStrings.elite.toUpperCase()) {
+      return Colors.purpleAccent;
+    }
+    if (rating == AppStrings.excellent.toUpperCase()) {
+      return Colors.green;
+    }
+    if (rating == AppStrings.good.toUpperCase()) {
+      return Colors.blueAccent;
+    }
+    if (rating == AppStrings.average.toUpperCase()) {
+      return Colors.orange;
+    }
     return Colors.redAccent;
   }
 
@@ -318,9 +327,12 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: !userLoaded
@@ -339,7 +351,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                           Expanded(
                             child: _messageCard(
                               isDark,
-                              "No batch assigned to this coach",
+                              AppStrings.noBatchAssignedToCoach,
                               Icons.groups_2_outlined,
                             ),
                           ),
@@ -357,7 +369,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                                     child: Padding(
                                       padding: const EdgeInsets.all(18),
                                       child: Text(
-                                        "Error: ${snapshot.error}",
+                                        "${AppStrings.error}: ${snapshot.error}",
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                           color: Colors.redAccent,
@@ -416,7 +428,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                                   fitness: fitnessAvg,
                                 ),
                                 const SizedBox(height: 18),
-                                _sectionTitle("SKILL AVERAGE CHART", isDark),
+                                _sectionTitle(AppStrings.skillAverageChart, isDark),
                                 _barChart(
                                   isDark: isDark,
                                   batting: battingAvg,
@@ -425,7 +437,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                                   fitness: fitnessAvg,
                                 ),
                                 const SizedBox(height: 18),
-                                _sectionTitle("TOP PERFORMERS", isDark),
+                                _sectionTitle(AppStrings.topPerformers, isDark),
                                 docs.isEmpty
                                     ? _emptyCard(isDark)
                                     : Column(
@@ -439,7 +451,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                                                   : _text(data['name'])
                                                           .isNotEmpty
                                                       ? _text(data['name'])
-                                                      : 'Unknown';
+                                                      : AppStrings.unknown;
 
                                           final batting = _toInt(data['batting']);
                                           final bowling = _toInt(data['bowling']);
@@ -470,6 +482,8 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                         },
                       ),
           ),
+            );
+          },
         );
       },
     );
@@ -497,19 +511,23 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "ANALYTICS",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.analytics.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
-                  "Performance insight center",
+                  AppStrings.performanceInsightCenter,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -658,7 +676,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "CRICHEROES",
+                            AppStrings.cricHeroes.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 13,
@@ -666,8 +684,8 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "PERFORMANCE",
+                          Text(
+                            AppStrings.performance.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 28,
@@ -676,7 +694,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                             ),
                           ),
                           Text(
-                            "ANALYTICS",
+                            AppStrings.analytics.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -689,8 +707,8 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Reports: $totalReports"),
-                              _heroChip("Top: $topPlayer"),
+                              _heroChip("${AppStrings.reports}: $totalReports"),
+                              _heroChip("${AppStrings.top}: $topPlayer"),
                             ],
                           ),
                         ],
@@ -749,7 +767,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Analytics are view-only now. Data will sync from CricHeroes integration later.",
+              AppStrings.analyticsViewOnlyCricHeroesLater,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -780,28 +798,28 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
       children: [
         _statCard(
           isDark: isDark,
-          title: "Batting Avg",
+          title: AppStrings.battingAverage,
           value: batting.round().toString(),
           icon: Icons.sports_cricket_rounded,
           color: Colors.green,
         ),
         _statCard(
           isDark: isDark,
-          title: "Bowling Avg",
+          title: AppStrings.bowlingAverage,
           value: bowling.round().toString(),
           icon: Icons.sports_baseball_rounded,
           color: Colors.blueAccent,
         ),
         _statCard(
           isDark: isDark,
-          title: "Fielding Avg",
+          title: AppStrings.fieldingAverage,
           value: fielding.round().toString(),
           icon: Icons.sports_handball_rounded,
           color: Colors.orange,
         ),
         _statCard(
           isDark: isDark,
-          title: "Fitness Avg",
+          title: AppStrings.fitnessAverage,
           value: fitness.round().toString(),
           icon: Icons.fitness_center_rounded,
           color: Colors.purpleAccent,
@@ -890,13 +908,21 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -974,16 +1000,16 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
 
                   switch (value.toInt()) {
                     case 0:
-                      title = "BAT";
+                      title = AppStrings.batShort;
                       break;
                     case 1:
-                      title = "BOWL";
+                      title = AppStrings.bowlShort;
                       break;
                     case 2:
-                      title = "FIELD";
+                      title = AppStrings.fieldShort;
                       break;
                     case 3:
-                      title = "FIT";
+                      title = AppStrings.fitShort;
                       break;
                   }
 
@@ -1075,7 +1101,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  batch.isEmpty ? "No batch" : batch,
+                  batch.isEmpty ? AppStrings.noBatch : batch,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1106,12 +1132,16 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: ratingColor.withOpacity(0.25)),
                 ),
-                child: Text(
-                  rating,
-                  style: TextStyle(
-                    color: ratingColor,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    rating,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: ratingColor,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ),
@@ -1141,7 +1171,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No performance records available",
+            AppStrings.noPerformanceRecordsAvailable,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1149,7 +1179,7 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "Analytics data will sync from CricHeroes later",
+            AppStrings.analyticsDataSyncCricHeroesLater,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class StudentAttendanceAnalyticsScreen extends StatefulWidget {
   const StudentAttendanceAnalyticsScreen({super.key});
@@ -62,11 +63,11 @@ class _StudentAttendanceAnalyticsScreenState
   }
 
   String _grade(double percentage) {
-    if (percentage >= 90) return "Excellent";
-    if (percentage >= 75) return "Good";
-    if (percentage >= 60) return "Average";
-    if (percentage > 0) return "Needs Focus";
-    return "No Data";
+    if (percentage >= 90) return AppStrings.excellent;
+    if (percentage >= 75) return AppStrings.good;
+    if (percentage >= 60) return AppStrings.average;
+    if (percentage > 0) return AppStrings.needsFocus;
+    return AppStrings.noData;
   }
 
   Color _gradeColor(double percentage) {
@@ -106,9 +107,12 @@ class _StudentAttendanceAnalyticsScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -123,7 +127,7 @@ class _StudentAttendanceAnalyticsScreenState
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              "Error: ${snapshot.error}",
+                              "${AppStrings.error}: ${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.redAccent,
@@ -208,7 +212,7 @@ class _StudentAttendanceAnalyticsScreenState
                     SliverToBoxAdapter(child: _searchBox(isDark)),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("STUDENT ATTENDANCE ANALYTICS", isDark),
+                      child: _sectionTitle(AppStrings.studentAttendanceAnalyticsTitle, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -221,15 +225,15 @@ class _StudentAttendanceAnalyticsScreenState
                                   final data = doc.data();
 
                                   final name = _text(data['name']).isEmpty
-                                      ? 'Unknown Student'
+                                      ? AppStrings.unknownStudent
                                       : _text(data['name']);
 
                                   final rollNo = _text(data['rollNo']).isEmpty
-                                      ? 'No Roll No'
+                                      ? AppStrings.noRollNo
                                       : _text(data['rollNo']);
 
                                   final batch = _text(data['batch']).isEmpty
-                                      ? 'No Batch'
+                                      ? AppStrings.noBatch
                                       : _text(data['batch']);
 
                                   final present = _toInt(
@@ -269,6 +273,8 @@ class _StudentAttendanceAnalyticsScreenState
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -297,7 +303,7 @@ class _StudentAttendanceAnalyticsScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "STUDENT ANALYTICS",
+                  AppStrings.studentAnalytics.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -308,7 +314,7 @@ class _StudentAttendanceAnalyticsScreenState
                   ),
                 ),
                 Text(
-                  "Student-wise attendance performance",
+                  AppStrings.studentWiseAttendancePerformance,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -424,7 +430,7 @@ class _StudentAttendanceAnalyticsScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Student Attendance Analytics",
+                      AppStrings.studentAttendanceAnalytics,
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontSize: 17,
@@ -433,7 +439,7 @@ class _StudentAttendanceAnalyticsScreenState
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Total students: $totalStudents • Average attendance: ${averagePercentage.toStringAsFixed(0)}%",
+                      "${AppStrings.totalStudents}: $totalStudents • ${AppStrings.averageAttendance}: ${averagePercentage.toStringAsFixed(0)}%",
                       style: TextStyle(
                         color: _secondaryText(isDark),
                         fontSize: 12,
@@ -464,7 +470,7 @@ class _StudentAttendanceAnalyticsScreenState
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Present",
+                  label: AppStrings.present,
                   value: present.toString(),
                   color: Colors.green,
                 ),
@@ -473,7 +479,7 @@ class _StudentAttendanceAnalyticsScreenState
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Absent",
+                  label: AppStrings.absent,
                   value: absent.toString(),
                   color: Colors.redAccent,
                 ),
@@ -482,7 +488,7 @@ class _StudentAttendanceAnalyticsScreenState
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Leave",
+                  label: AppStrings.leave,
                   value: leave.toString(),
                   color: Colors.orange,
                 ),
@@ -560,7 +566,7 @@ class _StudentAttendanceAnalyticsScreenState
             Icons.search_rounded,
             color: isDark ? Colors.white54 : maroon,
           ),
-          hintText: "Search by name, roll no or batch",
+          hintText: AppStrings.searchNameRollBatch,
           hintStyle: TextStyle(
             color: _secondaryText(isDark),
             fontSize: 12,
@@ -576,13 +582,21 @@ class _StudentAttendanceAnalyticsScreenState
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -711,7 +725,7 @@ class _StudentAttendanceAnalyticsScreenState
               Expanded(
                 child: _statusBox(
                   isDark: isDark,
-                  label: "Present",
+                  label: AppStrings.present,
                   value: present.toString(),
                   color: Colors.green,
                 ),
@@ -720,7 +734,7 @@ class _StudentAttendanceAnalyticsScreenState
               Expanded(
                 child: _statusBox(
                   isDark: isDark,
-                  label: "Absent",
+                  label: AppStrings.absent,
                   value: absent.toString(),
                   color: Colors.redAccent,
                 ),
@@ -729,7 +743,7 @@ class _StudentAttendanceAnalyticsScreenState
               Expanded(
                 child: _statusBox(
                   isDark: isDark,
-                  label: "Leave",
+                  label: AppStrings.leave,
                   value: leave.toString(),
                   color: Colors.orange,
                 ),
@@ -816,7 +830,7 @@ class _StudentAttendanceAnalyticsScreenState
           ),
           const SizedBox(height: 10),
           Text(
-            "No Students Found",
+            AppStrings.noStudentsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -824,7 +838,7 @@ class _StudentAttendanceAnalyticsScreenState
           ),
           const SizedBox(height: 4),
           Text(
-            "No student records are available for analytics.",
+            AppStrings.noStudentRecordsForAnalytics,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

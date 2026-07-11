@@ -933,4 +933,286 @@ static String get noLowAttendanceStudents =>
 static String get allStudentsAbove75 =>
     text("All students are above 75%", "அனைத்து மாணவர்களும் 75%க்கு மேல் உள்ளனர்", "सभी छात्र 75% से ऊपर हैं");
 
+// Add before the final } in app_strings.dart. Skip existing getters.
+
+static String get studentAttendanceAnalyticsTitle =>
+    text("STUDENT ATTENDANCE ANALYTICS", "மாணவர் வருகை பகுப்பாய்வு", "छात्र उपस्थिति विश्लेषण");
+
+static String get noRollNo =>
+    text("No Roll No", "ரோல் எண் இல்லை", "रोल नंबर नहीं");
+
+static String get studentWiseAttendancePerformance =>
+    text("Student-wise attendance performance", "மாணவர் வாரியான வருகை செயல்திறன்", "छात्र-वार उपस्थिति प्रदर्शन");
+
+static String get studentAttendanceAnalytics =>
+    text("Student Attendance Analytics", "மாணவர் வருகை பகுப்பாய்வு", "छात्र उपस्थिति विश्लेषण");
+
+static String get averageAttendance =>
+    text("Average attendance", "சராசரி வருகை", "औसत उपस्थिति");
+
+static String get needsFocus =>
+    text("Needs Focus", "கவனம் தேவை", "ध्यान आवश्यक");
+
+static String get noData =>
+    text("No Data", "தகவல் இல்லை", "कोई डेटा नहीं");
+
+static String get searchNameRollBatch =>
+    text("Search by name, roll no or batch", "பெயர், ரோல் எண் அல்லது பேட்ச் மூலம் தேடவும்", "नाम, रोल नंबर या बैच से खोजें");
+
+static String get noStudentRecordsForAnalytics =>
+    text("No student records are available for analytics.", "பகுப்பாய்விற்கான மாணவர் பதிவுகள் இல்லை.", "विश्लेषण के लिए कोई छात्र रिकॉर्ड उपलब्ध नहीं है।");
+// Add these before the final } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get progress =>
+    text("Progress", "முன்னேற்றம்", "प्रगति");
+
+static String get performanceModule =>
+    text("Performance Module", "செயல்திறன் மாட்யூல்", "प्रदर्शन मॉड्यूल");
+
+static String get viewCricketSkillPerformance =>
+    text("View your cricket skill performance", "உங்கள் கிரிக்கெட் திறன் செயல்திறனை பாருங்கள்", "अपना क्रिकेट कौशल प्रदर्शन देखें");
+
+static String get trackFitnessSkillDevelopment =>
+    text("Track fitness and skill development", "உடற்தகுதி மற்றும் திறன் வளர்ச்சியை கண்காணிக்கவும்", "फिटनेस और कौशल विकास ट्रैक करें");
+
+static String get viewPerformanceReportsAnalytics =>
+    text("View performance reports and analytics", "செயல்திறன் அறிக்கைகள் மற்றும் பகுப்பாய்வுகளை பாருங்கள்", "प्रदर्शन रिपोर्ट और विश्लेषण देखें");
+
+static String get performanceOverview =>
+    text("Performance Overview", "செயல்திறன் கண்ணோட்டம்", "प्रदर्शन अवलोकन");
+
+static String get viewCompletePerformanceSummary =>
+    text("View complete performance summary", "முழுமையான செயல்திறன் சுருக்கத்தை பாருங்கள்", "पूर्ण प्रदर्शन सारांश देखें");
+
+static String get battingPerformance =>
+    text("Batting Performance", "பேட்டிங் செயல்திறன்", "बल्लेबाजी प्रदर्शन");
+
+static String get checkBattingProgressScoreAnalysis =>
+    text("Check batting progress and score analysis", "பேட்டிங் முன்னேற்றம் மற்றும் ஸ்கோர் பகுப்பாய்வை பாருங்கள்", "बल्लेबाजी प्रगति और स्कोर विश्लेषण देखें");
+
+static String get bowlingPerformance =>
+    text("Bowling Performance", "பந்துவீச்சு செயல்திறன்", "गेंदबाजी प्रदर्शन");
+
+static String get checkBowlingProgressSkillReport =>
+    text("Check bowling progress and skill report", "பந்துவீச்சு முன்னேற்றம் மற்றும் திறன் அறிக்கையை பாருங்கள்", "गेंदबाजी प्रगति और कौशल रिपोर्ट देखें");
+
+static String get fitnessProgress =>
+    text("Fitness Progress", "உடற்தகுதி முன்னேற்றம்", "फिटनेस प्रगति");
+
+static String get viewStrengthStaminaFitnessUpdates =>
+    text("View strength, stamina and fitness updates", "வலிமை, சகிப்புத்தன்மை மற்றும் உடற்தகுதி புதுப்பிப்புகளை பாருங்கள்", "ताकत, सहनशक्ति और फिटनेस अपडेट देखें");
+
+static String get skillDevelopment =>
+    text("Skill Development", "திறன் வளர்ச்சி", "कौशल विकास");
+
+static String get trackCricketSkillImprovement =>
+    text("Track cricket skill improvement", "கிரிக்கெட் திறன் மேம்பாட்டை கண்காணிக்கவும்", "क्रिकेट कौशल सुधार ट्रैक करें");
+
+static String get progressReport =>
+    text("Progress Report", "முன்னேற்ற அறிக்கை", "प्रगति रिपोर्ट");
+
+static String get viewOverallProgressReport =>
+    text("View your overall progress report", "உங்கள் மொத்த முன்னேற்ற அறிக்கையை பாருங்கள்", "अपनी समग्र प्रगति रिपोर्ट देखें");
+
+static String get coachFeedback =>
+    text("Coach Feedback", "பயிற்சியாளர் கருத்து", "कोच प्रतिक्रिया");
+
+static String get viewCoachRemarksImprovementNotes =>
+    text("View coach remarks and improvement notes", "பயிற்சியாளர் குறிப்புகள் மற்றும் மேம்பாட்டு குறிப்புகளை பாருங்கள்", "कोच टिप्पणियाँ और सुधार नोट्स देखें");
+
+static String get monthlyReport =>
+    text("Monthly Report", "மாதாந்திர அறிக்கை", "मासिक रिपोर्ट");
+
+static String get viewMonthlyPerformanceReport =>
+    text("View monthly performance report", "மாதாந்திர செயல்திறன் அறிக்கையை பாருங்கள்", "मासिक प्रदर्शन रिपोर्ट देखें");
+
+static String get cricketProgressSkillAnalytics =>
+    text("Cricket progress and skill analytics", "கிரிக்கெட் முன்னேற்றம் மற்றும் திறன் பகுப்பாய்வு", "क्रिकेट प्रगति और कौशल विश्लेषण");
+
+static String get reportUpdatesControlledByCoachAdmin =>
+    text("Report updates are controlled by Coach/Admin", "அறிக்கை புதுப்பிப்புகள் பயிற்சியாளர்/அட்மின் கட்டுப்பாட்டில் உள்ளன", "रिपोर्ट अपडेट कोच/एडमिन द्वारा नियंत्रित हैं");
+
+static String get studentsViewOwnPerformanceOnly =>
+    text("Students can view their own performance reports only. Later we can connect each row to separate dynamic screens.", "மாணவர்கள் தங்களுடைய செயல்திறன் அறிக்கைகளை மட்டுமே பார்க்க முடியும். பின்னர் ஒவ்வொரு வரியையும் தனித்தனி டைனமிக் திரைகளுடன் இணைக்கலாம்.", "छात्र केवल अपनी प्रदर्शन रिपोर्ट देख सकते हैं। बाद में प्रत्येक पंक्ति को अलग डायनेमिक स्क्रीन से जोड़ सकते हैं।");
+
+static String get overview =>
+    text("Overview", "கண்ணோட்டம்", "अवलोकन");
+
+static String get batting =>
+    text("Batting", "பேட்டிங்", "बल्लेबाजी");
+
+static String get bowling =>
+    text("Bowling", "பந்துவீச்சு", "गेंदबाजी");
+
+static String get score =>
+    text("Score", "ஸ்கோர்", "स्कोर");
+
+static String get grow =>
+    text("Grow", "வளர்ச்சி", "विकास");
+
+static String get feedback =>
+    text("Feedback", "கருத்து", "प्रतिक्रिया");
+
+static String get coach =>
+    text("Coach", "பயிற்சியாளர்", "कोच");
+// Add these before the final } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get elite =>
+    text("Elite", "உச்சநிலை", "एलीट");
+
+static String get needsWork =>
+    text("Needs Work", "மேம்பாடு தேவை", "सुधार आवश्यक");
+
+static String get noBatchAssignedToCoach =>
+    text("No batch assigned to this coach", "இந்த பயிற்சியாளருக்கு பேட்ச் ஒதுக்கப்படவில்லை", "इस कोच को कोई बैच असाइन नहीं है");
+
+static String get viewPerformanceAnalytics =>
+    text("VIEW PERFORMANCE ANALYTICS", "செயல்திறன் பகுப்பாய்வைப் பாருங்கள்", "प्रदर्शन विश्लेषण देखें");
+
+static String get performanceReportsTitle =>
+    text("PERFORMANCE REPORTS", "செயல்திறன் அறிக்கைகள்", "प्रदर्शन रिपोर्ट");
+
+static String get reportsPlayerAnalytics =>
+    text("Reports & Player Analytics", "அறிக்கைகள் மற்றும் வீரர் பகுப்பாய்வு", "रिपोर्ट और खिलाड़ी विश्लेषण");
+
+static String get cricHeroes =>
+    text("CricHeroes", "CricHeroes", "CricHeroes");
+
+static String get performanceReportsViewOnlyCricHeroesLater =>
+    text("Performance reports are view-only now. Data will be updated through CricHeroes integration later.", "செயல்திறன் அறிக்கைகள் தற்போது பார்வைக்கு மட்டும். பின்னர் CricHeroes இணைப்பின் மூலம் தகவல் புதுப்பிக்கப்படும்.", "प्रदर्शन रिपोर्ट अभी केवल देखने के लिए हैं। बाद में CricHeroes एकीकरण से डेटा अपडेट होगा।");
+
+static String get fielding =>
+    text("Fielding", "பீல்டிங்", "फील्डिंग");
+
+static String get coachRemarks =>
+    text("Coach Remarks", "பயிற்சியாளர் குறிப்புகள்", "कोच टिप्पणियाँ");
+
+static String get coachRemarksNoRemarks =>
+    text("Coach Remarks: No remarks added", "பயிற்சியாளர் குறிப்புகள்: குறிப்புகள் சேர்க்கப்படவில்லை", "कोच टिप्पणियाँ: कोई टिप्पणी नहीं जोड़ी गई");
+
+static String get noPerformanceReportsFound =>
+    text("No performance reports found", "செயல்திறன் அறிக்கைகள் இல்லை", "कोई प्रदर्शन रिपोर्ट नहीं मिली");
+
+static String get performanceDataSyncCricHeroesLater =>
+    text("Performance data will sync from CricHeroes integration later", "செயல்திறன் தகவல் பின்னர் CricHeroes இணைப்பில் இருந்து ஒத்திசைக்கப்படும்", "प्रदर्शन डेटा बाद में CricHeroes एकीकरण से सिंक होगा");
+// Add these before the final } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get analytics =>
+    text("Analytics", "பகுப்பாய்வு", "विश्लेषण");
+
+static String get performanceInsightCenter =>
+    text("Performance insight center", "செயல்திறன் பார்வை மையம்", "प्रदर्शन अंतर्दृष्टि केंद्र");
+
+static String get skillAverageChart =>
+    text("SKILL AVERAGE CHART", "திறன் சராசரி விளக்கப்படம்", "कौशल औसत चार्ट");
+
+static String get topPerformers =>
+    text("TOP PERFORMERS", "சிறந்த செயல்திறன் வீரர்கள்", "शीर्ष प्रदर्शनकर्ता");
+
+static String get top =>
+    text("Top", "சிறந்தவர்", "शीर्ष");
+
+static String get analyticsViewOnlyCricHeroesLater =>
+    text("Analytics are view-only now. Data will sync from CricHeroes integration later.", "பகுப்பாய்வு தற்போது பார்வைக்கு மட்டும். பின்னர் CricHeroes இணைப்பிலிருந்து தகவல் ஒத்திசைக்கப்படும்.", "विश्लेषण अभी केवल देखने के लिए है। बाद में CricHeroes एकीकरण से डेटा सिंक होगा।");
+
+static String get battingAverage =>
+    text("Batting Avg", "பேட்டிங் சராசரி", "बल्लेबाजी औसत");
+
+static String get bowlingAverage =>
+    text("Bowling Avg", "பந்துவீச்சு சராசரி", "गेंदबाजी औसत");
+
+static String get fieldingAverage =>
+    text("Fielding Avg", "பீல்டிங் சராசரி", "फील्डिंग औसत");
+
+static String get fitnessAverage =>
+    text("Fitness Avg", "உடற்தகுதி சராசரி", "फिटनेस औसत");
+
+static String get batShort =>
+    text("BAT", "பேட்", "बैट");
+
+static String get bowlShort =>
+    text("BOWL", "பந்து", "बॉल");
+
+static String get fieldShort =>
+    text("FIELD", "பீல்டிங்", "फील्ड");
+
+static String get fitShort =>
+    text("FIT", "உடல்", "फिट");
+
+static String get noPerformanceRecordsAvailable =>
+    text("No performance records available", "செயல்திறன் பதிவுகள் இல்லை", "कोई प्रदर्शन रिकॉर्ड उपलब्ध नहीं");
+
+static String get analyticsDataSyncCricHeroesLater =>
+    text("Analytics data will sync from CricHeroes later", "பகுப்பாய்வு தகவல் பின்னர் CricHeroes இலிருந்து ஒத்திசைக்கப்படும்", "विश्लेषण डेटा बाद में CricHeroes से सिंक होगा");
+// Add these before the final } in app_strings.dart.
+// Skip any getter that already exists.
+
+static String get unableLoadReports =>
+    text("Unable to load reports", "அறிக்கைகளை ஏற்ற முடியவில்லை", "रिपोर्ट लोड नहीं हो सकीं");
+
+static String get financeSummary =>
+    text("FINANCE SUMMARY", "நிதி சுருக்கம்", "वित्त सारांश");
+
+static String get collected =>
+    text("Collected", "வசூலிக்கப்பட்டது", "संग्रहित");
+
+static String get reportOverview =>
+    text("REPORT OVERVIEW", "அறிக்கை கண்ணோட்டம்", "रिपोर्ट अवलोकन");
+
+static String get totalRegistered =>
+    text("Total registered", "மொத்த பதிவு", "कुल पंजीकृत");
+
+static String get recordsMarked =>
+    text("Records marked", "பதிவுகள் குறிக்கப்பட்டது", "रिकॉर्ड दर्ज");
+
+static String get reportsSynced =>
+    text("Reports synced", "அறிக்கைகள் ஒத்திசைக்கப்பட்டது", "रिपोर्ट सिंक");
+
+static String get requestsReceived =>
+    text("Requests received", "கோரிக்கைகள் பெறப்பட்டது", "अनुरोध प्राप्त");
+
+static String get scheduledMatches =>
+    text("Scheduled matches", "திட்டமிடப்பட்ட போட்டிகள்", "निर्धारित मैच");
+
+static String get salaryBudget =>
+    text("Salary Budget", "சம்பள பட்ஜெட்", "वेतन बजट");
+
+static String get coachSalaries =>
+    text("Coach salaries", "பயிற்சியாளர் சம்பளங்கள்", "कोच वेतन");
+
+static String get reportsDashboardTitle =>
+    text("REPORTS DASHBOARD", "அறிக்கை டாஷ்போர்டு", "रिपोर्ट डैशबोर्ड");
+
+static String get academyInsightsSummary =>
+    text("Academy insights and summary", "அகாடமி பார்வைகள் மற்றும் சுருக்கம்", "अकादमी अंतर्दृष्टि और सारांश");
+
+static String get dashboard =>
+    text("Dashboard", "டாஷ்போர்டு", "डैशबोर्ड");
+
+static String get collectionInsight =>
+    text("COLLECTION INSIGHT", "வசூல் பார்வை", "संग्रह अंतर्दृष्टि");
+
+static String get feeCollectionIs =>
+    text("Fee collection is", "கட்டண வசூல்", "फीस संग्रह");
+
+static String get salaryBudgetIs =>
+    text("Salary budget is", "சம்பள பட்ஜெட்", "वेतन बजट");
+
+static String get attendanceRecords =>
+    text("Attendance records", "வருகை பதிவுகள்", "उपस्थिति रिकॉर्ड");
+
+static String get matchesScheduled =>
+    text("Matches scheduled", "திட்டமிடப்பட்ட போட்டிகள்", "निर्धारित मैच");
+
+static String get passion =>
+    text("Passion", "ஆர்வம்", "जुनून");
+
+static String get discipline =>
+    text("Discipline", "ஒழுக்கம்", "अनुशासन");
+
+static String get success =>
+    text("Success", "வெற்றி", "सफलता");
 }
