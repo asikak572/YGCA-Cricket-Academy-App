@@ -1368,102 +1368,136 @@ static String get noReceiptsFound =>
 
 static String get noFeeReceiptRecordsAvailable =>
     text("No fee receipt records are available.", "கட்டண ரசீது பதிவுகள் இல்லை.", "कोई शुल्क रसीद रिकॉर्ड उपलब्ध नहीं है।");
-static String get pdfReportGenerated =>
-    text("PDF report generated", "PDF அறிக்கை உருவாக்கப்பட்டது", "PDF रिपोर्ट बनाई गई");
 
-static String get pdfFailed =>
-    text("PDF failed", "PDF தோல்வியடைந்தது", "PDF विफल");
 
-static String get excelReportGenerated =>
-    text("Excel report generated", "Excel அறிக்கை உருவாக்கப்பட்டது", "Excel रिपोर्ट बनाई गई");
 
-static String get excelFailed =>
-    text("Excel failed", "Excel தோல்வியடைந்தது", "Excel विफल");
+  // ================= COACH SALARY =================
+  static String get salaryMarkedAs => text("Salary marked as", "சம்பள நிலை மாற்றப்பட்டது:", "वेतन स्थिति बदली गई:");
 
-static String get feeReportSummary =>
-    text("FEE REPORT SUMMARY", "கட்டண அறிக்கை சுருக்கம்", "शुल्क रिपोर्ट सारांश");
+  static String get salaryRecordDeleted => text("Salary record deleted", "சம்பள பதிவு நீக்கப்பட்டது", "वेतन रिकॉर्ड हटाया गया");
 
-static String get paidRecords =>
-    text("Paid Records", "செலுத்திய பதிவுகள்", "भुगतान रिकॉर्ड");
+  static String get deleteSalaryRecord => text("Delete Salary Record", "சம்பள பதிவை நீக்கு", "वेतन रिकॉर्ड हटाएं");
 
-static String get noFeeRecordForUser =>
-    text("No fee record available for this user", "இந்த பயனருக்கு கட்டண பதிவு இல்லை", "इस उपयोगकर्ता के लिए कोई शुल्क रिकॉर्ड उपलब्ध नहीं है");
+  static String get deleteSalaryRecordConfirm => text("Are you sure you want to delete this salary record?", "இந்த சம்பள பதிவை நீக்க விரும்புகிறீர்களா?", "क्या आप यह वेतन रिकॉर्ड हटाना चाहते हैं?");
 
-static String get fullyPaid =>
-    text("Fully Paid", "முழுமையாக செலுத்தப்பட்டது", "पूर्ण भुगतान");
+  static String get addCoachSalary => text("Add Coach Salary", "பயிற்சியாளர் சம்பளத்தை சேர்", "कोच वेतन जोड़ें");
 
-static String get pendingFeeRecords =>
-    text("PENDING FEE RECORDS", "நிலுவை கட்டண பதிவுகள்", "लंबित शुल्क रिकॉर्ड");
+  static String get noCoachUsersFoundEnterManually => text("No coach users found. You can enter manually.", "பயிற்சியாளர் பயனர்கள் இல்லை. கைமுறையாக உள்ளிடலாம்.", "कोई कोच उपयोगकर्ता नहीं मिला। आप मैन्युअल रूप से दर्ज कर सकते हैं।");
 
-static String get noPendingFees =>
-    text("No pending fees", "நிலுவை கட்டணங்கள் இல்லை", "कोई लंबित शुल्क नहीं");
+  static String get selectCoach => text("Select Coach", "பயிற்சியாளரை தேர்வு செய்க", "कोच चुनें");
 
-static String get allFeeRecordsCompleted =>
-    text("All fee records are completed", "அனைத்து கட்டண பதிவுகளும் முடிந்தது", "सभी शुल्क रिकॉर्ड पूर्ण हैं");
+  static String get coachName => text("Coach Name", "பயிற்சியாளர் பெயர்", "कोच का नाम");
 
-static String get feeReportsTitle =>
-    text("FEE REPORTS", "கட்டண அறிக்கைகள்", "शुल्क रिपोर्ट");
+  static String get role => text("Role", "பங்கு", "भूमिका");
 
-static String get collectionSummaryExports =>
-    text("Collection summary and exports", "வசூல் சுருக்கம் மற்றும் ஏற்றுமதி", "संग्रह सारांश और निर्यात");
+  static String get salaryAmount => text("Salary Amount", "சம்பள தொகை", "वेतन राशि");
 
-static String get collectedFrom =>
-    text("collected from", "வசூலிக்கப்பட்டது / மொத்தம்", "में से संग्रहित");
+  static String get enterValidSalaryAmount => text("Please enter valid salary amount", "சரியான சம்பள தொகையை உள்ளிடவும்", "कृपया मान्य वेतन राशि दर्ज करें");
 
-static String get dayWiseCollection =>
-    text("DAY WISE COLLECTION", "நாள் வாரியான வசூல்", "दिन-वार संग्रह");
+  static String get coachSalarySaved => text("Coach salary saved", "பயிற்சியாளர் சம்பளம் சேமிக்கப்பட்டது", "कोच वेतन सेव हुआ");
 
-static String get monthlyTransactions =>
-    text("MONTHLY TRANSACTIONS", "மாதாந்திர பரிவர்த்தனைகள்", "मासिक लेनदेन");
+  static String get addSalary => text("Add Salary", "சம்பளம் சேர்", "वेतन जोड़ें");
 
-static String get monthlyCollectionTitle =>
-    text("MONTHLY COLLECTION", "மாதாந்திர வசூல்", "मासिक संग्रह");
+  static String get salaryOverview => text("SALARY OVERVIEW", "சம்பள கண்ணோட்டம்", "वेतन अवलोकन");
 
-static String get monthlyFeeCollectionSummary =>
-    text("Monthly fee collection summary", "மாதாந்திர கட்டண வசூல் சுருக்கம்", "मासिक शुल्क संग्रह सारांश");
+  static String get budget => text("Budget", "பட்ஜெட்", "बजट");
 
-static String get tapArrowsChangeMonth =>
-    text("Tap arrows to change month", "மாதத்தை மாற்ற அம்புகளை அழுத்தவும்", "माह बदलने के लिए तीर दबाएं");
+  static String get remaining => text("Remaining", "மீதம்", "शेष");
 
-static String get monthlyFeeCollectionOverview =>
-    text("Monthly fee collection, pending dues and transaction overview.", "மாதாந்திர கட்டண வசூல், நிலுவை மற்றும் பரிவர்த்தனை கண்ணோட்டம்.", "मासिक शुल्क संग्रह, लंबित बकाया और लेनदेन अवलोकन।");
+  static String get entries => text("Entries", "பதிவுகள்", "प्रविष्टियाँ");
 
-static String get paidPending =>
-    text("Paid / Pending", "செலுத்தியது / நிலுவை", "भुगतान / लंबित");
+  static String get salaryRecords => text("SALARY RECORDS", "சம்பள பதிவுகள்", "वेतन रिकॉर्ड");
 
-static String get noMonthlyCollectionFound =>
-    text("No Monthly Collection Found", "மாதாந்திர வசூல் இல்லை", "कोई मासिक संग्रह नहीं मिला");
+  static String get unknownCoach => text("Unknown Coach", "தெரியாத பயிற்சியாளர்", "अज्ञात कोच");
 
-static String get noFeeRecordsSelectedMonth =>
-    text("No fee records are available for this selected month.", "தேர்ந்தெடுக்கப்பட்ட மாதத்திற்கு கட்டண பதிவுகள் இல்லை.", "चयनित माह के लिए कोई शुल्क रिकॉर्ड उपलब्ध नहीं है।");
+  static String get coachSalaryTitle => text("COACH SALARY", "பயிற்சியாளர் சம்பளம்", "कोच वेतन");
 
-static String get salaryMarkedAs => text("Salary marked as", "சம்பள நிலை மாற்றப்பட்டது:", "वेतन स्थिति बदली गई:");
-static String get salaryRecordDeleted => text("Salary record deleted", "சம்பள பதிவு நீக்கப்பட்டது", "वेतन रिकॉर्ड हटाया गया");
-static String get deleteSalaryRecord => text("Delete Salary Record", "சம்பள பதிவை நீக்கு", "वेतन रिकॉर्ड हटाएं");
-static String get deleteSalaryRecordConfirm => text("Are you sure you want to delete this salary record?", "இந்த சம்பள பதிவை நீக்க விரும்புகிறீர்களா?", "क्या आप यह वेतन रिकॉर्ड हटाना चाहते हैं?");
-static String get addCoachSalary => text("Add Coach Salary", "பயிற்சியாளர் சம்பளத்தை சேர்", "कोच वेतन जोड़ें");
-static String get noCoachUsersFoundEnterManually => text("No coach users found. You can enter manually.", "பயிற்சியாளர் பயனர்கள் இல்லை. கைமுறையாக உள்ளிடலாம்.", "कोई कोच उपयोगकर्ता नहीं मिला। आप मैन्युअल रूप से दर्ज कर सकते हैं।");
-static String get selectCoach => text("Select Coach", "பயிற்சியாளரை தேர்வு செய்க", "कोच चुनें");
-static String get coachName => text("Coach Name", "பயிற்சியாளர் பெயர்", "कोच का नाम");
-static String get role => text("Role", "பங்கு", "भूमिका");
-static String get salaryAmount => text("Salary Amount", "சம்பள தொகை", "वेतन राशि");
-static String get enterValidSalaryAmount => text("Please enter valid salary amount", "சரியான சம்பள தொகையை உள்ளிடவும்", "कृपया मान्य वेतन राशि दर्ज करें");
-static String get coachSalarySaved => text("Coach salary saved", "பயிற்சியாளர் சம்பளம் சேமிக்கப்பட்டது", "कोच वेतन सेव हुआ");
-static String get addSalary => text("Add Salary", "சம்பளம் சேர்", "वेतन जोड़ें");
-static String get salaryOverview => text("SALARY OVERVIEW", "சம்பள கண்ணோட்டம்", "वेतन अवलोकन");
-static String get budget => text("Budget", "பட்ஜெட்", "बजट");
-static String get remaining => text("Remaining", "மீதம்", "शेष");
-static String get entries => text("Entries", "பதிவுகள்", "प्रविष्टियाँ");
-static String get salaryRecords => text("SALARY RECORDS", "சம்பள பதிவுகள்", "वेतन रिकॉर्ड");
-static String get unknownCoach => text("Unknown Coach", "தெரியாத பயிற்சியாளர்", "अज्ञात कोच");
-static String get coachSalaryTitle => text("COACH SALARY", "பயிற்சியாளர் சம்பளம்", "कोच वेतन");
-static String get manageCoachMonthlySalary => text("Manage coach monthly salary", "பயிற்சியாளர் மாத சம்பளத்தை நிர்வகிக்கவும்", "कोच का मासिक वेतन प्रबंधित करें");
-static String get viewYourSalaryRecords => text("View your salary records", "உங்கள் சம்பள பதிவுகளை பாருங்கள்", "अपने वेतन रिकॉर्ड देखें");
-static String get salary => text("Salary", "சம்பளம்", "वेतन");
-static String get markPaid => text("Mark Paid", "செலுத்தியதாக குறி", "भुगतान चिह्नित करें");
-static String get markPending => text("Mark Pending", "நிலுவையாக குறி", "लंबित चिह्नित करें");
-static String get noSalaryRecordsFound => text("No Salary Records Found", "சம்பள பதிவுகள் இல்லை", "कोई वेतन रिकॉर्ड नहीं मिला");
-static String get clickAddSalaryCreateOne => text("Click Add Salary to create one", "புதிய பதிவு உருவாக்க Add Salary அழுத்தவும்", "नया रिकॉर्ड बनाने के लिए Add Salary दबाएं");
-static String get noSalaryRecordForAccount => text("No salary record available for your account", "உங்கள் கணக்கிற்கு சம்பள பதிவு இல்லை", "आपके खाते के लिए कोई वेतन रिकॉर्ड उपलब्ध नहीं है");
+  static String get manageCoachMonthlySalary => text("Manage coach monthly salary", "பயிற்சியாளர் மாத சம்பளத்தை நிர்வகிக்கவும்", "कोच का मासिक वेतन प्रबंधित करें");
+
+  static String get viewYourSalaryRecords => text("View your salary records", "உங்கள் சம்பள பதிவுகளை பாருங்கள்", "अपने वेतन रिकॉर्ड देखें");
+
+  static String get salary => text("Salary", "சம்பளம்", "वेतन");
+
+  static String get markPaid => text("Mark Paid", "செலுத்தியதாக குறி", "भुगतान चिह्नित करें");
+
+  static String get markPending => text("Mark Pending", "நிலுவையாக குறி", "लंबित चिह्नित करें");
+
+  static String get noSalaryRecordsFound => text("No Salary Records Found", "சம்பள பதிவுகள் இல்லை", "कोई वेतन रिकॉर्ड नहीं मिला");
+
+  static String get clickAddSalaryCreateOne => text("Click Add Salary to create one", "புதிய பதிவு உருவாக்க Add Salary அழுத்தவும்", "नया रिकॉर्ड बनाने के लिए Add Salary दबाएं");
+
+  static String get noSalaryRecordForAccount => text("No salary record available for your account", "உங்கள் கணக்கிற்கு சம்பள பதிவு இல்லை", "आपके खाते के लिए कोई वेतन रिकॉर्ड उपलब्ध नहीं है");
+
+
+
+  // ================= FEE REPORT & MONTHLY COLLECTION =================
+  static String get pdfReportGenerated =>
+      text("PDF report generated", "PDF அறிக்கை உருவாக்கப்பட்டது", "PDF रिपोर्ट बनाई गई");
+
+  static String get pdfFailed =>
+      text("PDF failed", "PDF தோல்வியடைந்தது", "PDF विफल");
+
+  static String get excelReportGenerated =>
+      text("Excel report generated", "Excel அறிக்கை உருவாக்கப்பட்டது", "Excel रिपोर्ट बनाई गई");
+
+  static String get excelFailed =>
+      text("Excel failed", "Excel தோல்வியடைந்தது", "Excel विफल");
+
+  static String get feeReportSummary =>
+      text("FEE REPORT SUMMARY", "கட்டண அறிக்கை சுருக்கம்", "शुल्क रिपोर्ट सारांश");
+
+  static String get paidRecords =>
+      text("Paid Records", "செலுத்திய பதிவுகள்", "भुगतान रिकॉर्ड");
+
+  static String get noFeeRecordForUser =>
+      text("No fee record available for this user", "இந்த பயனருக்கு கட்டண பதிவு இல்லை", "इस उपयोगकर्ता के लिए कोई शुल्क रिकॉर्ड उपलब्ध नहीं है");
+
+  static String get fullyPaid =>
+      text("Fully Paid", "முழுமையாக செலுத்தப்பட்டது", "पूर्ण भुगतान");
+
+  static String get pendingFeeRecords =>
+      text("PENDING FEE RECORDS", "நிலுவை கட்டண பதிவுகள்", "लंबित शुल्क रिकॉर्ड");
+
+  static String get noPendingFees =>
+      text("No pending fees", "நிலுவை கட்டணங்கள் இல்லை", "कोई लंबित शुल्क नहीं");
+
+  static String get allFeeRecordsCompleted =>
+      text("All fee records are completed", "அனைத்து கட்டண பதிவுகளும் முடிந்தது", "सभी शुल्क रिकॉर्ड पूर्ण हैं");
+
+  static String get feeReportsTitle =>
+      text("FEE REPORTS", "கட்டண அறிக்கைகள்", "शुल्क रिपोर्ट");
+
+  static String get collectionSummaryExports =>
+      text("Collection summary and exports", "வசூல் சுருக்கம் மற்றும் ஏற்றுமதி", "संग्रह सारांश और निर्यात");
+
+  static String get collectedFrom =>
+      text("collected from", "வசூலிக்கப்பட்டது / மொத்தம்", "में से संग्रहित");
+
+  static String get dayWiseCollection =>
+      text("DAY WISE COLLECTION", "நாள் வாரியான வசூல்", "दिन-वार संग्रह");
+
+  static String get monthlyTransactions =>
+      text("MONTHLY TRANSACTIONS", "மாதாந்திர பரிவர்த்தனைகள்", "मासिक लेनदेन");
+
+  static String get monthlyCollectionTitle =>
+      text("MONTHLY COLLECTION", "மாதாந்திர வசூல்", "मासिक संग्रह");
+
+  static String get monthlyFeeCollectionSummary =>
+      text("Monthly fee collection summary", "மாதாந்திர கட்டண வசூல் சுருக்கம்", "मासिक शुल्क संग्रह सारांश");
+
+  static String get tapArrowsChangeMonth =>
+      text("Tap arrows to change month", "மாதத்தை மாற்ற அம்புகளை அழுத்தவும்", "माह बदलने के लिए तीर दबाएं");
+
+  static String get monthlyFeeCollectionOverview =>
+      text("Monthly fee collection, pending dues and transaction overview.", "மாதாந்திர கட்டண வசூல், நிலுவை மற்றும் பரிவர்த்தனை கண்ணோட்டம்.", "मासिक शुल्क संग्रह, लंबित बकाया और लेनदेन अवलोकन।");
+
+  static String get paidPending =>
+      text("Paid / Pending", "செலுத்தியது / நிலுவை", "भुगतान / लंबित");
+
+  static String get noMonthlyCollectionFound =>
+      text("No Monthly Collection Found", "மாதாந்திர வசூல் இல்லை", "कोई मासिक संग्रह नहीं मिला");
+
+  static String get noFeeRecordsSelectedMonth =>
+      text("No fee records are available for this selected month.", "தேர்ந்தெடுக்கப்பட்ட மாதத்திற்கு கட்டண பதிவுகள் இல்லை.", "चयनित माह के लिए कोई शुल्क रिकॉर्ड उपलब्ध नहीं है।");
 
 }
