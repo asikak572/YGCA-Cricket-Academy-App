@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class PaymentStatusScreen extends StatefulWidget {
   const PaymentStatusScreen({super.key});
@@ -15,13 +16,31 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   static const Color maroon = Color(0xFF7F0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  String selectedFilter = "All";
+  String selectedFilter = "all";
 
   final List<String> filters = const [
-    "All",
-    "Paid",
-    "Pending",
+    "all",
+    "paid",
+    "pending",
   ];
+
+  String _filterLabel(String filter) {
+    switch (filter) {
+      case "paid":
+        return AppStrings.paid;
+      case "pending":
+        return AppStrings.pending;
+      default:
+        return AppStrings.all;
+    }
+  }
+
+  String _localizedStatus(String status) {
+    final value = status.trim().toLowerCase();
+    if (value == "paid") return AppStrings.paid;
+    if (value == "pending") return AppStrings.pending;
+    return status;
+  }
 
   Color _bg(bool isDark) {
     return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
@@ -65,8 +84,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
         : _text(data['paymentStatus']).isNotEmpty
             ? _text(data['paymentStatus'])
             : _toInt(data['pendingAmount']) > 0
-                ? "Pending"
-                : "Paid";
+                ? AppStrings.pending
+                : AppStrings.paid;
 
     return status;
   }
@@ -74,11 +93,11 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _filteredDocs(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
   ) {
-    if (selectedFilter == "All") return docs;
+    if (selectedFilter == "all") return docs;
 
     return docs.where((doc) {
-      final status = _statusFromData(doc.data());
-      return status.toLowerCase() == selectedFilter.toLowerCase();
+      final status = _statusFromData(doc.data()).toLowerCase();
+      return status == selectedFilter;
     }).toList();
   }
 
@@ -91,9 +110,12 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -108,7 +130,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              "Error: ${snapshot.error}",
+                              "${AppStrings.error}: ${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.redAccent,
@@ -174,7 +196,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                     SliverToBoxAdapter(child: _filterTabs(isDark)),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("PAYMENT STATUS LIST", isDark),
+                      child: _sectionTitle(AppStrings.paymentStatusList, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -191,11 +213,11 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                                           ? _text(data['studentName'])
                                           : _text(data['name']).isNotEmpty
                                               ? _text(data['name'])
-                                              : "Unknown Student";
+                                              : AppStrings.unknownStudent;
 
                                   final batch = _text(data['batch']).isNotEmpty
                                       ? _text(data['batch'])
-                                      : "No Batch";
+                                      : AppStrings.noBatch;
 
                                   final amount = _toInt(
                                     data['amount'] ?? data['paidAmount'],
@@ -224,6 +246,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -251,19 +275,23 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "PAYMENT STATUS",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.paymentStatusTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
-                  "Paid and pending fee tracking",
+                  AppStrings.paidPendingFeeTracking,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -374,7 +402,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               const SizedBox(width: 13),
               Expanded(
                 child: Text(
-                  "Track paid and pending student fee status.",
+                  AppStrings.trackPaidPendingStudentFeeStatus,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 14,
@@ -391,7 +419,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Total",
+                  label: AppStrings.total,
                   value: total.toString(),
                   color: Colors.blueAccent,
                 ),
@@ -400,7 +428,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Paid",
+                  label: AppStrings.paid,
                   value: paidCount.toString(),
                   color: Colors.green,
                 ),
@@ -409,7 +437,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Pending",
+                  label: AppStrings.pending,
                   value: pendingCount.toString(),
                   color: Colors.orange,
                 ),
@@ -422,7 +450,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Paid ₹",
+                  label: AppStrings.paidAmountLabel,
                   value: "₹$paidAmount",
                   color: Colors.green,
                 ),
@@ -431,7 +459,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Pending ₹",
+                  label: AppStrings.pendingAmountLabel,
                   value: "₹$pendingAmount",
                   color: Colors.orange,
                 ),
@@ -469,12 +497,16 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
             ),
           ),
           const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -525,7 +557,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               ),
               child: Center(
                 child: Text(
-                  filter,
+                  _filterLabel(filter),
                   style: TextStyle(
                     color: selected
                         ? Colors.white
@@ -549,13 +581,21 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -646,19 +686,19 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                     _chip(
                       isDark: isDark,
                       icon: Icons.currency_rupee_rounded,
-                      text: "Paid ₹$amount",
+                      text: "${AppStrings.paid} ₹$amount",
                       color: Colors.green,
                     ),
                     _chip(
                       isDark: isDark,
                       icon: Icons.pending_rounded,
-                      text: "Due ₹$pendingAmount",
+                      text: "${AppStrings.due} ₹$pendingAmount",
                       color: Colors.orange,
                     ),
                     _chip(
                       isDark: isDark,
                       icon: Icons.verified_rounded,
-                      text: status,
+                      text: _localizedStatus(status),
                       color: color,
                     ),
                   ],
@@ -689,12 +729,18 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
         children: [
           Icon(icon, color: color, size: 13),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 11,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                text,
+                maxLines: 1,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                ),
+              ),
             ),
           ),
         ],
@@ -721,7 +767,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Payment Status Found",
+            AppStrings.noPaymentStatusFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -729,7 +775,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "No fee records available for this filter.",
+            AppStrings.noFeeRecordsForFilter,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

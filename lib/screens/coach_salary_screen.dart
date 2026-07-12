@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CoachSalaryScreen extends StatefulWidget {
   const CoachSalaryScreen({super.key});
@@ -132,7 +133,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No Date";
+    if (timestamp == null) return AppStrings.noDate;
 
     try {
       if (timestamp is Timestamp) {
@@ -147,12 +148,19 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
 
       return timestamp.toString();
     } catch (_) {
-      return "No Date";
+      return AppStrings.noDate;
     }
   }
 
   Color _statusColor(String status) {
     return status == "Paid" ? Colors.green : Colors.orange;
+  }
+
+  String _localizedStatus(String status) {
+    final value = status.trim().toLowerCase();
+    if (value == "paid") return AppStrings.paid;
+    if (value == "pending") return AppStrings.pending;
+    return status;
   }
 
   Future<void> _updateSalaryStatus(
@@ -172,7 +180,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Salary marked as $status"),
+            content: Text("${AppStrings.salaryMarkedAs} ${_localizedStatus(status)}"),
             backgroundColor: Colors.green,
           ),
         );
@@ -181,7 +189,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Update failed: $e"),
+            content: Text("${AppStrings.updateFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -198,8 +206,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Salary record deleted"),
+          SnackBar(
+            content: Text(AppStrings.salaryRecordDeleted),
             backgroundColor: Colors.green,
           ),
         );
@@ -208,7 +216,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Delete failed: $e"),
+            content: Text("${AppStrings.deleteFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -222,21 +230,21 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: _card(isDark),
         title: Text(
-          "Delete Salary Record",
+          AppStrings.deleteSalaryRecord,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete this salary record?",
+          AppStrings.deleteSalaryRecordConfirm,
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Cancel",
+              AppStrings.cancel,
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
             ),
           ),
@@ -249,7 +257,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
               Navigator.pop(context);
               await _deleteSalary(context, docId);
             },
-            child: const Text("Delete"),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -272,7 +280,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
           return AlertDialog(
             backgroundColor: _card(isDark),
             title: Text(
-              "Add Coach Salary",
+              AppStrings.addCoachSalary,
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontWeight: FontWeight.w900,
@@ -300,7 +308,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
-                            "No coach users found. You can enter manually.",
+                            AppStrings.noCoachUsersFoundEnterManually,
                             style: TextStyle(
                               color: _secondaryText(isDark),
                               fontSize: 12,
@@ -323,7 +331,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                           decoration: InputDecoration(
-                            labelText: "Select Coach",
+                            labelText: AppStrings.selectCoach,
                             labelStyle: TextStyle(
                               color: _secondaryText(isDark),
                             ),
@@ -389,17 +397,17 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                   ),
                   _dialogField(
                     isDark: isDark,
-                    label: "Coach Name",
+                    label: AppStrings.coachName,
                     controller: coachNameController,
                   ),
                   _dialogField(
                     isDark: isDark,
-                    label: "Role",
+                    label: AppStrings.role,
                     controller: roleController,
                   ),
                   _dialogField(
                     isDark: isDark,
-                    label: "Salary Amount",
+                    label: AppStrings.salaryAmount,
                     controller: salaryController,
                     keyboardType: TextInputType.number,
                   ),
@@ -412,7 +420,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                     decoration: InputDecoration(
-                      labelText: "Status",
+                      labelText: AppStrings.status,
                       labelStyle: TextStyle(color: _secondaryText(isDark)),
                       border: const OutlineInputBorder(),
                       enabledBorder: OutlineInputBorder(
@@ -441,7 +449,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  "Cancel",
+                  AppStrings.cancel,
                   style: TextStyle(color: isDark ? Colors.white70 : maroon),
                 ),
               ),
@@ -459,8 +467,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                       coachRole.isEmpty ||
                       salaryText.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Please fill all fields"),
+                      SnackBar(
+                        content: Text(AppStrings.pleaseFillAllFields),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -471,8 +479,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
 
                   if (salary <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Please enter valid salary amount"),
+                      SnackBar(
+                        content: Text(AppStrings.enterValidSalaryAmount),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -498,8 +506,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                     if (context.mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Coach salary saved"),
+                        SnackBar(
+                          content: Text(AppStrings.coachSalarySaved),
                           backgroundColor: Colors.green,
                         ),
                       );
@@ -508,14 +516,14 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text("Save failed: $e"),
+                          content: Text("${AppStrings.saveFailed}: $e"),
                           backgroundColor: Colors.red,
                         ),
                       );
                     }
                   }
                 },
-                child: const Text("Save"),
+                child: Text(AppStrings.save),
               ),
             ],
           );
@@ -563,9 +571,12 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: _isAdmin
               ? FloatingActionButton.extended(
@@ -573,8 +584,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                   foregroundColor: isDark ? Colors.white : gold,
                   onPressed: () => _addSalaryDialog(context, isDark),
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text(
-                    "Add Salary",
+                  label: Text(
+                    AppStrings.addSalary,
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                 )
@@ -601,7 +612,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(18),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -662,7 +673,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                               records: salaryDocs.length,
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("SALARY OVERVIEW", isDark),
+                            _sectionTitle(AppStrings.salaryOverview, isDark),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -677,40 +688,40 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                                   _statCard(
                                     isDark: isDark,
                                     icon: Icons.account_balance_wallet_rounded,
-                                    title: "TOTAL",
+                                    title: AppStrings.total.toUpperCase(),
                                     value: "₹$totalBudget",
-                                    subtitle: "Budget",
+                                    subtitle: AppStrings.budget,
                                     color: Colors.blueAccent,
                                   ),
                                   _statCard(
                                     isDark: isDark,
                                     icon: Icons.verified_rounded,
-                                    title: "PAID",
+                                    title: AppStrings.paid.toUpperCase(),
                                     value: "₹$paidBudget",
-                                    subtitle: "Completed",
+                                    subtitle: AppStrings.completed,
                                     color: Colors.green,
                                   ),
                                   _statCard(
                                     isDark: isDark,
                                     icon: Icons.pending_actions_rounded,
-                                    title: "PENDING",
+                                    title: AppStrings.pending.toUpperCase(),
                                     value: "₹$pendingBudget",
-                                    subtitle: "Remaining",
+                                    subtitle: AppStrings.remaining,
                                     color: Colors.orange,
                                   ),
                                   _statCard(
                                     isDark: isDark,
                                     icon: Icons.receipt_long_rounded,
-                                    title: "RECORDS",
+                                    title: AppStrings.records.toUpperCase(),
                                     value: salaryDocs.length.toString(),
-                                    subtitle: "Entries",
+                                    subtitle: AppStrings.entries,
                                     color: Colors.purpleAccent,
                                   ),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("SALARY RECORDS", isDark),
+                            _sectionTitle(AppStrings.salaryRecords, isDark),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -722,7 +733,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
 
                                         final name =
                                             _text(data['coachName']).isEmpty
-                                                ? 'Unknown Coach'
+                                                ? AppStrings.unknownCoach
                                                 : _text(data['coachName']);
 
                                         final coachRole =
@@ -760,6 +771,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -788,7 +801,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "COACH SALARY",
+                  AppStrings.coachSalaryTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -800,8 +813,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                 ),
                 Text(
                   _isAdmin
-                      ? "Manage coach monthly salary"
-                      : "View your salary records",
+                      ? AppStrings.manageCoachMonthlySalary
+                      : AppStrings.viewYourSalaryRecords,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -952,7 +965,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "MONTHLY",
+                            AppStrings.monthly.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 13,
@@ -960,8 +973,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "SALARY",
+                          Text(
+                            AppStrings.salary.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -970,7 +983,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                             ),
                           ),
                           Text(
-                            "CENTER",
+                            AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -983,10 +996,10 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Total: ₹$totalBudget"),
-                              _heroChip("Paid: ₹$paidBudget"),
-                              _heroChip("Pending: ₹$pendingBudget"),
-                              _heroChip("Records: $records"),
+                              _heroChip("${AppStrings.total}: ₹$totalBudget"),
+                              _heroChip("${AppStrings.paid}: ₹$paidBudget"),
+                              _heroChip("${AppStrings.pending}: ₹$pendingBudget"),
+                              _heroChip("${AppStrings.records}: $records"),
                             ],
                           ),
                         ],
@@ -1222,7 +1235,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                     _chip(
                       isDark: isDark,
                       icon: Icons.verified_rounded,
-                      text: status,
+                      text: _localizedStatus(status),
                       color: statusColor,
                     ),
                   ],
@@ -1243,7 +1256,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                   );
                 }
 
-                if (value == "Delete") {
+                if (value == AppStrings.delete) {
                   _confirmDelete(context, docId, isDark);
                 }
               },
@@ -1251,21 +1264,21 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                 PopupMenuItem(
                   value: "Paid",
                   child: Text(
-                    "Mark Paid",
+                    AppStrings.markPaid,
                     style: TextStyle(color: _primaryText(isDark)),
                   ),
                 ),
                 PopupMenuItem(
                   value: "Pending",
                   child: Text(
-                    "Mark Pending",
+                    AppStrings.markPending,
                     style: TextStyle(color: _primaryText(isDark)),
                   ),
                 ),
                 PopupMenuItem(
-                  value: "Delete",
+                  value: AppStrings.delete,
                   child: Text(
-                    "Delete",
+                    AppStrings.delete,
                     style: TextStyle(
                       color: Colors.redAccent,
                       fontWeight: FontWeight.w800,
@@ -1331,7 +1344,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Salary Records Found",
+            AppStrings.noSalaryRecordsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1340,8 +1353,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
           const SizedBox(height: 4),
           Text(
             _isAdmin
-                ? "Click Add Salary to create one"
-                : "No salary record available for your account",
+                ? AppStrings.clickAddSalaryCreateOne
+                : AppStrings.noSalaryRecordForAccount,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

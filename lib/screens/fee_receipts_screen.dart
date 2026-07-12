@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class FeeReceiptsScreen extends StatefulWidget {
   const FeeReceiptsScreen({super.key});
@@ -50,7 +51,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No Date";
+    if (timestamp == null) return AppStrings.noDate;
 
     try {
       if (timestamp is Timestamp) {
@@ -64,12 +65,19 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
 
       return timestamp.toString();
     } catch (_) {
-      return "No Date";
+      return AppStrings.noDate;
     }
   }
 
   Query<Map<String, dynamic>> _feesQuery() {
     return FirebaseFirestore.instance.collection('fees');
+  }
+
+  String _localizedStatus(String status) {
+    final value = status.trim().toLowerCase();
+    if (value == "paid") return AppStrings.paid;
+    if (value == "pending") return AppStrings.pending;
+    return status;
   }
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _filteredDocs(
@@ -168,7 +176,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Fee Receipt",
+                  AppStrings.feeReceipt,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 20,
@@ -187,32 +195,32 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                 const SizedBox(height: 18),
                 _receiptRow(
                   isDark: isDark,
-                  label: "Student",
+                  label: AppStrings.student,
                   value: studentName,
                 ),
                 _receiptRow(
                   isDark: isDark,
-                  label: "Batch",
+                  label: AppStrings.batch,
                   value: batch,
                 ),
                 _receiptRow(
                   isDark: isDark,
-                  label: "Paid Amount",
+                  label: AppStrings.paidAmount,
                   value: "₹$amount",
                 ),
                 _receiptRow(
                   isDark: isDark,
-                  label: "Pending Amount",
+                  label: AppStrings.pendingAmount,
                   value: "₹$pendingAmount",
                 ),
                 _receiptRow(
                   isDark: isDark,
-                  label: "Status",
-                  value: status,
+                  label: AppStrings.status,
+                  value: _localizedStatus(status),
                 ),
                 _receiptRow(
                   isDark: isDark,
-                  label: "Date",
+                  label: AppStrings.date,
                   value: date,
                 ),
                 const SizedBox(height: 18),
@@ -225,7 +233,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                     border: Border.all(color: gold.withOpacity(0.35)),
                   ),
                   child: Text(
-                    "Receipt print/download can be added later.",
+                    AppStrings.receiptPrintDownloadLater,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: isDark ? gold : maroon,
@@ -283,9 +291,12 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -300,7 +311,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              "Error: ${snapshot.error}",
+                              "${AppStrings.error}: ${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.redAccent,
@@ -349,7 +360,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                     SliverToBoxAdapter(child: _searchBox(isDark)),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("FEE RECEIPTS LIST", isDark),
+                      child: _sectionTitle(AppStrings.feeReceiptsList, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -366,11 +377,11 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                                           ? _text(data['studentName'])
                                           : _text(data['name']).isNotEmpty
                                               ? _text(data['name'])
-                                              : "Unknown Student";
+                                              : AppStrings.unknownStudent;
 
                                   final batch = _text(data['batch']).isNotEmpty
                                       ? _text(data['batch'])
-                                      : "No Batch";
+                                      : AppStrings.noBatch;
 
                                   final amount = _toInt(
                                     data['amount'] ?? data['paidAmount'],
@@ -414,6 +425,8 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -441,19 +454,23 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "FEE RECEIPTS",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.feeReceiptsTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
-                  "View student fee receipts",
+                  AppStrings.viewStudentFeeReceipts,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -562,7 +579,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Receipt Center",
+                  AppStrings.receiptCenter,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 17,
@@ -571,7 +588,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "$receiptCount receipts • ₹$totalAmount collected",
+                  "$receiptCount ${AppStrings.receipts} • ₹$totalAmount ${AppStrings.collected}",
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 12,
@@ -614,7 +631,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
             Icons.search_rounded,
             color: isDark ? Colors.white54 : maroon,
           ),
-          hintText: "Search by student, receipt no or batch",
+          hintText: AppStrings.searchStudentReceiptBatch,
           hintStyle: TextStyle(
             color: _secondaryText(isDark),
             fontSize: 12,
@@ -630,13 +647,21 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -762,7 +787,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                           icon: isPaid
                               ? Icons.verified_rounded
                               : Icons.pending_actions_rounded,
-                          text: status,
+                          text: _localizedStatus(status),
                           color: statusColor,
                         ),
                       ],
@@ -799,12 +824,18 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
         children: [
           Icon(icon, color: color, size: 13),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 11,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                text,
+                maxLines: 1,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                ),
+              ),
             ),
           ),
         ],
@@ -831,7 +862,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Receipts Found",
+            AppStrings.noReceiptsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -839,7 +870,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "No fee receipt records are available.",
+            AppStrings.noFeeReceiptRecordsAvailable,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

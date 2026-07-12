@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 import '../services/pdf_service.dart';
 import '../services/excel_service.dart';
 
@@ -246,7 +247,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     final name2 = _text(data['name']);
     if (name2.isNotEmpty) return name2;
 
-    return 'Unknown Student';
+    return AppStrings.unknownStudent;
   }
 
   String _studentId(Map<String, dynamic> data) {
@@ -281,6 +282,21 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     if (rawStatus.contains('unpaid')) return 'Unpaid';
 
     return 'Pending';
+  }
+
+  String _localizedStatus(String status) {
+    switch (status.trim().toLowerCase()) {
+      case 'paid':
+        return AppStrings.paid;
+      case 'partial':
+        return AppStrings.partiallyPaid;
+      case 'unpaid':
+        return AppStrings.unpaid;
+      case 'pending':
+        return AppStrings.pending;
+      default:
+        return status;
+    }
   }
 
   Color _statusColor(String status) {
@@ -424,8 +440,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("PDF report generated"),
+          SnackBar(
+            content: Text(AppStrings.pdfReportGenerated),
             backgroundColor: Colors.green,
           ),
         );
@@ -434,7 +450,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("PDF failed: $e"),
+            content: Text("${AppStrings.pdfFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -452,8 +468,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Excel report generated"),
+          SnackBar(
+            content: Text(AppStrings.excelReportGenerated),
             backgroundColor: Colors.green,
           ),
         );
@@ -462,7 +478,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Excel failed: $e"),
+            content: Text("${AppStrings.excelFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -475,9 +491,12 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -512,7 +531,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(18),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -576,7 +595,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                               totalFee: totalFee,
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("FEE REPORT SUMMARY", isDark),
+                            _sectionTitle(AppStrings.feeReportSummary, isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -591,28 +610,28 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                                 children: [
                                   _statCard(
                                     isDark: isDark,
-                                    title: "Total Fee",
+                                    title: AppStrings.totalFee,
                                     value: "₹$totalFee",
                                     icon: Icons.account_balance_wallet_rounded,
                                     color: gold,
                                   ),
                                   _statCard(
                                     isDark: isDark,
-                                    title: "Collected",
+                                    title: AppStrings.collected,
                                     value: "₹$collected",
                                     icon: Icons.check_circle_rounded,
                                     color: Colors.green,
                                   ),
                                   _statCard(
                                     isDark: isDark,
-                                    title: "Pending",
+                                    title: AppStrings.pending,
                                     value: "₹$pending",
                                     icon: Icons.warning_amber_rounded,
                                     color: Colors.orange,
                                   ),
                                   _statCard(
                                     isDark: isDark,
-                                    title: "Paid Records",
+                                    title: AppStrings.paidRecords,
                                     value: paidRecords.toString(),
                                     icon: Icons.verified_rounded,
                                     color: Colors.blueAccent,
@@ -630,7 +649,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                                   Expanded(
                                     child: _smallStatusCard(
                                       isDark: isDark,
-                                      title: "Partial",
+                                      title: AppStrings.partiallyPaid,
                                       value: partialRecords.toString(),
                                       color: Colors.orange,
                                       icon: Icons.timelapse_rounded,
@@ -640,7 +659,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                                   Expanded(
                                     child: _smallStatusCard(
                                       isDark: isDark,
-                                      title: "Pending",
+                                      title: AppStrings.pending,
                                       value: pendingRecords.toString(),
                                       color: Colors.redAccent,
                                       icon: Icons.pending_actions_rounded,
@@ -650,7 +669,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("PAYMENT RECORDS", isDark),
+                            _sectionTitle(AppStrings.paymentRecords, isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -658,8 +677,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                               child: feeRecords.isEmpty
                                   ? _emptyCard(
                                       isDark,
-                                      "No fee records found",
-                                      "No fee record available for this user",
+                                      AppStrings.noFeeRecordsFound,
+                                      AppStrings.noFeeRecordForUser,
                                       Icons.receipt_long_rounded,
                                     )
                                   : Column(
@@ -682,21 +701,21 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                                           isDark: isDark,
                                           title: name,
                                           subtitle: studentId.isEmpty
-                                              ? "Student ID not found"
+                                              ? AppStrings.studentIdNotFound
                                               : "ID: $studentId",
                                           status: status,
                                           amount: "₹$paid / ₹$total",
                                           progress: progress,
                                           pending: status == 'Paid'
-                                              ? "Fully Paid"
-                                              : "Pending ₹$pendingAmount",
+                                              ? AppStrings.fullyPaid
+                                              : "${AppStrings.pending} ₹$pendingAmount",
                                           statusColor: color,
                                         );
                                       }).toList(),
                                     ),
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("PENDING FEE RECORDS", isDark),
+                            _sectionTitle(AppStrings.pendingFeeRecords, isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -704,8 +723,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                               child: pendingFeeRecords.isEmpty
                                   ? _emptyCard(
                                       isDark,
-                                      "No pending fees",
-                                      "All fee records are completed",
+                                      AppStrings.noPendingFees,
+                                      AppStrings.allFeeRecordsCompleted,
                                       Icons.check_circle_rounded,
                                     )
                                   : Column(
@@ -717,7 +736,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                                           isDark: isDark,
                                           name: _studentName(data),
                                           batch: _studentId(data).isEmpty
-                                              ? "Student ID not found"
+                                              ? AppStrings.studentIdNotFound
                                               : "ID: ${_studentId(data)}",
                                           amount:
                                               "₹${_pendingAmount(data)}",
@@ -734,6 +753,8 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -761,19 +782,23 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "FEE REPORTS",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.feeReportsTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
-                  "Collection summary and exports",
+                  AppStrings.collectionSummaryExports,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -936,7 +961,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "FEE COLLECTION",
+                          AppStrings.feeCollection.toUpperCase(),
                           style: TextStyle(
                             color: gold,
                             fontSize: 13,
@@ -954,7 +979,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                           ),
                         ),
                         Text(
-                          "Completed",
+                          AppStrings.completed,
                           style: TextStyle(
                             color: gold,
                             fontSize: 16,
@@ -973,7 +998,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "₹$collected collected from ₹$totalFee",
+                          "₹$collected ${AppStrings.collectedFrom} ₹$totalFee",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -999,13 +1024,21 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1169,7 +1202,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                   ),
                 ),
               ),
-              _statusChip(status, statusColor),
+              _statusChip(_localizedStatus(status), statusColor),
             ],
           ),
           const SizedBox(height: 4),
@@ -1269,7 +1302,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "$batch • $status",
+                  "$batch • ${_localizedStatus(status)}",
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1295,12 +1328,16 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.25)),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w900,
-          fontSize: 11,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          maxLines: 1,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w900,
+            fontSize: 11,
+          ),
         ),
       ),
     );

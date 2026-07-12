@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class MonthlyFeeCollectionScreen extends StatefulWidget {
   const MonthlyFeeCollectionScreen({super.key});
@@ -62,19 +63,19 @@ class _MonthlyFeeCollectionScreenState
   }
 
   String _monthName(int month) {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+    final months = [
+      AppStrings.january,
+      AppStrings.february,
+      AppStrings.march,
+      AppStrings.april,
+      AppStrings.may,
+      AppStrings.june,
+      AppStrings.july,
+      AppStrings.august,
+      AppStrings.september,
+      AppStrings.october,
+      AppStrings.november,
+      AppStrings.december,
     ];
 
     return months[month - 1];
@@ -136,7 +137,7 @@ class _MonthlyFeeCollectionScreenState
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No Date";
+    if (timestamp == null) return AppStrings.noDate;
 
     try {
       if (timestamp is Timestamp) {
@@ -150,7 +151,7 @@ class _MonthlyFeeCollectionScreenState
 
       return timestamp.toString();
     } catch (_) {
-      return "No Date";
+      return AppStrings.noDate;
     }
   }
 
@@ -184,9 +185,12 @@ class _MonthlyFeeCollectionScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -201,7 +205,7 @@ class _MonthlyFeeCollectionScreenState
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              "Error: ${snapshot.error}",
+                              "${AppStrings.error}: ${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.redAccent,
@@ -243,7 +247,7 @@ class _MonthlyFeeCollectionScreenState
                   final status = _text(data['status']).isNotEmpty
                       ? _text(data['status'])
                       : pending > 0
-                          ? "Pending"
+                          ? AppStrings.pending
                           : "Paid";
 
                   totalCollected += amount;
@@ -274,7 +278,7 @@ class _MonthlyFeeCollectionScreenState
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("DAY WISE COLLECTION", isDark),
+                      child: _sectionTitle(AppStrings.dayWiseCollection, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -299,7 +303,7 @@ class _MonthlyFeeCollectionScreenState
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("MONTHLY TRANSACTIONS", isDark),
+                      child: _sectionTitle(AppStrings.monthlyTransactions, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -316,11 +320,11 @@ class _MonthlyFeeCollectionScreenState
                                           ? _text(data['studentName'])
                                           : _text(data['name']).isNotEmpty
                                               ? _text(data['name'])
-                                              : "Unknown Student";
+                                              : AppStrings.unknownStudent;
 
                                   final batch = _text(data['batch']).isNotEmpty
                                       ? _text(data['batch'])
-                                      : "No Batch";
+                                      : AppStrings.noBatch;
 
                                   final amount = _toInt(
                                     data['amount'] ?? data['paidAmount'],
@@ -352,6 +356,8 @@ class _MonthlyFeeCollectionScreenState
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -379,19 +385,23 @@ class _MonthlyFeeCollectionScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "MONTHLY COLLECTION",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    AppStrings.monthlyCollectionTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Text(
-                  "Monthly fee collection summary",
+                  AppStrings.monthlyFeeCollectionSummary,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -485,7 +495,7 @@ class _MonthlyFeeCollectionScreenState
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  "Tap arrows to change month",
+                  AppStrings.tapArrowsChangeMonth,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 11,
@@ -578,7 +588,7 @@ class _MonthlyFeeCollectionScreenState
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  "Monthly fee collection, pending dues and transaction overview.",
+                  AppStrings.monthlyFeeCollectionOverview,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 14,
@@ -595,7 +605,7 @@ class _MonthlyFeeCollectionScreenState
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Collected",
+                  label: AppStrings.collected,
                   value: "₹$totalCollected",
                   color: Colors.green,
                 ),
@@ -604,7 +614,7 @@ class _MonthlyFeeCollectionScreenState
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Pending",
+                  label: AppStrings.pending,
                   value: "₹$totalPending",
                   color: Colors.orange,
                 ),
@@ -617,7 +627,7 @@ class _MonthlyFeeCollectionScreenState
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Records",
+                  label: AppStrings.records,
                   value: totalRecords.toString(),
                   color: Colors.blueAccent,
                 ),
@@ -626,7 +636,7 @@ class _MonthlyFeeCollectionScreenState
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Paid / Pending",
+                  label: AppStrings.paidPending,
                   value: "$paidCount / $pendingCount",
                   color: Colors.purpleAccent,
                 ),
@@ -664,12 +674,16 @@ class _MonthlyFeeCollectionScreenState
             ),
           ),
           const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -682,13 +696,21 @@ class _MonthlyFeeCollectionScreenState
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? gold : maroon,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -833,13 +855,13 @@ class _MonthlyFeeCollectionScreenState
                     _chip(
                       isDark: isDark,
                       icon: Icons.currency_rupee_rounded,
-                      text: "Paid ₹$amount",
+                      text: "${AppStrings.paid} ₹$amount",
                       color: Colors.green,
                     ),
                     _chip(
                       isDark: isDark,
                       icon: Icons.pending_rounded,
-                      text: "Due ₹$pendingAmount",
+                      text: "${AppStrings.due} ₹$pendingAmount",
                       color: Colors.orange,
                     ),
                   ],
@@ -870,12 +892,18 @@ class _MonthlyFeeCollectionScreenState
         children: [
           Icon(icon, color: color, size: 13),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 11,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                text,
+                maxLines: 1,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                ),
+              ),
             ),
           ),
         ],
@@ -902,7 +930,7 @@ class _MonthlyFeeCollectionScreenState
           ),
           const SizedBox(height: 10),
           Text(
-            "No Monthly Collection Found",
+            AppStrings.noMonthlyCollectionFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -910,7 +938,7 @@ class _MonthlyFeeCollectionScreenState
           ),
           const SizedBox(height: 4),
           Text(
-            "No fee records are available for this selected month.",
+            AppStrings.noFeeRecordsSelectedMonth,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

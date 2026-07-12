@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
   const PaymentHistoryScreen({super.key});
@@ -240,7 +241,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No Date";
+    if (timestamp == null) return AppStrings.noDate;
 
     try {
       if (timestamp is Timestamp) {
@@ -255,7 +256,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 
       return timestamp.toString();
     } catch (_) {
-      return "No Date";
+      return AppStrings.noDate;
     }
   }
 
@@ -263,14 +264,24 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     return status == "Paid" ? Colors.green : Colors.orange;
   }
 
+  String _localizedStatus(String status) {
+    final value = status.trim().toLowerCase();
+    if (value == 'paid') return AppStrings.paid;
+    if (value == 'pending') return AppStrings.pending;
+    return status;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -294,7 +305,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(18),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -341,7 +352,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                               records: payments.length,
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("PAYMENT RECORDS", isDark),
+                            _sectionTitle(AppStrings.paymentRecords, isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -354,7 +365,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 
                                         final studentName =
                                             _text(data['studentName']).isEmpty
-                                                ? 'Unknown Student'
+                                                ? AppStrings.unknownStudent
                                                 : _text(data['studentName']);
 
                                         final batch = _text(data['batch']);
@@ -367,7 +378,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 
                                         final status =
                                             _text(data['status']).isEmpty
-                                                ? 'Pending'
+                                                ? AppStrings.pending
                                                 : _text(data['status']);
 
                                         final paymentDate =
@@ -392,6 +403,8 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -420,7 +433,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "PAYMENT HISTORY",
+                  AppStrings.paymentHistoryTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -431,7 +444,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                   ),
                 ),
                 Text(
-                  "Fee payment transaction records",
+                  AppStrings.feePaymentTransactionRecords,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -581,7 +594,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "ACADEMY",
+                            AppStrings.academy.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 13,
@@ -589,8 +602,8 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "PAYMENT",
+                          Text(
+                            AppStrings.payment.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -599,7 +612,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                             ),
                           ),
                           Text(
-                            "HISTORY",
+                            AppStrings.history.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -612,9 +625,9 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Paid: ₹$totalPaid"),
-                              _heroChip("Pending: ₹$totalPending"),
-                              _heroChip("Records: $records"),
+                              _heroChip("${AppStrings.paid}: ₹$totalPaid"),
+                              _heroChip("${AppStrings.pending}: ₹$totalPending"),
+                              _heroChip("${AppStrings.records}: $records"),
                             ],
                           ),
                         ],
@@ -754,12 +767,12 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                   children: [
                     _amountChip(
                       isDark: isDark,
-                      text: "Paid ₹$paidAmount",
+                      text: "${AppStrings.paid} ₹$paidAmount",
                       color: Colors.green,
                     ),
                     _amountChip(
                       isDark: isDark,
-                      text: "Pending ₹$pendingAmount",
+                      text: "${AppStrings.pending} ₹$pendingAmount",
                       color: Colors.orange,
                     ),
                   ],
@@ -767,7 +780,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
               ],
             ),
           ),
-          _statusChip(status, color),
+          _statusChip(_localizedStatus(status), color),
         ],
       ),
     );
@@ -833,7 +846,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No payment records found",
+            AppStrings.noPaymentRecordsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -841,7 +854,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "Payment records will appear here",
+            AppStrings.paymentRecordsAppearHere,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class PendingFeesScreen extends StatefulWidget {
   const PendingFeesScreen({super.key});
@@ -243,7 +244,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No Date";
+    if (timestamp == null) return AppStrings.noDate;
 
     try {
       if (timestamp is Timestamp) {
@@ -258,7 +259,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
 
       return timestamp.toString();
     } catch (_) {
-      return "No Date";
+      return AppStrings.noDate;
     }
   }
 
@@ -267,9 +268,12 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -293,7 +297,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(18),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -341,7 +345,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                               totalPaid: totalPaid,
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("PENDING OVERVIEW", isDark),
+                            _sectionTitle(AppStrings.pendingOverview, isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -357,9 +361,9 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                                   _statCard(
                                     isDark: isDark,
                                     icon: Icons.warning_amber_rounded,
-                                    title: "PENDING",
+                                    title: AppStrings.pending.toUpperCase(),
                                     value: "₹$totalPending",
-                                    subtitle: "Total Amount",
+                                    subtitle: AppStrings.totalAmount,
                                     color: Colors.orange,
                                   ),
                                   _statCard(
@@ -367,7 +371,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                                     icon: Icons.groups_rounded,
                                     title: "STUDENTS",
                                     value: pendingStudents.length.toString(),
-                                    subtitle: "With Due",
+                                    subtitle: AppStrings.withDue,
                                     color: Colors.redAccent,
                                   ),
                                   _statCard(
@@ -375,7 +379,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                                     icon: Icons.payments_rounded,
                                     title: "PAID",
                                     value: "₹$totalPaid",
-                                    subtitle: "Collected",
+                                    subtitle: AppStrings.collected,
                                     color: Colors.green,
                                   ),
                                   _statCard(
@@ -383,14 +387,14 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                                     icon: Icons.receipt_long_rounded,
                                     title: "RECORDS",
                                     value: pendingStudents.length.toString(),
-                                    subtitle: "Fee Entries",
+                                    subtitle: AppStrings.feeEntries,
                                     color: Colors.purpleAccent,
                                   ),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 18),
-                            _sectionTitle("PENDING FEE LIST", isDark),
+                            _sectionTitle(AppStrings.pendingFeeList, isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -403,7 +407,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
 
                                         final name =
                                             _text(data['studentName']).isEmpty
-                                                ? 'Unknown'
+                                                ? AppStrings.unknown
                                                 : _text(data['studentName']);
 
                                         final studentId =
@@ -443,6 +447,8 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -471,7 +477,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "PENDING FEES",
+                  AppStrings.pendingFeesTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -482,7 +488,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                   ),
                 ),
                 Text(
-                  "Track unpaid student dues",
+                  AppStrings.trackUnpaidStudentDues,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -632,7 +638,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "ACADEMY",
+                            AppStrings.academy.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 13,
@@ -640,8 +646,8 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "PENDING",
+                          Text(
+                            AppStrings.pending.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -650,7 +656,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                             ),
                           ),
                           Text(
-                            "FEES",
+                            AppStrings.fees.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -663,9 +669,9 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Due: ₹$totalPending"),
-                              _heroChip("Students: $pendingCount"),
-                              _heroChip("Paid: ₹$totalPaid"),
+                              _heroChip("${AppStrings.due}: ₹$totalPending"),
+                              _heroChip("${AppStrings.students}: $pendingCount"),
+                              _heroChip("${AppStrings.paid}: ₹$totalPaid"),
                             ],
                           ),
                         ],
@@ -845,84 +851,124 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: maroon,
-            child: Text(
-              name.isNotEmpty ? name[0].toUpperCase() : "?",
-              style: const TextStyle(
-                color: gold,
-                fontWeight: FontWeight.w900,
-                fontSize: 18,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: maroon,
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : "?",
+                  style: const TextStyle(
+                    color: gold,
                     fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                    fontSize: 18,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  batch.isEmpty ? "ID: $studentId" : "$batch • $date",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _chip(
-                      isDark: isDark,
-                      icon: Icons.payments_rounded,
-                      text: "Paid ₹$paidAmount",
-                      color: Colors.green,
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
                     ),
-                    _chip(
-                      isDark: isDark,
-                      icon: Icons.warning_amber_rounded,
-                      text: "Due ₹$pendingAmount",
-                      color: Colors.redAccent,
+                    const SizedBox(height: 4),
+                    Text(
+                      batch.isEmpty ? "ID: $studentId" : "$batch • $date",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "₹$pendingAmount",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.redAccent,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.redAccent.withOpacity(0.25),
+                    ),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      AppStrings.pending,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
-              _statusChip(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _chip(
+                isDark: isDark,
+                icon: Icons.payments_rounded,
+                text: "${AppStrings.paid} ₹$paidAmount",
+                color: Colors.green,
+              ),
+              _chip(
+                isDark: isDark,
+                icon: Icons.warning_amber_rounded,
+                text: "${AppStrings.due} ₹$pendingAmount",
+                color: Colors.redAccent,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withOpacity(
+                    isDark ? 0.13 : 0.09,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.redAccent.withOpacity(0.24),
+                  ),
+                ),
+                child: Text(
+                  "₹$pendingAmount",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -948,34 +994,21 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
         children: [
           Icon(icon, color: color, size: 13),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 11,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                text,
+                maxLines: 1,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                ),
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _statusChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.redAccent.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.redAccent.withOpacity(0.25)),
-      ),
-      child: const Text(
-        "Pending",
-        style: TextStyle(
-          color: Colors.redAccent,
-          fontWeight: FontWeight.w900,
-          fontSize: 10,
-        ),
       ),
     );
   }
@@ -998,7 +1031,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Pending Fees Found",
+            AppStrings.noPendingFeesFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1006,7 +1039,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "All students are clear",
+            AppStrings.allStudentsAreClear,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

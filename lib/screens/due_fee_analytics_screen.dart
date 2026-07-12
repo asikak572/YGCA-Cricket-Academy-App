@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class DueFeeAnalyticsScreen extends StatefulWidget {
   const DueFeeAnalyticsScreen({super.key});
@@ -88,10 +89,10 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
   }
 
   String _riskLabel(int pendingAmount) {
-    if (pendingAmount >= 10000) return "High Due";
-    if (pendingAmount >= 5000) return "Medium Due";
-    if (pendingAmount > 0) return "Low Due";
-    return "No Due";
+    if (pendingAmount >= 10000) return AppStrings.highDue;
+    if (pendingAmount >= 5000) return AppStrings.mediumDue;
+    if (pendingAmount > 0) return AppStrings.lowDue;
+    return AppStrings.noDue;
   }
 
   Color _riskColor(int pendingAmount) {
@@ -121,9 +122,12 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -138,7 +142,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              "Error: ${snapshot.error}",
+                              "${AppStrings.error}: ${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.redAccent,
@@ -205,7 +209,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                     SliverToBoxAdapter(child: _searchBox(isDark)),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("DUE FEE ANALYTICS", isDark),
+                      child: _sectionTitle(AppStrings.dueFeeAnalyticsTitle, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -222,15 +226,15 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                                           ? _text(data['studentName'])
                                           : _text(data['name']).isNotEmpty
                                               ? _text(data['name'])
-                                              : "Unknown Student";
+                                              : AppStrings.unknownStudent;
 
                                   final rollNo = _text(data['rollNo']).isNotEmpty
                                       ? _text(data['rollNo'])
-                                      : "No Roll No";
+                                      : AppStrings.noRollNo;
 
                                   final batch = _text(data['batch']).isNotEmpty
                                       ? _text(data['batch'])
-                                      : "No Batch";
+                                      : AppStrings.noBatch;
 
                                   final paidAmount = _toInt(
                                     data['amount'] ?? data['paidAmount'],
@@ -263,6 +267,8 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -291,7 +297,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "DUE FEE ANALYTICS",
+                  AppStrings.dueFeeAnalyticsTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -302,7 +308,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                   ),
                 ),
                 Text(
-                  "Student-wise pending fee analysis",
+                  AppStrings.studentWisePendingFeeAnalysis,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -417,7 +423,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  "Analyze students with pending fees and prioritize high due payments.",
+                  AppStrings.analyzePendingFeesPriority,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 14,
@@ -444,7 +450,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            "${duePercent.toStringAsFixed(0)}% students have pending dues",
+            "${duePercent.toStringAsFixed(0)}% ${AppStrings.studentsHavePendingDues}",
             style: TextStyle(
               color: duePercent >= 50 ? Colors.redAccent : Colors.orange,
               fontSize: 12,
@@ -457,7 +463,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Total Due",
+                  label: AppStrings.totalDue,
                   value: "₹$totalPending",
                   color: Colors.orange,
                 ),
@@ -466,7 +472,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Due Students",
+                  label: AppStrings.dueStudents,
                   value: dueStudents.toString(),
                   color: Colors.redAccent,
                 ),
@@ -479,7 +485,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "High",
+                  label: AppStrings.high,
                   value: highDueCount.toString(),
                   color: Colors.redAccent,
                 ),
@@ -488,7 +494,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Medium",
+                  label: AppStrings.medium,
                   value: mediumDueCount.toString(),
                   color: Colors.orange,
                 ),
@@ -497,7 +503,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               Expanded(
                 child: _miniBox(
                   isDark: isDark,
-                  label: "Low",
+                  label: AppStrings.low,
                   value: lowDueCount.toString(),
                   color: Colors.blueAccent,
                 ),
@@ -575,7 +581,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
             Icons.search_rounded,
             color: isDark ? Colors.white54 : maroon,
           ),
-          hintText: "Search due students by name, roll no or batch",
+          hintText: AppStrings.searchDueStudents,
           hintStyle: TextStyle(
             color: _secondaryText(isDark),
             fontSize: 12,
@@ -724,7 +730,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               Expanded(
                 child: _amountBox(
                   isDark: isDark,
-                  label: "Total",
+                  label: AppStrings.total,
                   value: "₹$totalFee",
                   color: Colors.blueAccent,
                 ),
@@ -733,7 +739,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               Expanded(
                 child: _amountBox(
                   isDark: isDark,
-                  label: "Paid",
+                  label: AppStrings.paid,
                   value: "₹$paidAmount",
                   color: Colors.green,
                 ),
@@ -742,7 +748,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
               Expanded(
                 child: _amountBox(
                   isDark: isDark,
-                  label: "Due",
+                  label: AppStrings.due,
                   value: "₹$pendingAmount",
                   color: Colors.orange,
                 ),
@@ -812,7 +818,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Due Fees Found",
+            AppStrings.noDueFeesFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -820,7 +826,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "No pending fee records are available.",
+            AppStrings.noPendingFeeRecordsAvailable,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
