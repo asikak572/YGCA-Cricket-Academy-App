@@ -1500,4 +1500,10 @@ static String get noFeeReceiptRecordsAvailable =>
   static String get noFeeRecordsSelectedMonth =>
       text("No fee records are available for this selected month.", "தேர்ந்தெடுக்கப்பட்ட மாதத்திற்கு கட்டண பதிவுகள் இல்லை.", "चयनित माह के लिए कोई शुल्क रिकॉर्ड उपलब्ध नहीं है।");
 
+static String get applyLeave =>
+    text(
+      "Apply Leave",
+      "விடுப்பு விண்ணப்பம்",
+      "छुट्टी के लिए आवेदन",
+    );
 }

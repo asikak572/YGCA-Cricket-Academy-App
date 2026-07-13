@@ -4,6 +4,9 @@ import '../theme/theme_controller.dart';
 
 import 'attendance_calendar_screen.dart';
 import 'attendance_history_screen.dart';
+import 'leave_request_screen.dart';
+import 'cancel_session_screen.dart';
+import 'makeup_session_screen.dart';
 
 class StudentAttendanceModuleScreen extends StatefulWidget {
   const StudentAttendanceModuleScreen({
@@ -140,23 +143,23 @@ class _StudentAttendanceModuleScreenState
         _InfoItem(
           icon: Icons.assignment_rounded,
           title: "Leave Requests",
-          subtitle: "Approve and manage student leave requests",
+          subtitle: "Apply and manage leave requests",
           color: Colors.redAccent,
-          screen: const AttendanceHistoryScreen(),
+          screen: const LeaveRequestScreen(),
         ),
         _InfoItem(
           icon: Icons.event_busy_rounded,
           title: "Cancel Session",
-          subtitle: "Cancel or update class sessions",
+          subtitle: "View cancelled sessions",
           color: Colors.deepOrange,
-          screen: const AttendanceHistoryScreen(),
+          screen: const CancelSessionScreen(),
         ),
         _InfoItem(
           icon: Icons.event_repeat_rounded,
           title: "Makeup Sessions",
-          subtitle: "Compensate missed or cancelled sessions",
+          subtitle: "View makeup sessions",
           color: Colors.teal,
-          screen: const AttendanceHistoryScreen(),
+          screen: const MakeupSessionScreen(),
         ),
       ];
     }

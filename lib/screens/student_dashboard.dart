@@ -17,6 +17,9 @@ import 'widgets/ygca_bottom_nav.dart';
 import '../core/language/app_strings.dart';
 
 import 'notification_screen.dart';
+import 'leave_request_screen.dart';
+import 'cancel_session_screen.dart';
+import 'makeup_session_screen.dart';
 import 'student_attendance_module_screen.dart';
 import 'student_performance_module_screen.dart';
 import 'student_schedule_module_screen.dart';
@@ -956,6 +959,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             color: Colors.green,
             onTap: _openStudentAttendanceModule,
           ),
+
           _quickActionCard(
             isDark: isDark,
             icon: Icons.analytics_rounded,
@@ -981,6 +985,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
             color: Colors.orange,
             onTap: () => _openRoute('/fees'),
           ),
+          _quickActionCard(
+  isDark: isDark,
+  icon: Icons.event_available_rounded,
+  title: AppStrings.applyLeave,
+  color: Colors.amber,
+  onTap: () => _open(
+    const LeaveRequestScreen(),
+  ),
+),
           _quickActionCard(
             isDark: isDark,
             icon: Icons.notifications_rounded,
