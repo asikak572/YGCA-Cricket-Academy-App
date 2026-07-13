@@ -4,6 +4,9 @@ import '../theme/theme_controller.dart';
 
 import 'match_schedule_screen.dart';
 import 'training_schedule_screen.dart';
+import 'makeup_session_screen.dart';
+import 'cancel_session_screen.dart';
+import 'leave_request_screen.dart';
 
 class StudentScheduleModuleScreen extends StatefulWidget {
   const StudentScheduleModuleScreen({super.key});
@@ -129,14 +132,21 @@ class _StudentScheduleModuleScreenState
           title: "Makeup Sessions",
           subtitle: "View makeup class/session updates",
           color: Colors.blueAccent,
-          screen: const TrainingScheduleScreen(),
+          screen: const MakeupSessionScreen(),
         ),
         _InfoItem(
           icon: Icons.event_busy_rounded,
           title: "Cancelled Sessions",
           subtitle: "View cancelled training sessions",
           color: Colors.redAccent,
-          screen: const TrainingScheduleScreen(),
+          screen: const CancelSessionScreen(),
+        ),
+        _InfoItem(
+          icon: Icons.assignment_rounded,
+          title: "Leave Request",
+          subtitle: "Apply for leave and view leave requests",
+          color: Colors.orange,
+          screen: const LeaveRequestScreen(),
         ),
       ];
     }
@@ -718,6 +728,12 @@ class _StudentScheduleModuleScreenState
             label: "Cancel",
             value: "Track",
             color: Colors.redAccent,
+          ),
+          _MiniStatData(
+            icon: Icons.assignment_rounded,
+            label: "Leave",
+            value: "Apply",
+            color: Colors.orange,
           ),
         ],
       );

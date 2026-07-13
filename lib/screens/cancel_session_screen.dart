@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
@@ -22,11 +23,25 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
   final TextEditingController reasonController = TextEditingController();
 
   bool submitting = false;
+  bool loadingUser = true;
+
+  String uid = '';
+  String role = '';
+  String userBatch = '';
+
+  List<String> linkedChildrenIds = [];
+  List<String> linkedChildBatches = [];
 
   String cancelType = 'Batch';
   String? selectedBatch;
   String? selectedStudentId;
   String? selectedStudentName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
 
   @override
   void dispose() {
@@ -45,6 +60,151 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
   String _text(dynamic value) {
     if (value == null) return '';
     return value.toString().trim();
+  }
+
+  String _lower(String value) {
+    return value.trim().toLowerCase();
+  }
+
+  List<String> _stringList(dynamic value) {
+    final result = <String>[];
+
+    if (value is List) {
+      for (final item in value) {
+        final text = _text(item);
+        if (text.isNotEmpty) result.add(text);
+      }
+    }
+
+    return result;
+  }
+
+  bool get _canManage => role == 'Admin' || role == 'Coach';
+
+  Future<void> _loadCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      if (!mounted) return;
+      setState(() => loadingUser = false);
+      return;
+    }
+
+    uid = user.uid;
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    final data = userDoc.data() ?? {};
+    final loadedRole = _text(data['role']);
+
+    final children = <String>{};
+    final childBatches = <String>{};
+
+    for (final id in _stringList(data['linkedChildrenIds'])) {
+      children.add(id);
+    }
+
+    final directChildId = _text(data['childId']);
+    if (directChildId.isNotEmpty) children.add(directChildId);
+
+    final directStudentId = _text(data['studentId']);
+    if (directStudentId.isNotEmpty) children.add(directStudentId);
+
+    if (loadedRole == 'Parent') {
+      final parentEmail = _lower(
+        _text(data['email']).isNotEmpty
+            ? _text(data['email'])
+            : user.email ?? '',
+      );
+
+      if (parentEmail.isNotEmpty) {
+        final byLower = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmailLower', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byLower.docs) {
+          children.add(doc.id);
+          final batch = _text(doc.data()['batch']);
+          if (batch.isNotEmpty) childBatches.add(batch);
+        }
+
+        final byEmail = await FirebaseFirestore.instance
+            .collection('students')
+            .where('parentEmail', isEqualTo: parentEmail)
+            .get();
+
+        for (final doc in byEmail.docs) {
+          children.add(doc.id);
+          final batch = _text(doc.data()['batch']);
+          if (batch.isNotEmpty) childBatches.add(batch);
+        }
+      }
+
+      final byUid = await FirebaseFirestore.instance
+          .collection('students')
+          .where('parentUid', isEqualTo: uid)
+          .get();
+
+      for (final doc in byUid.docs) {
+        children.add(doc.id);
+        final batch = _text(doc.data()['batch']);
+        if (batch.isNotEmpty) childBatches.add(batch);
+      }
+
+      for (final childId in children) {
+        final childDoc = await FirebaseFirestore.instance
+            .collection('students')
+            .doc(childId)
+            .get();
+
+        if (childDoc.exists) {
+          final batch = _text(childDoc.data()?['batch']);
+          if (batch.isNotEmpty) childBatches.add(batch);
+        }
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      role = loadedRole;
+      userBatch = _text(data['batch']).isNotEmpty
+          ? _text(data['batch'])
+          : _text(data['assignedBatch']);
+      linkedChildrenIds = children.toList();
+      linkedChildBatches = childBatches.toList();
+      loadingUser = false;
+    });
+  }
+
+  bool _canViewCancelledSession(Map<String, dynamic> data) {
+    if (role == 'Admin' || role == 'Coach') return true;
+
+    final cancelTypeValue = _text(data['cancelType']);
+    final studentId = _text(data['studentId']);
+    final batch = _text(data['batch']);
+
+    if (role == 'Student') {
+      if (cancelTypeValue == 'Student') {
+        return studentId == uid;
+      }
+
+      return batch.isNotEmpty && batch == userBatch;
+    }
+
+    if (role == 'Parent') {
+      if (cancelTypeValue == 'Student') {
+        return linkedChildrenIds.contains(studentId);
+      }
+
+      return batch.isNotEmpty && linkedChildBatches.contains(batch);
+    }
+
+    return false;
   }
 
   String _dateKey(DateTime date) {
@@ -315,7 +475,16 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
-            child: StreamBuilder<QuerySnapshot>(
+            child: loadingUser
+                ? Column(
+                    children: [
+                      _topHeader(context, isDark),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  )
+                : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('cancelled_sessions')
                   .orderBy('createdAt', descending: true)
@@ -348,7 +517,10 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                   );
                 }
 
-                final sessions = snapshot.data?.docs ?? [];
+                final sessions = (snapshot.data?.docs ?? []).where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return _canViewCancelledSession(data);
+                }).toList();
 
                 int makeupPending = 0;
                 final Set<String> batches = {};
@@ -373,91 +545,94 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                         makeupPending: makeupPending,
                         batches: batches.length,
                       ),
-                      const SizedBox(height: 18),
-                      _sectionTitle(AppStrings.cancelSessionForm, isDark),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          children: [
-                            _warningBox(isDark),
-                            const SizedBox(height: 14),
-                            _cancelTypeSelector(isDark),
-                            const SizedBox(height: 10),
-                            _batchDropdown(isDark),
-                            if (cancelType == 'Student') ...[
+                      if (_canManage) ...[
+                        const SizedBox(height: 18),
+                        _sectionTitle(AppStrings.cancelSessionForm, isDark),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: [
+                              _warningBox(isDark),
+                              const SizedBox(height: 14),
+                              _cancelTypeSelector(isDark),
                               const SizedBox(height: 10),
-                              _studentDropdown(isDark),
-                            ],
-                            const SizedBox(height: 10),
-                            _inputBox(
-                              isDark: isDark,
-                              label: AppStrings.sessionDate,
-                              controller: dateController,
-                              icon: Icons.calendar_month_rounded,
-                              readOnly: true,
-                              onTap: _pickDate,
-                            ),
-                            _inputBox(
-                              isDark: isDark,
-                              label: AppStrings.sessionTime,
-                              controller: timeController,
-                              icon: Icons.access_time_rounded,
-                              readOnly: true,
-                              onTap: _pickTime,
-                            ),
-                            _inputBox(
-                              isDark: isDark,
-                              label: AppStrings.reason,
-                              controller: reasonController,
-                              icon: Icons.warning_amber_rounded,
-                              maxLines: 2,
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 54,
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? red : maroon,
-                                  foregroundColor:
-                                      isDark ? Colors.white : gold,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                              _batchDropdown(isDark),
+                              if (cancelType == 'Student') ...[
+                                const SizedBox(height: 10),
+                                _studentDropdown(isDark),
+                              ],
+                              const SizedBox(height: 10),
+                              _inputBox(
+                                isDark: isDark,
+                                label: AppStrings.sessionDate,
+                                controller: dateController,
+                                icon: Icons.calendar_month_rounded,
+                                readOnly: true,
+                                onTap: _pickDate,
+                              ),
+                              _inputBox(
+                                isDark: isDark,
+                                label: AppStrings.sessionTime,
+                                controller: timeController,
+                                icon: Icons.access_time_rounded,
+                                readOnly: true,
+                                onTap: _pickTime,
+                              ),
+                              _inputBox(
+                                isDark: isDark,
+                                label: AppStrings.reason,
+                                controller: reasonController,
+                                icon: Icons.warning_amber_rounded,
+                                maxLines: 2,
+                              ),
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 54,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDark ? red : maroon,
+                                    foregroundColor:
+                                        isDark ? Colors.white : gold,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
-                                ),
-                                onPressed: submitting
-                                    ? null
-                                    : () => _cancelSession(context),
-                                icon: submitting
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Icon(Icons.notifications_active_rounded),
-                                label: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    submitting
-                                        ? AppStrings.creating
-                                        : cancelType == 'Student'
-                                            ? AppStrings.cancelStudentCreateMakeup
-                                            : AppStrings.cancelBatchCreateMakeup,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.5,
+                                  onPressed: submitting
+                                      ? null
+                                      : () => _cancelSession(context),
+                                  icon: submitting
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Icon(Icons.notifications_active_rounded),
+                                  label: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      submitting
+                                          ? AppStrings.creating
+                                          : cancelType == 'Student'
+                                              ? AppStrings.cancelStudentCreateMakeup
+                                              : AppStrings.cancelBatchCreateMakeup,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.5,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 22),
+                        const SizedBox(height: 22),
+                      ] else
+                        const SizedBox(height: 18),
                       _sectionTitle(AppStrings.recentlyCancelled, isDark),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
