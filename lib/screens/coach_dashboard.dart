@@ -155,17 +155,19 @@ class _CoachDashboardState extends State<CoachDashboard> {
     return count;
   }
 
-  String _sessionsText(List<String> sessions) {
-    if (sessions.isEmpty) return "No session assigned";
-    if (sessions.length == 1) return sessions.first;
-    return "${sessions.length} Sessions";
-  }
+ String _sessionsText(List<String> sessions) {
+  if (sessions.isEmpty) return AppStrings.noSessionAssigned;
+  if (sessions.length == 1) return sessions.first;
+
+  return "${sessions.length} ${AppStrings.sessions}";
+}
 
   String _shortSessionText(List<String> sessions) {
-    if (sessions.isEmpty) return "Batch not assigned";
-    if (sessions.length == 1) return sessions.first;
-    return "${sessions.length} weekly sessions";
-  }
+  if (sessions.isEmpty) return AppStrings.noBatchAssigned;
+  if (sessions.length == 1) return sessions.first;
+
+  return "${sessions.length} ${AppStrings.weeklySessions}";
+}
 
   Color _bg(bool isDark) {
     return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
@@ -188,9 +190,11 @@ class _CoachDashboardState extends State<CoachDashboard> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text("No user logged in")),
-      );
+     return Scaffold(
+  body: Center(
+    child: Text(AppStrings.noUserLoggedIn),
+  ),
+);
     }
 
     return ValueListenableBuilder<ThemeMode>(
@@ -226,7 +230,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
                       Expanded(
                         child: Center(
                           child: Text(
-                            "Something went wrong",
+                            AppStrings.somethingWentWrong,
                             style: TextStyle(color: _primaryText(isDark)),
                           ),
                         ),
@@ -253,9 +257,9 @@ class _CoachDashboardState extends State<CoachDashboard> {
                       Expanded(
                         child: Center(
                           child: Text(
-                            "Coach details not found",
-                            style: TextStyle(color: _primaryText(isDark)),
-                          ),
+  AppStrings.coachDetailsNotFound,
+  style: TextStyle(color: _primaryText(isDark)),
+),
                         ),
                       ),
                     ],

@@ -1504,6 +1504,7 @@ static String get applyLeave =>
       "விடுப்பு விண்ணப்பம்",
       "छुट्टी के लिए आवेदन",
     );
+<<<<<<< HEAD
 static String get coachAttendanceTodaySubtitle => text(
   "Mark today attendance for weekly assigned sessions",
   "வாராந்திர ஒதுக்கப்பட்ட அமர்வுகளுக்கான இன்றைய வருகையை பதிவு செய்க",
@@ -1848,4 +1849,26 @@ static String get noUserLoggedIn => text(
   "பயனர் உள்நுழையவில்லை",
   "कोई उपयोगकर्ता लॉग इन नहीं है",
 );
+=======
+static String get noUserLoggedIn =>
+    text(
+      "No user logged in",
+      "பயனர் உள்நுழையவில்லை",
+      "कोई उपयोगकर्ता लॉग इन नहीं है",
+    );
+
+static String get coachDetailsNotFound =>
+    text(
+      "Coach details not found",
+      "பயிற்சியாளர் விவரங்கள் கிடைக்கவில்லை",
+      "कोच का विवरण नहीं मिला",
+    );
+
+static String get weeklySessions =>
+    text(
+      "weekly sessions",
+      "வாராந்திர அமர்வுகள்",
+      "साप्ताहिक सेशन",
+    );
+>>>>>>> 8e0fb1cefd4c1525d0928c8d1b35fabafe2c4883
 }
