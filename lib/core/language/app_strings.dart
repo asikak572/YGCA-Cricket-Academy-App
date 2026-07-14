@@ -1506,4 +1506,24 @@ static String get applyLeave =>
       "விடுப்பு விண்ணப்பம்",
       "छुट्टी के लिए आवेदन",
     );
+static String get noUserLoggedIn =>
+    text(
+      "No user logged in",
+      "பயனர் உள்நுழையவில்லை",
+      "कोई उपयोगकर्ता लॉग इन नहीं है",
+    );
+
+static String get coachDetailsNotFound =>
+    text(
+      "Coach details not found",
+      "பயிற்சியாளர் விவரங்கள் கிடைக்கவில்லை",
+      "कोच का विवरण नहीं मिला",
+    );
+
+static String get weeklySessions =>
+    text(
+      "weekly sessions",
+      "வாராந்திர அமர்வுகள்",
+      "साप्ताहिक सेशन",
+    );
 }
