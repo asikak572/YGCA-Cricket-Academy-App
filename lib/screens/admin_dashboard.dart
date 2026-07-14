@@ -97,7 +97,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           backgroundColor: _bg(isDark),
           drawer: YgcaDrawer(
             role: 'Admin',
-            username: 'Admin User',
+            username: AppStrings.adminUser,
             onLogout: _logout,
           ),
           body: SafeArea(
@@ -159,7 +159,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                   icon: Icons.receipt_long_rounded,
                                   title: AppStrings.pendingFees,
                                   value: "₹2.45L",
-                                  subtitle: "28 students",
+                                  subtitle: AppStrings.students28,
                                   color: Colors.orange,
                                 ),
                                 _overviewCard(

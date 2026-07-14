@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'coach_details_screen.dart';
 import 'add_coach_screen.dart';
@@ -63,7 +64,7 @@ class CoachManagementScreen extends StatelessWidget {
     final batch = data['batch']?.toString().trim() ?? '';
     if (batch.isNotEmpty) return batch;
 
-    return 'Weekly sessions assigned separately';
+    return AppStrings.coachMgmtWeeklySessionsAssignedSeparately;
   }
 
   Future<void> _syncCoachUserByEmail({
@@ -102,15 +103,15 @@ class CoachManagementScreen extends StatelessWidget {
     final emailController = TextEditingController();
     final phoneController = TextEditingController();
 
-    String selectedSpecialization = "Batting Coach";
+    String selectedSpecialization = AppStrings.coachMgmtBattingCoach;
 
     final specializations = [
-      "Batting Coach",
-      "Bowling Coach",
-      "Fielding Coach",
-      "Fitness Coach",
-      "Head Coach",
-      "Assistant Coach",
+      AppStrings.coachMgmtBattingCoach,
+      AppStrings.coachMgmtBowlingCoach,
+      AppStrings.coachMgmtFieldingCoach,
+      AppStrings.coachMgmtFitnessCoach,
+      AppStrings.coachMgmtHeadCoach,
+      AppStrings.coachMgmtAssistantCoach,
     ];
 
     await showDialog(
@@ -124,7 +125,7 @@ class CoachManagementScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(22),
               ),
               title: Text(
-                "Add Coach",
+                AppStrings.coachMgmtAddCoach,
                 style: TextStyle(
                   color: _primaryText(isDark),
                   fontWeight: FontWeight.w900,
@@ -136,18 +137,18 @@ class CoachManagementScreen extends StatelessWidget {
                   children: [
                     _field(
                       isDark: isDark,
-                      label: "Coach Name",
+                      label: AppStrings.coachMgmtCoachName,
                       controller: nameController,
                     ),
                     _field(
                       isDark: isDark,
-                      label: "Coach Email",
+                      label: AppStrings.coachMgmtCoachEmail,
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                     ),
                     _field(
                       isDark: isDark,
-                      label: "Phone",
+                      label: AppStrings.phone,
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
                     ),
@@ -162,7 +163,7 @@ class CoachManagementScreen extends StatelessWidget {
                       ),
                       decoration: _inputDecoration(
                         isDark: isDark,
-                        label: "Specialization",
+                        label: AppStrings.coachMgmtSpecialization,
                       ),
                       items: specializations.map((item) {
                         return DropdownMenuItem<String>(
@@ -193,7 +194,7 @@ class CoachManagementScreen extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        "Session assignment is handled separately in Weekly Coach Assignment.",
+                        AppStrings.coachMgmtSessionAssignmentInfo,
                         style: TextStyle(
                           color: _secondaryText(isDark),
                           fontSize: 12,
@@ -211,7 +212,7 @@ class CoachManagementScreen extends StatelessWidget {
                     Navigator.of(dialogContext).pop();
                   },
                   child: Text(
-                    "Cancel",
+                    AppStrings.cancel,
                     style: TextStyle(color: isDark ? Colors.white70 : maroon),
                   ),
                 ),
@@ -231,10 +232,10 @@ class CoachManagementScreen extends StatelessWidget {
                       if (!rootContext.mounted) return;
 
                       ScaffoldMessenger.of(rootContext).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please fill name, email and phone"),
-                          backgroundColor: Colors.red,
-                        ),
+                        SnackBar(
+  content: Text(AppStrings.coachMgmtFillNameEmailPhone),
+  backgroundColor: Colors.red,
+),
                       );
                       return;
                     }
@@ -281,23 +282,23 @@ class CoachManagementScreen extends StatelessWidget {
                       if (!rootContext.mounted) return;
 
                       ScaffoldMessenger.of(rootContext).showSnackBar(
-                        const SnackBar(
-                          content: Text("Coach added successfully"),
-                          backgroundColor: Colors.green,
-                        ),
+                       SnackBar(
+  content: Text(AppStrings.coachMgmtCoachAddedSuccessfully),
+  backgroundColor: Colors.green,
+),
                       );
                     } catch (e) {
                       if (!rootContext.mounted) return;
 
                       ScaffoldMessenger.of(rootContext).showSnackBar(
                         SnackBar(
-                          content: Text("Error: $e"),
+                          content: Text("${AppStrings.error}: $e"),
                           backgroundColor: Colors.red,
                         ),
                       );
                     }
                   },
-                  child: const Text("Save"),
+                  child: Text(AppStrings.save),
                 ),
               ],
             );
@@ -350,17 +351,17 @@ class CoachManagementScreen extends StatelessWidget {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Coach approved successfully"),
-          backgroundColor: Colors.green,
-        ),
+       SnackBar(
+  content: Text(AppStrings.coachMgmtCoachApprovedSuccessfully),
+  backgroundColor: Colors.green,
+),
       );
     } catch (e) {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Approve failed: $e"),
+          content: Text("${AppStrings.coachMgmtApproveFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -415,10 +416,10 @@ class CoachManagementScreen extends StatelessWidget {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Coach deleted"),
-          backgroundColor: Colors.green,
-        ),
+       SnackBar(
+  content: Text(AppStrings.coachMgmtCoachDeleted),
+  backgroundColor: Colors.green,
+),
       );
     }
   }
@@ -435,21 +436,21 @@ class CoachManagementScreen extends StatelessWidget {
         backgroundColor: _card(isDark),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: Text(
-          "Delete Coach",
+          AppStrings.coachMgmtDeleteCoach,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete $coachName?",
+          "${AppStrings.coachMgmtDeleteCoachConfirm} $coachName?",
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
-              "Cancel",
+              AppStrings.cancel,
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
             ),
           ),
@@ -462,7 +463,7 @@ class CoachManagementScreen extends StatelessWidget {
               Navigator.of(dialogContext).pop();
               await _deleteCoach(context, coachId);
             },
-            child: const Text("Delete"),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -507,9 +508,12 @@ class CoachManagementScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           floatingActionButton: FloatingActionButton.extended(
             backgroundColor: isDark ? red : maroon,
@@ -523,10 +527,10 @@ class CoachManagementScreen extends StatelessWidget {
   );
 },
             icon: const Icon(Icons.add_rounded),
-            label: const Text(
-              "Add Coach",
-              style: TextStyle(fontWeight: FontWeight.w900),
-            ),
+           label: Text(
+  AppStrings.coachMgmtAddCoach,
+  style: const TextStyle(fontWeight: FontWeight.w900),
+),
           ),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot>(
@@ -544,7 +548,7 @@ class CoachManagementScreen extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              "Error: ${snapshot.error}",
+                              "${AppStrings.error}: ${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.redAccent,
@@ -576,7 +580,7 @@ class CoachManagementScreen extends StatelessWidget {
 
                 for (final doc in coaches) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final status = data['status']?.toString() ?? 'Pending';
+                  final status = data['status']?.toString() ?? AppStrings.pending;
                   final specialization =
                       data['specialization']?.toString() ?? '';
 
@@ -601,7 +605,7 @@ class CoachManagementScreen extends StatelessWidget {
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("COACH OVERVIEW", isDark),
+                      child: _sectionTitle(AppStrings.coachMgmtCoachOverview, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -611,33 +615,33 @@ class CoachManagementScreen extends StatelessWidget {
                             _statCard(
                               isDark: isDark,
                               icon: Icons.sports_rounded,
-                              title: "COACHES",
+                              title: AppStrings.coachMgmtCoaches,
                               value: coaches.length.toString(),
-                              subtitle: "Total",
+                              subtitle: AppStrings.total,
                               color: Colors.blue,
                             ),
                             _statCard(
                               isDark: isDark,
                               icon: Icons.verified_rounded,
-                              title: "ACTIVE",
+                              title: AppStrings.active.toUpperCase(),
                               value: active.toString(),
-                              subtitle: "Approved",
+                              subtitle: AppStrings.approved,
                               color: Colors.green,
                             ),
                             _statCard(
                               isDark: isDark,
                               icon: Icons.pending_actions_rounded,
-                              title: "PENDING",
+                              title: AppStrings.pending.toUpperCase(),
                               value: pending.toString(),
-                              subtitle: "Approval",
+                              subtitle: AppStrings.approval,
                               color: Colors.orange,
                             ),
                             _statCard(
                               isDark: isDark,
                               icon: Icons.category_rounded,
-                              title: "SPECIAL",
+                              title: AppStrings.coachMgmtSpecial,
                               value: specializations.length.toString(),
-                              subtitle: "Types",
+                              subtitle: AppStrings.coachMgmtTypes,
                               color: Colors.purple,
                             ),
                           ],
@@ -653,7 +657,7 @@ class CoachManagementScreen extends StatelessWidget {
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("COACH LIST", isDark),
+                      child: _sectionTitle(AppStrings.coachMgmtCoachList, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -667,14 +671,14 @@ class CoachManagementScreen extends StatelessWidget {
                                       doc.data() as Map<String, dynamic>;
 
                                   final name =
-                                      data['name']?.toString() ?? 'No Name';
+                                      data['name']?.toString() ?? AppStrings.noName;
                                   final role =
-                                      data['role']?.toString() ?? 'Coach';
+                                      data['role']?.toString() ?? AppStrings.coachLabel;
                                   final phone =
-                                      data['phone']?.toString() ?? 'No Phone';
+                                      data['phone']?.toString() ?? AppStrings.coachMgmtNoPhone;
                                   final batch = _sessionInfoText(data);
                                   final status =
-                                      data['status']?.toString() ?? 'Pending';
+                                      data['status']?.toString() ?? AppStrings.pending;
 
                                   return _coachCard(
                                     context: context,
@@ -698,6 +702,8 @@ class CoachManagementScreen extends StatelessWidget {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -731,7 +737,7 @@ class CoachManagementScreen extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "COACH CENTER",
+              AppStrings.coachMgmtCoachCenter,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -891,7 +897,7 @@ class CoachManagementScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "CENTER",
+                            AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 25,
@@ -904,9 +910,9 @@ class CoachManagementScreen extends StatelessWidget {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Total: $total"),
-                              _heroChip("Active: $active"),
-                              _heroChip("Pending: $pending"),
+                              _heroChip("${AppStrings.total}: $total"),
+                              _heroChip("${AppStrings.active}: $active"),
+                              _heroChip("${AppStrings.pending}: $pending"),
                             ],
                           ),
                         ],
@@ -1145,7 +1151,7 @@ class CoachManagementScreen extends StatelessWidget {
                             _chip(
                               isDark: isDark,
                               icon: Icons.verified_rounded,
-                              text: status,
+                              text: status.toLowerCase().trim() == 'active' ? AppStrings.active : status,
                               color: color,
                             ),
                           ],
@@ -1187,10 +1193,10 @@ class CoachManagementScreen extends StatelessWidget {
                       data: data,
                     ),
                     icon: const Icon(Icons.verified_user_rounded),
-                    label: const Text(
-                      "Approve Coach",
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
+                   label: Text(
+  AppStrings.coachMgmtApproveCoach,
+  style: const TextStyle(fontWeight: FontWeight.w900),
+),
                   ),
                 ),
               ],
@@ -1250,7 +1256,7 @@ class CoachManagementScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Coaches Found",
+            AppStrings.coachMgmtNoCoachesFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,

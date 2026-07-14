@@ -23,12 +23,12 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
   bool isSaving = false;
 
   final List<String> specializations = const [
-    "Batting Coach",
-    "Bowling Coach",
-    "Fielding Coach",
-    "Fitness Coach",
-    "Head Coach",
-    "Assistant Coach",
+   AppStrings.battingCoach
+AppStrings.bowlingCoach
+AppStrings.fieldingCoach
+AppStrings.fitnessCoach
+AppStrings.headCoach
+AppStrings.assistantCoach
   ];
 
   @override
@@ -79,7 +79,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
     if (name.isEmpty || email.isEmpty || phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Please fill name, email and phone"),
+          content: Text(AppStrings.fillNameEmailPhone),
           backgroundColor: Colors.red,
         ),
       );
@@ -125,7 +125,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Coach added successfully"),
+          content: Text(AppStrings.coachAddedSuccessfully),
           backgroundColor: Colors.green,
         ),
       );
@@ -136,7 +136,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error: $e"),
+          content: Text(AppStrings.error),
           backgroundColor: Colors.red,
         ),
       );
@@ -279,7 +279,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          "ADD COACH",
+                          AppStrings.addCoach,
                           style: TextStyle(
                             color: isDark ? Colors.white : gold,
                             fontSize: 20,
@@ -305,7 +305,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Coach Profile Details",
+                            AppStrings.coachProfileDetails,
                             style: TextStyle(
                               color: _primaryText(isDark),
                               fontSize: 17,
@@ -314,7 +314,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "Weekly sessions will be assigned separately.",
+                            AppStrings.weeklySessionsAssignedSeparately,
                             style: TextStyle(
                               color: _secondaryText(isDark),
                               fontSize: 12,
@@ -324,20 +324,20 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                           const SizedBox(height: 16),
                           _field(
                             isDark: isDark,
-                            label: "Coach Name",
+                            label: AppStrings.coachName,
                             controller: nameController,
                             icon: Icons.person_rounded,
                           ),
                           _field(
                             isDark: isDark,
-                            label: "Coach Email",
+                            label: AppStrings.coachEmail,
                             controller: emailController,
                             icon: Icons.email_rounded,
                             keyboardType: TextInputType.emailAddress,
                           ),
                           _field(
                             isDark: isDark,
-                            label: "Phone",
+                            label: AppStrings.phone,
                             controller: phoneController,
                             icon: Icons.phone_rounded,
                             keyboardType: TextInputType.phone,
@@ -354,7 +354,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                             ),
                             decoration: _inputDecoration(
                               isDark: isDark,
-                              label: "Specialization",
+                              label: AppStrings.specialization,
                               icon: Icons.sports_cricket_rounded,
                             ),
                             items: specializations.map((item) {
@@ -388,7 +388,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                               ),
                             ),
                             child: Text(
-                              "After adding coach, go to Weekly Coach Assignment to assign current week sessions.",
+                              AppStrings.afterAddingCoachAssignWeeklySessions,
                               style: TextStyle(
                                 color: _secondaryText(isDark),
                                 fontSize: 12,
@@ -436,7 +436,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                           strokeWidth: 2,
                         )
                       : const Text(
-                          "SAVE COACH",
+                          AppStrings.saveCoach,
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.6,

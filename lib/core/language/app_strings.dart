@@ -1862,4 +1862,132 @@ static String get weeklySessions =>
       "வாராந்திர அமர்வுகள்",
       "साप्ताहिक सेशन",
     );
+static String get adminUser => text(
+  "Admin User",
+  "நிர்வாக பயனர்",
+  "एडमिन उपयोगकर्ता",
+);
+static String get students28 => text(
+  "28 students",
+  "28 மாணவர்கள்",
+  "28 छात्र",
+);
+// Add these inside AppStrings before the final }.
+static String get coachMgmtWeeklySessionsAssignedSeparately => text("Weekly sessions assigned separately","வாராந்திர அமர்வுகள் தனியாக ஒதுக்கப்படுகின்றன","साप्ताहिक सेशन अलग से असाइन किए जाते हैं");
+static String get coachMgmtBattingCoach => text("Batting Coach","பேட்டிங் பயிற்சியாளர்","बल्लेबाजी कोच");
+static String get coachMgmtBowlingCoach => text("Bowling Coach","பந்துவீச்சு பயிற்சியாளர்","गेंदबाजी कोच");
+static String get coachMgmtFieldingCoach => text("Fielding Coach","ஃபீல்டிங் பயிற்சியாளர்","फील्डिंग कोच");
+static String get coachMgmtFitnessCoach => text("Fitness Coach","உடற்தகுதி பயிற்சியாளர்","फिटनेस कोच");
+static String get coachMgmtHeadCoach => text("Head Coach","தலைமை பயிற்சியாளர்","मुख्य कोच");
+static String get coachMgmtAssistantCoach => text("Assistant Coach","உதவி பயிற்சியாளர்","सहायक कोच");
+static String get coachMgmtAddCoach => text("Add Coach","பயிற்சியாளரை சேர்","कोच जोड़ें");
+static String get coachMgmtCoachName => text("Coach Name","பயிற்சியாளர் பெயர்","कोच का नाम");
+static String get coachMgmtCoachEmail => text("Coach Email","பயிற்சியாளர் மின்னஞ்சல்","कोच ईमेल");
+static String get coachMgmtSpecialization => text("Specialization","சிறப்பு துறை","विशेषज्ञता");
+static String get coachMgmtSessionAssignmentInfo => text("Session assignment is handled separately in Weekly Coach Assignment.","அமர்வு ஒதுக்கீடு வாராந்திர பயிற்சியாளர் ஒதுக்கீட்டில் தனியாக நிர்வகிக்கப்படுகிறது.","सेशन असाइनमेंट साप्ताहिक कोच असाइनमेंट में अलग से प्रबंधित होता है।");
+static String get coachMgmtFillNameEmailPhone => text("Please fill name, email and phone","பெயர், மின்னஞ்சல் மற்றும் தொலைபேசி எண்ணை நிரப்பவும்","कृपया नाम, ईमेल और फोन भरें");
+static String get coachMgmtCoachAddedSuccessfully => text("Coach added successfully","பயிற்சியாளர் வெற்றிகரமாக சேர்க்கப்பட்டார்","कोच सफलतापूर्वक जोड़ा गया");
+static String get coachMgmtCoachApprovedSuccessfully => text("Coach approved successfully","பயிற்சியாளர் வெற்றிகரமாக அங்கீகரிக்கப்பட்டார்","कोच सफलतापूर्वक स्वीकृत हुआ");
+static String get coachMgmtApproveFailed => text("Approve failed","அங்கீகாரம் தோல்வியடைந்தது","स्वीकृति विफल");
+static String get coachMgmtCoachDeleted => text("Coach deleted","பயிற்சியாளர் நீக்கப்பட்டார்","कोच हटाया गया");
+static String get coachMgmtDeleteCoach => text("Delete Coach","பயிற்சியாளரை நீக்கு","कोच हटाएं");
+static String get coachMgmtDeleteCoachConfirm => text("Are you sure you want to delete","நீங்கள் நிச்சயமாக நீக்க விரும்புகிறீர்களா","क्या आप वाकई हटाना चाहते हैं");
+static String get coachMgmtCoachOverview => text("COACH OVERVIEW","பயிற்சியாளர் சுருக்கம்","कोच अवलोकन");
+static String get coachMgmtCoaches => text("COACHES","பயிற்சியாளர்கள்","कोच");
+static String get coachMgmtSpecial => text("SPECIAL","சிறப்பு","विशेष");
+static String get coachMgmtTypes => text("Types","வகைகள்","प्रकार");
+static String get coachMgmtCoachList => text("COACH LIST","பயிற்சியாளர் பட்டியல்","कोच सूची");
+static String get coachMgmtNoPhone => text("No Phone","தொலைபேசி இல்லை","कोई फोन नहीं");
+static String get coachMgmtCoachCenter => text("COACH CENTER","பயிற்சியாளர் மையம்","कोच केंद्र");
+static String get coachMgmtApproveCoach => text("Approve Coach","பயிற்சியாளரை அங்கீகரி","कोच स्वीकृत करें");
+static String get coachMgmtNoCoachesFound => text("No Coaches Found","பயிற்சியாளர்கள் இல்லை","कोई कोच नहीं मिला");
+
+static String get addCoach => text(
+  "Add Coach",
+  "பயிற்சியாளரை சேர்",
+  "कोच जोड़ें",
+);
+
+static String get coachProfileDetails => text(
+  "Coach Profile Details",
+  "பயிற்சியாளர் விவரங்கள்",
+  "कोच प्रोफ़ाइल विवरण",
+);
+
+static String get weeklySessionsAssignedSeparately => text(
+  "Weekly sessions will be assigned separately.",
+  "வாராந்திர அமர்வுகள் தனியாக ஒதுக்கப்படும்.",
+  "साप्ताहिक सेशन अलग से असाइन किए जाएंगे।",
+);
+
+static String get afterAddingCoachAssignWeeklySessions => text(
+  "After adding coach, go to Weekly Coach Assignment to assign current week sessions.",
+  "பயிற்சியாளரை சேர்த்த பிறகு தற்போதைய வார அமர்வுகளை ஒதுக்க வாராந்திர பயிற்சியாளர் ஒதுக்கீட்டிற்கு செல்லவும்.",
+  "कोच जोड़ने के बाद वर्तमान सप्ताह के सेशन असाइन करने के लिए Weekly Coach Assignment पर जाएं।",
+);
+
+static String get saveCoach => text(
+  "Save Coach",
+  "பயிற்சியாளரை சேமி",
+  "कोच सहेजें",
+);
+
+static String get fillNameEmailPhone => text(
+  "Please fill name, email and phone",
+  "பெயர், மின்னஞ்சல் மற்றும் தொலைபேசி எண்ணை நிரப்பவும்",
+  "कृपया नाम, ईमेल और फोन भरें",
+);
+
+static String get coachAddedSuccessfully => text(
+  "Coach added successfully",
+  "பயிற்சியாளர் வெற்றிகரமாக சேர்க்கப்பட்டார்",
+  "कोच सफलतापूर्वक जोड़ा गया",
+);
+static String get battingCoach => text(
+  "Batting Coach",
+  "பேட்டிங் பயிற்சியாளர்",
+  "बल्लेबाजी कोच",
+);
+
+static String get bowlingCoach => text(
+  "Bowling Coach",
+  "பந்துவீச்சு பயிற்சியாளர்",
+  "गेंदबाजी कोच",
+);
+
+static String get fieldingCoach => text(
+  "Fielding Coach",
+  "ஃபீல்டிங் பயிற்சியாளர்",
+  "फील्डिंग कोच",
+);
+
+static String get fitnessCoach => text(
+  "Fitness Coach",
+  "உடற்தகுதி பயிற்சியாளர்",
+  "फिटनेस कोच",
+);
+
+static String get headCoach => text(
+  "Head Coach",
+  "தலைமை பயிற்சியாளர்",
+  "मुख्य कोच",
+);
+
+static String get assistantCoach => text(
+  "Assistant Coach",
+  "உதவி பயிற்சியாளர்",
+  "सहायक कोच",
+);
+
+static String get coachEmail => text(
+  "Coach Email",
+  "பயிற்சியாளர் மின்னஞ்சல்",
+  "कोच ईमेल",
+);
+
+static String get specialization => text(
+  "Specialization",
+  "சிறப்பு துறை",
+  "विशेषज्ञता",
+);
 }
