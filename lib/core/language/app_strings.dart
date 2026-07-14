@@ -1050,8 +1050,6 @@ static String get score =>
 static String get grow =>
     text("Grow", "வளர்ச்சி", "विकास");
 
-static String get feedback =>
-    text("Feedback", "கருத்து", "प्रतिक्रिया");
 
 static String get coach =>
     text("Coach", "பயிற்சியாளர்", "कोच");
@@ -1506,4 +1504,348 @@ static String get applyLeave =>
       "விடுப்பு விண்ணப்பம்",
       "छुट्टी के लिए आवेदन",
     );
+static String get coachAttendanceTodaySubtitle => text(
+  "Mark today attendance for weekly assigned sessions",
+  "வாராந்திர ஒதுக்கப்பட்ட அமர்வுகளுக்கான இன்றைய வருகையை பதிவு செய்க",
+  "साप्ताहिक असाइन सेशन के लिए आज की उपस्थिति दर्ज करें",
+);
+
+static String get coachAttendanceHistorySubtitle => text(
+  "Review assigned student attendance history",
+  "ஒதுக்கப்பட்ட மாணவர்களின் வருகை வரலாற்றைப் பாருங்கள்",
+  "असाइन किए गए छात्रों का उपस्थिति इतिहास देखें",
+);
+
+static String get coachAttendanceCalendarSubtitle => text(
+  "Track assigned student-wise attendance calendar",
+  "ஒதுக்கப்பட்ட மாணவர் வாரியான வருகை காலண்டரை கண்காணிக்கவும்",
+  "असाइन किए गए छात्र-वार उपस्थिति कैलेंडर देखें",
+);
+
+static String get markAttendanceTitleSingleLine => text(
+  "Mark Attendance",
+  "வருகையை பதிவு செய்க",
+  "उपस्थिति दर्ज करें",
+);
+
+static String get takeTodayAttendanceCurrentWeek => text(
+  "Take today attendance for current week sessions",
+  "நடப்பு வார அமர்வுகளுக்கான இன்றைய வருகையை பதிவு செய்க",
+  "वर्तमान सप्ताह के सेशन के लिए आज की उपस्थिति दर्ज करें",
+);
+
+static String get viewAssignedAttendanceHistory => text(
+  "View previous attendance records of assigned students",
+  "ஒதுக்கப்பட்ட மாணவர்களின் முந்தைய வருகை பதிவுகளைப் பாருங்கள்",
+  "असाइन किए गए छात्रों के पिछले उपस्थिति रिकॉर्ड देखें",
+);
+
+static String get viewAssignedAttendanceCalendar => text(
+  "View assigned student-wise attendance calendar",
+  "ஒதுக்கப்பட்ட மாணவர் வாரியான வருகை காலண்டரைப் பாருங்கள்",
+  "असाइन किए गए छात्र-वार उपस्थिति कैलेंडर देखें",
+);
+
+static String get coachAttendanceTitle => text(
+  "COACH ATTENDANCE",
+  "பயிற்சியாளர் வருகை",
+  "कोच उपस्थिति",
+);
+
+static String get markReviewTrackAttendance => text(
+  "Mark, review and track attendance",
+  "வருகையை பதிவு செய்து, பார்த்து, கண்காணிக்கவும்",
+  "उपस्थिति दर्ज करें, समीक्षा करें और ट्रैक करें",
+);
+
+static String get coachManageWeeklyAttendance => text(
+  "Coach can manage attendance for current weekly assigned sessions",
+  "பயிற்சியாளர் நடப்பு வாரம் ஒதுக்கப்பட்ட அமர்வுகளுக்கான வருகையை நிர்வகிக்கலாம்",
+  "कोच वर्तमान सप्ताह के असाइन सेशन की उपस्थिति प्रबंधित कर सकता है",
+);
+
+static String get coachAttendanceFilteringInfo => text(
+  "History and Calendar use weekly coach assignments for role-based filtering.",
+  "வரலாறும் காலண்டரும் வாராந்திர பயிற்சியாளர் ஒதுக்கீடுகளைப் பயன்படுத்தி அணுகலை வடிகட்டுகின்றன.",
+  "इतिहास और कैलेंडर भूमिका-आधारित फ़िल्टरिंग के लिए साप्ताहिक कोच असाइनमेंट का उपयोग करते हैं।",
+);
+
+static String get mark => text("Mark", "பதிவு", "दर्ज करें");
+static String get roleLabel => text("Role", "பங்கு", "भूमिका");
+static String get coachLabel => text("Coach", "பயிற்சியாளர்", "कोच");
+static String get coachStudentsAssignedSubtitle => text("View students assigned to your batches", "உங்கள் பேட்ச்களுக்கு ஒதுக்கப்பட்ட மாணவர்களைப் பாருங்கள்", "अपने बैचों को असाइन किए गए छात्रों को देखें");
+static String get coachStudentAttendanceSubtitle => text("Check student attendance records", "மாணவர் வருகை பதிவுகளைச் சரிபார்க்கவும்", "छात्र उपस्थिति रिकॉर्ड जांचें");
+static String get coachStudentPerformanceSubtitle => text("Track student performance reports", "மாணவர் செயல்திறன் அறிக்கைகளை கண்காணிக்கவும்", "छात्र प्रदर्शन रिपोर्ट ट्रैक करें");
+static String get assignedStudentsTitle => text("Assigned Students", "ஒதுக்கப்பட்ட மாணவர்கள்", "असाइन किए गए छात्र");
+static String get viewYourBatchStudents => text("View your batch students", "உங்கள் பேட்ச் மாணவர்களைப் பாருங்கள்", "अपने बैच के छात्रों को देखें");
+static String get studentAttendanceTitle => text("Student Attendance", "மாணவர் வருகை", "छात्र उपस्थिति");
+static String get viewAssignedStudentsAttendance => text("View assigned students attendance", "ஒதுக்கப்பட்ட மாணவர்களின் வருகையைப் பாருங்கள்", "असाइन किए गए छात्रों की उपस्थिति देखें");
+static String get studentPerformanceTitle => text("Student Performance", "மாணவர் செயல்திறன்", "छात्र प्रदर्शन");
+static String get viewAssignedStudentsPerformance => text("View assigned students performance", "ஒதுக்கப்பட்ட மாணவர்களின் செயல்திறனைப் பாருங்கள்", "असाइन किए गए छात्रों का प्रदर्शन देखें");
+static String get coachStudentsTitle => text("COACH STUDENTS", "பயிற்சியாளர் மாணவர்கள்", "कोच छात्र");
+static String get studentModuleTitle => text("STUDENT MODULE", "மாணவர் மாட்யூல்", "छात्र मॉड्यूल");
+static String get assignedStudentsAttendancePerformance => text("Assigned students, attendance and performance", "ஒதுக்கப்பட்ட மாணவர்கள், வருகை மற்றும் செயல்திறன்", "असाइन छात्र, उपस्थिति और प्रदर्शन");
+static String get coachAssignedBatchStudentsOnly => text("Coach can view assigned batch students only", "பயிற்சியாளர் ஒதுக்கப்பட்ட பேட்ச் மாணவர்களை மட்டுமே பார்க்க முடியும்", "कोच केवल असाइन किए गए बैच के छात्रों को देख सकता है");
+static String get coachStudentFilteringInfo => text("Student data is filtered using assigned batches. If the list is empty, check the coach assignment and student batch fields.", "மாணவர் தரவு ஒதுக்கப்பட்ட பேட்ச்களைப் பயன்படுத்தி வடிகட்டப்படுகிறது. பட்டியல் காலியாக இருந்தால், பயிற்சியாளர் ஒதுக்கீடு மற்றும் மாணவர் பேட்ச் புலங்களைச் சரிபார்க்கவும்.", "छात्र डेटा असाइन किए गए बैचों से फ़िल्टर होता है। सूची खाली होने पर कोच असाइनमेंट और छात्र बैच फ़ील्ड जांचें।");
+static String get wise => text("Wise", "வாரியாக", "वार");
+static String get only => text("Only", "மட்டும்", "केवल");
+static String get feedback => text("Feedback", "கருத்து", "प्रतिक्रिया");
+
+static String get noCoachLoggedIn => text("No Coach Logged In", "பயிற்சியாளர் உள்நுழையவில்லை", "कोई कोच लॉग इन नहीं है");
+static String get loginAsCoachToViewStudents => text("Please login as coach to view assigned students.", "ஒதுக்கப்பட்ட மாணவர்களைப் பார்க்க பயிற்சியாளராக உள்நுழையவும்.", "असाइन किए गए छात्रों को देखने के लिए कोच के रूप में लॉग इन करें।");
+static String get weeklyAssignmentError => text("Weekly Assignment Error", "வாராந்திர ஒதுக்கீட்டு பிழை", "साप्ताहिक असाइनमेंट त्रुटि");
+static String get adminNotAssignedCurrentWeekSession => text("Admin has not assigned any session to this coach for the current week.", "நடப்பு வாரத்திற்கு இந்த பயிற்சியாளருக்கு அட்மின் எந்த அமர்வையும் ஒதுக்கவில்லை.", "एडमिन ने इस सप्ताह के लिए इस कोच को कोई सेशन असाइन नहीं किया है।");
+static String get studentsLoadingError => text("Students Loading Error", "மாணவர்களை ஏற்றுவதில் பிழை", "छात्र लोड करने में त्रुटि");
+static String get currentWeekSessionsTitle => text("CURRENT WEEK SESSIONS", "நடப்பு வார அமர்வுகள்", "वर्तमान सप्ताह के सेशन");
+static String get currentWeekCoachStudentCenter => text("Current week coach student center", "நடப்பு வார பயிற்சியாளர் மாணவர் மையம்", "वर्तमान सप्ताह का कोच छात्र केंद्र");
+static String get assignedStudentCenter => text("Assigned Student Center", "ஒதுக்கப்பட்ட மாணவர் மையம்", "असाइन छात्र केंद्र");
+static String get noStudentsInCurrentWeekSessions => text("No students found in current week assigned sessions", "நடப்பு வாரம் ஒதுக்கப்பட்ட அமர்வுகளில் மாணவர்கள் இல்லை", "वर्तमान सप्ताह के असाइन सेशन में कोई छात्र नहीं मिला");
+static String get loginAsCoachToViewAttendance => text(
+  "Please login as coach to view student attendance.",
+  "மாணவர் வருகையைப் பார்க்க பயிற்சியாளராக உள்நுழையவும்.",
+  "छात्र उपस्थिति देखने के लिए कोच के रूप में लॉग इन करें।",
+);
+
+static String get currentWeekAssignedSessionOverview => text(
+  "Current week assigned session overview",
+  "நடப்பு வார ஒதுக்கப்பட்ட அமர்வு சுருக்கம்",
+  "वर्तमान सप्ताह के असाइन सेशन का अवलोकन",
+);
+
+static String get currentWeekAttendance => text(
+  "Current Week Attendance",
+  "நடப்பு வார வருகை",
+  "वर्तमान सप्ताह की उपस्थिति",
+);
+
+static String get presentShort => text(
+  "P",
+  "வ",
+  "उ",
+);
+
+static String get absentShort => text(
+  "A",
+  "வரா",
+  "अनु",
+);
+
+static String get leaveShort => text(
+  "L",
+  "வி",
+  "छु",
+);
+
+static String get noAttendanceDataFound => text(
+  "No Attendance Data Found",
+  "வருகை தரவு இல்லை",
+  "कोई उपस्थिति डेटा नहीं मिला",
+);
+
+static String get noStudentsForCoachCurrentWeek => text(
+  "No students are available in this coach current week assigned sessions.",
+  "இந்த பயிற்சியாளரின் நடப்பு வார ஒதுக்கப்பட்ட அமர்வுகளில் மாணவர்கள் இல்லை.",
+  "इस कोच के वर्तमान सप्ताह के असाइन सेशन में कोई छात्र उपलब्ध नहीं है।",
+);
+
+
+static String get loginAsCoachToViewPerformance => text(
+  "Please login as coach to view student performance.",
+  "மாணவர் செயல்திறனைப் பார்க்க பயிற்சியாளராக உள்நுழையவும்.",
+  "छात्र प्रदर्शन देखने के लिए कोच के रूप में लॉग इन करें।",
+);
+
+static String get noCurrentWeekSessionAssignedToCoach => text(
+  "No current-week session is assigned to this coach yet.",
+  "இந்த பயிற்சியாளருக்கு நடப்பு வார அமர்வு இன்னும் ஒதுக்கப்படவில்லை.",
+  "इस कोच को वर्तमान सप्ताह का कोई सेशन अभी असाइन नहीं किया गया है।",
+);
+
+static String get assignedBatchPerformanceOverview => text(
+  "Assigned session performance overview",
+  "ஒதுக்கப்பட்ட அமர்வு செயல்திறன் சுருக்கம்",
+  "असाइन सेशन प्रदर्शन का अवलोकन",
+);
+
+static String get assignedStudentPerformance => text(
+  "Assigned Student Performance",
+  "ஒதுக்கப்பட்ட மாணவர் செயல்திறன்",
+  "असाइन छात्र प्रदर्शन",
+);
+
+
+static String get noPerformanceDataFound => text(
+  "No Performance Data Found",
+  "செயல்திறன் தரவு இல்லை",
+  "कोई प्रदर्शन डेटा नहीं मिला",
+);
+
+static String get noStudentsForCoachAssignedSessions => text(
+  "No students are available in this coach's assigned sessions.",
+  "இந்த பயிற்சியாளரின் ஒதுக்கப்பட்ட அமர்வுகளில் மாணவர்கள் இல்லை.",
+  "इस कोच के असाइन सेशन में कोई छात्र उपलब्ध नहीं है।",
+);
+
+static String get coachProfileUnavailable => text(
+  "Coach profile is not available in the users collection.",
+  "பயனர்கள் தொகுப்பில் பயிற்சியாளர் சுயவிவரம் கிடைக்கவில்லை.",
+  "यूज़र्स कलेक्शन में कोच प्रोफ़ाइल उपलब्ध नहीं है।",
+);
+static String get coachPerfUpdateSkillsSubtitle => text(
+  "Update player performance and skills",
+  "வீரர் செயல்திறன் மற்றும் திறன்களை புதுப்பிக்கவும்",
+  "खिलाड़ी का प्रदर्शन और कौशल अपडेट करें",
+);
+
+static String get coachPerfReportsSubtitle => text(
+  "View student performance reports",
+  "மாணவர் செயல்திறன் அறிக்கைகளைப் பாருங்கள்",
+  "छात्र प्रदर्शन रिपोर्ट देखें",
+);
+
+static String get coachPerfFeedbackSubtitle => text(
+  "Manage coach feedback and skill notes",
+  "பயிற்சியாளர் கருத்து மற்றும் திறன் குறிப்புகளை நிர்வகிக்கவும்",
+  "कोच प्रतिक्रिया और कौशल नोट्स प्रबंधित करें",
+);
+
+static String get coachPerfUpdatePerformance => text(
+  "Update Performance",
+  "செயல்திறனை புதுப்பிக்கவும்",
+  "प्रदर्शन अपडेट करें",
+);
+
+static String get coachPerfTrackGrowthSkills => text(
+  "Track player growth and skills",
+  "வீரர் வளர்ச்சி மற்றும் திறன்களை கண்காணிக்கவும்",
+  "खिलाड़ी की प्रगति और कौशल ट्रैक करें",
+);
+
+static String get coachPerfBattingUpdate => text(
+  "Batting Update",
+  "பேட்டிங் புதுப்பிப்பு",
+  "बल्लेबाजी अपडेट",
+);
+
+static String get coachPerfUpdateBatting => text(
+  "Update batting performance",
+  "பேட்டிங் செயல்திறனை புதுப்பிக்கவும்",
+  "बल्लेबाजी प्रदर्शन अपडेट करें",
+);
+
+static String get coachPerfBowlingUpdate => text(
+  "Bowling Update",
+  "பந்துவீச்சு புதுப்பிப்பு",
+  "गेंदबाजी अपडेट",
+);
+
+static String get coachPerfUpdateBowling => text(
+  "Update bowling performance",
+  "பந்துவீச்சு செயல்திறனை புதுப்பிக்கவும்",
+  "गेंदबाजी प्रदर्शन अपडेट करें",
+);
+
+static String get coachPerfStudentWiseReport => text(
+  "View student-wise performance report",
+  "மாணவர் வாரியான செயல்திறன் அறிக்கையைப் பாருங்கள்",
+  "छात्र-वार प्रदर्शन रिपोर्ट देखें",
+);
+
+static String get coachPerfMonthlyReport => text(
+  "Monthly Report",
+  "மாதாந்திர அறிக்கை",
+  "मासिक रिपोर्ट",
+);
+
+static String get coachPerfViewMonthlyProgress => text(
+  "View monthly progress report",
+  "மாதாந்திர முன்னேற்ற அறிக்கையைப் பாருங்கள்",
+  "मासिक प्रगति रिपोर्ट देखें",
+);
+
+static String get coachPerfProgressAnalytics => text(
+  "Progress Analytics",
+  "முன்னேற்ற பகுப்பாய்வு",
+  "प्रगति विश्लेषण",
+);
+
+static String get coachPerfAnalyzeGrowth => text(
+  "Analyze growth and improvement",
+  "வளர்ச்சி மற்றும் மேம்பாட்டை பகுப்பாய்வு செய்யவும்",
+  "विकास और सुधार का विश्लेषण करें",
+);
+
+static String get coachPerfCoachFeedback => text(
+  "Coach Feedback",
+  "பயிற்சியாளர் கருத்து",
+  "कोच प्रतिक्रिया",
+);
+
+static String get coachPerfAddFeedback => text(
+  "Add coach feedback for students",
+  "மாணவர்களுக்கு பயிற்சியாளர் கருத்தைச் சேர்க்கவும்",
+  "छात्रों के लिए कोच प्रतिक्रिया जोड़ें",
+);
+
+static String get coachPerfSkillNotes => text(
+  "Skill Notes",
+  "திறன் குறிப்புகள்",
+  "कौशल नोट्स",
+);
+
+static String get coachPerfAddSkillNotes => text(
+  "Add skill improvement notes",
+  "திறன் மேம்பாட்டு குறிப்புகளைச் சேர்க்கவும்",
+  "कौशल सुधार नोट्स जोड़ें",
+);
+
+static String get coachPerfImprovementStatus => text(
+  "Improvement Status",
+  "மேம்பாட்டு நிலை",
+  "सुधार स्थिति",
+);
+
+static String get coachPerfTrackImprovement => text(
+  "Track student improvement status",
+  "மாணவர் மேம்பாட்டு நிலையை கண்காணிக்கவும்",
+  "छात्र सुधार स्थिति ट्रैक करें",
+);
+
+static String get coachPerfPageTitle => text(
+  "COACH PERFORMANCE",
+  "பயிற்சியாளர் செயல்திறன்",
+  "कोच प्रदर्शन",
+);
+
+static String get coachPerfModuleTitle => text(
+  "PERFORMANCE MODULE",
+  "செயல்திறன் மாட்யூல்",
+  "प्रदर्शन मॉड्यूल",
+);
+
+static String get coachPerfUpdateProgress => text(
+  "Update player performance and progress",
+  "வீரர் செயல்திறன் மற்றும் முன்னேற்றத்தை புதுப்பிக்கவும்",
+  "खिलाड़ी का प्रदर्शन और प्रगति अपडेट करें",
+);
+
+static String get coachPerfAssignedStudentsOnly => text(
+  "Coach can update reports for assigned students",
+  "பயிற்சியாளர் ஒதுக்கப்பட்ட மாணவர்களின் அறிக்கைகளை புதுப்பிக்கலாம்",
+  "कोच असाइन किए गए छात्रों की रिपोर्ट अपडेट कर सकता है",
+);
+
+static String get coachPerfInfoMessage => text(
+  "All performance actions currently open the same performance report screen.",
+  "அனைத்து செயல்திறன் செயல்களும் தற்போது ஒரே செயல்திறன் அறிக்கை திரையைத் திறக்கின்றன.",
+  "सभी प्रदर्शन क्रियाएँ अभी एक ही प्रदर्शन रिपोर्ट स्क्रीन खोलती हैं।",
+);
+
+static String get now => text("Now", "இப்போது", "अभी");
+static String get add => text("Add", "சேர்", "जोड़ें");
+static String get noUserLoggedIn => text(
+  "No user logged in",
+  "பயனர் உள்நுழையவில்லை",
+  "कोई उपयोगकर्ता लॉग इन नहीं है",
+);
 }

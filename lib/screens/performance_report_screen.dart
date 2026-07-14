@@ -59,6 +59,51 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
     return result;
   }
 
+
+  DateTime _startOfWeek(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day - (date.weekday - 1),
+    );
+  }
+
+  String _dateId(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  Future<List<String>> _loadCoachCurrentWeekAssignments(
+    String coachUid,
+  ) async {
+    final weekId = _dateId(_startOfWeek(DateTime.now()));
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('coach_session_assignments')
+        .where('weekStartDate', isEqualTo: weekId)
+        .get();
+
+    final sessions = <String>[];
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+
+      final assignedCoachId = _text(data['coachId']);
+      final status = _lower(_text(data['status']));
+      final session = _text(data['session']);
+      final batch = _text(data['batch']);
+      final value = session.isNotEmpty ? session : batch;
+
+      if (assignedCoachId == coachUid &&
+          status == 'active' &&
+          value.isNotEmpty &&
+          !sessions.contains(value)) {
+        sessions.add(value);
+      }
+    }
+
+    return sessions;
+  }
+
   Future<void> _loadUserRole() async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -83,15 +128,9 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
     final data = userDoc.data() ?? {};
     final loadedRole = _text(data['role']);
 
-    final coachBatches = _listFromDynamic(data['assignedBatches']);
-
-    final oldBatch = _text(data['assignedBatch']).isNotEmpty
-        ? _text(data['assignedBatch'])
-        : _text(data['batch']);
-
-    if (oldBatch.isNotEmpty && !coachBatches.contains(oldBatch)) {
-      coachBatches.add(oldBatch);
-    }
+    final coachBatches = loadedRole == 'Coach'
+        ? await _loadCoachCurrentWeekAssignments(uid)
+        : <String>[];
 
     final children = _listFromDynamic(data['linkedChildrenIds']);
 
@@ -261,7 +300,20 @@ class _PerformanceReportScreenState extends State<PerformanceReportScreen> {
                       ),
                     ],
                   )
-                : role == 'Coach' && assignedBatches.isEmpty
+                : role.isEmpty
+                    ? Column(
+                        children: [
+                          _topHeader(context, isDark),
+                          Expanded(
+                            child: _messageCard(
+                              isDark,
+                              AppStrings.noUserLoggedIn,
+                              Icons.lock_outline_rounded,
+                            ),
+                          ),
+                        ],
+                      )
+                    : role == 'Coach' && assignedBatches.isEmpty
                     ? Column(
                         children: [
                           _topHeader(context, isDark),

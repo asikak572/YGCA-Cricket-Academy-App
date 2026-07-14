@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'coach_assigned_students_screen.dart';
 import 'coach_student_attendance_screen.dart';
@@ -45,24 +46,24 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Students";
+        return AppStrings.students;
       case 1:
-        return "Attendance";
+        return AppStrings.attendance;
       case 2:
-        return "Performance";
+        return AppStrings.performance;
       default:
-        return "Students";
+        return AppStrings.students;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "View students assigned to your batches";
+        return AppStrings.coachStudentsAssignedSubtitle;
       case 1:
-        return "Check student attendance records";
+        return AppStrings.coachStudentAttendanceSubtitle;
       case 2:
-        return "Track student performance reports";
+        return AppStrings.coachStudentPerformanceSubtitle;
       default:
         return "";
     }
@@ -93,8 +94,8 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.groups_rounded,
-          title: "Assigned Students",
-          subtitle: "View your batch students",
+          title: AppStrings.assignedStudentsTitle,
+          subtitle: AppStrings.viewYourBatchStudents,
           color: Colors.orange,
           screen: const CoachAssignedStudentsScreen(),
         ),
@@ -105,8 +106,8 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.fact_check_rounded,
-          title: "Student Attendance",
-          subtitle: "View assigned students attendance",
+          title: AppStrings.studentAttendanceTitle,
+          subtitle: AppStrings.viewAssignedStudentsAttendance,
           color: Colors.green,
           screen: const CoachStudentAttendanceScreen(),
         ),
@@ -116,8 +117,8 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
     return [
       _InfoItem(
         icon: Icons.analytics_rounded,
-        title: "Student Performance",
-        subtitle: "View assigned students performance",
+        title: AppStrings.studentPerformanceTitle,
+        subtitle: AppStrings.viewAssignedStudentsPerformance,
         color: Colors.blueAccent,
         screen: const CoachStudentPerformanceScreen(),
       ),
@@ -129,9 +130,12 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -175,6 +179,8 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -198,7 +204,7 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            "COACH STUDENTS",
+            AppStrings.coachStudentsTitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -329,8 +335,8 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "STUDENT MODULE",
+                    Text(
+                      AppStrings.studentModuleTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -341,7 +347,7 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Assigned students, attendance and performance",
+                      AppStrings.assignedStudentsAttendancePerformance,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -353,7 +359,7 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Coach can view assigned batch students only",
+                      AppStrings.coachAssignedBatchStudentsOnly,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -404,7 +410,7 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Student data should be filtered by assigned batches. If students show empty, check coach assignedBatches and student batch fields.",
+              AppStrings.coachStudentFilteringInfo,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -635,26 +641,26 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
         items: [
           _MiniStatData(
             icon: Icons.groups_rounded,
-            label: "Students",
-            value: "View",
+            label: AppStrings.students,
+            value: AppStrings.view,
             color: Colors.orange,
           ),
           _MiniStatData(
             icon: Icons.sports_cricket_rounded,
-            label: "Batch",
-            value: "Wise",
+            label: AppStrings.batch,
+            value: AppStrings.wise,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.verified_rounded,
-            label: "Approved",
-            value: "Only",
+            label: AppStrings.approved,
+            value: AppStrings.only,
             color: Colors.blueAccent,
           ),
           _MiniStatData(
             icon: Icons.person_rounded,
-            label: "Role",
-            value: "Coach",
+            label: AppStrings.roleLabel,
+            value: AppStrings.coachLabel,
             color: Colors.purpleAccent,
           ),
         ],
@@ -667,26 +673,26 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
         items: [
           _MiniStatData(
             icon: Icons.fact_check_rounded,
-            label: "Attendance",
-            value: "View",
+            label: AppStrings.attendance,
+            value: AppStrings.view,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.check_circle_rounded,
-            label: "Present",
-            value: "Track",
+            label: AppStrings.present,
+            value: AppStrings.track,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.cancel_rounded,
-            label: "Absent",
-            value: "Track",
+            label: AppStrings.absent,
+            value: AppStrings.track,
             color: Colors.red,
           ),
           _MiniStatData(
             icon: Icons.history_rounded,
-            label: "History",
-            value: "Live",
+            label: AppStrings.history,
+            value: AppStrings.live,
             color: Colors.orange,
           ),
         ],
@@ -698,26 +704,26 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
       items: [
         _MiniStatData(
           icon: Icons.analytics_rounded,
-          label: "Performance",
-          value: "View",
+          label: AppStrings.performance,
+          value: AppStrings.view,
           color: Colors.blueAccent,
         ),
         _MiniStatData(
           icon: Icons.trending_up_rounded,
-          label: "Growth",
-          value: "Track",
+          label: AppStrings.growth,
+          value: AppStrings.track,
           color: Colors.green,
         ),
         _MiniStatData(
           icon: Icons.rate_review_rounded,
-          label: "Feedback",
-          value: "Coach",
+          label: AppStrings.feedback,
+          value: AppStrings.coachLabel,
           color: Colors.orange,
         ),
         _MiniStatData(
           icon: Icons.verified_rounded,
-          label: "Status",
-          value: "Live",
+          label: AppStrings.status,
+          value: AppStrings.live,
           color: Colors.purpleAccent,
         ),
       ],
@@ -797,15 +803,15 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
     final items = [
       _BottomNavItem(
         icon: Icons.groups_rounded,
-        label: "Students",
+        label: AppStrings.students,
       ),
       _BottomNavItem(
         icon: Icons.fact_check_rounded,
-        label: "Attendance",
+        label: AppStrings.attendance,
       ),
       _BottomNavItem(
         icon: Icons.analytics_rounded,
-        label: "Reports",
+        label: AppStrings.reports,
       ),
     ];
 

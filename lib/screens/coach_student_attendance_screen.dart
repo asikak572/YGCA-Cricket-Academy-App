@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CoachStudentAttendanceScreen extends StatelessWidget {
   const CoachStudentAttendanceScreen({super.key});
@@ -75,7 +76,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
 
     final coachDoc = await firestore.collection('users').doc(coachUid).get();
     final coachData = coachDoc.data() ?? {};
-    final coachName = _text(coachData['name'], 'Coach');
+    final coachName = _text(coachData['name'], AppStrings.coachLabel);
 
     final assignmentSnapshot = await firestore
         .collection('coach_session_assignments')
@@ -158,9 +159,12 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        if (coachUid == null) {
+            if (coachUid == null) {
           return Scaffold(
             backgroundColor: _bg(isDark),
             body: SafeArea(
@@ -171,9 +175,9 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                     child: _messageCard(
                       isDark: isDark,
                       icon: Icons.lock_outline_rounded,
-                      title: "No Coach Logged In",
+                      title: AppStrings.noCoachLoggedIn,
                       message:
-                          "Please login as coach to view student attendance.",
+                          AppStrings.loginAsCoachToViewAttendance,
                     ),
                   ),
                 ],
@@ -208,7 +212,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.error_outline_rounded,
-                          title: "Weekly Assignment Error",
+                          title: AppStrings.weeklyAssignmentError,
                           message: weeklySnapshot.error.toString(),
                         ),
                       ),
@@ -218,7 +222,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
 
                 final weeklyData = weeklySnapshot.data ?? {};
                 final coachName =
-                    weeklyData['coachName']?.toString() ?? 'Coach';
+                    weeklyData['coachName']?.toString() ?? AppStrings.coachLabel;
 
                 final assignedSessions =
                     (weeklyData['assignedSessions'] as List?)
@@ -235,9 +239,9 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.event_busy_rounded,
-                          title: "No Session Assigned",
+                          title: AppStrings.noSessionAssigned,
                           message:
-                              "Admin has not assigned any session to this coach for the current week.",
+                              AppStrings.adminNotAssignedCurrentWeekSession,
                         ),
                       ),
                     ],
@@ -267,7 +271,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                             child: _messageCard(
                               isDark: isDark,
                               icon: Icons.error_outline_rounded,
-                              title: "Students Loading Error",
+                              title: AppStrings.studentsLoadingError,
                               message: studentSnapshot.error.toString(),
                             ),
                           ),
@@ -312,7 +316,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 16)),
                         SliverToBoxAdapter(
                           child: _sectionTitle(
-                            "CURRENT WEEK SESSIONS",
+                            AppStrings.currentWeekSessionsTitle,
                             isDark,
                           ),
                         ),
@@ -338,7 +342,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 18)),
                         SliverToBoxAdapter(
                           child: _sectionTitle(
-                            "STUDENT ATTENDANCE",
+                            AppStrings.studentAttendanceTitle.toUpperCase(),
                             isDark,
                           ),
                         ),
@@ -362,7 +366,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
 
                                       final name = _text(
                                         data['name'],
-                                        'Student',
+                                        AppStrings.student,
                                       );
                                       final rollNo = _text(
                                         data['rollNo'],
@@ -374,7 +378,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                                       );
                                       final status = _text(
                                         data['status'],
-                                        'Active',
+                                        AppStrings.active,
                                       );
 
                                       final counts =
@@ -417,6 +421,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -445,7 +451,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "STUDENT ATTENDANCE",
+                  AppStrings.studentAttendanceTitle.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -456,7 +462,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "Current week assigned session overview",
+                  AppStrings.currentWeekAssignedSessionOverview,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -611,8 +617,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
-                              "Current Week Attendance",
+                            Text(
+                              AppStrings.currentWeekAttendance,
                               style: TextStyle(
                                 color: gold,
                                 fontSize: 13,
@@ -624,10 +630,10 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                               spacing: 8,
                               runSpacing: 6,
                               children: [
-                                _heroChip("Sessions: $sessionCount"),
-                                _heroChip("Students: $studentCount"),
+                                _heroChip("${AppStrings.sessions}: $sessionCount"),
+                                _heroChip("${AppStrings.students}: $studentCount"),
                                 _heroChip(
-                                  "Avg: ${percentage.toStringAsFixed(0)}%",
+                                  "${AppStrings.avg}: ${percentage.toStringAsFixed(0)}%",
                                 ),
                               ],
                             ),
@@ -728,28 +734,28 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
           _summaryCard(
             isDark: isDark,
             icon: Icons.check_circle_rounded,
-            title: "Present",
+            title: AppStrings.present,
             value: present.toString(),
             color: Colors.green,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.cancel_rounded,
-            title: "Absent",
+            title: AppStrings.absent,
             value: absent.toString(),
             color: Colors.redAccent,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.event_busy_rounded,
-            title: "Leave",
+            title: AppStrings.leave,
             value: leave.toString(),
             color: Colors.orange,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.percent_rounded,
-            title: "Average",
+            title: AppStrings.average,
             value: "${percentage.toStringAsFixed(0)}%",
             color: Colors.blueAccent,
           ),
@@ -894,7 +900,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "Roll No: $rollNo • Session: $batch",
+                  "${AppStrings.rollNo}: $rollNo • ${AppStrings.session}: $batch",
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -911,19 +917,19 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                     _chip(
                       isDark: isDark,
                       icon: Icons.check_circle_rounded,
-                      text: "P $present",
+                      text: "${AppStrings.presentShort} $present",
                       color: Colors.green,
                     ),
                     _chip(
                       isDark: isDark,
                       icon: Icons.cancel_rounded,
-                      text: "A $absent",
+                      text: "${AppStrings.absentShort} $absent",
                       color: Colors.redAccent,
                     ),
                     _chip(
                       isDark: isDark,
                       icon: Icons.event_busy_rounded,
-                      text: "L $leave",
+                      text: "${AppStrings.leaveShort} $leave",
                       color: Colors.orange,
                     ),
                     _chip(
@@ -935,7 +941,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                     _chip(
                       isDark: isDark,
                       icon: Icons.verified_rounded,
-                      text: status,
+                      text: status.toLowerCase().trim() == 'active' ? AppStrings.active : status,
                       color: isActive ? Colors.green : Colors.orange,
                     ),
                   ],
@@ -997,7 +1003,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Attendance Data Found",
+            AppStrings.noAttendanceDataFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.w900,
@@ -1005,7 +1011,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            "No students are available in this coach current week assigned sessions.",
+            AppStrings.noStudentsForCoachCurrentWeek,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: _secondaryText(isDark),

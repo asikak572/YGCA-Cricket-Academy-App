@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'performance_report_screen.dart';
 
@@ -44,24 +45,24 @@ class _CoachPerformanceModuleScreenState
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Performance";
+        return AppStrings.performance;
       case 1:
-        return "Reports";
+        return AppStrings.reports;
       case 2:
-        return "Feedback";
+        return AppStrings.feedback;
       default:
-        return "Performance";
+        return AppStrings.performance;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Update player performance and skills";
+        return AppStrings.coachPerfUpdateSkillsSubtitle;
       case 1:
-        return "View student performance reports";
+        return AppStrings.coachPerfReportsSubtitle;
       case 2:
-        return "Manage coach feedback and skill notes";
+        return AppStrings.coachPerfFeedbackSubtitle;
       default:
         return "";
     }
@@ -92,22 +93,22 @@ class _CoachPerformanceModuleScreenState
       return [
         _InfoItem(
           icon: Icons.bar_chart_rounded,
-          title: "Update Performance",
-          subtitle: "Track player growth and skills",
+          title: AppStrings.coachPerfUpdatePerformance,
+          subtitle: AppStrings.coachPerfTrackGrowthSkills,
           color: Colors.blueAccent,
           screen: const PerformanceReportScreen(),
         ),
         _InfoItem(
           icon: Icons.sports_cricket_rounded,
-          title: "Batting Update",
-          subtitle: "Update batting performance",
+          title: AppStrings.coachPerfBattingUpdate,
+          subtitle: AppStrings.coachPerfUpdateBatting,
           color: Colors.orange,
           screen: const PerformanceReportScreen(),
         ),
         _InfoItem(
           icon: Icons.sports_baseball_rounded,
-          title: "Bowling Update",
-          subtitle: "Update bowling performance",
+          title: AppStrings.coachPerfBowlingUpdate,
+          subtitle: AppStrings.coachPerfUpdateBowling,
           color: Colors.green,
           screen: const PerformanceReportScreen(),
         ),
@@ -118,22 +119,22 @@ class _CoachPerformanceModuleScreenState
       return [
         _InfoItem(
           icon: Icons.analytics_rounded,
-          title: "Student Performance",
-          subtitle: "View student-wise performance report",
+          title: AppStrings.studentPerformanceTitle,
+          subtitle: AppStrings.coachPerfStudentWiseReport,
           color: Colors.blueAccent,
           screen: const PerformanceReportScreen(),
         ),
         _InfoItem(
           icon: Icons.calendar_month_rounded,
-          title: "Monthly Report",
-          subtitle: "View monthly progress report",
+          title: AppStrings.coachPerfMonthlyReport,
+          subtitle: AppStrings.coachPerfViewMonthlyProgress,
           color: Colors.purpleAccent,
           screen: const PerformanceReportScreen(),
         ),
         _InfoItem(
           icon: Icons.timeline_rounded,
-          title: "Progress Analytics",
-          subtitle: "Analyze growth and improvement",
+          title: AppStrings.coachPerfProgressAnalytics,
+          subtitle: AppStrings.coachPerfAnalyzeGrowth,
           color: Colors.green,
           screen: const PerformanceReportScreen(),
         ),
@@ -143,22 +144,22 @@ class _CoachPerformanceModuleScreenState
     return [
       _InfoItem(
         icon: Icons.rate_review_rounded,
-        title: "Coach Feedback",
-        subtitle: "Add coach feedback for students",
+        title: AppStrings.coachPerfCoachFeedback,
+        subtitle: AppStrings.coachPerfAddFeedback,
         color: Colors.orange,
         screen: const PerformanceReportScreen(),
       ),
       _InfoItem(
         icon: Icons.psychology_rounded,
-        title: "Skill Notes",
-        subtitle: "Add skill improvement notes",
+        title: AppStrings.coachPerfSkillNotes,
+        subtitle: AppStrings.coachPerfAddSkillNotes,
         color: Colors.purpleAccent,
         screen: const PerformanceReportScreen(),
       ),
       _InfoItem(
         icon: Icons.verified_rounded,
-        title: "Improvement Status",
-        subtitle: "Track student improvement status",
+        title: AppStrings.coachPerfImprovementStatus,
+        subtitle: AppStrings.coachPerfTrackImprovement,
         color: Colors.green,
         screen: const PerformanceReportScreen(),
       ),
@@ -170,9 +171,12 @@ class _CoachPerformanceModuleScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -216,6 +220,8 @@ class _CoachPerformanceModuleScreenState
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -239,7 +245,7 @@ class _CoachPerformanceModuleScreenState
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            "COACH PERFORMANCE",
+            AppStrings.coachPerfPageTitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -370,8 +376,8 @@ class _CoachPerformanceModuleScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "PERFORMANCE MODULE",
+                    Text(
+                      AppStrings.coachPerfModuleTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -382,7 +388,7 @@ class _CoachPerformanceModuleScreenState
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Update player performance and progress",
+                      AppStrings.coachPerfUpdateProgress,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -394,7 +400,7 @@ class _CoachPerformanceModuleScreenState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Coach can update reports for assigned students",
+                      AppStrings.coachPerfAssignedStudentsOnly,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -436,7 +442,7 @@ class _CoachPerformanceModuleScreenState
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Currently all performance actions open PerformanceReportScreen. Later we can split each action into separate dynamic screens.",
+              AppStrings.coachPerfInfoMessage,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -656,14 +662,14 @@ class _CoachPerformanceModuleScreenState
       ),
       child: Row(
         children: [
-          _miniStat(isDark, Icons.bar_chart_rounded, "Update", "Now",
+          _miniStat(isDark, Icons.bar_chart_rounded, AppStrings.update, AppStrings.now,
               Colors.blueAccent),
-          _miniStat(isDark, Icons.analytics_rounded, "Reports", "View",
+          _miniStat(isDark, Icons.analytics_rounded, AppStrings.reports, AppStrings.view,
               Colors.purpleAccent),
           _miniStat(
-              isDark, Icons.rate_review_rounded, "Feedback", "Add", Colors.orange),
+              isDark, Icons.rate_review_rounded, AppStrings.feedback, AppStrings.add, Colors.orange),
           _miniStat(
-              isDark, Icons.trending_up_rounded, "Growth", "Track", Colors.green),
+              isDark, Icons.trending_up_rounded, AppStrings.growth, AppStrings.track, Colors.green),
         ],
       ),
     );
@@ -705,9 +711,9 @@ class _CoachPerformanceModuleScreenState
 
   Widget _bottomNavigation(bool isDark) {
     final items = [
-      _BottomNavItem(icon: Icons.bar_chart_rounded, label: "Main"),
-      _BottomNavItem(icon: Icons.analytics_rounded, label: "Reports"),
-      _BottomNavItem(icon: Icons.rate_review_rounded, label: "Feedback"),
+      _BottomNavItem(icon: Icons.bar_chart_rounded, label: AppStrings.main),
+      _BottomNavItem(icon: Icons.analytics_rounded, label: AppStrings.reports),
+      _BottomNavItem(icon: Icons.rate_review_rounded, label: AppStrings.feedback),
     ];
 
     return Container(

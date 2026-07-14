@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CoachStudentPerformanceScreen extends StatelessWidget {
   const CoachStudentPerformanceScreen({super.key});
@@ -44,23 +45,54 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
     return int.tryParse(value.toString()) ?? 0;
   }
 
-  List<String> _getAssignedBatches(Map<String, dynamic> coachData) {
-    final assignedBatches = coachData['assignedBatches'];
+  DateTime _startOfWeek(DateTime date) {
+    return DateTime(
+      date.year,
+      date.month,
+      date.day - (date.weekday - 1),
+    );
+  }
 
-    if (assignedBatches is List && assignedBatches.isNotEmpty) {
-      return assignedBatches
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
+  String _dateId(DateTime date) {
+    return "\${date.year}-\${date.month.toString().padLeft(2, '0')}-\${date.day.toString().padLeft(2, '0')}";
+  }
+
+  Future<Map<String, dynamic>> _loadCoachWeeklyData(String coachUid) async {
+    final firestore = FirebaseFirestore.instance;
+    final weekId = _dateId(_startOfWeek(DateTime.now()));
+
+    final coachDoc = await firestore.collection('users').doc(coachUid).get();
+    final coachData = coachDoc.data() ?? {};
+    final coachName = _text(coachData['name'], AppStrings.coachLabel);
+
+    final assignmentSnapshot = await firestore
+        .collection('coach_session_assignments')
+        .where('weekStartDate', isEqualTo: weekId)
+        .get();
+
+    final assignedSessions = <String>[];
+
+    for (final doc in assignmentSnapshot.docs) {
+      final data = doc.data();
+      final assignedCoachId = data['coachId']?.toString().trim() ?? '';
+      final status = data['status']?.toString().toLowerCase().trim() ?? '';
+      final session = data['session']?.toString().trim() ?? '';
+      final batch = data['batch']?.toString().trim() ?? '';
+      final value = session.isNotEmpty ? session : batch;
+
+      if (assignedCoachId == coachUid &&
+          status == 'active' &&
+          value.isNotEmpty &&
+          !assignedSessions.contains(value)) {
+        assignedSessions.add(value);
+      }
     }
 
-    final singleBatch = coachData['batch']?.toString().trim() ?? '';
-    if (singleBatch.isNotEmpty) return [singleBatch];
-
-    final assignedBatch = coachData['assignedBatch']?.toString().trim() ?? '';
-    if (assignedBatch.isNotEmpty) return [assignedBatch];
-
-    return [];
+    return {
+      'coachName': coachName,
+      'assignedSessions': assignedSessions,
+      'weekStartDate': weekId,
+    };
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _studentStream(
@@ -87,11 +119,11 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
   }
 
   String _grade(int score) {
-    if (score >= 90) return "Excellent";
-    if (score >= 75) return "Good";
-    if (score >= 60) return "Average";
-    if (score >= 40) return "Needs Work";
-    return "No Data";
+    if (score >= 90) return AppStrings.excellent;
+    if (score >= 75) return AppStrings.good;
+    if (score >= 60) return AppStrings.average;
+    if (score >= 40) return AppStrings.needsWork;
+    return AppStrings.noData;
   }
 
   Color _gradeColor(int score) {
@@ -109,9 +141,12 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        if (coachUid == null) {
+            if (coachUid == null) {
           return Scaffold(
             backgroundColor: _bg(isDark),
             body: SafeArea(
@@ -122,9 +157,9 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                     child: _messageCard(
                       isDark: isDark,
                       icon: Icons.lock_outline_rounded,
-                      title: "No Coach Logged In",
+                      title: AppStrings.noCoachLoggedIn,
                       message:
-                          "Please login as coach to view student performance.",
+                          AppStrings.loginAsCoachToViewPerformance,
                     ),
                   ),
                 ],
@@ -136,11 +171,8 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
         return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
-            child: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-              future: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(coachUid)
-                  .get(),
+            child: FutureBuilder<Map<String, dynamic>>(
+              future: _loadCoachWeeklyData(coachUid),
               builder: (context, coachSnapshot) {
                 if (coachSnapshot.connectionState == ConnectionState.waiting) {
                   return Column(
@@ -161,7 +193,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.error_outline_rounded,
-                          title: "Something Went Wrong",
+                          title: AppStrings.somethingWentWrong,
                           message: coachSnapshot.error.toString(),
                         ),
                       ),
@@ -169,26 +201,16 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                   );
                 }
 
-                if (!coachSnapshot.hasData || !coachSnapshot.data!.exists) {
-                  return Column(
-                    children: [
-                      _topHeader(context, isDark),
-                      Expanded(
-                        child: _messageCard(
-                          isDark: isDark,
-                          icon: Icons.person_off_rounded,
-                          title: "Coach Data Not Found",
-                          message:
-                              "Coach profile is not available in users collection.",
-                        ),
-                      ),
-                    ],
-                  );
-                }
+                final weeklyData = coachSnapshot.data ?? {};
+                final coachName =
+                    weeklyData['coachName']?.toString() ?? AppStrings.coachLabel;
 
-                final coachData = coachSnapshot.data!.data() ?? {};
-                final assignedBatches = _getAssignedBatches(coachData);
-                final coachName = _text(coachData['name'], 'Coach');
+                final assignedBatches =
+                    (weeklyData['assignedSessions'] as List?)
+                            ?.map((e) => e.toString())
+                            .where((e) => e.trim().isNotEmpty)
+                            .toList() ??
+                        [];
 
                 if (assignedBatches.isEmpty) {
                   return Column(
@@ -198,8 +220,8 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.groups_2_outlined,
-                          title: "No Batch Assigned",
-                          message: "No batch is assigned to this coach yet.",
+                          title: AppStrings.noBatchAssigned,
+                          message: AppStrings.noCurrentWeekSessionAssignedToCoach,
                         ),
                       ),
                     ],
@@ -229,7 +251,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                             child: _messageCard(
                               isDark: isDark,
                               icon: Icons.error_outline_rounded,
-                              title: "Students Loading Error",
+                              title: AppStrings.studentsLoadingError,
                               message: studentSnapshot.error.toString(),
                             ),
                           ),
@@ -300,7 +322,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 18)),
                         SliverToBoxAdapter(
                           child: _sectionTitle(
-                            "STUDENT PERFORMANCE",
+                            AppStrings.studentPerformanceTitle.toUpperCase(),
                             isDark,
                           ),
                         ),
@@ -322,7 +344,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                                     (context, index) {
                                       final data = students[index].data();
 
-                                      final name = _text(data['name'], 'Student');
+                                      final name = _text(data['name'], AppStrings.student);
                                       final rollNo = _text(data['rollNo'], '-');
                                       final batch = _text(data['batch'], '-');
 
@@ -378,6 +400,8 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -406,7 +430,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "STUDENT PERFORMANCE",
+                AppStrings.studentPerformanceTitle.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -417,7 +441,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                "Assigned batch performance overview",
+                AppStrings.assignedBatchPerformanceOverview,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -572,7 +596,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "Assigned Student Performance",
+                              AppStrings.assignedStudentPerformance,
                               style: TextStyle(
                                 color: gold,
                                 fontSize: 13,
@@ -584,8 +608,8 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                               spacing: 8,
                               runSpacing: 6,
                               children: [
-                                _heroChip("Students: $studentCount"),
-                                _heroChip("Overall: $overall"),
+                                _heroChip("${AppStrings.students}: $studentCount"),
+                                _heroChip("${AppStrings.overall}: $overall"),
                               ],
                             ),
                           ],
@@ -644,28 +668,28 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
           _summaryCard(
             isDark: isDark,
             icon: Icons.sports_cricket_rounded,
-            title: "Batting Avg",
+            title: AppStrings.battingAverage,
             value: batting.toString(),
             color: Colors.green,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.sports_baseball_rounded,
-            title: "Bowling Avg",
+            title: AppStrings.bowlingAverage,
             value: bowling.toString(),
             color: Colors.orange,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.sports_handball_rounded,
-            title: "Fielding Avg",
+            title: AppStrings.fieldingAverage,
             value: fielding.toString(),
             color: Colors.blueAccent,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.fitness_center_rounded,
-            title: "Fitness Avg",
+            title: AppStrings.fitnessAverage,
             value: fitness.toString(),
             color: Colors.purpleAccent,
           ),
@@ -830,7 +854,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Roll No: $rollNo • Batch: $batch",
+                      "${AppStrings.rollNo}: $rollNo • ${AppStrings.batch}: $batch",
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -869,7 +893,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
               Expanded(
                 child: _scoreChip(
                   isDark: isDark,
-                  label: "Bat",
+                  label: AppStrings.batShort,
                   value: batting,
                   color: Colors.green,
                 ),
@@ -877,7 +901,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
               Expanded(
                 child: _scoreChip(
                   isDark: isDark,
-                  label: "Bowl",
+                  label: AppStrings.bowlShort,
                   value: bowling,
                   color: Colors.orange,
                 ),
@@ -885,7 +909,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
               Expanded(
                 child: _scoreChip(
                   isDark: isDark,
-                  label: "Field",
+                  label: AppStrings.fieldShort,
                   value: fielding,
                   color: Colors.blueAccent,
                 ),
@@ -893,7 +917,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
               Expanded(
                 child: _scoreChip(
                   isDark: isDark,
-                  label: "Fit",
+                  label: AppStrings.fitShort,
                   value: fitness,
                   color: Colors.purpleAccent,
                 ),
@@ -973,7 +997,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Performance Data Found",
+            AppStrings.noPerformanceDataFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.w900,
@@ -981,7 +1005,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            "No students are available in this coach assigned batch.",
+            AppStrings.noStudentsForCoachAssignedSessions,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: _secondaryText(isDark),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'attendance_screen.dart';
 import 'attendance_history_screen.dart';
@@ -46,24 +47,24 @@ class _CoachAttendanceModuleScreenState
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Attendance";
+        return AppStrings.attendance;
       case 1:
-        return "Records";
+        return AppStrings.records;
       case 2:
-        return "Calendar";
+        return AppStrings.calendar;
       default:
-        return "Attendance";
+        return AppStrings.attendance;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Mark today attendance for weekly assigned sessions";
+        return AppStrings.coachAttendanceTodaySubtitle;
       case 1:
-        return "Review assigned student attendance history";
+        return AppStrings.coachAttendanceHistorySubtitle;
       case 2:
-        return "Track assigned student-wise attendance calendar";
+        return AppStrings.coachAttendanceCalendarSubtitle;
       default:
         return "";
     }
@@ -94,8 +95,8 @@ class _CoachAttendanceModuleScreenState
       return [
         _InfoItem(
           icon: Icons.check_circle_rounded,
-          title: "Mark Attendance",
-          subtitle: "Take today attendance for current week sessions",
+          title: AppStrings.markAttendanceTitleSingleLine,
+          subtitle: AppStrings.takeTodayAttendanceCurrentWeek,
           color: Colors.green,
           screen: const AttendanceScreen(),
         ),
@@ -106,8 +107,8 @@ class _CoachAttendanceModuleScreenState
       return [
         _InfoItem(
           icon: Icons.history_rounded,
-          title: "Attendance History",
-          subtitle: "View previous attendance records of assigned students",
+          title: AppStrings.attendanceHistory,
+          subtitle: AppStrings.viewAssignedAttendanceHistory,
           color: Colors.redAccent,
           screen: const AttendanceHistoryScreen(),
         ),
@@ -117,8 +118,8 @@ class _CoachAttendanceModuleScreenState
     return [
       _InfoItem(
         icon: Icons.calendar_month_rounded,
-        title: "Attendance Calendar",
-        subtitle: "View assigned student-wise attendance calendar",
+        title: AppStrings.attendanceCalendar,
+        subtitle: AppStrings.viewAssignedAttendanceCalendar,
         color: Colors.orange,
         screen: const AttendanceCalendarScreen(),
       ),
@@ -130,9 +131,12 @@ class _CoachAttendanceModuleScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -176,6 +180,8 @@ class _CoachAttendanceModuleScreenState
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -199,7 +205,7 @@ class _CoachAttendanceModuleScreenState
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            "COACH ATTENDANCE",
+            AppStrings.coachAttendanceTitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -318,7 +324,7 @@ class _CoachAttendanceModuleScreenState
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "Mark, review and track attendance",
+                  AppStrings.markReviewTrackAttendance,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -330,7 +336,7 @@ class _CoachAttendanceModuleScreenState
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Coach can manage attendance for current weekly assigned sessions",
+                  AppStrings.coachManageWeeklyAttendance,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -370,7 +376,7 @@ class _CoachAttendanceModuleScreenState
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "History and Calendar now use coach_session_assignments for coach role filtering.",
+              AppStrings.coachAttendanceFilteringInfo,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -579,29 +585,29 @@ class _CoachAttendanceModuleScreenState
           _miniStat(
             isDark: isDark,
             icon: Icons.fact_check_rounded,
-            label: "Mark",
-            value: "Today",
+            label: AppStrings.mark,
+            value: AppStrings.today,
             color: Colors.green,
           ),
           _miniStat(
             isDark: isDark,
             icon: Icons.history_rounded,
-            label: "History",
-            value: "View",
+            label: AppStrings.history,
+            value: AppStrings.view,
             color: Colors.redAccent,
           ),
           _miniStat(
             isDark: isDark,
             icon: Icons.calendar_month_rounded,
-            label: "Calendar",
-            value: "View",
+            label: AppStrings.calendar,
+            value: AppStrings.view,
             color: Colors.orange,
           ),
           _miniStat(
             isDark: isDark,
             icon: Icons.person_rounded,
-            label: "Role",
-            value: "Coach",
+            label: AppStrings.roleLabel,
+            value: AppStrings.coachLabel,
             color: Colors.purpleAccent,
           ),
         ],
@@ -663,21 +669,21 @@ class _CoachAttendanceModuleScreenState
           _bottomItem(
             isDark: isDark,
             icon: Icons.fact_check_rounded,
-            label: "Mark",
+            label: AppStrings.mark,
             selected: _currentIndex == 0,
             onTap: () => setState(() => _currentIndex = 0),
           ),
           _bottomItem(
             isDark: isDark,
             icon: Icons.history_rounded,
-            label: "Records",
+            label: AppStrings.records,
             selected: _currentIndex == 1,
             onTap: () => setState(() => _currentIndex = 1),
           ),
           _bottomItem(
             isDark: isDark,
             icon: Icons.calendar_month_rounded,
-            label: "Calendar",
+            label: AppStrings.calendar,
             selected: _currentIndex == 2,
             onTap: () => setState(() => _currentIndex = 2),
           ),
