@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'coach_salary_screen.dart';
 
@@ -171,8 +172,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Coach deleted successfully"),
+      SnackBar(
+        content: Text(AppStrings.coachDetailsDeletedSuccessfully),
         backgroundColor: Colors.green,
       ),
     );
@@ -225,8 +226,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Coach updated successfully"),
+      SnackBar(
+        content: Text(AppStrings.coachDetailsUpdatedSuccessfully),
         backgroundColor: Colors.green,
       ),
     );
@@ -241,21 +242,21 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
           borderRadius: BorderRadius.circular(22),
         ),
         title: Text(
-          "Delete Coach",
+          AppStrings.coachDetailsDeleteCoach,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete ${widget.name}?",
+          "${AppStrings.coachDetailsDeleteConfirm} ${widget.name}?",
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Cancel",
+              AppStrings.cancel,
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
             ),
           ),
@@ -268,7 +269,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               Navigator.pop(context);
               await _deleteCoach();
             },
-            child: const Text("Delete"),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -296,13 +297,13 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     );
 
     final specializations = [
-      "Coach",
-      "Batting Coach",
-      "Bowling Coach",
-      "Fielding Coach",
-      "Fitness Coach",
-      "Head Coach",
-      "Assistant Coach",
+      AppStrings.coachLabel,
+      AppStrings.battingCoach,
+      AppStrings.bowlingCoach,
+      AppStrings.fieldingCoach,
+      AppStrings.fitnessCoach,
+      AppStrings.headCoach,
+      AppStrings.assistantCoach,
     ];
 
     final rawSpecialization =
@@ -311,13 +312,13 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     String selectedSpecialization =
         specializations.contains(rawSpecialization)
             ? rawSpecialization
-            : "Coach";
+            : AppStrings.coachLabel;
 
-    final statusOptions = ["Active", "Inactive"];
+    final statusOptions = [AppStrings.active, AppStrings.inactive];
 
     final rawStatus = statusController.text.trim();
     if (!statusOptions.contains(rawStatus)) {
-      statusController.text = "Active";
+      statusController.text = AppStrings.active;
     }
 
     showDialog(
@@ -330,7 +331,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               borderRadius: BorderRadius.circular(22),
             ),
             title: Text(
-              "Edit Coach",
+              AppStrings.coachDetailsEditCoach,
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontWeight: FontWeight.w900,
@@ -341,29 +342,29 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                 children: [
                   _editField(
                     isDark: isDark,
-                    label: "Coach Name",
+                    label: AppStrings.coachName,
                     controller: nameController,
                   ),
                   _editField(
                     isDark: isDark,
-                    label: "Coach Email",
+                    label: AppStrings.coachEmail,
                     controller: emailController,
                     keyboardType: TextInputType.emailAddress,
                   ),
                   _editField(
                     isDark: isDark,
-                    label: "Role",
+                    label: AppStrings.roleLabel,
                     controller: roleController,
                   ),
                   _editField(
                     isDark: isDark,
-                    label: "Phone Number",
+                    label: AppStrings.phoneNumber,
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
                   ),
                   _editField(
                     isDark: isDark,
-                    label: "Experience",
+                    label: AppStrings.experience,
                     controller: experienceController,
                   ),
                   DropdownButtonFormField<String>(
@@ -377,7 +378,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     ),
                     decoration: _inputDecoration(
                       isDark: isDark,
-                      label: "Specialization",
+                      label: AppStrings.specialization,
                     ),
                     items: specializations.map((item) {
                       return DropdownMenuItem<String>(
@@ -402,7 +403,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     ),
                     decoration: _inputDecoration(
                       isDark: isDark,
-                      label: "Status",
+                      label: AppStrings.status,
                     ),
                     items: statusOptions.map((item) {
                       return DropdownMenuItem<String>(
@@ -435,7 +436,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            "Weekly sessions are assigned from Weekly Coach Assignment screen.",
+                            AppStrings.coachDetailsWeeklyAssignmentInfo,
                             style: TextStyle(
                               color: _secondaryText(isDark),
                               fontSize: 12,
@@ -454,7 +455,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  "Cancel",
+                  AppStrings.cancel,
                   style: TextStyle(color: isDark ? Colors.white70 : maroon),
                 ),
               ),
@@ -470,10 +471,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
 
                   if (name.isEmpty || email.isEmpty || phone.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Please fill name, email and phone",
-                        ),
+                      SnackBar(
+                        content: Text(AppStrings.fillNameEmailPhone),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -492,7 +491,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
 
                   if (context.mounted) Navigator.pop(context);
                 },
-                child: const Text("Update"),
+                child: Text(AppStrings.update),
               ),
             ],
           );
@@ -569,7 +568,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    "Current Week Sessions",
+                    AppStrings.currentWeekSessions,
                     style: TextStyle(
                       color: _secondaryText(isDark),
                       fontWeight: FontWeight.w600,
@@ -598,7 +597,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
             children: [
               Expanded(
                 child: Text(
-                  "Current Week Sessions",
+                  AppStrings.currentWeekSessions,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontWeight: FontWeight.w600,
@@ -609,7 +608,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               Flexible(
                 child: sessions.isEmpty
                     ? Text(
-                        "No Session Assigned",
+                        AppStrings.noSessionAssigned,
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           color: _primaryText(isDark),
@@ -656,7 +655,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
 
         return _infoCard(
           isDark: isDark,
-          title: "CURRENT WEEK SESSIONS",
+          title: AppStrings.currentWeekSessions.toUpperCase(),
           children: [
             if (loading)
               Padding(
@@ -673,7 +672,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      "Loading sessions...",
+                      AppStrings.loadingSessions,
                       style: TextStyle(
                         color: _secondaryText(isDark),
                         fontWeight: FontWeight.w700,
@@ -686,7 +685,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  "No session assigned for this coach in the current week.",
+                  AppStrings.noCurrentWeekSessionAssignedToCoach,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 12,
@@ -733,9 +732,12 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return StreamBuilder<DocumentSnapshot>(
+            return StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
               .collection('coaches')
               .doc(widget.coachId)
@@ -782,33 +784,33 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                             _statCard(
                               isDark: isDark,
                               icon: Icons.event_available_rounded,
-                              title: "SESSIONS",
-                              value: "Weekly",
-                              subtitle: "Assigned",
+                              title: AppStrings.sessions.toUpperCase(),
+                              value: AppStrings.weekly,
+                              subtitle: AppStrings.assigned,
                               color: Colors.blue,
                             ),
                             _statCard(
                               isDark: isDark,
                               icon: Icons.verified_rounded,
-                              title: "STATUS",
+                              title: AppStrings.status.toUpperCase(),
                               value: status,
-                              subtitle: isActive ? "Working" : "Inactive",
+                              subtitle: isActive ? AppStrings.working : AppStrings.inactive,
                               color: isActive ? Colors.green : Colors.orange,
                             ),
                             _statCard(
                               isDark: isDark,
                               icon: Icons.work_history_rounded,
-                              title: "EXPERIENCE",
+                              title: AppStrings.experience.toUpperCase(),
                               value: experience,
-                              subtitle: "Coaching",
+                              subtitle: AppStrings.coaching,
                               color: Colors.orange,
                             ),
                             _statCard(
                               isDark: isDark,
                               icon: Icons.sports_cricket_rounded,
-                              title: "SPECIALITY",
+                              title: AppStrings.speciality.toUpperCase(),
                               value: specialization,
-                              subtitle: "Skill Area",
+                              subtitle: AppStrings.skillArea,
                               color: Colors.purple,
                             ),
                           ],
@@ -828,7 +830,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                       sliver: SliverToBoxAdapter(
                         child: _infoCard(
                           isDark: isDark,
-                          title: "COACH INFORMATION",
+                          title: AppStrings.coachInformation.toUpperCase(),
                           children: [
                             _infoRow(
                               isDark: isDark,
@@ -837,7 +839,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                             ),
                             _infoRow(
                               isDark: isDark,
-                              title: "Email",
+                              title: AppStrings.email,
                               value: email,
                             ),
                             _infoRow(
@@ -891,7 +893,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                       sliver: SliverToBoxAdapter(
                         child: _infoCard(
                           isDark: isDark,
-                          title: "QUICK ACTIONS",
+                          title: AppStrings.quickActions.toUpperCase(),
                           children: [
                             Row(
                               children: [
@@ -899,7 +901,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                                   child: _actionCard(
                                     isDark: isDark,
                                     icon: Icons.edit_rounded,
-                                    title: "Edit\nCoach",
+                                    title: AppStrings.editCoachMultiline,
                                     color: Colors.blue,
                                     onTap: () => _showEditDialog(
                                       data,
@@ -912,7 +914,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                                   child: _actionCard(
                                     isDark: isDark,
                                     icon: Icons.delete_rounded,
-                                    title: "Delete\nCoach",
+                                    title: AppStrings.deleteCoachMultiline,
                                     color: Colors.red,
                                     onTap: () => _confirmDelete(isDark),
                                   ),
@@ -923,7 +925,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                             _actionCard(
                               isDark: isDark,
                               icon: Icons.account_balance_wallet_rounded,
-                              title: "Salary Details",
+                              title: AppStrings.salaryDetails,
                               color: Colors.green,
                               onTap: () {
                                 Navigator.push(
@@ -957,8 +959,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                                 ),
                                 onPressed: () => _showEditDialog(data, isDark),
                                 icon: const Icon(Icons.edit_rounded),
-                                label: const Text(
-                                  "EDIT COACH",
+                                label: Text(
+                                  AppStrings.editCoach.toUpperCase(),
                                   style: TextStyle(
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -993,8 +995,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                                 icon: const Icon(
                                   Icons.account_balance_wallet_rounded,
                                 ),
-                                label: const Text(
-                                  "SALARY",
+                                label: Text(
+                                  AppStrings.salary.toUpperCase(),
                                   style: TextStyle(
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -1009,6 +1011,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                   ],
                 ),
               ),
+            );
+          },
             );
           },
         );
@@ -1044,7 +1048,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "COACH DETAILS",
+              AppStrings.coachDetails.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -1207,8 +1211,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                             const SizedBox(height: 10),
                             _statusChip(status),
                             const SizedBox(height: 10),
-                            const Text(
-                              "Guiding players towards excellence.",
+                            Text(
+                              AppStrings.coachDetailsGuidingExcellence,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(

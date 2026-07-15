@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'coach_details_screen.dart';
 
@@ -50,7 +51,7 @@ class CoachDetailsListScreen extends StatelessWidget {
 
   String _batchesText(Map<String, dynamic> data) {
     final batches = _batchesFromData(data);
-    if (batches.isEmpty) return 'No Batch Assigned';
+    if (batches.isEmpty) return AppStrings.noBatchAssigned;
     return batches.join(', ');
   }
 
@@ -118,7 +119,7 @@ class CoachDetailsListScreen extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              "Error: ${snapshot.error}",
+                              "${AppStrings.error}: ${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.redAccent,
@@ -152,7 +153,7 @@ class CoachDetailsListScreen extends StatelessWidget {
                     SliverToBoxAdapter(child: _infoHeader(isDark, coaches.length)),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("COACH DETAILS LIST", isDark),
+                      child: _sectionTitle(AppStrings.coachDetailsList, isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -164,16 +165,16 @@ class CoachDetailsListScreen extends StatelessWidget {
                                   final doc = coaches[index];
                                   final data = doc.data() as Map<String, dynamic>;
 
-                                  final name = _text(data, 'name', 'No Name');
-                                  final role = _text(data, 'role', 'Coach');
-                                  final phone = _text(data, 'phone', 'No Phone');
+                                  final name = _text(data, 'name', AppStrings.noName);
+                                  final role = _text(data, 'role', AppStrings.coachLabel);
+                                  final phone = _text(data, 'phone', AppStrings.noPhone);
                                   final batch = _batchesText(data);
-                                  final status = _text(data, 'status', 'Pending');
-                                  final email = _text(data, 'email', 'No Email');
+                                  final status = _text(data, 'status', AppStrings.pending);
+                                  final email = _text(data, 'email', AppStrings.noEmail);
                                   final specialization = _text(
                                     data,
                                     'specialization',
-                                    'No Specialization',
+                                    AppStrings.noSpecialization,
                                   );
 
                                   return _coachDetailsCard(
@@ -232,7 +233,7 @@ class CoachDetailsListScreen extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "COACH DETAILS",
+              AppStrings.coachDetails,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -329,7 +330,7 @@ class CoachDetailsListScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Coach Profile Details",
+                  AppStrings.coachProfileDetails,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 17,
@@ -338,7 +339,7 @@ class CoachDetailsListScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "View individual coach profile and assigned batch details.",
+                  AppStrings.viewCoachProfileAndBatchDetails,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 12,
@@ -578,7 +579,7 @@ class CoachDetailsListScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Coach Details Found",
+            AppStrings.noCoachDetailsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,

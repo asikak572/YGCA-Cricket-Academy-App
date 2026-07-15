@@ -1990,4 +1990,82 @@ static String get specialization => text(
   "சிறப்பு துறை",
   "विशेषज्ञता",
 );
+static String get coachDetails => text(
+  "Coach Details",
+  "பயிற்சியாளர் விவரங்கள்",
+  "कोच विवरण",
+);
+
+static String get coachDetailsList => text(
+  "Coach Details List",
+  "பயிற்சியாளர் விவர பட்டியல்",
+  "कोच विवरण सूची",
+);
+
+static String get viewCoachProfileAndBatchDetails => text(
+  "View individual coach profile and assigned batch details.",
+  "ஒவ்வொரு பயிற்சியாளரின் சுயவிவரத்தையும் ஒதுக்கப்பட்ட பேட்ச் விவரங்களையும் காணவும்.",
+  "व्यक्तिगत कोच प्रोफ़ाइल और असाइन किए गए बैच विवरण देखें।",
+);
+
+static String get noCoachDetailsFound => text(
+  "No Coach Details Found",
+  "பயிற்சியாளர் விவரங்கள் எதுவும் இல்லை",
+  "कोई कोच विवरण नहीं मिला",
+);
+static String get noPhone => text(
+  "No Phone",
+  "தொலைபேசி இல்லை",
+  "कोई फोन नहीं",
+);
+
+static String get noEmail => text(
+  "No Email",
+  "மின்னஞ்சல் இல்லை",
+  "कोई ईमेल नहीं",
+);
+
+static String get noSpecialization => text(
+  "No Specialization",
+  "சிறப்பு துறை இல்லை",
+  "कोई विशेषज्ञता नहीं",
+);
+// Add only missing getters inside AppStrings before the final }.
+
+static String get coachDetailsDeletedSuccessfully => text("Coach deleted successfully","பயிற்சியாளர் வெற்றிகரமாக நீக்கப்பட்டார்","कोच सफलतापूर्वक हटाया गया");
+static String get coachDetailsUpdatedSuccessfully => text("Coach updated successfully","பயிற்சியாளர் வெற்றிகரமாக புதுப்பிக்கப்பட்டார்","कोच सफलतापूर्वक अपडेट हुआ");
+static String get coachDetailsDeleteCoach => text("Delete Coach","பயிற்சியாளரை நீக்கு","कोच हटाएं");
+static String get coachDetailsDeleteConfirm => text("Are you sure you want to delete","நீங்கள் நிச்சயமாக நீக்க விரும்புகிறீர்களா","क्या आप वाकई हटाना चाहते हैं");
+static String get coachDetailsEditCoach => text("Edit Coach","பயிற்சியாளரைத் திருத்து","कोच संपादित करें");
+static String get coachDetailsWeeklyAssignmentInfo => text("Weekly sessions are assigned from Weekly Coach Assignment screen.","வாராந்திர அமர்வுகள் வாராந்திர பயிற்சியாளர் ஒதுக்கீட்டு திரையில் இருந்து ஒதுக்கப்படுகின்றன.","साप्ताहिक सेशन Weekly Coach Assignment स्क्रीन से असाइन किए जाते हैं।");
+static String get loadingSessions => text("Loading sessions...","அமர்வுகள் ஏற்றப்படுகின்றன...","सेशन लोड हो रहे हैं...");
+static String get fiveYears => text("5 Years","5 ஆண்டுகள்","5 वर्ष");
+static String get weekly => text("Weekly","வாராந்திர","साप्ताहिक");
+static String get working => text("Working","பணியில்","कार्यरत");
+static String get coaching => text("Coaching","பயிற்சி","कोचिंग");
+static String get speciality => text("Speciality","சிறப்பு","विशेषता");
+static String get skillArea => text("Skill Area","திறன் பகுதி","कौशल क्षेत्र");
+static String get coachInformation => text("Coach Information","பயிற்சியாளர் தகவல்","कोच जानकारी");
+static String get editCoachMultiline => text("Edit\nCoach","திருத்து\nபயிற்சியாளர்","कोच\nसंपादित करें");
+static String get deleteCoachMultiline => text("Delete\nCoach","நீக்கு\nபயிற்சியாளர்","कोच\nहटाएं");
+static String get salaryDetails => text("Salary Details","சம்பள விவரங்கள்","वेतन विवरण");
+static String get coachDetailsGuidingExcellence => text("Guiding players towards excellence.","வீரர்களை சிறப்பை நோக்கி வழிநடத்துதல்.","खिलाड़ियों को उत्कृष्टता की ओर मार्गदर्शन।");
+
+static String get experience => text(
+  "Experience",
+  "அனுபவம்",
+  "अनुभव",
+);
+
+static String get currentWeekSessions => text(
+  "Current Week Sessions",
+  "நடப்பு வார அமர்வுகள்",
+  "वर्तमान सप्ताह के सेशन",
+);
+
+static String get editCoach => text(
+  "Edit Coach",
+  "பயிற்சியாளரைத் திருத்து",
+  "कोच संपादित करें",
+);
 }
