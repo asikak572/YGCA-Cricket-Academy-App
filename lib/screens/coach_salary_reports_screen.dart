@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CoachSalaryReportsScreen extends StatefulWidget {
   const CoachSalaryReportsScreen({super.key});
@@ -127,7 +128,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No Date";
+    if (timestamp == null) return AppStrings.noDate;
 
     try {
       if (timestamp is Timestamp) {
@@ -142,12 +143,16 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
 
       return timestamp.toString();
     } catch (_) {
-      return "No Date";
+      return AppStrings.noDate;
     }
   }
 
   Color _statusColor(String status) {
     return status == "Paid" ? Colors.green : Colors.orange;
+  }
+
+  String _statusLabel(String status) {
+    return status == "Paid" ? AppStrings.paid : AppStrings.pending;
   }
 
   double _paidPercentage({
@@ -163,9 +168,12 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -189,7 +197,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(18),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -273,7 +281,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                           ),
                           const SliverToBoxAdapter(child: SizedBox(height: 18)),
                           SliverToBoxAdapter(
-                            child: _sectionTitle("SALARY REPORT SUMMARY", isDark),
+                            child: _sectionTitle(AppStrings.salaryReportSummary.toUpperCase(), isDark),
                           ),
                           SliverToBoxAdapter(
                             child: Padding(
@@ -292,7 +300,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                           ),
                           const SliverToBoxAdapter(child: SizedBox(height: 18)),
                           SliverToBoxAdapter(
-                            child: _sectionTitle("RECENT SALARY RECORDS", isDark),
+                            child: _sectionTitle(AppStrings.recentSalaryRecords.toUpperCase(), isDark),
                           ),
                           SliverPadding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -306,7 +314,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
 
                                         final name =
                                             _text(data['coachName']).isEmpty
-                                                ? 'Unknown Coach'
+                                                ? AppStrings.unknownCoach
                                                 : _text(data['coachName']);
 
                                         final salary = _toInt(data['salary']);
@@ -337,6 +345,8 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -365,7 +375,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "SALARY REPORTS",
+                  AppStrings.salaryReports.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -377,8 +387,8 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                 ),
                 Text(
                   _isAdmin
-                      ? "Overall coach salary analytics"
-                      : "Your salary report summary",
+                      ? AppStrings.overallCoachSalaryAnalytics
+                      : AppStrings.yourSalaryReportSummary,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -491,7 +501,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Salary Report Center",
+                      AppStrings.salaryReportCenter,
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontSize: 17,
@@ -500,7 +510,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "View paid, pending and total salary analytics.",
+                      AppStrings.viewPaidPendingTotalSalaryAnalytics,
                       style: TextStyle(
                         color: _secondaryText(isDark),
                         fontSize: 12,
@@ -524,7 +534,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
               Expanded(
                 child: _amountBox(
                   isDark: isDark,
-                  label: "Total",
+                  label: AppStrings.total,
                   value: "₹$totalAmount",
                   color: Colors.blueAccent,
                 ),
@@ -533,7 +543,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
               Expanded(
                 child: _amountBox(
                   isDark: isDark,
-                  label: "Paid",
+                  label: AppStrings.paid,
                   value: "₹$paidAmount",
                   color: Colors.green,
                 ),
@@ -542,7 +552,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
               Expanded(
                 child: _amountBox(
                   isDark: isDark,
-                  label: "Pending",
+                  label: AppStrings.pending,
                   value: "₹$pendingAmount",
                   color: Colors.orange,
                 ),
@@ -563,7 +573,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
         Row(
           children: [
             Text(
-              "Paid Completion",
+              AppStrings.paidCompletion,
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontSize: 12,
@@ -658,28 +668,28 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
           _summaryCard(
             isDark: isDark,
             icon: Icons.receipt_long_rounded,
-            title: "Records",
+            title: AppStrings.records,
             value: totalRecords.toString(),
             color: Colors.blueAccent,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.verified_rounded,
-            title: "Paid",
+            title: AppStrings.paid,
             value: paidCount.toString(),
             color: Colors.green,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.pending_actions_rounded,
-            title: "Pending",
+            title: AppStrings.pending,
             value: pendingCount.toString(),
             color: Colors.orange,
           ),
           _summaryCard(
             isDark: isDark,
             icon: Icons.percent_rounded,
-            title: "Completion",
+            title: AppStrings.completion,
             value: "${paidPercentage.toStringAsFixed(0)}%",
             color: Colors.purpleAccent,
           ),
@@ -811,35 +821,35 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
         children: [
           _reportRow(
             isDark: isDark,
-            title: "Total Salary Amount",
+            title: AppStrings.totalSalaryAmount,
             value: "₹$totalAmount",
             color: Colors.blueAccent,
           ),
           _divider(isDark),
           _reportRow(
             isDark: isDark,
-            title: "Paid Salary Amount",
+            title: AppStrings.paidSalaryAmount,
             value: "₹$paidAmount",
             color: Colors.green,
           ),
           _divider(isDark),
           _reportRow(
             isDark: isDark,
-            title: "Pending Salary Amount",
+            title: AppStrings.pendingSalaryAmount,
             value: "₹$pendingAmount",
             color: Colors.orange,
           ),
           _divider(isDark),
           _reportRow(
             isDark: isDark,
-            title: "Total Salary Records",
+            title: AppStrings.totalSalaryRecords,
             value: totalRecords.toString(),
             color: Colors.purpleAccent,
           ),
           _divider(isDark),
           _reportRow(
             isDark: isDark,
-            title: "Paid / Pending Count",
+            title: AppStrings.paidPendingCount,
             value: "$paidCount / $pendingCount",
             color: Colors.teal,
           ),
@@ -966,7 +976,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                     _chip(
                       isDark: isDark,
                       icon: Icons.verified_rounded,
-                      text: status,
+                      text: _statusLabel(status),
                       color: statusColor,
                     ),
                   ],
@@ -1032,7 +1042,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Salary Reports Found",
+            AppStrings.noSalaryReportsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1040,7 +1050,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "No salary records are available to generate reports.",
+            AppStrings.noSalaryRecordsToGenerateReports,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

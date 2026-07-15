@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CoachSalaryAnalyticsScreen extends StatelessWidget {
   const CoachSalaryAnalyticsScreen({super.key});
@@ -47,9 +48,12 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot>(
@@ -65,7 +69,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.error_outline_rounded,
-                          title: "Something went wrong",
+                          title: AppStrings.somethingWentWrong,
                           message: snapshot.error.toString(),
                         ),
                       ),
@@ -88,7 +92,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
 
                 int totalExpense = 0;
                 int highestSalary = 0;
-                String highestCoach = "N/A";
+                String highestCoach = AppStrings.notAvailable;
 
                 final sortedCoaches = coaches.toList();
 
@@ -100,7 +104,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
 
                   if (salary > highestSalary) {
                     highestSalary = salary;
-                    highestCoach = data['name']?.toString() ?? "Unknown Coach";
+                    highestCoach = data['name']?.toString() ?? AppStrings.unknownCoach;
                   }
                 }
 
@@ -138,23 +142,23 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                           children: [
                             _statCard(
                               isDark: isDark,
-                              title: "Total Coaches",
+                              title: AppStrings.totalCoaches,
                               value: coaches.length.toString(),
-                              subtitle: "Active records",
+                              subtitle: AppStrings.activeRecords,
                               icon: Icons.people_alt_rounded,
                               color: Colors.blueAccent,
                             ),
                             _statCard(
                               isDark: isDark,
-                              title: "Monthly Expense",
+                              title: AppStrings.monthlyExpense,
                               value: _money(totalExpense),
-                              subtitle: "Total salary",
+                              subtitle: AppStrings.totalSalary,
                               icon: Icons.payments_rounded,
                               color: Colors.green,
                             ),
                             _statCard(
                               isDark: isDark,
-                              title: "Highest Salary",
+                              title: AppStrings.highestSalary,
                               value: _money(highestSalary),
                               subtitle: highestCoach,
                               icon: Icons.workspace_premium_rounded,
@@ -162,9 +166,9 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                             ),
                             _statCard(
                               isDark: isDark,
-                              title: "Average Salary",
+                              title: AppStrings.averageSalary,
                               value: _money(averageSalary),
-                              subtitle: "Per coach",
+                              subtitle: AppStrings.perCoach,
                               icon: Icons.analytics_rounded,
                               color: Colors.purpleAccent,
                             ),
@@ -172,7 +176,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 22),
-                      _sectionTitle("COACH SALARY RANKING", isDark),
+                      _sectionTitle(AppStrings.coachSalaryRanking.toUpperCase(), isDark),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: sortedCoaches.isEmpty
@@ -184,7 +188,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                                   final data = doc.data() as Map<String, dynamic>;
 
                                   final name =
-                                      data['name']?.toString() ?? 'Unknown Coach';
+                                      data['name']?.toString() ?? AppStrings.unknownCoach;
                                   final batch = data['batch']?.toString() ?? '';
                                   final salary = _toInt(data['salary']);
 
@@ -206,6 +210,8 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -234,7 +240,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "SALARY ANALYTICS",
+                  AppStrings.salaryAnalytics.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -245,7 +251,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "Coach salary expense overview",
+                  AppStrings.coachSalaryExpenseOverview,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -402,8 +408,8 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "COACH",
+                          Text(
+                            AppStrings.coachLabel.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -412,7 +418,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            "SALARY ANALYTICS",
+                            AppStrings.salaryAnalytics.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 21,
@@ -425,10 +431,10 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Coaches: $totalCoaches"),
-                              _heroChip("Expense: ${_money(totalExpense)}"),
-                              _heroChip("Highest: ${_money(highestSalary)}"),
-                              _heroChip("Avg: ${_money(averageSalary)}"),
+                              _heroChip("${AppStrings.coaches}: $totalCoaches"),
+                              _heroChip("${AppStrings.expense}: ${_money(totalExpense)}"),
+                              _heroChip("${AppStrings.highest}: ${_money(highestSalary)}"),
+                              _heroChip("${AppStrings.averageShort}: ${_money(averageSalary)}"),
                             ],
                           ),
                         ],
@@ -629,7 +635,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name.isEmpty ? "Unknown Coach" : name,
+                  name.isEmpty ? AppStrings.unknownCoach : name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -640,7 +646,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  batch.isEmpty ? "No Batch" : batch,
+                  batch.isEmpty ? AppStrings.noBatch : batch,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -680,8 +686,8 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: gold.withOpacity(0.35)),
       ),
-      child: const Text(
-        "Top Paid Coach",
+      child: Text(
+        AppStrings.topPaidCoach,
         style: TextStyle(
           color: gold,
           fontSize: 10.5,
@@ -709,7 +715,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            "No coaches found",
+            AppStrings.noCoachesFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -717,7 +723,7 @@ class CoachSalaryAnalyticsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            "Coach salary records will appear here",
+            AppStrings.coachSalaryRecordsWillAppearHere,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),
