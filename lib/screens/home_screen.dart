@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 import 'login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -20,7 +22,10 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ValueListenableBuilder<String>(
+      valueListenable: ThemeController.language,
+      builder: (context, language, _) {
+        return Scaffold(
       backgroundColor: bg,
       body: SafeArea(
         child: LayoutBuilder(
@@ -42,7 +47,7 @@ class HomeScreen extends StatelessWidget {
                       padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
                       child: Column(
                         children: [
-                          _sectionTitle("WHAT WE OFFER"),
+                          _sectionTitle(AppStrings.homeWhatWeOffer.toUpperCase()),
                           const SizedBox(height: 8),
                           Expanded(
                             flex: 6,
@@ -53,36 +58,36 @@ class HomeScreen extends StatelessWidget {
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
                               childAspectRatio: 1.05,
-                              children: const [
+                              children: [
                                 _OfferCard(
                                   icon: Icons.calendar_month_rounded,
-                                  title: "Sessions",
+                                  title: AppStrings.sessions,
                                 ),
                                 _OfferCard(
                                   icon: Icons.wb_sunny_rounded,
-                                  title: "Practice",
+                                  title: AppStrings.homePractice,
                                 ),
                                 _OfferCard(
                                   icon: Icons.fitness_center_rounded,
-                                  title: "Fitness",
+                                  title: AppStrings.fitness,
                                 ),
                                 _OfferCard(
                                   icon: Icons.videocam_rounded,
-                                  title: "Video",
+                                  title: AppStrings.homeVideo,
                                 ),
                                 _OfferCard(
                                   icon: Icons.person_rounded,
-                                  title: "Profile",
+                                  title: AppStrings.homeProfile,
                                 ),
                                 _OfferCard(
                                   icon: Icons.sports_cricket_rounded,
-                                  title: "Skills",
+                                  title: AppStrings.skills,
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 8),
-                          _sectionTitle("SESSION"),
+                          _sectionTitle(AppStrings.session.toUpperCase()),
                           const SizedBox(height: 8),
                           _sessionCard(),
                           const SizedBox(height: 8),
@@ -98,6 +103,8 @@ class HomeScreen extends StatelessWidget {
           },
         ),
       ),
+        );
+      },
     );
   }
 
@@ -146,11 +153,11 @@ class HomeScreen extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
                 const Spacer(),
-                const FittedBox(
+                FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    "YOUNG GEN",
+                    AppStrings.homeYoungGen.toUpperCase(),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 34,
@@ -160,11 +167,11 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                const FittedBox(
+                FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    "CRICKET ACADEMY",
+                    AppStrings.homeCricketAcademy.toUpperCase(),
                     style: TextStyle(
                       color: gold,
                       fontSize: 24,
@@ -174,8 +181,8 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  "Build your Cricket Career with us",
+                Text(
+                  AppStrings.homeBuildCricketCareer,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -191,7 +198,7 @@ class HomeScreen extends StatelessWidget {
                     SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        "Valasaravakkam, Chennai",
+                        AppStrings.homeLocation,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -219,10 +226,10 @@ class HomeScreen extends StatelessWidget {
                     ),
                     onPressed: () => _goToLogin(context),
                     icon: const Icon(Icons.login_rounded, size: 21),
-                    label: const FittedBox(
+                    label: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        "LOGIN TO CONTINUE",
+                        AppStrings.homeLoginToContinue.toUpperCase(),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
@@ -282,12 +289,12 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _DayChip(day: "FRI"),
-          _DayChip(day: "SAT"),
-          _DayChip(day: "SUN"),
+          _DayChip(day: AppStrings.fri.toUpperCase()),
+          _DayChip(day: AppStrings.sat.toUpperCase()),
+          _DayChip(day: AppStrings.sun.toUpperCase()),
         ],
       ),
     );
@@ -313,7 +320,7 @@ class HomeScreen extends StatelessWidget {
           SizedBox(width: 11),
           Expanded(
             child: Text(
-              "Contact Academy for admission and session details",
+              AppStrings.homeContactAcademy,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -340,10 +347,10 @@ class HomeScreen extends StatelessWidget {
           top: BorderSide(color: gold, width: 1.2),
         ),
       ),
-      child: const FittedBox(
+      child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Text(
-          "❤️ Passion  •  ★ Discipline  •  🏆 Success",
+          AppStrings.homePassionDisciplineSuccess,
           textAlign: TextAlign.center,
           style: TextStyle(
             color: gold,

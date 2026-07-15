@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 import 'register_screen.dart';
 import 'auth_checker.dart';
 
@@ -52,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password')),
+        SnackBar(content: Text(AppStrings.loginEnterEmailPassword)),
       );
       return;
     }
@@ -75,18 +76,18 @@ class _LoginScreenState extends State<LoginScreen> {
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
-      String message = 'Login failed';
+      String message = AppStrings.loginFailed;
 
       if (e.code == 'user-not-found') {
-        message = 'No user found';
+        message = AppStrings.loginNoUserFound;
       } else if (e.code == 'wrong-password') {
-        message = 'Wrong password';
+        message = AppStrings.loginWrongPassword;
       } else if (e.code == 'invalid-email') {
-        message = 'Invalid email';
+        message = AppStrings.loginInvalidEmail;
       } else if (e.code == 'invalid-credential') {
-        message = 'Invalid email or password';
+        message = AppStrings.loginInvalidEmailPassword;
       } else if (e.code == 'network-request-failed') {
-        message = 'Network error. Please check internet';
+        message = AppStrings.loginNetworkError;
       } else if (e.message != null && e.message!.trim().isNotEmpty) {
         message = e.message!;
       }
@@ -101,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Login error: $e'),
+          content: Text("${AppStrings.loginError}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -132,9 +133,12 @@ class _LoginScreenState extends State<LoginScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
@@ -174,6 +178,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -258,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  'WELCOME BACK',
+                  AppStrings.loginWelcomeBack.toUpperCase(),
                   style: TextStyle(
                     color: gold,
                     fontSize: 12,
@@ -268,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'LOGIN',
+                  AppStrings.loginTitle.toUpperCase(),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: isSmall ? 34 : 40,
@@ -277,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 Text(
-                  'TO CONTINUE',
+                  AppStrings.loginToContinue.toUpperCase(),
                   style: TextStyle(
                     color: gold,
                     fontSize: isSmall ? 25 : 30,
@@ -286,8 +292,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 7),
-                const Text(
-                  'Young Gen Cricket Academy',
+                Text(
+                  AppStrings.youngGenCricketAcademy,
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -357,7 +363,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Account Login',
+                      AppStrings.loginAccountLogin,
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontWeight: FontWeight.w900,
@@ -365,7 +371,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     Text(
-                      'Admin • Coach • Parent • Student',
+                      AppStrings.loginRoles,
                       style: TextStyle(
                         color: _secondaryText(isDark),
                         fontWeight: FontWeight.w600,
@@ -380,20 +386,20 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
           _field(
             isDark: isDark,
-            label: 'Email Address',
+            label: AppStrings.loginEmailAddress,
             controller: emailController,
             icon: Icons.mail_outline_rounded,
-            hint: 'Enter email',
+            hint: AppStrings.loginEnterEmail,
             obscure: false,
             keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 14),
           _field(
             isDark: isDark,
-            label: 'Password',
+            label: AppStrings.loginPassword,
             controller: passwordController,
             icon: Icons.lock_outline_rounded,
-            hint: 'Enter password',
+            hint: AppStrings.loginEnterPassword,
             obscure: obscurePassword,
             suffix: IconButton(
               icon: Icon(
@@ -508,8 +514,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   strokeWidth: 2,
                 ),
               )
-            : const Text(
-                'LOGIN',
+            : Text(
+                AppStrings.loginTitle.toUpperCase(),
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 15,
@@ -536,7 +542,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'New to YGCA?',
+              AppStrings.loginNewToYgca,
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontWeight: FontWeight.w900,
@@ -555,8 +561,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             onPressed: _goToRegister,
-            child: const Text(
-              'REGISTER',
+            child: Text(
+              AppStrings.loginRegister.toUpperCase(),
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ),
@@ -569,7 +575,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
-        '♥ Passion  •  ★ Discipline  •  🏆 Success',
+        AppStrings.loginPassionDisciplineSuccess,
         textAlign: TextAlign.center,
         style: TextStyle(
           color: isDark ? gold : maroon,

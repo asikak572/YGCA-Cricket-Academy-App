@@ -7,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -159,8 +160,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Image size must be less than 2 MB"),
+          SnackBar(
+            content: Text(AppStrings.editProfileImageTooLarge),
             backgroundColor: Colors.red,
           ),
         );
@@ -214,8 +215,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Profile photo uploaded successfully"),
+        SnackBar(
+          content: Text(AppStrings.editProfilePhotoUploaded),
           backgroundColor: Colors.green,
         ),
       );
@@ -224,7 +225,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Photo upload failed: $e"),
+          content: Text("${AppStrings.photoUploadFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -244,8 +245,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (nameController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Name and phone number are required"),
+        SnackBar(
+          content: Text(AppStrings.editProfileNamePhoneRequired),
           backgroundColor: Colors.red,
         ),
       );
@@ -288,8 +289,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Profile updated successfully"),
+        SnackBar(
+          content: Text(AppStrings.editProfileUpdatedSuccessfully),
           backgroundColor: Colors.green,
         ),
       );
@@ -300,7 +301,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error: $e"),
+          content: Text("${AppStrings.error}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -323,9 +324,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        if (isLoading) {
+            if (isLoading) {
           return Scaffold(
             backgroundColor: _bg(isDark),
             body: const Center(child: CircularProgressIndicator()),
@@ -354,27 +358,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       children: [
                         _inputField(
                           isDark: isDark,
-                          label: "Full Name",
+                          label: AppStrings.fullName,
                           controller: nameController,
                           icon: Icons.person_rounded,
                         ),
                         _inputField(
                           isDark: isDark,
-                          label: "Phone Number",
+                          label: AppStrings.phoneNumber,
                           controller: phoneController,
                           icon: Icons.phone_rounded,
                           keyboardType: TextInputType.phone,
                         ),
                         _inputField(
                           isDark: isDark,
-                          label: "Email",
+                          label: AppStrings.email,
                           controller: emailController,
                           icon: Icons.email_rounded,
                           keyboardType: TextInputType.emailAddress,
                         ),
                         _inputField(
                           isDark: isDark,
-                          label: "Address",
+                          label: AppStrings.address,
                           controller: addressController,
                           icon: Icons.location_on_rounded,
                           maxLines: 3,
@@ -405,7 +409,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   )
                                 : const Icon(Icons.save_rounded),
                             label: Text(
-                              isSaving ? "SAVING..." : "SAVE CHANGES",
+                              isSaving ? AppStrings.saving.toUpperCase() : AppStrings.editProfileSaveChanges.toUpperCase(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1,
@@ -423,6 +427,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ],
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -456,7 +462,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "EDIT PROFILE",
+              AppStrings.editProfileTitle.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -623,10 +629,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: Text(
                     isUploadingPhoto
-                        ? "Uploading..."
+                        ? AppStrings.editProfileUploading
                         : photoUrl.isEmpty
-                            ? "Upload Photo"
-                            : "Change Photo",
+                            ? AppStrings.uploadPhoto
+                            : AppStrings.changePhoto,
                     style: const TextStyle(
                       color: gold,
                       fontWeight: FontWeight.bold,
@@ -638,7 +644,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 12),
               Text(
                 nameController.text.isEmpty
-                    ? "User Profile"
+                    ? AppStrings.editProfileUserProfile
                     : nameController.text,
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -651,7 +657,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                role.isEmpty ? "YGCA MEMBER" : role.toUpperCase(),
+                role.isEmpty ? AppStrings.editProfileYgcaMember.toUpperCase() : role.toUpperCase(),
                 style: const TextStyle(
                   color: gold,
                   fontSize: 13,
@@ -730,7 +736,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "You can update only your own profile details. Academy data like batch, roll number, attendance and fees are controlled by Admin.",
+              AppStrings.editProfileInfoNote,
               style: TextStyle(
                 color: isDark ? Colors.white70 : const Color(0xFF374151),
                 fontSize: 12,

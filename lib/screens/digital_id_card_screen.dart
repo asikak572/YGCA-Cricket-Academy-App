@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class DigitalIdCardScreen extends StatelessWidget {
   final String name;
@@ -55,9 +56,12 @@ class DigitalIdCardScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -74,6 +78,8 @@ class DigitalIdCardScreen extends StatelessWidget {
               ),
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -100,7 +106,7 @@ class DigitalIdCardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "DIGITAL ID CARD",
+                AppStrings.digitalIdCardTitle.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -111,7 +117,7 @@ class DigitalIdCardScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                "Young Gen Cricket Academy",
+                AppStrings.youngGenCricketAcademy,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -203,7 +209,7 @@ class DigitalIdCardScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Text(
-                name.isEmpty ? "Student Name" : name,
+                name.isEmpty ? AppStrings.studentName : name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -227,7 +233,7 @@ class DigitalIdCardScreen extends StatelessWidget {
                 ),
               ),
               child: Text(
-                "Roll No: ${rollNo.isEmpty ? '-' : rollNo}",
+                "${AppStrings.rollNo}: ${rollNo.isEmpty ? '-' : rollNo}",
                 style: TextStyle(
                   color: isDark ? gold : maroon,
                   fontSize: 12,
@@ -243,26 +249,26 @@ class DigitalIdCardScreen extends StatelessWidget {
                   _infoRow(
                     isDark: isDark,
                     icon: Icons.groups_rounded,
-                    label: "Batch",
+                    label: AppStrings.batch,
                     value: batch,
                   ),
                   _infoRow(
                     isDark: isDark,
                     icon: Icons.family_restroom_rounded,
-                    label: "Parent",
+                    label: AppStrings.parent,
                     value: parentName,
                   ),
                   _infoRow(
                     isDark: isDark,
                     icon: Icons.phone_rounded,
-                    label: "Phone",
+                    label: AppStrings.phone,
                     value: phone,
                   ),
                   _infoRow(
                     isDark: isDark,
                     icon: Icons.verified_rounded,
-                    label: "Status",
-                    value: "Active",
+                    label: AppStrings.status,
+                    value: AppStrings.active,
                     valueColor: Colors.green,
                   ),
                 ],
@@ -316,8 +322,8 @@ class DigitalIdCardScreen extends StatelessWidget {
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 8),
-              const Text(
-                "YOUNG GEN CRICKET ACADEMY",
+              Text(
+                AppStrings.youngGenCricketAcademy.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -337,8 +343,8 @@ class DigitalIdCardScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: gold.withOpacity(0.85)),
                 ),
-                child: const Text(
-                  "STUDENT ID CARD",
+                child: Text(
+                AppStrings.studentIdCard.toUpperCase(),
                   style: TextStyle(
                     color: gold,
                     fontSize: 12,
@@ -468,8 +474,8 @@ class DigitalIdCardScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Text(
-            "Discipline • Passion • Success",
+          Text(
+                AppStrings.disciplinePassionSuccess,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: gold,
@@ -480,7 +486,7 @@ class DigitalIdCardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            "This digital ID is valid only for academy verification.",
+            AppStrings.digitalIdValidForVerification,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withOpacity(0.62),
@@ -513,7 +519,7 @@ class DigitalIdCardScreen extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Use this ID card for student verification inside the academy.",
+              AppStrings.useIdCardForVerification,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,

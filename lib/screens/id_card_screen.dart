@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
 
+import '../core/language/app_strings.dart';
+import '../theme/theme_controller.dart';
+
 class IDCardScreen extends StatelessWidget {
   const IDCardScreen({super.key});
 
-  final Color maroon = const Color(0xFF7F0000);
-  final Color darkMaroon = const Color(0xFF3B0000);
-  final Color gold = const Color(0xFFD4AF37);
-  final Color bg = const Color(0xFFFAFAFA);
-  final Color border = const Color(0xFFE2E8F0);
+  static const Color maroon = Color(0xFF7F0000);
+  static const Color darkMaroon = Color(0xFF3B0000);
+  static const Color gold = Color(0xFFD4AF37);
+  static const Color bg = Color(0xFFFAFAFA);
+  static const Color border = Color(0xFFE2E8F0);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _topHeader(context),
-            const SizedBox(height: 22),
-            _idCard(),
-            const SizedBox(height: 20),
-            _noteCard(),
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
+    return ValueListenableBuilder<String>(
+      valueListenable: ThemeController.language,
+      builder: (context, language, _) {
+        return Scaffold(
+          backgroundColor: bg,
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                _topHeader(context),
+                const SizedBox(height: 22),
+                _idCard(),
+                const SizedBox(height: 20),
+                _noteCard(),
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -42,8 +50,8 @@ class IDCardScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "STUDENT ID CARD",
-              style: TextStyle(
+              AppStrings.studentIdCard.toUpperCase(),
+              style: const TextStyle(
                 color: gold,
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
@@ -90,8 +98,8 @@ class IDCardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            "ACTIVE PLAYER",
-            style: TextStyle(
+            AppStrings.idCardActivePlayer.toUpperCase(),
+            style: const TextStyle(
               color: gold,
               fontWeight: FontWeight.w900,
               fontSize: 12,
@@ -113,9 +121,9 @@ class IDCardScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: maroon,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -129,18 +137,18 @@ class IDCardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            "YOUNG GEN CRICKET ACADEMY",
+            AppStrings.youngGenCricketAcademy.toUpperCase(),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: gold,
               fontSize: 16,
               fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            "Discipline • Training • Excellence",
-            style: TextStyle(
+          Text(
+            AppStrings.idCardDisciplineTrainingExcellence,
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 11,
             ),
@@ -157,7 +165,7 @@ class IDCardScreen extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: gold, width: 2),
       ),
-      child: CircleAvatar(
+      child: const CircleAvatar(
         radius: 48,
         backgroundColor: maroon,
         child: Icon(Icons.person, color: gold, size: 58),
@@ -170,11 +178,11 @@ class IDCardScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 22),
       child: Column(
         children: [
-          _detailRow("ID", "YGCA014"),
-          _detailRow("Batch", "Morning Batch"),
-          _detailRow("Phone", "9876543210"),
-          _detailRow("Attendance", "92%"),
-          _detailRow("Fee Status", "Paid"),
+          _detailRow(AppStrings.idCardIdLabel, "YGCA014"),
+          _detailRow(AppStrings.batch, AppStrings.idCardMorningBatch),
+          _detailRow(AppStrings.phone, "9876543210"),
+          _detailRow(AppStrings.attendance, "92%"),
+          _detailRow(AppStrings.feeStatus, AppStrings.paid),
         ],
       ),
     );
@@ -228,12 +236,12 @@ class IDCardScreen extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.qr_code_2, color: maroon, size: 70),
+            child: const Icon(Icons.qr_code_2, color: maroon, size: 70),
           ),
           const SizedBox(height: 8),
           Text(
-            "Scan for student verification",
-            style: TextStyle(
+            AppStrings.idCardScanForVerification,
+            style: const TextStyle(
               color: gold,
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -254,9 +262,9 @@ class IDCardScreen extends StatelessWidget {
               children: [
                 Container(height: 1, color: Colors.grey.shade400),
                 const SizedBox(height: 5),
-                const Text(
-                  "Student Signature",
-                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                Text(
+                  AppStrings.idCardStudentSignature,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],
             ),
@@ -267,9 +275,9 @@ class IDCardScreen extends StatelessWidget {
               children: [
                 Container(height: 1, color: Colors.grey.shade400),
                 const SizedBox(height: 5),
-                const Text(
-                  "Authorized Signature",
-                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                Text(
+                  AppStrings.idCardAuthorizedSignature,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],
             ),
@@ -290,12 +298,12 @@ class IDCardScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline, color: gold),
+          const Icon(Icons.info_outline, color: gold),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
-              "This ID card is a sample layout. Later we can connect it with Firestore student data.",
-              style: TextStyle(fontSize: 12),
+              AppStrings.idCardSampleLayoutNote,
+              style: const TextStyle(fontSize: 12),
             ),
           ),
         ],
