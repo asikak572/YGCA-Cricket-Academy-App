@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class ReportsDashboardScreen extends StatelessWidget {
   const ReportsDashboardScreen({super.key});
@@ -103,9 +104,12 @@ class ReportsDashboardScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: FutureBuilder<Map<String, dynamic>>(
@@ -131,7 +135,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.all(22),
                             child: Text(
-                              'Unable to load reports.\n${snapshot.error}',
+                              "${AppStrings.reportsUnableToLoad}\n${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: _primaryText(isDark),
@@ -167,7 +171,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                         pending: _money(pending),
                       ),
                       const SizedBox(height: 18),
-                      _sectionTitle('FINANCE SUMMARY', isDark),
+                      _sectionTitle(AppStrings.reportsFinanceSummary.toUpperCase(), isDark),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
@@ -175,7 +179,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                             Expanded(
                               child: _financeCard(
                                 isDark: isDark,
-                                title: 'Collected',
+                                title: AppStrings.reportsCollected,
                                 value: _money(collected),
                                 icon: Icons.payments_rounded,
                                 color: Colors.green,
@@ -185,7 +189,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                             Expanded(
                               child: _financeCard(
                                 isDark: isDark,
-                                title: 'Pending',
+                                title: AppStrings.pending,
                                 value: _money(pending),
                                 icon: Icons.warning_amber_rounded,
                                 color: Colors.orange,
@@ -195,7 +199,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      _sectionTitle('REPORT OVERVIEW', isDark),
+                      _sectionTitle(AppStrings.reportsOverview.toUpperCase(), isDark),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: GridView.count(
@@ -208,51 +212,51 @@ class ReportsDashboardScreen extends StatelessWidget {
                           children: [
                             _reportCard(
                               isDark: isDark,
-                              title: 'Students',
+                              title: AppStrings.students,
                               value: students.toString(),
                               icon: Icons.people_alt_rounded,
                               color: Colors.blueAccent,
-                              subtitle: 'Total registered',
+                              subtitle: AppStrings.reportsTotalRegistered,
                             ),
                             _reportCard(
                               isDark: isDark,
-                              title: 'Attendance',
+                              title: AppStrings.attendance,
                               value: attendance.toString(),
                               icon: Icons.check_circle_rounded,
                               color: Colors.green,
-                              subtitle: 'Records marked',
+                              subtitle: AppStrings.reportsRecordsMarked,
                             ),
                             _reportCard(
                               isDark: isDark,
-                              title: 'Performance',
+                              title: AppStrings.performance,
                               value: performance.toString(),
                               icon: Icons.bar_chart_rounded,
                               color: Colors.purpleAccent,
-                              subtitle: 'Reports synced',
+                              subtitle: AppStrings.reportsSynced,
                             ),
                             _reportCard(
                               isDark: isDark,
-                              title: 'Leave Requests',
+                              title: AppStrings.leaveRequestsSingleLine,
                               value: leaves.toString(),
                               icon: Icons.event_note_rounded,
                               color: Colors.orange,
-                              subtitle: 'Requests received',
+                              subtitle: AppStrings.reportsRequestsReceived,
                             ),
                             _reportCard(
                               isDark: isDark,
-                              title: 'Matches',
+                              title: AppStrings.matches,
                               value: matches.toString(),
                               icon: Icons.sports_cricket_rounded,
                               color: Colors.redAccent,
-                              subtitle: 'Scheduled matches',
+                              subtitle: AppStrings.reportsScheduledMatches,
                             ),
                             _reportCard(
                               isDark: isDark,
-                              title: 'Salary Budget',
+                              title: AppStrings.reportsSalaryBudget,
                               value: _money(salaryBudget),
                               icon: Icons.account_balance_wallet_rounded,
                               color: Colors.brown,
-                              subtitle: 'Coach salaries',
+                              subtitle: AppStrings.reportsCoachSalaries,
                             ),
                           ],
                         ),
@@ -284,6 +288,8 @@ class ReportsDashboardScreen extends StatelessWidget {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -312,7 +318,7 @@ class ReportsDashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'REPORTS DASHBOARD',
+                  AppStrings.reportsDashboardTitle.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -323,7 +329,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Academy insights and summary',
+                  AppStrings.reportsAcademyInsights,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 11,
@@ -469,7 +475,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'ACADEMY',
+                            AppStrings.academy.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 14,
@@ -477,8 +483,8 @@ class ReportsDashboardScreen extends StatelessWidget {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            'REPORTS',
+                          Text(
+                  AppStrings.reports.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 31,
@@ -487,7 +493,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'DASHBOARD',
+                            AppStrings.reportsDashboardWord.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 26,
@@ -500,9 +506,9 @@ class ReportsDashboardScreen extends StatelessWidget {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip('Students: $students'),
-                              _heroChip('Collected: $collected'),
-                              _heroChip('Pending: $pending'),
+                              _heroChip("${AppStrings.students}: $students"),
+                              _heroChip("${AppStrings.reportsCollected}: $collected"),
+                              _heroChip("${AppStrings.pending}: $pending"),
                             ],
                           ),
                         ],
@@ -760,7 +766,7 @@ class ReportsDashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'COLLECTION INSIGHT',
+                  AppStrings.reportsCollectionInsight.toUpperCase(),
                   style: TextStyle(
                     color: gold,
                     fontWeight: FontWeight.w900,
@@ -769,7 +775,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'Fee collection is $collectionPercent%. Salary budget is ${_money(salaryBudget)}.',
+                  "${AppStrings.reportsFeeCollectionIs} $collectionPercent%. ${AppStrings.reportsSalaryBudgetIs} ${_money(salaryBudget)}.",
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -805,28 +811,28 @@ class ReportsDashboardScreen extends StatelessWidget {
           _miniRow(
             isDark: isDark,
             icon: Icons.check_circle_rounded,
-            title: 'Attendance records',
+            title: AppStrings.reportsAttendanceRecords,
             value: attendance.toString(),
             color: Colors.green,
           ),
           _miniRow(
             isDark: isDark,
             icon: Icons.bar_chart_rounded,
-            title: 'Performance reports',
+            title: AppStrings.reportsPerformanceReports,
             value: performance.toString(),
             color: Colors.purpleAccent,
           ),
           _miniRow(
             isDark: isDark,
             icon: Icons.event_note_rounded,
-            title: 'Leave requests',
+            title: AppStrings.leaveRequestsSingleLine,
             value: leaves.toString(),
             color: Colors.orange,
           ),
           _miniRow(
             isDark: isDark,
             icon: Icons.sports_cricket_rounded,
-            title: 'Matches scheduled',
+            title: AppStrings.reportsMatchesScheduled,
             value: matches.toString(),
             color: Colors.redAccent,
             last: true,
@@ -908,9 +914,9 @@ class ReportsDashboardScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _footerItem(Icons.favorite_rounded, 'Passion'),
-          _footerItem(Icons.star_rounded, 'Discipline'),
-          _footerItem(Icons.emoji_events_rounded, 'Success'),
+          _footerItem(Icons.favorite_rounded, AppStrings.reportsPassion),
+          _footerItem(Icons.star_rounded, AppStrings.reportsDiscipline),
+          _footerItem(Icons.emoji_events_rounded, AppStrings.reportsSuccess),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'widgets/ygca_app_bar.dart';
 import 'performance_report_screen.dart';
@@ -38,11 +39,14 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
-          appBar: const YgcaAppBar(title: "Performance Module"),
+          appBar: YgcaAppBar(title: AppStrings.parentPerformanceModule),
           body: SafeArea(
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
@@ -60,7 +64,7 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
                   child: SizedBox(height: 18),
                 ),
                 SliverToBoxAdapter(
-                  child: _sectionTitle("PERFORMANCE ACCESS", isDark),
+                  child: _sectionTitle(AppStrings.parentPerformanceAccess.toUpperCase(), isDark),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
@@ -71,8 +75,8 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
                           context: context,
                           isDark: isDark,
                           icon: Icons.bar_chart_rounded,
-                          title: "Performance Report",
-                          subtitle: "View child progress",
+                          title: AppStrings.parentPerformanceReport,
+                          subtitle: AppStrings.parentPerformanceViewChildProgress,
                           color: const Color(0xFF16A34A),
                           onTap: () {
                             Navigator.push(
@@ -98,6 +102,8 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
               ],
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -171,8 +177,8 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "PERFORMANCE MODULE",
+              Text(
+                AppStrings.parentPerformanceModule.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -183,7 +189,7 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                "View your child performance reports and progress analytics",
+                AppStrings.parentPerformanceViewReportsAnalytics,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.78),
@@ -231,7 +237,7 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Parents can view child performance and progress reports. Report updates are controlled by Coach/Admin.",
+              AppStrings.parentPerformanceInfoNote,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,

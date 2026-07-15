@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'widgets/ygca_app_bar.dart';
 import 'match_schedule_screen.dart';
@@ -38,11 +39,14 @@ class ParentScheduleModuleScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
-          appBar: const YgcaAppBar(title: "Schedule Module"),
+          appBar: YgcaAppBar(title: AppStrings.scheduleModuleTitle),
           body: SafeArea(
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
@@ -60,7 +64,7 @@ class ParentScheduleModuleScreen extends StatelessWidget {
                   child: SizedBox(height: 18),
                 ),
                 SliverToBoxAdapter(
-                  child: _sectionTitle("SCHEDULE ACCESS", isDark),
+                  child: _sectionTitle(AppStrings.parentScheduleAccess.toUpperCase(), isDark),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
@@ -71,8 +75,8 @@ class ParentScheduleModuleScreen extends StatelessWidget {
                           context: context,
                           isDark: isDark,
                           icon: Icons.sports_cricket_rounded,
-                          title: "Match Schedule",
-                          subtitle: "View upcoming matches",
+                          title: AppStrings.matchSchedule,
+                          subtitle: AppStrings.parentScheduleViewUpcomingMatches,
                           color: const Color(0xFF8B5CF6),
                           onTap: () {
                             Navigator.push(
@@ -97,6 +101,8 @@ class ParentScheduleModuleScreen extends StatelessWidget {
               ],
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -170,8 +176,8 @@ class ParentScheduleModuleScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "SCHEDULE MODULE",
+              Text(
+                AppStrings.scheduleModuleTitle.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -182,7 +188,7 @@ class ParentScheduleModuleScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                "View your child training and match schedule",
+                AppStrings.parentScheduleViewChildTrainingMatch,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.78),
@@ -230,7 +236,7 @@ class ParentScheduleModuleScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Parents can view match and academy schedule details. Schedule creation is controlled by Admin and Coach.",
+              AppStrings.parentScheduleInfoNote,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,

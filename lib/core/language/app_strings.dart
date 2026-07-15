@@ -3217,4 +3217,767 @@ static String get loginPassionDisciplineSuccess => text(
   "♥ ஆர்வம்  •  ★ ஒழுக்கம்  •  🏆 வெற்றி",
   "♥ जुनून  •  ★ अनुशासन  •  🏆 सफलता",
 );
+// Add only missing getters inside AppStrings before the final }.
+// Existing getters such as all, fees, total, today, academy, center,
+// cancel, delete and error must not be duplicated.
+
+static String get notificationTabHoliday => text(
+  "Holiday",
+  "விடுமுறை",
+  "छुट्टी",
+);
+
+static String get notificationTabSession => text(
+  "Session",
+  "அமர்வு",
+  "सेशन",
+);
+
+static String get notificationTabUpdates => text(
+  "Updates",
+  "புதுப்பிப்புகள்",
+  "अपडेट",
+);
+
+static String get notificationNoDate => text(
+  "No date",
+  "தேதி இல்லை",
+  "कोई तारीख नहीं",
+);
+
+static String get notificationDeleted => text(
+  "Notification deleted",
+  "அறிவிப்பு நீக்கப்பட்டது",
+  "सूचना हटा दी गई",
+);
+
+static String get notificationDeleteTitle => text(
+  "Delete Notification",
+  "அறிவிப்பை நீக்கு",
+  "सूचना हटाएं",
+);
+
+static String get notificationDeleteConfirm => text(
+  "Are you sure you want to delete this notification?",
+  "இந்த அறிவிப்பை நிச்சயமாக நீக்க விரும்புகிறீர்களா?",
+  "क्या आप वाकई इस सूचना को हटाना चाहते हैं?",
+);
+
+static String get notificationReceivedTitle => text(
+  "Received Notifications",
+  "பெறப்பட்ட அறிவிப்புகள்",
+  "प्राप्त सूचनाएं",
+);
+
+static String get notificationNoTitle => text(
+  "No Title",
+  "தலைப்பு இல்லை",
+  "कोई शीर्षक नहीं",
+);
+
+static String get notificationNoMessage => text(
+  "No Message",
+  "செய்தி இல்லை",
+  "कोई संदेश नहीं",
+);
+
+static String get notificationsTitle => text(
+  "Notifications",
+  "அறிவிப்புகள்",
+  "सूचनाएं",
+);
+
+static String get notificationSubtitle => text(
+  "Academy updates and alerts",
+  "அகாடமி புதுப்பிப்புகள் மற்றும் எச்சரிக்கைகள்",
+  "अकादमी अपडेट और अलर्ट",
+);
+
+static String get notificationSendCommunication => text(
+  "Send Communication",
+  "தகவலை அனுப்பு",
+  "संचार भेजें",
+);
+
+static String get notificationSendCommunicationSubtitle => text(
+  "Holiday, session cancel, fee reminder and alerts",
+  "விடுமுறை, அமர்வு ரத்து, கட்டண நினைவூட்டல் மற்றும் எச்சரிக்கைகள்",
+  "छुट्टी, सेशन रद्द, फीस रिमाइंडर और अलर्ट",
+);
+
+static String get notificationNoneFound => text(
+  "No notifications found",
+  "அறிவிப்புகள் எதுவும் இல்லை",
+  "कोई सूचना नहीं मिली",
+);
+
+static String notificationNoneForCategory(String category) => text(
+  "No $category notifications",
+  "$category அறிவிப்புகள் இல்லை",
+  "$category की कोई सूचना नहीं",
+);
+
+static String get notificationNewUpdatesAppearHere => text(
+  "New academy updates will appear here.",
+  "புதிய அகாடமி புதுப்பிப்புகள் இங்கே தோன்றும்.",
+  "नई अकादमी अपडेट यहां दिखाई देंगी।",
+);
+// Add only missing getters inside AppStrings before the final }.
+// Existing getters such as attendanceModule, error, somethingWentWrong,
+// student, rollNo, attendanceCalendar, attendanceHistory and child
+// must not be duplicated.
+
+static String get parentAttendanceLoading => text(
+  "Loading...",
+  "ஏற்றப்படுகிறது...",
+  "लोड हो रहा है...",
+);
+
+static String get parentAttendancePleaseWait => text(
+  "Please wait",
+  "தயவுசெய்து காத்திருக்கவும்",
+  "कृपया प्रतीक्षा करें",
+);
+
+static String get parentAttendanceUnableToLoad => text(
+  "Unable to load attendance",
+  "வருகை விவரங்களை ஏற்ற முடியவில்லை",
+  "उपस्थिति लोड नहीं हो सकी",
+);
+
+static String get parentAttendanceNoChildLinked => text(
+  "No Child Linked",
+  "குழந்தை இணைக்கப்படவில்லை",
+  "कोई बच्चा लिंक नहीं है",
+);
+
+static String get parentAttendanceContactAdmin => text(
+  "Contact admin to link student",
+  "மாணவரை இணைக்க நிர்வாகியை தொடர்புகொள்ளவும்",
+  "छात्र को लिंक करने के लिए एडमिन से संपर्क करें",
+);
+
+static String get parentAttendanceNoLinkedStudentFound => text(
+  "No linked student found",
+  "இணைக்கப்பட்ட மாணவர் கிடைக்கவில்லை",
+  "कोई लिंक किया गया छात्र नहीं मिला",
+);
+
+static String get parentAttendanceNotLinkedMessage => text(
+  "This parent account is not linked with any student yet.",
+  "இந்த பெற்றோர் கணக்கு இன்னும் எந்த மாணவருடனும் இணைக்கப்படவில்லை.",
+  "यह अभिभावक खाता अभी किसी छात्र से लिंक नहीं है।",
+);
+
+static String get parentAttendanceBatchNotAssigned => text(
+  "Batch not assigned",
+  "பேட்ச் ஒதுக்கப்படவில்லை",
+  "बैच असाइन नहीं है",
+);
+
+static String get parentAttendanceNotAssigned => text(
+  "Not assigned",
+  "ஒதுக்கப்படவில்லை",
+  "असाइन नहीं है",
+);
+
+static String get parentAttendanceAccess => text(
+  "Attendance Access",
+  "வருகை அணுகல்",
+  "उपस्थिति एक्सेस",
+);
+
+static String get parentAttendanceDayWiseChildAttendance => text(
+  "Day-wise child attendance",
+  "நாள் வாரியான குழந்தை வருகை",
+  "दिन-वार बच्चे की उपस्थिति",
+);
+
+static String get parentAttendanceViewFullRecords => text(
+  "View full attendance records",
+  "முழு வருகை பதிவுகளை பார்க்கவும்",
+  "पूरे उपस्थिति रिकॉर्ड देखें",
+);
+
+static String get parentAttendanceChildSummary => text(
+  "Child Attendance Summary",
+  "குழந்தையின் வருகை சுருக்கம்",
+  "बच्चे की उपस्थिति सारांश",
+);
+
+static String get parentAttendanceLinkedChildren => text(
+  "Linked Children",
+  "இணைக்கப்பட்ட குழந்தைகள்",
+  "लिंक किए गए बच्चे",
+);
+// Add only missing getters inside AppStrings before the final }.
+// Existing getters such as feeModule, paymentHistory,
+// viewFeePaymentRecords must not be duplicated.
+
+static String get parentFeeAccess => text(
+  "Fee Access",
+  "கட்டண அணுகல்",
+  "फीस एक्सेस",
+);
+
+static String get parentFeeViewChildStatusHistory => text(
+  "View your child fee status and payment history",
+  "உங்கள் குழந்தையின் கட்டண நிலை மற்றும் கட்டண வரலாற்றைப் பார்க்கவும்",
+  "अपने बच्चे की फीस स्थिति और भुगतान इतिहास देखें",
+);
+
+static String get parentFeeInfoNote => text(
+  "Parents can view payment history and fee status. Payment editing is controlled by Admin.",
+  "பெற்றோர் கட்டண வரலாறு மற்றும் கட்டண நிலையை பார்க்கலாம். கட்டண திருத்தம் நிர்வாகியால் கட்டுப்படுத்தப்படுகிறது.",
+  "अभिभावक भुगतान इतिहास और फीस स्थिति देख सकते हैं। भुगतान संपादन एडमिन द्वारा नियंत्रित किया जाता है।",
+);
+// Add only missing getters inside AppStrings before the final }.
+
+static String get parentPerformanceModule => text(
+  "Performance Module",
+  "செயல்திறன் மாட்யூல்",
+  "प्रदर्शन मॉड्यूल",
+);
+
+static String get parentPerformanceAccess => text(
+  "Performance Access",
+  "செயல்திறன் அணுகல்",
+  "प्रदर्शन एक्सेस",
+);
+
+static String get parentPerformanceReport => text(
+  "Performance Report",
+  "செயல்திறன் அறிக்கை",
+  "प्रदर्शन रिपोर्ट",
+);
+
+static String get parentPerformanceViewChildProgress => text(
+  "View child progress",
+  "குழந்தையின் முன்னேற்றத்தை பார்க்கவும்",
+  "बच्चे की प्रगति देखें",
+);
+
+static String get parentPerformanceViewReportsAnalytics => text(
+  "View your child performance reports and progress analytics",
+  "உங்கள் குழந்தையின் செயல்திறன் அறிக்கைகள் மற்றும் முன்னேற்ற பகுப்பாய்வை பார்க்கவும்",
+  "अपने बच्चे की प्रदर्शन रिपोर्ट और प्रगति विश्लेषण देखें",
+);
+
+static String get parentPerformanceInfoNote => text(
+  "Parents can view child performance and progress reports. Report updates are controlled by Coach/Admin.",
+  "பெற்றோர் குழந்தையின் செயல்திறன் மற்றும் முன்னேற்ற அறிக்கைகளை பார்க்கலாம். அறிக்கை புதுப்பிப்புகள் பயிற்சியாளர் அல்லது நிர்வாகியால் கட்டுப்படுத்தப்படுகின்றன.",
+  "अभिभावक बच्चे की प्रदर्शन और प्रगति रिपोर्ट देख सकते हैं। रिपोर्ट अपडेट कोच या एडमिन द्वारा नियंत्रित किए जाते हैं।",
+);
+// Add only missing getters inside AppStrings before the final }.
+// Existing getters scheduleModuleTitle and matchSchedule must not be duplicated.
+
+static String get parentScheduleAccess => text(
+  "Schedule Access",
+  "அட்டவணை அணுகல்",
+  "कार्यक्रम एक्सेस",
+);
+
+static String get parentScheduleViewUpcomingMatches => text(
+  "View upcoming matches",
+  "வரவிருக்கும் போட்டிகளை பார்க்கவும்",
+  "आगामी मैच देखें",
+);
+
+static String get parentScheduleViewChildTrainingMatch => text(
+  "View your child training and match schedule",
+  "உங்கள் குழந்தையின் பயிற்சி மற்றும் போட்டி அட்டவணையை பார்க்கவும்",
+  "अपने बच्चे का प्रशिक्षण और मैच कार्यक्रम देखें",
+);
+
+static String get parentScheduleInfoNote => text(
+  "Parents can view match and academy schedule details. Schedule creation is controlled by Admin and Coach.",
+  "பெற்றோர் போட்டி மற்றும் அகாடமி அட்டவணை விவரங்களை பார்க்கலாம். அட்டவணை உருவாக்கம் நிர்வாகி மற்றும் பயிற்சியாளரால் கட்டுப்படுத்தப்படுகிறது.",
+  "अभिभावक मैच और अकादमी कार्यक्रम विवरण देख सकते हैं। कार्यक्रम बनाना एडमिन और कोच द्वारा नियंत्रित किया जाता है।",
+);
+// Add only missing getters inside AppStrings before the final }.
+// Existing getters such as fullName, phoneNumber, parentName,
+// parentEmail, student, parent and somethingWentWrong must not be duplicated.
+
+static String get registerFillNameEmailPassword => text(
+  "Please fill name, email and password",
+  "பெயர், மின்னஞ்சல் மற்றும் கடவுச்சொல்லை நிரப்பவும்",
+  "कृपया नाम, ईमेल और पासवर्ड भरें",
+);
+
+static String get registerPasswordMinSix => text(
+  "Password must be at least 6 characters",
+  "கடவுச்சொல் குறைந்தது 6 எழுத்துகள் இருக்க வேண்டும்",
+  "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+);
+
+static String get registerFillStudentDetails => text(
+  "Please fill student age, phone and parent details",
+  "மாணவர் வயது, தொலைபேசி மற்றும் பெற்றோர் விவரங்களை நிரப்பவும்",
+  "कृपया छात्र की आयु, फ़ोन और अभिभावक विवरण भरें",
+);
+
+static String get registerFillCoachPhone => text(
+  "Please fill coach phone number",
+  "பயிற்சியாளர் தொலைபேசி எண்ணை நிரப்பவும்",
+  "कृपया कोच का फ़ोन नंबर भरें",
+);
+
+static String get registerStudentWaitingApproval => text(
+  "Student registered. Waiting for admin approval.",
+  "மாணவர் பதிவு செய்யப்பட்டார். நிர்வாகி அனுமதிக்காக காத்திருக்கிறது.",
+  "छात्र पंजीकृत हुआ। एडमिन स्वीकृति की प्रतीक्षा है।",
+);
+
+static String get registerCoachWaitingApproval => text(
+  "Coach registered. Waiting for admin approval.",
+  "பயிற்சியாளர் பதிவு செய்யப்பட்டார். நிர்வாகி அனுமதிக்காக காத்திருக்கிறது.",
+  "कोच पंजीकृत हुआ। एडमिन स्वीकृति की प्रतीक्षा है।",
+);
+
+static String get registerParentSuccess => text(
+  "Parent account registered successfully.",
+  "பெற்றோர் கணக்கு வெற்றிகரமாக பதிவு செய்யப்பட்டது.",
+  "अभिभावक खाता सफलतापूर्वक पंजीकृत हुआ।",
+);
+
+static String get registerFailed => text(
+  "Registration failed",
+  "பதிவு தோல்வியடைந்தது",
+  "पंजीकरण विफल",
+);
+
+static String get registerEmailAlreadyUsed => text(
+  "This email is already registered",
+  "இந்த மின்னஞ்சல் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது",
+  "यह ईमेल पहले से पंजीकृत है",
+);
+
+static String get registerWeakPassword => text(
+  "Password is too weak",
+  "கடவுச்சொல் மிகவும் பலவீனமாக உள்ளது",
+  "पासवर्ड बहुत कमजोर है",
+);
+
+static String get registerInvalidEmail => text(
+  "Invalid email address",
+  "தவறான மின்னஞ்சல் முகவரி",
+  "अमान्य ईमेल पता",
+);
+
+static String get registerEmailAddress => text(
+  "Email Address",
+  "மின்னஞ்சல் முகவரி",
+  "ईमेल पता",
+);
+
+static String get registerPassword => text(
+  "Password",
+  "கடவுச்சொல்",
+  "पासवर्ड",
+);
+
+static String get registerStudentAge => text(
+  "Student Age",
+  "மாணவர் வயது",
+  "छात्र की आयु",
+);
+
+static String get registerCreateYour => text(
+  "Create Your",
+  "உங்கள்",
+  "अपना",
+);
+
+static String get registerAccount => text(
+  "Account",
+  "கணக்கு உருவாக்கவும்",
+  "खाता बनाएं",
+);
+
+static String get registerJoinJourney => text(
+  "Join YGCA and start your journey",
+  "YGCA-வில் இணைந்து உங்கள் பயணத்தை தொடங்குங்கள்",
+  "YGCA से जुड़ें और अपनी यात्रा शुरू करें",
+);
+
+static String get registerSelectRole => text(
+  "Select Role",
+  "பாத்திரத்தை தேர்வு செய்க",
+  "भूमिका चुनें",
+);
+
+static String get registerCoach => text(
+  "Coach",
+  "பயிற்சியாளர்",
+  "कोच",
+);
+
+static String get registerCoachApprovalNote => text(
+  "Coach account will be sent to admin approval. Admin will assign batch before dashboard access.",
+  "பயிற்சியாளர் கணக்கு நிர்வாகி அனுமதிக்காக அனுப்பப்படும். டாஷ்போர்டு அணுகலுக்கு முன் நிர்வாகி பேட்ச் ஒதுக்குவார்.",
+  "कोच खाता एडमिन स्वीकृति के लिए भेजा जाएगा। डैशबोर्ड एक्सेस से पहले एडमिन बैच असाइन करेगा।",
+);
+
+static String get registerStudentApprovalNote => text(
+  "Student account will be sent to admin approval. Admin will assign batch and roll number.",
+  "மாணவர் கணக்கு நிர்வாகி அனுமதிக்காக அனுப்பப்படும். நிர்வாகி பேட்ச் மற்றும் ரோல் எண்ணை ஒதுக்குவார்.",
+  "छात्र खाता एडमिन स्वीकृति के लिए भेजा जाएगा। एडमिन बैच और रोल नंबर असाइन करेगा।",
+);
+
+static String get registerAccountButton => text(
+  "Register Account",
+  "கணக்கை பதிவு செய்க",
+  "खाता पंजीकृत करें",
+);
+
+static String get registerAlreadyHaveAccount => text(
+  "Already have an account? ",
+  "ஏற்கனவே கணக்கு உள்ளதா? ",
+  "पहले से खाता है? ",
+);
+
+static String get registerLoginNow => text(
+  "Login Now",
+  "இப்போது உள்நுழைக",
+  "अभी लॉगिन करें",
+);
+
+static String get registerPassionDisciplineSuccess => text(
+  "♥ Passion  •  ★ Discipline  •  🏆 Success",
+  "♥ ஆர்வம்  •  ★ ஒழுக்கம்  •  🏆 வெற்றி",
+  "♥ जुनून  •  ★ अनुशासन  •  🏆 सफलता",
+);
+// Add only missing getters inside AppStrings before the final }.
+// Existing getters such as pending, students, attendance, performance,
+// leaveRequestsSingleLine, matches, reports and academy must not be duplicated.
+
+static String get reportsUnableToLoad => text(
+  "Unable to load reports.",
+  "அறிக்கைகளை ஏற்ற முடியவில்லை.",
+  "रिपोर्ट लोड नहीं हो सकीं।",
+);
+
+static String get reportsFinanceSummary => text(
+  "Finance Summary",
+  "நிதி சுருக்கம்",
+  "वित्त सारांश",
+);
+
+static String get reportsCollected => text(
+  "Collected",
+  "வசூலிக்கப்பட்டது",
+  "संग्रहित",
+);
+
+static String get reportsOverview => text(
+  "Report Overview",
+  "அறிக்கை மேலோட்டம்",
+  "रिपोर्ट अवलोकन",
+);
+
+static String get reportsTotalRegistered => text(
+  "Total registered",
+  "மொத்த பதிவு",
+  "कुल पंजीकृत",
+);
+
+static String get reportsRecordsMarked => text(
+  "Records marked",
+  "பதிவுகள் குறிக்கப்பட்டன",
+  "रिकॉर्ड दर्ज किए गए",
+);
+
+
+
+static String get reportsRequestsReceived => text(
+  "Requests received",
+  "கோரிக்கைகள் பெறப்பட்டன",
+  "अनुरोध प्राप्त हुए",
+);
+
+static String get reportsScheduledMatches => text(
+  "Scheduled matches",
+  "திட்டமிடப்பட்ட போட்டிகள்",
+  "निर्धारित मैच",
+);
+
+static String get reportsSalaryBudget => text(
+  "Salary Budget",
+  "சம்பள பட்ஜெட்",
+  "वेतन बजट",
+);
+
+static String get reportsCoachSalaries => text(
+  "Coach salaries",
+  "பயிற்சியாளர் சம்பளங்கள்",
+  "कोच वेतन",
+);
+
+
+
+static String get reportsAcademyInsights => text(
+  "Academy insights and summary",
+  "அகாடமி பகுப்பாய்வு மற்றும் சுருக்கம்",
+  "अकादमी जानकारी और सारांश",
+);
+
+static String get reportsDashboardWord => text(
+  "Dashboard",
+  "டாஷ்போர்டு",
+  "डैशबोर्ड",
+);
+
+static String get reportsCollectionInsight => text(
+  "Collection Insight",
+  "வசூல் பகுப்பாய்வு",
+  "संग्रह जानकारी",
+);
+
+static String get reportsFeeCollectionIs => text(
+  "Fee collection is",
+  "கட்டண வசூல்",
+  "फीस संग्रह है",
+);
+
+static String get reportsSalaryBudgetIs => text(
+  "Salary budget is",
+  "சம்பள பட்ஜெட்",
+  "वेतन बजट है",
+);
+
+static String get reportsAttendanceRecords => text(
+  "Attendance records",
+  "வருகை பதிவுகள்",
+  "उपस्थिति रिकॉर्ड",
+);
+
+static String get reportsPerformanceReports => text(
+  "Performance reports",
+  "செயல்திறன் அறிக்கைகள்",
+  "प्रदर्शन रिपोर्ट",
+);
+
+static String get reportsMatchesScheduled => text(
+  "Matches scheduled",
+  "திட்டமிடப்பட்ட போட்டிகள்",
+  "निर्धारित मैच",
+);
+
+static String get reportsPassion => text(
+  "Passion",
+  "ஆர்வம்",
+  "जुनून",
+);
+
+static String get reportsDiscipline => text(
+  "Discipline",
+  "ஒழுக்கம்",
+  "अनुशासन",
+);
+
+static String get reportsSuccess => text(
+  "Success",
+  "வெற்றி",
+  "सफलता",
+);
+// Add only these missing getters inside AppStrings before the final }.
+// Most labels used by this screen already exist in AppStrings.
+
+static String get studentAttendanceApplyManageLeave => text(
+  "Apply and manage leave requests",
+  "விடுப்பு கோரிக்கைகளை விண்ணப்பித்து நிர்வகிக்கவும்",
+  "छुट्टी अनुरोध लागू और प्रबंधित करें",
+);
+
+static String get studentAttendanceViewCancelledSessions => text(
+  "View cancelled sessions",
+  "ரத்து செய்யப்பட்ட அமர்வுகளை பார்க்கவும்",
+  "रद्द किए गए सेशन देखें",
+);
+
+static String get studentAttendanceViewMakeupSessions => text(
+  "View makeup sessions",
+  "மேக்கப் அமர்வுகளை பார்க்கவும்",
+  "मेकअप सेशन देखें",
+);
+// Add only these missing getters inside AppStrings before the final }.
+// Existing getters such as schedule, sessions, reports, scheduleModuleTitle,
+// matchSchedule, trainingSchedule, todaySchedule, makeupSessions, sessionHistory,
+// monthlySchedule, match, training, today, plan, live, makeup, cancel, track,
+// leave, history, monthly, status, active, main and view must not be duplicated.
+
+static String get studentScheduleViewMatchTraining => text(
+  "View match and training schedules",
+  "போட்டி மற்றும் பயிற்சி அட்டவணைகளை பார்க்கவும்",
+  "मैच और प्रशिक्षण कार्यक्रम देखें",
+);
+
+static String get studentScheduleCheckSessions => text(
+  "Check regular, makeup and cancelled sessions",
+  "வழக்கமான, மேக்கப் மற்றும் ரத்து செய்யப்பட்ட அமர்வுகளை பார்க்கவும்",
+  "नियमित, मेकअप और रद्द सेशन देखें",
+);
+
+static String get studentScheduleHistoryMonthly => text(
+  "View schedule history and monthly plan",
+  "அட்டவணை வரலாறு மற்றும் மாதாந்திர திட்டத்தை பார்க்கவும்",
+  "कार्यक्रम इतिहास और मासिक योजना देखें",
+);
+
+static String get studentScheduleViewTrainingSessions => text(
+  "View academy training sessions",
+  "அகாடமி பயிற்சி அமர்வுகளை பார்க்கவும்",
+  "अकादमी प्रशिक्षण सेशन देखें",
+);
+
+static String get studentScheduleCheckTodayPlan => text(
+  "Check today's training or match plan",
+  "இன்றைய பயிற்சி அல்லது போட்டித் திட்டத்தை பார்க்கவும்",
+  "आज का प्रशिक्षण या मैच प्लान देखें",
+);
+
+static String get studentScheduleRegularSessions => text(
+  "Regular Sessions",
+  "வழக்கமான அமர்வுகள்",
+  "नियमित सेशन",
+);
+
+static String get studentScheduleViewRegularSessions => text(
+  "View regular academy sessions",
+  "வழக்கமான அகாடமி அமர்வுகளை பார்க்கவும்",
+  "नियमित अकादमी सेशन देखें",
+);
+
+static String get studentScheduleViewMakeupUpdates => text(
+  "View makeup class/session updates",
+  "மேக்கப் வகுப்பு அல்லது அமர்வு புதுப்பிப்புகளை பார்க்கவும்",
+  "मेकअप कक्षा या सेशन अपडेट देखें",
+);
+
+static String get studentScheduleCancelledSessions => text(
+  "Cancelled Sessions",
+  "ரத்து செய்யப்பட்ட அமர்வுகள்",
+  "रद्द सेशन",
+);
+
+static String get studentScheduleViewCancelledTraining => text(
+  "View cancelled training sessions",
+  "ரத்து செய்யப்பட்ட பயிற்சி அமர்வுகளை பார்க்கவும்",
+  "रद्द प्रशिक्षण सेशन देखें",
+);
+
+static String get studentScheduleLeaveRequest => text(
+  "Leave Request",
+  "விடுப்பு கோரிக்கை",
+  "छुट्टी अनुरोध",
+);
+
+static String get studentScheduleApplyViewLeave => text(
+  "Apply for leave and view leave requests",
+  "விடுப்பிற்கு விண்ணப்பித்து கோரிக்கைகளை பார்க்கவும்",
+  "छुट्टी के लिए आवेदन करें और अनुरोध देखें",
+);
+
+static String get studentScheduleViewPreviousRecords => text(
+  "View previous schedule records",
+  "முந்தைய அட்டவணை பதிவுகளை பார்க்கவும்",
+  "पिछले कार्यक्रम रिकॉर्ड देखें",
+);
+
+static String get studentScheduleViewMonthlyTimetable => text(
+  "View monthly training timetable",
+  "மாதாந்திர பயிற்சி கால அட்டவணையை பார்க்கவும்",
+  "मासिक प्रशिक्षण समय-सारणी देखें",
+);
+
+static String get studentScheduleMatchesTrainingTimetable => text(
+  "Matches, training sessions and timetable",
+  "போட்டிகள், பயிற்சி அமர்வுகள் மற்றும் கால அட்டவணை",
+  "मैच, प्रशिक्षण सेशन और समय-सारणी",
+);
+
+static String get studentScheduleControlledByAdminCoach => text(
+  "Schedule updates are controlled by Admin/Coach",
+  "அட்டவணை புதுப்பிப்புகள் நிர்வாகி அல்லது பயிற்சியாளரால் கட்டுப்படுத்தப்படுகின்றன",
+  "कार्यक्रम अपडेट एडमिन या कोच द्वारा नियंत्रित किए जाते हैं",
+);
+
+static String get studentScheduleInfoNote => text(
+  "Students can view match and training schedules. Later we can connect each row to separate dynamic screens.",
+  "மாணவர்கள் போட்டி மற்றும் பயிற்சி அட்டவணைகளை பார்க்கலாம். பின்னர் ஒவ்வொரு வரியையும் தனித்தனி டைனமிக் திரைகளுடன் இணைக்கலாம்.",
+  "छात्र मैच और प्रशिक्षण कार्यक्रम देख सकते हैं। बाद में प्रत्येक पंक्ति को अलग डायनेमिक स्क्रीन से जोड़ा जा सकता है।",
+);
+
+static String get studentScheduleRegular => text(
+  "Regular",
+  "வழக்கமான",
+  "नियमित",
+);
+
+static String get studentScheduleClass => text(
+  "Class",
+  "வகுப்பு",
+  "कक्षा",
+);
+
+static String get studentScheduleApply => text(
+  "Apply",
+  "விண்ணப்பி",
+  "आवेदन करें",
+);
+// Add only these missing getters inside AppStrings before the final }.
+
+static String get whatsappNotificationsTitle => text(
+  "WhatsApp Notifications",
+  "வாட்ஸ்அப் அறிவிப்புகள்",
+  "व्हाट्सऐप सूचनाएं",
+);
+
+static String get whatsappFeeReminder => text(
+  "Fee Reminder",
+  "கட்டண நினைவூட்டல்",
+  "फीस रिमाइंडर",
+);
+
+static String get whatsappSendPendingFeeAlerts => text(
+  "Send pending fee alerts",
+  "நிலுவை கட்டண எச்சரிக்கைகளை அனுப்பவும்",
+  "बकाया फीस अलर्ट भेजें",
+);
+
+static String get whatsappAttendanceAlert => text(
+  "Attendance Alert",
+  "வருகை எச்சரிக்கை",
+  "उपस्थिति अलर्ट",
+);
+
+static String get whatsappSendAbsentAlerts => text(
+  "Send absent alerts",
+  "வராதவர்களின் எச்சரிக்கைகளை அனுப்பவும்",
+  "अनुपस्थित अलर्ट भेजें",
+);
+
+static String get whatsappLeaveStatus => text(
+  "Leave Status",
+  "விடுப்பு நிலை",
+  "छुट्टी स्थिति",
+);
+
+static String get whatsappApprovedRejectedAlerts => text(
+  "Approved / rejected alerts",
+  "அங்கீகரிக்கப்பட்ட / நிராகரிக்கப்பட்ட எச்சரிக்கைகள்",
+  "स्वीकृत / अस्वीकृत अलर्ट",
+);
+
+static String get whatsappAnnouncement => text(
+  "Announcement",
+  "அறிவிப்பு",
+  "घोषणा",
+);
+
+static String get whatsappAcademyUpdates => text(
+  "Academy updates",
+  "அகாடமி புதுப்பிப்புகள்",
+  "अकादमी अपडेट",
+);
 }

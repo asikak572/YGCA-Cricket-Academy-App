@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'match_schedule_screen.dart';
 import 'training_schedule_screen.dart';
@@ -48,24 +49,24 @@ class _StudentScheduleModuleScreenState
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Schedule";
+        return AppStrings.schedule;
       case 1:
-        return "Sessions";
+        return AppStrings.sessions;
       case 2:
-        return "Reports";
+        return AppStrings.reports;
       default:
-        return "Schedule Module";
+        return AppStrings.scheduleModuleTitle;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "View match and training schedules";
+        return AppStrings.studentScheduleViewMatchTraining;
       case 1:
-        return "Check regular, makeup and cancelled sessions";
+        return AppStrings.studentScheduleCheckSessions;
       case 2:
-        return "View schedule history and monthly plan";
+        return AppStrings.studentScheduleHistoryMonthly;
       default:
         return "";
     }
@@ -96,22 +97,22 @@ class _StudentScheduleModuleScreenState
       return [
         _InfoItem(
           icon: Icons.sports_cricket_rounded,
-          title: "Match Schedule",
-          subtitle: "View upcoming matches",
+          title: AppStrings.matchSchedule,
+          subtitle: AppStrings.parentScheduleViewUpcomingMatches,
           color: const Color(0xFF8B5CF6),
           screen: const MatchScheduleScreen(),
         ),
         _InfoItem(
           icon: Icons.calendar_today_rounded,
-          title: "Training Schedule",
-          subtitle: "View academy training sessions",
+          title: AppStrings.trainingSchedule,
+          subtitle: AppStrings.studentScheduleViewTrainingSessions,
           color: const Color(0xFF0F766E),
           screen: const TrainingScheduleScreen(),
         ),
         _InfoItem(
           icon: Icons.today_rounded,
-          title: "Today Schedule",
-          subtitle: "Check today's training or match plan",
+          title: AppStrings.todaySchedule,
+          subtitle: AppStrings.studentScheduleCheckTodayPlan,
           color: Colors.orange,
           screen: const TrainingScheduleScreen(),
         ),
@@ -122,29 +123,29 @@ class _StudentScheduleModuleScreenState
       return [
         _InfoItem(
           icon: Icons.event_available_rounded,
-          title: "Regular Sessions",
-          subtitle: "View regular academy sessions",
+          title: AppStrings.studentScheduleRegularSessions,
+          subtitle: AppStrings.studentScheduleViewRegularSessions,
           color: Colors.green,
           screen: const TrainingScheduleScreen(),
         ),
         _InfoItem(
           icon: Icons.replay_circle_filled_rounded,
-          title: "Makeup Sessions",
-          subtitle: "View makeup class/session updates",
+          title: AppStrings.makeupSessions,
+          subtitle: AppStrings.studentScheduleViewMakeupUpdates,
           color: Colors.blueAccent,
           screen: const MakeupSessionScreen(),
         ),
         _InfoItem(
           icon: Icons.event_busy_rounded,
-          title: "Cancelled Sessions",
-          subtitle: "View cancelled training sessions",
+          title: AppStrings.studentScheduleCancelledSessions,
+          subtitle: AppStrings.studentScheduleViewCancelledTraining,
           color: Colors.redAccent,
           screen: const CancelSessionScreen(),
         ),
         _InfoItem(
           icon: Icons.assignment_rounded,
-          title: "Leave Request",
-          subtitle: "Apply for leave and view leave requests",
+          title: AppStrings.studentScheduleLeaveRequest,
+          subtitle: AppStrings.studentScheduleApplyViewLeave,
           color: Colors.orange,
           screen: const LeaveRequestScreen(),
         ),
@@ -154,15 +155,15 @@ class _StudentScheduleModuleScreenState
     return [
       _InfoItem(
         icon: Icons.history_rounded,
-        title: "Session History",
-        subtitle: "View previous schedule records",
+        title: AppStrings.sessionHistory,
+        subtitle: AppStrings.studentScheduleViewPreviousRecords,
         color: Colors.purpleAccent,
         screen: const TrainingScheduleScreen(),
       ),
       _InfoItem(
         icon: Icons.calendar_month_rounded,
-        title: "Monthly Schedule",
-        subtitle: "View monthly training timetable",
+        title: AppStrings.monthlySchedule,
+        subtitle: AppStrings.studentScheduleViewMonthlyTimetable,
         color: Colors.blueAccent,
         screen: const TrainingScheduleScreen(),
       ),
@@ -175,9 +176,12 @@ class _StudentScheduleModuleScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -221,6 +225,8 @@ class _StudentScheduleModuleScreenState
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -244,7 +250,7 @@ class _StudentScheduleModuleScreenState
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            "SCHEDULE MODULE",
+            AppStrings.scheduleModuleTitle.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -375,8 +381,8 @@ class _StudentScheduleModuleScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "SCHEDULE MODULE",
+                    Text(
+                      AppStrings.scheduleModuleTitle.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -387,7 +393,7 @@ class _StudentScheduleModuleScreenState
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Matches, training sessions and timetable",
+                      AppStrings.studentScheduleMatchesTrainingTimetable,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -399,7 +405,7 @@ class _StudentScheduleModuleScreenState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Schedule updates are controlled by Admin/Coach",
+                      AppStrings.studentScheduleControlledByAdminCoach,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -450,7 +456,7 @@ class _StudentScheduleModuleScreenState
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Students can view match and training schedules. Later we can connect each row to separate dynamic screens.",
+              AppStrings.studentScheduleInfoNote,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -681,26 +687,26 @@ class _StudentScheduleModuleScreenState
         items: [
           _MiniStatData(
             icon: Icons.sports_cricket_rounded,
-            label: "Match",
-            value: "View",
+            label: AppStrings.match,
+            value: AppStrings.view,
             color: const Color(0xFF8B5CF6),
           ),
           _MiniStatData(
             icon: Icons.calendar_today_rounded,
-            label: "Training",
-            value: "View",
+            label: AppStrings.training,
+            value: AppStrings.view,
             color: const Color(0xFF0F766E),
           ),
           _MiniStatData(
             icon: Icons.today_rounded,
-            label: "Today",
-            value: "Plan",
+            label: AppStrings.today,
+            value: AppStrings.plan,
             color: Colors.orange,
           ),
           _MiniStatData(
             icon: Icons.event_rounded,
-            label: "Schedule",
-            value: "Live",
+            label: AppStrings.schedule,
+            value: AppStrings.live,
             color: Colors.blueAccent,
           ),
         ],
@@ -713,26 +719,26 @@ class _StudentScheduleModuleScreenState
         items: [
           _MiniStatData(
             icon: Icons.event_available_rounded,
-            label: "Regular",
-            value: "Class",
+            label: AppStrings.studentScheduleRegular,
+            value: AppStrings.studentScheduleClass,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.replay_circle_filled_rounded,
-            label: "Makeup",
-            value: "View",
+            label: AppStrings.makeup,
+            value: AppStrings.view,
             color: Colors.blueAccent,
           ),
           _MiniStatData(
             icon: Icons.event_busy_rounded,
-            label: "Cancel",
-            value: "Track",
+            label: AppStrings.cancel,
+            value: AppStrings.track,
             color: Colors.redAccent,
           ),
           _MiniStatData(
             icon: Icons.assignment_rounded,
-            label: "Leave",
-            value: "Apply",
+            label: AppStrings.leave,
+            value: AppStrings.studentScheduleApply,
             color: Colors.orange,
           ),
         ],
@@ -744,21 +750,21 @@ class _StudentScheduleModuleScreenState
       items: [
         _MiniStatData(
           icon: Icons.history_rounded,
-          label: "History",
-          value: "View",
+          label: AppStrings.history,
+          value: AppStrings.view,
           color: Colors.purpleAccent,
         ),
         _MiniStatData(
           icon: Icons.calendar_month_rounded,
-          label: "Monthly",
-          value: "Plan",
+          label: AppStrings.monthly,
+          value: AppStrings.plan,
           color: Colors.blueAccent,
         ),
       
         _MiniStatData(
           icon: Icons.verified_rounded,
-          label: "Status",
-          value: "Active",
+          label: AppStrings.status,
+          value: AppStrings.active,
           color: Colors.green,
         ),
       ],
@@ -838,15 +844,15 @@ class _StudentScheduleModuleScreenState
     final items = [
       _BottomNavItem(
         icon: Icons.calendar_month_rounded,
-        label: "Main",
+        label: AppStrings.main,
       ),
       _BottomNavItem(
         icon: Icons.event_available_rounded,
-        label: "Sessions",
+        label: AppStrings.sessions,
       ),
       _BottomNavItem(
         icon: Icons.analytics_rounded,
-        label: "Reports",
+        label: AppStrings.reports,
       ),
     ];
 

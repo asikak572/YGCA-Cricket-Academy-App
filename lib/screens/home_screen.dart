@@ -192,9 +192,9 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 7),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.location_on_rounded, color: gold, size: 18),
+                    const Icon(Icons.location_on_rounded, color: gold, size: 18),
                     SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -310,9 +310,9 @@ class HomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFFDE68A)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 22,
             backgroundColor: maroon,
             child: Icon(Icons.phone_rounded, color: gold, size: 21),

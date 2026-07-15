@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'communication_center_screen.dart';
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -32,6 +33,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
     "Fees",
     "Updates",
   ];
+
+  String _tabLabel(String tab) {
+    switch (tab) {
+      case "Holiday":
+        return AppStrings.notificationTabHoliday;
+      case "Session":
+        return AppStrings.notificationTabSession;
+      case "Fees":
+        return AppStrings.fees;
+      case "Updates":
+        return AppStrings.notificationTabUpdates;
+      case "All":
+      default:
+        return AppStrings.all;
+    }
+  }
 
   List<String> linkedChildrenIds = [];
 
@@ -236,7 +253,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No date";
+    if (timestamp == null) return AppStrings.notificationNoDate;
 
     try {
       if (timestamp is Timestamp) {
@@ -250,7 +267,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
       return timestamp.toString();
     } catch (_) {
-      return "No date";
+      return AppStrings.notificationNoDate;
     }
   }
 
@@ -271,8 +288,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Notification deleted"),
+        SnackBar(
+          content: Text(AppStrings.notificationDeleted),
           backgroundColor: Colors.green,
         ),
       );
@@ -285,21 +302,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF111111) : Colors.white,
         title: Text(
-          "Delete Notification",
+          AppStrings.notificationDeleteTitle,
           style: TextStyle(
             color: _primaryText(isDark),
             fontWeight: FontWeight.w900,
           ),
         ),
         content: Text(
-          "Are you sure you want to delete this notification?",
+          AppStrings.notificationDeleteConfirm,
           style: TextStyle(color: _secondaryText(isDark)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Cancel",
+              AppStrings.cancel,
               style: TextStyle(color: isDark ? Colors.white70 : maroon),
             ),
           ),
@@ -312,7 +329,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               Navigator.pop(context);
               await _deleteNotification(context, docId);
             },
-            child: const Text("Delete"),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -391,9 +408,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: !isUserLoaded
@@ -417,7 +437,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${AppStrings.error}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -472,7 +492,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                             _tabs(isDark),
                             const SizedBox(height: 14),
-                            _sectionTitle("RECEIVED NOTIFICATIONS", isDark),
+                            _sectionTitle(AppStrings.notificationReceivedTitle.toUpperCase(), isDark),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: tabFiltered.isEmpty
@@ -483,12 +503,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                                         final title =
                                             _text(data['title']).isEmpty
-                                                ? 'No Title'
+                                                ? AppStrings.notificationNoTitle
                                                 : _text(data['title']);
 
                                         final message =
                                             _text(data['message']).isEmpty
-                                                ? 'No Message'
+                                                ? AppStrings.notificationNoMessage
                                                 : _text(data['message']);
 
                                         final targetRole =
@@ -526,6 +546,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     },
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -554,7 +576,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "NOTIFICATIONS",
+                  AppStrings.notificationsTitle.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -565,7 +587,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   ),
                 ),
                 Text(
-                  "Academy updates and alerts",
+                  AppStrings.notificationSubtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -714,7 +736,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "ACADEMY",
+                            AppStrings.academy.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 13,
@@ -722,8 +744,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "UPDATES",
+                          Text(
+                            AppStrings.notificationTabUpdates.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -732,7 +754,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             ),
                           ),
                           Text(
-                            "CENTER",
+                            AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -745,8 +767,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("Total: $total"),
-                              _heroChip("Today: $today"),
+                              _heroChip("${AppStrings.total}: $total"),
+                              _heroChip("${AppStrings.today}: $today"),
                             ],
                           ),
                         ],
@@ -818,12 +840,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
               ),
               const SizedBox(width: 13),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Send Communication",
+                      AppStrings.notificationSendCommunication,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -832,7 +854,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      "Holiday, session cancel, fee reminder and alerts",
+                      AppStrings.notificationSendCommunicationSubtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -908,7 +930,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
               child: Center(
                 child: Text(
-                  tabs[index],
+                  _tabLabel(tabs[index]),
                   style: TextStyle(
                     color: selected
                         ? (isDark ? Colors.white : gold)
@@ -972,8 +994,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
           const SizedBox(height: 10),
           Text(
             selectedTab == "All"
-                ? "No notifications found"
-                : "No $selectedTab notifications",
+                ? AppStrings.notificationNoneFound
+                : AppStrings.notificationNoneForCategory(_tabLabel(selectedTab)),
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -981,7 +1003,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "New academy updates will appear here.",
+            AppStrings.notificationNewUpdatesAppearHere,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

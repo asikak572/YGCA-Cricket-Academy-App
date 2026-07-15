@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'attendance_calendar_screen.dart';
 import 'attendance_history_screen.dart';
@@ -60,24 +61,24 @@ class _StudentAttendanceModuleScreenState
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Attendance Main";
+        return AppStrings.attendanceMain;
       case 1:
-        return "Session Management";
+        return AppStrings.sessionManagement;
       case 2:
-        return "Attendance Reports";
+        return AppStrings.attendanceReports;
       default:
-        return "Attendance Module";
+        return AppStrings.attendanceModule;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Mark attendance, view calendar and history";
+        return AppStrings.markAttendanceViewCalendarHistory;
       case 1:
-        return "Manage leave, cancelled sessions and makeup sessions";
+        return AppStrings.manageLeaveCancelledMakeup;
       case 2:
-        return "View attendance reports, summaries and analytics";
+        return AppStrings.viewAttendanceReportsAnalytics;
       default:
         return "";
     }
@@ -108,15 +109,15 @@ class _StudentAttendanceModuleScreenState
       return [
         _InfoItem(
           icon: Icons.check_circle_rounded,
-          title: "Mark Attendance",
-          subtitle: "Take daily session attendance",
+          title: AppStrings.markAttendanceTitle,
+          subtitle: AppStrings.takeDailySessionAttendance,
           color: Colors.green,
           screen: const AttendanceHistoryScreen(),
         ),
         _InfoItem(
           icon: Icons.calendar_month_rounded,
-          title: "Attendance Calendar",
-          subtitle: "Student-wise calendar view",
+          title: AppStrings.attendanceCalendar,
+          subtitle: AppStrings.studentWiseCalendarView,
           color: Colors.orange,
           screen: AttendanceCalendarScreen(
             studentId: widget.studentId,
@@ -128,8 +129,8 @@ class _StudentAttendanceModuleScreenState
         ),
         _InfoItem(
           icon: Icons.history_rounded,
-          title: "Attendance History",
-          subtitle: "View past attendance records",
+          title: AppStrings.attendanceHistory,
+          subtitle: AppStrings.viewPastAttendanceRecords,
           color: Colors.blueAccent,
           screen: AttendanceHistoryScreen(
             allowedStudentIds: [widget.studentId],
@@ -142,22 +143,22 @@ class _StudentAttendanceModuleScreenState
       return [
         _InfoItem(
           icon: Icons.assignment_rounded,
-          title: "Leave Requests",
-          subtitle: "Apply and manage leave requests",
+          title: AppStrings.leaveRequestsSingleLine,
+          subtitle: AppStrings.studentAttendanceApplyManageLeave,
           color: Colors.redAccent,
           screen: const LeaveRequestScreen(),
         ),
         _InfoItem(
           icon: Icons.event_busy_rounded,
-          title: "Cancel Session",
-          subtitle: "View cancelled sessions",
+          title: AppStrings.cancelSession,
+          subtitle: AppStrings.studentAttendanceViewCancelledSessions,
           color: Colors.deepOrange,
           screen: const CancelSessionScreen(),
         ),
         _InfoItem(
           icon: Icons.event_repeat_rounded,
-          title: "Makeup Sessions",
-          subtitle: "View makeup sessions",
+          title: AppStrings.makeupSessions,
+          subtitle: AppStrings.studentAttendanceViewMakeupSessions,
           color: Colors.teal,
           screen: const MakeupSessionScreen(),
         ),
@@ -167,8 +168,8 @@ class _StudentAttendanceModuleScreenState
     return [
       _InfoItem(
         icon: Icons.bar_chart_rounded,
-        title: "Attendance Reports",
-        subtitle: "View attendance summary and analytics",
+        title: AppStrings.attendanceReports,
+        subtitle: AppStrings.viewAttendanceSummaryAnalytics,
         color: Colors.purpleAccent,
         screen: AttendanceHistoryScreen(
           allowedStudentIds: [widget.studentId],
@@ -176,8 +177,8 @@ class _StudentAttendanceModuleScreenState
       ),
       _InfoItem(
         icon: Icons.grid_view_rounded,
-        title: "Monthly Summary",
-        subtitle: "View monthly present, absent and leave summary",
+        title: AppStrings.monthlySummary,
+        subtitle: AppStrings.viewMonthlySummary,
         color: Colors.blueAccent,
         screen: AttendanceHistoryScreen(
           allowedStudentIds: [widget.studentId],
@@ -185,8 +186,8 @@ class _StudentAttendanceModuleScreenState
       ),
       _InfoItem(
         icon: Icons.person_search_rounded,
-        title: "Student Analytics",
-        subtitle: "Check student-wise attendance analytics",
+        title: AppStrings.studentAnalytics,
+        subtitle: AppStrings.checkStudentAnalytics,
         color: Colors.orange,
         screen: AttendanceHistoryScreen(
           allowedStudentIds: [widget.studentId],
@@ -200,9 +201,12 @@ class _StudentAttendanceModuleScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -242,6 +246,8 @@ class _StudentAttendanceModuleScreenState
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -265,7 +271,7 @@ class _StudentAttendanceModuleScreenState
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            "ATTENDANCE MODULE",
+            AppStrings.attendanceModule.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -579,26 +585,26 @@ class _StudentAttendanceModuleScreenState
         items: [
           _MiniStatData(
             icon: Icons.check_circle_rounded,
-            label: "Present",
+            label: AppStrings.present,
             value: widget.attendance.isEmpty ? "0%" : widget.attendance,
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.cancel_rounded,
-            label: "Absent",
+            label: AppStrings.absent,
             value: "5",
             color: Colors.redAccent,
           ),
           _MiniStatData(
             icon: Icons.event_busy_rounded,
-            label: "Leave",
+            label: AppStrings.leave,
             value: "3",
             color: Colors.orange,
           ),
           _MiniStatData(
             icon: Icons.history_rounded,
-            label: "History",
-            value: "All",
+            label: AppStrings.history,
+            value: AppStrings.all,
             color: Colors.blueAccent,
           ),
         ],
@@ -611,26 +617,26 @@ class _StudentAttendanceModuleScreenState
         items: [
           _MiniStatData(
             icon: Icons.assignment_rounded,
-            label: "Leave",
+            label: AppStrings.leave,
             value: "4",
             color: Colors.redAccent,
           ),
           _MiniStatData(
             icon: Icons.event_busy_rounded,
-            label: "Cancel",
+            label: AppStrings.cancel,
             value: "1",
             color: Colors.deepOrange,
           ),
           _MiniStatData(
             icon: Icons.event_repeat_rounded,
-            label: "Makeup",
+            label: AppStrings.makeup,
             value: "3",
             color: Colors.teal,
           ),
           _MiniStatData(
             icon: Icons.event_available_rounded,
-            label: "Sessions",
-            value: "Live",
+            label: AppStrings.sessions,
+            value: AppStrings.live,
             color: Colors.green,
           ),
         ],
@@ -642,25 +648,25 @@ class _StudentAttendanceModuleScreenState
       items: [
         _MiniStatData(
           icon: Icons.bar_chart_rounded,
-          label: "Reports",
-          value: "All",
+          label: AppStrings.reports,
+          value: AppStrings.all,
           color: Colors.purpleAccent,
         ),
         _MiniStatData(
           icon: Icons.grid_view_rounded,
-          label: "Month",
+          label: AppStrings.month,
           value: "30D",
           color: Colors.blueAccent,
         ),
         _MiniStatData(
           icon: Icons.person_search_rounded,
-          label: "Students",
-          value: "View",
+          label: AppStrings.students,
+          value: AppStrings.view,
           color: Colors.orange,
         ),
         _MiniStatData(
           icon: Icons.percent_rounded,
-          label: "Avg",
+          label: AppStrings.avg,
           value: widget.attendance.isEmpty ? "0%" : widget.attendance,
           color: Colors.green,
         ),
@@ -739,15 +745,15 @@ class _StudentAttendanceModuleScreenState
     final items = [
       _BottomNavItem(
         icon: Icons.fact_check_rounded,
-        label: "Main",
+        label: AppStrings.main,
       ),
       _BottomNavItem(
         icon: Icons.event_available_rounded,
-        label: "Session",
+        label: AppStrings.session,
       ),
       _BottomNavItem(
         icon: Icons.bar_chart_rounded,
-        label: "Reports",
+        label: AppStrings.reports,
       ),
     ];
 

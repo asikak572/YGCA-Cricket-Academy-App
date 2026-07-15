@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'widgets/ygca_app_bar.dart';
 import 'attendance_calendar_screen.dart';
@@ -156,11 +157,14 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
-          appBar: const YgcaAppBar(title: "Attendance Module"),
+          appBar: YgcaAppBar(title: AppStrings.attendanceModule),
           body: SafeArea(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _getLinkedChildren(),
@@ -168,7 +172,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Column(
                     children: [
-                      _header(isDark, "Loading...", "Please wait"),
+                      _header(isDark, AppStrings.parentAttendanceLoading, AppStrings.parentAttendancePleaseWait),
                       const Expanded(
                         child: Center(child: CircularProgressIndicator()),
                       ),
@@ -179,12 +183,12 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                 if (snapshot.hasError) {
                   return Column(
                     children: [
-                      _header(isDark, "Error", "Unable to load attendance"),
+                      _header(isDark, AppStrings.error, AppStrings.parentAttendanceUnableToLoad),
                       Expanded(
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.error_outline_rounded,
-                          title: "Something went wrong",
+                          title: AppStrings.somethingWentWrong,
                           message: snapshot.error.toString(),
                         ),
                       ),
@@ -199,16 +203,16 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                     children: [
                       _header(
                         isDark,
-                        "No Child Linked",
-                        "Contact admin to link student",
+                        AppStrings.parentAttendanceNoChildLinked,
+                        AppStrings.parentAttendanceContactAdmin,
                       ),
                       Expanded(
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.person_off_rounded,
-                          title: "No linked student found",
+                          title: AppStrings.parentAttendanceNoLinkedStudentFound,
                           message:
-                              "This parent account is not linked with any student yet.",
+                              AppStrings.parentAttendanceNotLinkedMessage,
                         ),
                       ),
                     ],
@@ -219,15 +223,15 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
 
                 final firstStudentId = _text(firstChild['studentId']);
                 final firstName = _text(firstChild['name']).isEmpty
-                    ? "Student"
+                    ? AppStrings.student
                     : _text(firstChild['name']);
 
                 final firstBatch = _text(firstChild['batch']).isEmpty
-                    ? "Batch not assigned"
+                    ? AppStrings.parentAttendanceBatchNotAssigned
                     : _text(firstChild['batch']);
 
                 final firstRollNo = _text(firstChild['rollNo']).isEmpty
-                    ? "Not assigned"
+                    ? AppStrings.parentAttendanceNotAssigned
                     : _text(firstChild['rollNo']);
 
                 final firstAttendance = _text(firstChild['attendance']).isEmpty
@@ -248,7 +252,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                       child: _header(
                         isDark,
                         firstName,
-                        "$firstBatch • Roll No: $firstRollNo",
+                        "$firstBatch • ${AppStrings.rollNo}: $firstRollNo",
                       ),
                     ),
                     const SliverToBoxAdapter(
@@ -267,7 +271,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                       child: SizedBox(height: 18),
                     ),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("ATTENDANCE ACCESS", isDark),
+                      child: _sectionTitle(AppStrings.parentAttendanceAccess.toUpperCase(), isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
@@ -278,8 +282,8 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                               context: context,
                               isDark: isDark,
                               icon: Icons.calendar_month_rounded,
-                              title: "Attendance Calendar",
-                              subtitle: "Day-wise child attendance",
+                              title: AppStrings.attendanceCalendar,
+                              subtitle: AppStrings.parentAttendanceDayWiseChildAttendance,
                               color: const Color(0xFFF97316),
                               onTap: () {
                                 Navigator.push(
@@ -300,8 +304,8 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                               context: context,
                               isDark: isDark,
                               icon: Icons.history_rounded,
-                              title: "Attendance History",
-                              subtitle: "View full attendance records",
+                              title: AppStrings.attendanceHistory,
+                              subtitle: AppStrings.parentAttendanceViewFullRecords,
                               color: const Color(0xFFDC2626),
                               onTap: () {
                                 Navigator.push(
@@ -340,6 +344,8 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -413,8 +419,8 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "ATTENDANCE MODULE",
+              Text(
+                AppStrings.attendanceModule.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -503,7 +509,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Child Attendance Summary",
+                  AppStrings.parentAttendanceChildSummary,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 11,
@@ -549,7 +555,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                "Child",
+                AppStrings.child,
                 style: TextStyle(
                   color: _secondaryText(isDark),
                   fontSize: 10,
@@ -713,14 +719,14 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle("LINKED CHILDREN", isDark),
+          _sectionTitle(AppStrings.parentAttendanceLinkedChildren.toUpperCase(), isDark),
           ...children.map((child) {
             final name = _text(child['name']).isEmpty
-                ? "Student"
+                ? AppStrings.student
                 : _text(child['name']);
 
             final batch = _text(child['batch']).isEmpty
-                ? "Batch not assigned"
+                ? AppStrings.parentAttendanceBatchNotAssigned
                 : _text(child['batch']);
 
             final attendance = _text(child['attendance']).isEmpty
