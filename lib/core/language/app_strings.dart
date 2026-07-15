@@ -2068,4 +2068,343 @@ static String get editCoach => text(
   "பயிற்சியாளரைத் திருத்து",
   "कोच संपादित करें",
 );
+static String get coachStatus => text(
+  "Coach Status",
+  "பயிற்சியாளர் நிலை",
+  "कोच स्थिति",
+);
+
+static String get coachStatusList => text(
+  "Coach Status List",
+  "பயிற்சியாளர் நிலை பட்டியல்",
+  "कोच स्थिति सूची",
+);
+
+static String get coachStatusControl => text(
+  "Coach Status Control",
+  "பயிற்சியாளர் நிலை கட்டுப்பாடு",
+  "कोच स्थिति नियंत्रण",
+);
+
+static String get manageCoachStatus => text(
+  "Manage active, inactive and pending coach status.",
+  "செயலில், செயலற்ற மற்றும் நிலுவை பயிற்சியாளர் நிலைகளை நிர்வகிக்கவும்.",
+  "सक्रिय, निष्क्रिय और लंबित कोच स्थिति प्रबंधित करें।",
+);
+
+static String get changeCoachStatus => text(
+  "Change Coach Status",
+  "பயிற்சியாளர் நிலையை மாற்று",
+  "कोच स्थिति बदलें",
+);
+
+static String get markAsActive => text(
+  "Mark as Active",
+  "செயலில் என குறி",
+  "सक्रिय के रूप में चिह्नित करें",
+);
+
+static String get markAsInactive => text(
+  "Mark as Inactive",
+  "செயலற்றதாக குறி",
+  "निष्क्रिय के रूप में चिह्नित करें",
+);
+
+static String get markAsPending => text(
+  "Mark as Pending",
+  "நிலுவையில் என குறி",
+  "लंबित के रूप में चिह्नित करें",
+);
+
+static String get coachDashboardAccess => text(
+  "Coach can access dashboard and assigned batches",
+  "பயிற்சியாளர் டாஷ்போர்டையும் ஒதுக்கப்பட்ட பேட்ச்களையும் அணுகலாம்",
+  "कोच डैशबोर्ड और असाइन किए गए बैचों तक पहुँच सकता है",
+);
+
+static String get coachAccessStopped => text(
+  "Temporarily stop coach access/status",
+  "பயிற்சியாளர் அணுகலை தற்காலிகமாக நிறுத்து",
+  "कोच की पहुँच अस्थायी रूप से रोकें",
+);
+
+static String get coachWaitingApproval => text(
+  "Keep coach waiting for approval",
+  "பயிற்சியாளரை அங்கீகாரத்திற்காக காத்திருக்க வைக்கவும்",
+  "कोच को स्वीकृति के लिए प्रतीक्षा में रखें",
+);
+
+static String get coachMarkedAs => text(
+  "Coach marked as",
+  "பயிற்சியாளர் நிலை மாற்றப்பட்டது",
+  "कोच चिह्नित किया गया",
+);
+
+static String get statusUpdateFailed => text(
+  "Status update failed",
+  "நிலை புதுப்பித்தல் தோல்வியடைந்தது",
+  "स्थिति अपडेट विफल",
+);
+
+static String get noCoachesFound => text(
+  "No Coaches Found",
+  "பயிற்சியாளர்கள் இல்லை",
+  "कोई कोच नहीं मिला",
+);
+// Add only missing getters inside AppStrings before the final }.
+
+static String get assignmentLoadingFailed => text(
+  "Assignment loading failed",
+  "ஒதுக்கீட்டை ஏற்றுவதில் தோல்வி",
+  "असाइनमेंट लोड करने में विफलता",
+);
+
+static String get weeklyCoachAssignmentsSavedSuccessfully => text(
+  "Weekly coach assignments saved successfully",
+  "வாராந்திர பயிற்சியாளர் ஒதுக்கீடுகள் வெற்றிகரமாக சேமிக்கப்பட்டன",
+  "साप्ताहिक कोच असाइनमेंट सफलतापूर्वक सहेजे गए",
+);
+
+
+static String get firebaseError => text(
+  "Firebase Error",
+  "Firebase பிழை",
+  "Firebase त्रुटि",
+);
+
+static String get noActiveCoachUsersFound => text(
+  "No Active Coach Users Found",
+  "செயலில் உள்ள பயிற்சியாளர் பயனர்கள் இல்லை",
+  "कोई सक्रिय कोच उपयोगकर्ता नहीं मिला",
+);
+
+static String get coachMustRegisterBeforeAssignment => text(
+  "Coach must register first. Then Admin can approve and assign weekly sessions.",
+  "பயிற்சியாளர் முதலில் பதிவு செய்ய வேண்டும். பின்னர் நிர்வாகி அங்கீகரித்து வாராந்திர அமர்வுகளை ஒதுக்கலாம்.",
+  "कोच को पहले पंजीकरण करना होगा। फिर एडमिन स्वीकृत करके साप्ताहिक सेशन असाइन कर सकता है।",
+);
+
+static String get weeklyAssignment => text(
+  "Weekly Assignment",
+  "வாராந்திர ஒதுக்கீடு",
+  "साप्ताहिक असाइनमेंट",
+);
+
+static String get assignCoachesToWeeklySessions => text(
+  "Assign coaches to weekly sessions",
+  "வாராந்திர அமர்வுகளுக்கு பயிற்சியாளர்களை ஒதுக்கவும்",
+  "साप्ताहिक सेशन के लिए कोच असाइन करें",
+);
+
+static String get selectedWeek => text(
+  "Selected Week",
+  "தேர்ந்தெடுக்கப்பட்ட வாரம்",
+  "चयनित सप्ताह",
+);
+
+static String get weeklyAssignmentInfo => text(
+  "Assign registered coach users for each weekly session. Coach login will show only these sessions.",
+  "ஒவ்வொரு வாராந்திர அமர்விற்கும் பதிவு செய்யப்பட்ட பயிற்சியாளர்களை ஒதுக்கவும். பயிற்சியாளர் உள்நுழைவில் இந்த அமர்வுகள் மட்டுமே காணப்படும்.",
+  "हर साप्ताहिक सेशन के लिए पंजीकृत कोच उपयोगकर्ताओं को असाइन करें। कोच लॉगिन में केवल यही सेशन दिखाई देंगे।",
+);
+
+static String get assignCoach => text(
+  "Assign Coach",
+  "பயிற்சியாளரை ஒதுக்கு",
+  "कोच असाइन करें",
+);
+
+static String get notAssigned => text(
+  "Not Assigned",
+  "ஒதுக்கப்படவில்லை",
+  "असाइन नहीं किया गया",
+);
+
+static String get saveWeeklyAssignment => text(
+  "Save Weekly Assignment",
+  "வாராந்திர ஒதுக்கீட்டை சேமி",
+  "साप्ताहिक असाइनमेंट सहेजें",
+);
+// Add only missing getters inside AppStrings before the final }.
+// These unique coachSchedule-prefixed names avoid duplicate getter errors.
+
+static String get coachScheduleManageMatchTraining => text(
+  "Manage match and training schedules",
+  "போட்டி மற்றும் பயிற்சி அட்டவணைகளை நிர்வகிக்கவும்",
+  "मैच और प्रशिक्षण शेड्यूल प्रबंधित करें",
+);
+
+static String get coachScheduleManageMakeupCancelled => text(
+  "Manage makeup and cancelled sessions",
+  "மேக்கப் மற்றும் ரத்து செய்யப்பட்ட அமர்வுகளை நிர்வகிக்கவும்",
+  "मेकअप और रद्द किए गए सेशन प्रबंधित करें",
+);
+
+static String get coachScheduleViewMonthlyUpdates => text(
+  "View monthly schedule and updates",
+  "மாதாந்திர அட்டவணை மற்றும் புதுப்பிப்புகளைப் பாருங்கள்",
+  "मासिक शेड्यूल और अपडेट देखें",
+);
+
+static String get coachScheduleViewAcademyMatches => text(
+  "View academy matches",
+  "அகாடமி போட்டிகளைப் பாருங்கள்",
+  "अकादमी मैच देखें",
+);
+
+static String get coachScheduleViewRegularTraining => text(
+  "View regular training schedule",
+  "வழக்கமான பயிற்சி அட்டவணையைப் பாருங்கள்",
+  "नियमित प्रशिक्षण शेड्यूल देखें",
+);
+
+static String get coachScheduleManageExtraSessions => text(
+  "Manage extra sessions",
+  "கூடுதல் அமர்வுகளை நிர்வகிக்கவும்",
+  "अतिरिक्त सेशन प्रबंधित करें",
+);
+
+static String get coachScheduleViewCancelledUpdates => text(
+  "View cancelled session updates",
+  "ரத்து செய்யப்பட்ட அமர்வு புதுப்பிப்புகளைப் பாருங்கள்",
+  "रद्द किए गए सेशन के अपडेट देखें",
+);
+
+static String get coachScheduleMonthlySchedule => text(
+  "Monthly Schedule",
+  "மாதாந்திர அட்டவணை",
+  "मासिक शेड्यूल",
+);
+
+static String get coachScheduleViewMonthlyTimetable => text(
+  "View monthly timetable",
+  "மாதாந்திர நேர அட்டவணையைப் பாருங்கள்",
+  "मासिक समय-सारणी देखें",
+);
+
+static String get coachScheduleUpdates => text(
+  "Schedule Updates",
+  "அட்டவணை புதுப்பிப்புகள்",
+  "शेड्यूल अपडेट",
+);
+
+static String get coachScheduleLatestAnnouncements => text(
+  "View latest schedule announcements",
+  "சமீபத்திய அட்டவணை அறிவிப்புகளைப் பாருங்கள்",
+  "नवीनतम शेड्यूल घोषणाएँ देखें",
+);
+
+static String get coachSchedulePageTitle => text(
+  "COACH SCHEDULE",
+  "பயிற்சியாளர் அட்டவணை",
+  "कोच शेड्यूल",
+);
+
+static String get coachScheduleHeroSubtitle => text(
+  "Matches, training and makeup sessions",
+  "போட்டிகள், பயிற்சி மற்றும் மேக்கப் அமர்வுகள்",
+  "मैच, प्रशिक्षण और मेकअप सेशन",
+);
+
+static String get coachScheduleHeroDescription => text(
+  "Coach can view and manage assigned schedule updates",
+  "பயிற்சியாளர் ஒதுக்கப்பட்ட அட்டவணை புதுப்பிப்புகளைப் பார்க்கவும் நிர்வகிக்கவும் முடியும்",
+  "कोच असाइन किए गए शेड्यूल अपडेट देख और प्रबंधित कर सकता है",
+);
+
+static String get coachScheduleInfoMessage => text(
+  "Some schedule options currently reuse existing screens.",
+  "சில அட்டவணை விருப்பங்கள் தற்போது ஏற்கனவே உள்ள திரைகளை பயன்படுத்துகின்றன.",
+  "कुछ शेड्यूल विकल्प अभी मौजूदा स्क्रीन का उपयोग करते हैं।",
+);
+
+static String get coachPaymentStatus => text(
+  "Coach Payment Status",
+  "பயிற்சியாளர் கட்டண நிலை",
+  "कोच भुगतान स्थिति",
+);
+
+static String get updatePaidPendingSalary => text(
+  "Update paid and pending salary",
+  "செலுத்தப்பட்ட மற்றும் நிலுவையில் உள்ள சம்பளத்தை புதுப்பிக்கவும்",
+  "भुगतान और लंबित वेतन अपडेट करें",
+);
+
+static String get viewSalaryPaymentStatus => text(
+  "View your salary payment status",
+  "உங்கள் சம்பள கட்டண நிலையைப் பாருங்கள்",
+  "अपनी वेतन भुगतान स्थिति देखें",
+);
+
+static String get changePaymentStatus => text(
+  "Change Payment Status",
+  "கட்டண நிலையை மாற்று",
+  "भुगतान स्थिति बदलें",
+);
+
+static String get markAsPaid => text(
+  "Mark as Paid",
+  "செலுத்தப்பட்டது என குறி",
+  "भुगतान किया गया के रूप में चिह्नित करें",
+);
+
+static String get salaryPaymentCompleted => text(
+  "Salary payment completed",
+  "சம்பள கட்டணம் முடிந்தது",
+  "वेतन भुगतान पूरा हुआ",
+);
+
+static String get salaryPaymentPending => text(
+  "Salary payment not completed",
+  "சம்பள கட்டணம் இன்னும் முடியவில்லை",
+  "वेतन भुगतान अभी पूरा नहीं हुआ",
+);
+
+
+static String get paymentRecordsNotFound => text(
+  "No Payment Records Found",
+  "கட்டண பதிவுகள் இல்லை",
+  "कोई भुगतान रिकॉर्ड नहीं मिला",
+);
+
+static String get noSalaryRecordsForFilter => text(
+  "No salary payment records available for this filter.",
+  "இந்த வடிகட்டலுக்கு சம்பள பதிவுகள் இல்லை.",
+  "इस फ़िल्टर के लिए कोई वेतन भुगतान रिकॉर्ड उपलब्ध नहीं है।",
+);
+
+// Add ALL of these inside AppStrings before the final closing brace.
+// These names are unique to coach_schedule_module_screen.dart.
+
+static String get coachScheduleTabSchedule => text("Schedule", "அட்டவணை", "शेड्यूल");
+static String get coachScheduleTabSessions => text("Sessions", "அமர்வுகள்", "सेशन");
+static String get coachScheduleTabReports => text("Reports", "அறிக்கைகள்", "रिपोर्ट");
+
+
+
+
+static String get coachScheduleMatchSchedule => text("Match Schedule", "போட்டி அட்டவணை", "मैच शेड्यूल");
+
+static String get coachScheduleTrainingSchedule => text("Training Schedule", "பயிற்சி அட்டவணை", "प्रशिक्षण शेड्यूल");
+static String get coachScheduleMakeupSessions => text("Makeup Sessions", "மேக்கப் அமர்வுகள்", "मेकअप सेशन");
+
+static String get coachScheduleCancelledSessions => text("Cancelled Sessions", "ரத்து செய்யப்பட்ட அமர்வுகள்", "रद्द किए गए सेशन");
+
+
+
+static String get coachScheduleModuleTitle => text("SCHEDULE MODULE", "அட்டவணை தொகுதி", "शेड्यूल मॉड्यूल");
+
+
+static String get coachScheduleSummaryMatch => text("Match", "போட்டி", "मैच");
+static String get coachScheduleSummaryView => text("View", "பார்", "देखें");
+static String get coachScheduleSummaryTraining => text("Training", "பயிற்சி", "प्रशिक्षण");
+static String get coachScheduleSummaryPlan => text("Plan", "திட்டம்", "योजना");
+static String get coachScheduleSummaryMakeup => text("Makeup", "மேக்கப்", "मेकअप");
+static String get coachScheduleSummaryManage => text("Manage", "நிர்வகி", "प्रबंधित करें");
+static String get coachScheduleSummaryUpdates => text("Updates", "புதுப்பிப்புகள்", "अपडेट");
+static String get coachScheduleSummaryLive => text("Live", "நேரலை", "लाइव");
+
+static String get coachScheduleBottomMain => text("Main", "முதன்மை", "मुख्य");
+static String get coachScheduleBottomSessions => text("Sessions", "அமர்வுகள்", "सेशन");
+static String get coachScheduleBottomReports => text("Reports", "அறிக்கைகள்", "रिपोर्ट");
 }

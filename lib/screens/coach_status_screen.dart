@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CoachStatusScreen extends StatefulWidget {
   const CoachStatusScreen({super.key});
@@ -17,11 +18,11 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
   static const Color maroon = Color(0xFF7F0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  final filters = const [
-    "All",
-    "Active",
-    "Inactive",
-    "Pending",
+  List<String> get filters => [
+    AppStrings.all,
+    AppStrings.active,
+    AppStrings.inactive,
+    AppStrings.pending,
   ];
 
   Color _bg(bool isDark) {
@@ -76,7 +77,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
 
     if (status.isNotEmpty) return status;
     if (approvalStatus.isNotEmpty) return approvalStatus;
-    return "Pending";
+    return AppStrings.pending;
   }
 
   Color _statusColor(String status) {
@@ -106,7 +107,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
 
   String _batchesText(Map<String, dynamic> data) {
     final batches = _batchesFromData(data);
-    if (batches.isEmpty) return 'No Batch Assigned';
+    if (batches.isEmpty) return AppStrings.noBatchAssigned;
     return batches.join(', ');
   }
 
@@ -171,7 +172,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Coach marked as $newStatus"),
+            content: Text("${AppStrings.coachMarkedAs} $newStatus"),
             backgroundColor: Colors.green,
           ),
         );
@@ -180,7 +181,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Status update failed: $e"),
+            content: Text("${AppStrings.statusUpdateFailed}: $e"),
             backgroundColor: Colors.red,
           ),
         );
@@ -194,7 +195,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
     required String coachId,
     required Map<String, dynamic> data,
   }) {
-    final name = _text(data, 'name', 'Coach');
+    final name = _text(data, 'name', AppStrings.coachLabel);
 
     showModalBottomSheet(
       context: context,
@@ -219,7 +220,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "Change Coach Status",
+                  AppStrings.changeCoachStatus,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
@@ -239,8 +240,8 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                 _statusAction(
                   isDark: isDark,
                   icon: Icons.verified_rounded,
-                  title: "Mark as Active",
-                  subtitle: "Coach can access dashboard and assigned batches",
+                  title: AppStrings.markAsActive,
+                  subtitle: AppStrings.coachDashboardAccess,
                   color: Colors.green,
                   onTap: () {
                     Navigator.pop(context);
@@ -256,8 +257,8 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                 _statusAction(
                   isDark: isDark,
                   icon: Icons.pause_circle_rounded,
-                  title: "Mark as Inactive",
-                  subtitle: "Temporarily stop coach access/status",
+                  title: AppStrings.markAsInactive,
+                  subtitle: AppStrings.coachAccessStopped,
                   color: Colors.redAccent,
                   onTap: () {
                     Navigator.pop(context);
@@ -273,8 +274,8 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                 _statusAction(
                   isDark: isDark,
                   icon: Icons.pending_actions_rounded,
-                  title: "Mark as Pending",
-                  subtitle: "Keep coach waiting for approval",
+                  title: AppStrings.markAsPending,
+                  subtitle: AppStrings.coachWaitingApproval,
                   color: Colors.orange,
                   onTap: () {
                     Navigator.pop(context);
@@ -358,9 +359,12 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot>(
@@ -376,7 +380,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                       Expanded(
                         child: Center(
                           child: Text(
-                            "Error: ${snapshot.error}",
+                            "${AppStrings.error}: ${snapshot.error}",
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.redAccent,
@@ -437,7 +441,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                     SliverToBoxAdapter(child: _filterTabs(isDark)),
                     const SliverToBoxAdapter(child: SizedBox(height: 16)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("COACH STATUS LIST", isDark),
+                      child: _sectionTitle(AppStrings.coachStatusList.toUpperCase(), isDark),
                     ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -467,6 +471,8 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -500,7 +506,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "COACH STATUS",
+              AppStrings.coachStatus.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -606,7 +612,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Coach Status Control",
+                      AppStrings.coachStatusControl,
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontSize: 17,
@@ -615,7 +621,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Manage active, inactive and pending coach status.",
+                      AppStrings.manageCoachStatus,
                       style: TextStyle(
                         color: _secondaryText(isDark),
                         fontSize: 12,
@@ -634,7 +640,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
               Expanded(
                 child: _miniStat(
                   isDark: isDark,
-                  label: "Total",
+                  label: AppStrings.total,
                   value: total.toString(),
                   color: Colors.blue,
                 ),
@@ -642,7 +648,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
               Expanded(
                 child: _miniStat(
                   isDark: isDark,
-                  label: "Active",
+                  label: AppStrings.active,
                   value: active.toString(),
                   color: Colors.green,
                 ),
@@ -650,7 +656,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
               Expanded(
                 child: _miniStat(
                   isDark: isDark,
-                  label: "Inactive",
+                  label: AppStrings.inactive,
                   value: inactive.toString(),
                   color: Colors.redAccent,
                 ),
@@ -658,7 +664,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
               Expanded(
                 child: _miniStat(
                   isDark: isDark,
-                  label: "Pending",
+                  label: AppStrings.pending,
                   value: pending.toString(),
                   color: Colors.orange,
                 ),
@@ -801,9 +807,9 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
     required String coachId,
     required Map<String, dynamic> data,
   }) {
-    final name = _text(data, 'name', 'No Name');
-    final phone = _text(data, 'phone', 'No Phone');
-    final specialization = _text(data, 'specialization', 'Coach');
+    final name = _text(data, 'name', AppStrings.noName);
+    final phone = _text(data, 'phone', AppStrings.noPhone);
+    final specialization = _text(data, 'specialization', AppStrings.coachLabel);
     final status = _statusText(data);
     final batch = _batchesText(data);
     final statusColor = _statusColor(status);
@@ -972,7 +978,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Coaches Found",
+            AppStrings.noCoachesFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,

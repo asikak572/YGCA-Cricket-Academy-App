@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'match_schedule_screen.dart';
 import 'makeup_session_screen.dart';
@@ -45,24 +46,24 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Schedule";
+        return AppStrings.coachScheduleTabSchedule;
       case 1:
-        return "Sessions";
+        return AppStrings.coachScheduleTabSessions;
       case 2:
-        return "Reports";
+        return AppStrings.coachScheduleTabReports;
       default:
-        return "Schedule";
+        return AppStrings.coachScheduleTabSchedule;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Manage match and training schedules";
+        return AppStrings.coachScheduleManageMatchTraining;
       case 1:
-        return "Manage makeup and cancelled sessions";
+        return AppStrings.coachScheduleManageMakeupCancelled;
       case 2:
-        return "View monthly schedule and updates";
+        return AppStrings.coachScheduleViewMonthlyUpdates;
       default:
         return "";
     }
@@ -93,15 +94,15 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.sports_cricket_rounded,
-          title: "Match Schedule",
-          subtitle: "View academy matches",
+          title: AppStrings.coachScheduleMatchSchedule,
+          subtitle: AppStrings.coachScheduleViewAcademyMatches,
           color: const Color(0xFF8B5CF6),
           screen: const MatchScheduleScreen(),
         ),
         _InfoItem(
           icon: Icons.calendar_today_rounded,
-          title: "Training Schedule",
-          subtitle: "View regular training schedule",
+          title: AppStrings.coachScheduleTrainingSchedule,
+          subtitle: AppStrings.coachScheduleViewRegularTraining,
           color: Colors.green,
           screen: const TrainingScheduleScreen(),
         ),
@@ -112,15 +113,15 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.event_repeat_rounded,
-          title: "Makeup Sessions",
-          subtitle: "Manage extra sessions",
+          title: AppStrings.coachScheduleMakeupSessions,
+          subtitle: AppStrings.coachScheduleManageExtraSessions,
           color: const Color(0xFF0F766E),
           screen: const MakeupSessionScreen(),
         ),
         _InfoItem(
           icon: Icons.event_busy_rounded,
-          title: "Cancelled Sessions",
-          subtitle: "View cancelled session updates",
+          title: AppStrings.coachScheduleCancelledSessions,
+          subtitle: AppStrings.coachScheduleViewCancelledUpdates,
           color: Colors.redAccent,
           screen: const MakeupSessionScreen(),
         ),
@@ -130,15 +131,15 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
     return [
       _InfoItem(
         icon: Icons.calendar_month_rounded,
-        title: "Monthly Schedule",
-        subtitle: "View monthly timetable",
+        title: AppStrings.coachScheduleMonthlySchedule,
+        subtitle: AppStrings.coachScheduleViewMonthlyTimetable,
         color: Colors.blueAccent,
         screen: const TrainingScheduleScreen(),
       ),
       _InfoItem(
         icon: Icons.campaign_rounded,
-        title: "Schedule Updates",
-        subtitle: "View latest schedule announcements",
+        title: AppStrings.coachScheduleUpdates,
+        subtitle: AppStrings.coachScheduleLatestAnnouncements,
         color: Colors.orange,
         screen: const TrainingScheduleScreen(),
       ),
@@ -150,9 +151,12 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -196,6 +200,8 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -219,7 +225,7 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            "COACH SCHEDULE",
+            AppStrings.coachSchedulePageTitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -350,19 +356,19 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "SCHEDULE MODULE",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                     Text(
+  AppStrings.coachScheduleModuleTitle,
+  maxLines: 1,
+  overflow: TextOverflow.ellipsis,
+  style: const TextStyle(
+    color: Colors.white,
+    fontSize: 20,
+    fontWeight: FontWeight.w900,
+  ),
+),
                     const SizedBox(height: 5),
                     Text(
-                      "Matches, training and makeup sessions",
+                      AppStrings.coachScheduleHeroSubtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -374,7 +380,7 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Coach can view and manage assigned schedule updates",
+                      AppStrings.coachScheduleHeroDescription,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -416,7 +422,7 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Currently some schedule options reuse existing screens. Later we can split them into separate dynamic screens.",
+              AppStrings.coachScheduleInfoMessage,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -639,29 +645,29 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
           _miniStat(
             isDark,
             Icons.sports_cricket_rounded,
-            "Match",
-            "View",
+            AppStrings.coachScheduleSummaryMatch,
+            AppStrings.coachScheduleSummaryView,
             const Color(0xFF8B5CF6),
           ),
           _miniStat(
             isDark,
             Icons.calendar_today_rounded,
-            "Training",
-            "Plan",
+            AppStrings.coachScheduleSummaryTraining,
+            AppStrings.coachScheduleSummaryPlan,
             Colors.green,
           ),
           _miniStat(
             isDark,
             Icons.event_repeat_rounded,
-            "Makeup",
-            "Manage",
+            AppStrings.coachScheduleSummaryMakeup,
+            AppStrings.coachScheduleSummaryManage,
             const Color(0xFF0F766E),
           ),
           _miniStat(
             isDark,
             Icons.campaign_rounded,
-            "Updates",
-            "Live",
+            AppStrings.coachScheduleSummaryUpdates,
+            AppStrings.coachScheduleSummaryLive,
             Colors.orange,
           ),
         ],
@@ -709,9 +715,9 @@ class _CoachScheduleModuleScreenState extends State<CoachScheduleModuleScreen> {
 
   Widget _bottomNavigation(bool isDark) {
     final items = [
-      _BottomNavItem(icon: Icons.calendar_month_rounded, label: "Main"),
-      _BottomNavItem(icon: Icons.event_repeat_rounded, label: "Sessions"),
-      _BottomNavItem(icon: Icons.analytics_rounded, label: "Reports"),
+      _BottomNavItem(icon: Icons.calendar_month_rounded, label: AppStrings.coachScheduleBottomMain),
+      _BottomNavItem(icon: Icons.event_repeat_rounded, label: AppStrings.coachScheduleBottomSessions),
+      _BottomNavItem(icon: Icons.analytics_rounded, label: AppStrings.coachScheduleBottomReports),
     ];
 
     return Container(

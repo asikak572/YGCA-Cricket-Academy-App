@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CoachSessionAssignmentScreen extends StatefulWidget {
   const CoachSessionAssignmentScreen({super.key});
@@ -79,6 +80,19 @@ class _CoachSessionAssignmentScreenState
     return "${_dateId(selectedWeekStart)}_${_safeDocId(session)}";
   }
 
+
+  String _sessionDisplayText(String session) {
+    if (session.startsWith("Friday:")) {
+      return session.replaceFirst("Friday:", "${AppStrings.friday}:");
+    }
+
+    if (session.startsWith("Saturday:")) {
+      return session.replaceFirst("Saturday:", "${AppStrings.saturday}:");
+    }
+
+    return session;
+  }
+
   Color _bg(bool isDark) {
     return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
   }
@@ -140,7 +154,7 @@ class _CoachSessionAssignmentScreenState
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Assignment loading failed: $e"),
+          content: Text("${AppStrings.assignmentLoadingFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -219,8 +233,8 @@ class _CoachSessionAssignmentScreenState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Weekly coach assignments saved successfully"),
+        SnackBar(
+          content: Text(AppStrings.weeklyCoachAssignmentsSavedSuccessfully),
           backgroundColor: Colors.green,
         ),
       );
@@ -229,7 +243,7 @@ class _CoachSessionAssignmentScreenState
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Save failed: $e"),
+          content: Text("${AppStrings.saveFailed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -243,9 +257,12 @@ class _CoachSessionAssignmentScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -262,7 +279,7 @@ class _CoachSessionAssignmentScreenState
                         child: _messageCard(
                           isDark: isDark,
                           icon: Icons.error_outline_rounded,
-                          title: "Firebase Error",
+                          title: AppStrings.firebaseError,
                           message: coachSnapshot.error.toString(),
                         ),
                       ),
@@ -314,9 +331,9 @@ class _CoachSessionAssignmentScreenState
                           ? _messageCard(
                               isDark: isDark,
                               icon: Icons.sports_cricket_rounded,
-                              title: "No Active Coach Users Found",
+                              title: AppStrings.noActiveCoachUsersFound,
                               message:
-                                  "Coach must register first. Then Admin can approve and assign weekly sessions.",
+                                  AppStrings.coachMustRegisterBeforeAssignment,
                             )
                           : ListView(
                               physics: const BouncingScrollPhysics(),
@@ -341,6 +358,8 @@ class _CoachSessionAssignmentScreenState
             ),
           ),
           bottomNavigationBar: _saveButton(isDark),
+            );
+          },
         );
       },
     );
@@ -369,7 +388,7 @@ class _CoachSessionAssignmentScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "WEEKLY ASSIGNMENT",
+                  AppStrings.weeklyAssignment.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -380,7 +399,7 @@ class _CoachSessionAssignmentScreenState
                   ),
                 ),
                 Text(
-                  "Assign coaches to weekly sessions",
+                  AppStrings.assignCoachesToWeeklySessions,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -478,8 +497,8 @@ class _CoachSessionAssignmentScreenState
           Expanded(
             child: Column(
               children: [
-                const Text(
-                  "Selected Week",
+                Text(
+                  AppStrings.selectedWeek,
                   style: TextStyle(
                     color: gold,
                     fontSize: 11,
@@ -554,7 +573,7 @@ class _CoachSessionAssignmentScreenState
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Assign registered coach users for each weekly session. Coach login will show only these sessions.",
+              AppStrings.weeklyAssignmentInfo,
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,
@@ -640,7 +659,7 @@ class _CoachSessionAssignmentScreenState
               fontWeight: FontWeight.w700,
             ),
             decoration: InputDecoration(
-              labelText: "Assign Coach",
+              labelText: AppStrings.assignCoach,
               labelStyle: TextStyle(color: _secondaryText(isDark)),
               prefixIcon: Icon(
                 Icons.person_rounded,
@@ -661,15 +680,15 @@ class _CoachSessionAssignmentScreenState
               ),
             ),
             items: [
-              const DropdownMenuItem<String>(
+              DropdownMenuItem<String>(
                 value: '',
-                child: Text("Not Assigned"),
+                child: Text(AppStrings.notAssigned),
               ),
               ...coaches.map((coach) {
                 final data = coach.data();
-                final name = data['name']?.toString() ?? 'Coach';
+                final name = data['name']?.toString() ?? AppStrings.coachLabel;
                 final specialization =
-                    data['specialization']?.toString() ?? 'Coach';
+                    data['specialization']?.toString() ?? AppStrings.coachLabel;
 
                 return DropdownMenuItem<String>(
                   value: coach.id,
@@ -783,8 +802,8 @@ class _CoachSessionAssignmentScreenState
                     color: isDark ? Colors.white : gold,
                     strokeWidth: 2,
                   )
-                : const Text(
-                    "SAVE WEEKLY ASSIGNMENT",
+                : Text(
+                    AppStrings.saveWeeklyAssignment.toUpperCase(),
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0.5,
