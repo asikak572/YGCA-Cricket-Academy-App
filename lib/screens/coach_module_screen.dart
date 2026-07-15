@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 import 'coach_management_screen.dart';
 import 'coach_assigned_students_screen.dart';
@@ -53,24 +54,24 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
   String get _title {
     switch (_currentIndex) {
       case 0:
-        return "Coach Management";
+        return AppStrings.coachModuleCoachManagement;
       case 1:
-        return "Assigned Students";
+        return AppStrings.text("Assigned Students", "ஒதுக்கப்பட்ட மாணவர்கள்", "असाइन किए गए छात्र");
       case 2:
-        return "Coach Salary";
+        return AppStrings.coachModuleCoachSalary;
       default:
-        return "Coach Module";
+        return AppStrings.coachModuleTitle;
     }
   }
 
   String get _subtitle {
     switch (_currentIndex) {
       case 0:
-        return "Manage coach records, details and status";
+        return AppStrings.coachModuleManageCoachRecords;
       case 1:
-        return "View assigned students, attendance and performance";
+        return AppStrings.coachModuleViewAssignedStudents;
       case 2:
-        return "View salary records, payments and reports";
+        return AppStrings.coachModuleViewSalaryRecords;
       default:
         return "";
     }
@@ -101,29 +102,33 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.person_add_alt_1_rounded,
-          title: "Add / Manage Coaches",
-          subtitle: "Add new coach, edit, delete and manage coach records",
+          title: AppStrings.coachModuleAddManageCoaches,
+          subtitle: AppStrings.coachModuleAddManageCoachesSubtitle,
           color: Colors.purpleAccent,
           screen: const CoachManagementScreen(),
         ),
         _InfoItem(
-  icon: Icons.event_available_rounded,
-  title: "Weekly Coach Assignment",
-  subtitle: "Assign coaches to weekly training sessions",
-  color: Colors.green,
-  screen: const CoachSessionAssignmentScreen(),
-),
+          icon: Icons.event_available_rounded,
+          title: AppStrings.text(
+            "Weekly Coach Assignment",
+            "வாராந்திர பயிற்சியாளர் ஒதுக்கீடு",
+            "साप्ताहिक कोच असाइनमेंट",
+          ),
+          subtitle: AppStrings.coachModuleAssignWeeklyTrainingSessions,
+          color: Colors.green,
+          screen: const CoachSessionAssignmentScreen(),
+        ),
         _InfoItem(
           icon: Icons.badge_rounded,
-          title: "Coach Details",
-          subtitle: "View full profile details of each coach",
+          title: AppStrings.coachDetails,
+          subtitle: AppStrings.coachModuleViewCoachProfileDetails,
           color: Colors.blueAccent,
           screen: const CoachDetailsListScreen(),
         ),
         _InfoItem(
           icon: Icons.verified_rounded,
-          title: "Coach Status",
-          subtitle: "Manage active, inactive and pending coach status",
+          title: AppStrings.coachStatus,
+          subtitle: AppStrings.coachModuleManageCoachStatus,
           color: Colors.orange,
           screen: const CoachStatusScreen(),
         ),
@@ -134,22 +139,22 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
       return [
         _InfoItem(
           icon: Icons.groups_rounded,
-          title: "View Students by Batch",
-          subtitle: "See assigned students batch wise",
+          title: AppStrings.coachModuleViewStudentsByBatch,
+          subtitle: AppStrings.coachModuleSeeAssignedStudentsBatchWise,
           color: Colors.blueAccent,
           screen: const CoachAssignedStudentsScreen(),
         ),
         _InfoItem(
           icon: Icons.fact_check_rounded,
-          title: "Student Attendance",
-          subtitle: "View attendance summary of assigned students",
+          title: AppStrings.text("Student Attendance", "மாணவர் வருகை", "छात्र उपस्थिति"),
+          subtitle: AppStrings.coachModuleViewAttendanceSummary,
           color: Colors.green,
           screen: const CoachStudentAttendanceScreen(),
         ),
         _InfoItem(
           icon: Icons.analytics_rounded,
-          title: "Student Performance",
-          subtitle: "Check batting, bowling, fielding and fitness progress",
+          title: AppStrings.text("Student Performance", "மாணவர் செயல்திறன்", "छात्र प्रदर्शन"),
+          subtitle: AppStrings.coachModuleCheckPerformanceProgress,
           color: Colors.orange,
           screen: const CoachStudentPerformanceScreen(),
         ),
@@ -159,22 +164,22 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
     return [
       _InfoItem(
         icon: Icons.currency_rupee_rounded,
-        title: "Salary Records",
-        subtitle: "Add salary and view monthly salary records",
+        title: AppStrings.salaryRecords,
+        subtitle: AppStrings.coachModuleAddViewMonthlySalary,
         color: Colors.green,
         screen: const CoachSalaryScreen(),
       ),
       _InfoItem(
         icon: Icons.payment_rounded,
-        title: "Payment Status",
-        subtitle: "View and update paid or pending salary status",
+        title: AppStrings.paymentStatus,
+        subtitle: AppStrings.coachModuleViewUpdateSalaryStatus,
         color: Colors.orange,
         screen: const CoachPaymentStatusScreen(),
       ),
       _InfoItem(
         icon: Icons.receipt_long_rounded,
-        title: "Salary Reports",
-        subtitle: "View salary summary, analytics and report details",
+        title: AppStrings.salaryReports,
+        subtitle: AppStrings.coachModuleViewSalarySummaryAnalytics,
         color: Colors.blueAccent,
         screen: const CoachSalaryReportsScreen(),
       ),
@@ -186,9 +191,12 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
@@ -228,6 +236,8 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
             top: false,
             child: _bottomNavigation(isDark),
           ),
+            );
+          },
         );
       },
     );
@@ -251,7 +261,7 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            "COACH MODULE",
+            AppStrings.coachModuleTitle.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -565,25 +575,25 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
         items: [
           _MiniStatData(
             icon: Icons.groups_rounded,
-            label: "Coaches",
+            label: AppStrings.coaches,
             value: "12",
             color: Colors.purpleAccent,
           ),
           _MiniStatData(
             icon: Icons.verified_rounded,
-            label: "Active",
+            label: AppStrings.active,
             value: "10",
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.pending_actions_rounded,
-            label: "Pending",
+            label: AppStrings.pending,
             value: "2",
             color: Colors.orange,
           ),
           _MiniStatData(
             icon: Icons.cancel_rounded,
-            label: "Inactive",
+            label: AppStrings.inactive,
             value: "0",
             color: Colors.redAccent,
           ),
@@ -597,25 +607,25 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
         items: [
           _MiniStatData(
             icon: Icons.school_rounded,
-            label: "Students",
+            label: AppStrings.students,
             value: "45",
             color: Colors.blueAccent,
           ),
           _MiniStatData(
             icon: Icons.check_circle_rounded,
-            label: "Present",
+            label: AppStrings.present,
             value: "38",
             color: Colors.green,
           ),
           _MiniStatData(
             icon: Icons.cancel_rounded,
-            label: "Absent",
+            label: AppStrings.absent,
             value: "5",
             color: Colors.redAccent,
           ),
           _MiniStatData(
             icon: Icons.analytics_rounded,
-            label: "Avg",
+            label: AppStrings.averageShort,
             value: "86%",
             color: Colors.orange,
           ),
@@ -628,26 +638,26 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
       items: [
         _MiniStatData(
           icon: Icons.currency_rupee_rounded,
-          label: "Records",
+          label: AppStrings.records,
           value: "12",
           color: Colors.green,
         ),
         _MiniStatData(
           icon: Icons.payment_rounded,
-          label: "Paid",
+          label: AppStrings.paid,
           value: "10",
           color: Colors.blueAccent,
         ),
         _MiniStatData(
           icon: Icons.pending_rounded,
-          label: "Pending",
+          label: AppStrings.pending,
           value: "2",
           color: Colors.orange,
         ),
         _MiniStatData(
           icon: Icons.receipt_long_rounded,
-          label: "Reports",
-          value: "All",
+          label: AppStrings.reports,
+          value: AppStrings.all,
           color: Colors.purpleAccent,
         ),
       ],
@@ -725,15 +735,15 @@ class _CoachModuleScreenState extends State<CoachModuleScreen> {
     final items = [
       _BottomNavItem(
         icon: Icons.groups_rounded,
-        label: "Coach",
+        label: AppStrings.coachLabel,
       ),
       _BottomNavItem(
         icon: Icons.school_rounded,
-        label: "Students",
+        label: AppStrings.students,
       ),
       _BottomNavItem(
         icon: Icons.account_balance_wallet_rounded,
-        label: "Salary",
+        label: AppStrings.salary,
       ),
     ];
 

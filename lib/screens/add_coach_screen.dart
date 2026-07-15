@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class AddCoachScreen extends StatefulWidget {
   const AddCoachScreen({super.key});
@@ -19,16 +20,16 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
 
-  String selectedSpecialization = "Batting Coach";
+  String selectedSpecialization = AppStrings.battingCoach;
   bool isSaving = false;
 
-  final List<String> specializations = const [
-   AppStrings.battingCoach
-AppStrings.bowlingCoach
-AppStrings.fieldingCoach
-AppStrings.fitnessCoach
-AppStrings.headCoach
-AppStrings.assistantCoach
+  final List<String> specializations = [
+    AppStrings.battingCoach,
+    AppStrings.bowlingCoach,
+    AppStrings.fieldingCoach,
+    AppStrings.fitnessCoach,
+    AppStrings.headCoach,
+    AppStrings.assistantCoach,
   ];
 
   @override
@@ -78,7 +79,7 @@ AppStrings.assistantCoach
 
     if (name.isEmpty || email.isEmpty || phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(AppStrings.fillNameEmailPhone),
           backgroundColor: Colors.red,
         ),
@@ -124,7 +125,7 @@ AppStrings.assistantCoach
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(AppStrings.coachAddedSuccessfully),
           backgroundColor: Colors.green,
         ),
@@ -136,7 +137,7 @@ AppStrings.assistantCoach
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppStrings.error),
+          content: Text("${AppStrings.error}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -225,9 +226,12 @@ AppStrings.assistantCoach
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: Column(
@@ -435,9 +439,9 @@ AppStrings.assistantCoach
                           color: Colors.white,
                           strokeWidth: 2,
                         )
-                      : const Text(
+                      : Text(
                           AppStrings.saveCoach,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.6,
                           ),
@@ -446,6 +450,8 @@ AppStrings.assistantCoach
               ),
             ),
           ),
+            );
+          },
         );
       },
     );
