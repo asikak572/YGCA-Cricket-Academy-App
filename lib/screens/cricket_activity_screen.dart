@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
+
 class CricketActivityScreen extends StatelessWidget {
   const CricketActivityScreen({super.key});
 
@@ -11,56 +14,64 @@ class CricketActivityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activities = [
-      {
-        "title": "Match Practice",
-        "subtitle": "Sunday morning match simulation",
-        "date": "09 Jun 2026",
-        "icon": Icons.sports_cricket,
-        "status": "Upcoming",
-        "color": Colors.orange,
-      },
-      {
-        "title": "Fitness Drill",
-        "subtitle": "Speed, stamina and agility training",
-        "date": "10 Jun 2026",
-        "icon": Icons.fitness_center,
-        "status": "Training",
-        "color": Colors.green,
-      },
-      {
-        "title": "Video Analysis",
-        "subtitle": "Batting technique review session",
-        "date": "12 Jun 2026",
-        "icon": Icons.video_camera_back,
-        "status": "Learning",
-        "color": Colors.blue,
-      },
-      {
-        "title": "Tournament Update",
-        "subtitle": "YGCA selected for local academy league",
-        "date": "15 Jun 2026",
-        "icon": Icons.emoji_events,
-        "status": "Event",
-        "color": Colors.purple,
-      },
-      {
-        "title": "Achievement",
-        "subtitle": "Arjun scored 72 runs in practice match",
-        "date": "18 Jun 2026",
-        "icon": Icons.star,
-        "status": "Highlight",
-        "color": Colors.red,
-      },
-    ];
+    return ValueListenableBuilder<String>(
+      valueListenable: ThemeController.language,
+      builder: (context, language, _) {
+        final activities = [
+          {
+            "title": AppStrings.cricketActivityMatchPractice,
+            "subtitle": AppStrings.cricketActivityMatchPracticeSubtitle,
+            "date": "09 Jun 2026",
+            "icon": Icons.sports_cricket,
+            "statusKey": AppStrings.upcoming,
+            "status": AppStrings.upcoming,
+            "color": Colors.orange,
+          },
+          {
+            "title": AppStrings.cricketActivityFitnessDrill,
+            "subtitle": AppStrings.cricketActivityFitnessDrillSubtitle,
+            "date": "10 Jun 2026",
+            "icon": Icons.fitness_center,
+            "statusKey": "Training",
+            "status": AppStrings.training,
+            "color": Colors.green,
+          },
+          {
+            "title": AppStrings.cricketActivityVideoAnalysis,
+            "subtitle": AppStrings.cricketActivityVideoAnalysisSubtitle,
+            "date": "12 Jun 2026",
+            "icon": Icons.video_camera_back,
+            "statusKey": "Learning",
+            "status": AppStrings.cricketActivityLearning,
+            "color": Colors.blue,
+          },
+          {
+            "title": AppStrings.cricketActivityTournamentUpdate,
+            "subtitle": AppStrings.cricketActivityTournamentUpdateSubtitle,
+            "date": "15 Jun 2026",
+            "icon": Icons.emoji_events,
+            "statusKey": "Event",
+            "status": AppStrings.event,
+            "color": Colors.purple,
+          },
+          {
+            "title": AppStrings.cricketActivityAchievement,
+            "subtitle": AppStrings.cricketActivityAchievementSubtitle,
+            "date": "18 Jun 2026",
+            "icon": Icons.star,
+            "statusKey": "Highlight",
+            "status": AppStrings.cricketActivityHighlight,
+            "color": Colors.red,
+          },
+        ];
 
     final matchCount =
-        activities.where((a) => a["status"] == "Upcoming").length;
+        activities.where((a) => a["statusKey"] == AppStrings.upcoming).length;
     final trainingCount =
-        activities.where((a) => a["status"] == "Training").length;
-    final eventCount = activities.where((a) => a["status"] == "Event").length;
+        activities.where((a) => a["statusKey"] == "Training").length;
+    final eventCount = activities.where((a) => a["statusKey"] == "Event").length;
     final highlightCount =
-        activities.where((a) => a["status"] == "Highlight").length;
+        activities.where((a) => a["statusKey"] == "Highlight").length;
 
     return Scaffold(
       backgroundColor: bg,
@@ -77,7 +88,7 @@ class CricketActivityScreen extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            _sectionTitle("ACTIVITY OVERVIEW"),
+            _sectionTitle(AppStrings.cricketActivityOverview.toUpperCase()),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -91,30 +102,30 @@ class CricketActivityScreen extends StatelessWidget {
                 children: [
                   _statCard(
                     Icons.sports_cricket,
-                    "MATCHES",
+                    AppStrings.matches.toUpperCase(),
                     matchCount.toString(),
-                    "Upcoming",
+                    AppStrings.upcoming,
                     Colors.orange,
                   ),
                   _statCard(
                     Icons.fitness_center,
-                    "TRAINING",
+                    AppStrings.training.toUpperCase(),
                     trainingCount.toString(),
-                    "Drills",
+                    AppStrings.cricketActivityDrills,
                     Colors.green,
                   ),
                   _statCard(
                     Icons.emoji_events,
-                    "EVENTS",
+                    AppStrings.events.toUpperCase(),
                     eventCount.toString(),
-                    "Tournament",
+                    AppStrings.tournament,
                     Colors.purple,
                   ),
                   _statCard(
                     Icons.star,
-                    "HIGHLIGHTS",
+                    AppStrings.cricketActivityHighlights.toUpperCase(),
                     highlightCount.toString(),
-                    "Achievements",
+                    AppStrings.cricketActivityAchievements,
                     Colors.red,
                   ),
                 ],
@@ -123,7 +134,7 @@ class CricketActivityScreen extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            _sectionTitle("FEATURED ACTIVITY"),
+            _sectionTitle(AppStrings.cricketActivityFeatured.toUpperCase()),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -132,7 +143,7 @@ class CricketActivityScreen extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            _sectionTitle("RECENT & UPCOMING"),
+            _sectionTitle(AppStrings.cricketActivityRecentUpcoming.toUpperCase()),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -154,6 +165,8 @@ class CricketActivityScreen extends StatelessWidget {
           ],
         ),
       ),
+        );
+      },
     );
   }
 
@@ -171,7 +184,7 @@ class CricketActivityScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "CRICKET ACTIVITY",
+              AppStrings.cricketActivityTitle.toUpperCase(),
               style: TextStyle(
                 color: gold,
                 fontSize: 20,
@@ -251,8 +264,8 @@ class CricketActivityScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text(
-                        "ACTIVITY",
+                       Text(
+                        AppStrings.cricketActivityActivity.toUpperCase(),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 31,
@@ -261,7 +274,7 @@ class CricketActivityScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        "HUB",
+                        AppStrings.cricketActivityHub.toUpperCase(),
                         style: TextStyle(
                           color: gold,
                           fontSize: 26,
@@ -274,10 +287,10 @@ class CricketActivityScreen extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 6,
                         children: [
-                          _heroChip("Total: $total"),
-                          _heroChip("Matches: $matches"),
-                          _heroChip("Training: $training"),
-                          _heroChip("Highlights: $highlights"),
+                          _heroChip("${AppStrings.total}: $total"),
+                          _heroChip("${AppStrings.matches}: $matches"),
+                          _heroChip("${AppStrings.training}: $training"),
+                          _heroChip("${AppStrings.cricketActivityHighlights}: $highlights"),
                         ],
                       ),
                     ],
@@ -414,7 +427,7 @@ class CricketActivityScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Featured Update",
+                  AppStrings.cricketActivityFeaturedUpdate,
                   style: TextStyle(
                     color: gold,
                     fontWeight: FontWeight.bold,
@@ -422,8 +435,8 @@ class CricketActivityScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  "YGCA selected for local academy league",
+                 Text(
+                  AppStrings.cricketActivityTournamentUpdateSubtitle,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -431,8 +444,8 @@ class CricketActivityScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                const Text(
-                  "Players will receive match schedule soon.",
+                 Text(
+                  AppStrings.cricketActivityPlayersReceiveScheduleSoon,
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 12,

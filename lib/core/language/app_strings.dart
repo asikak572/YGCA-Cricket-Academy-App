@@ -2637,4 +2637,228 @@ static String get coachModuleViewSalarySummaryAnalytics => text(
   "சம்பள சுருக்கம், பகுப்பாய்வு மற்றும் அறிக்கை விவரங்களைப் பாருங்கள்",
   "वेतन सारांश, विश्लेषण और रिपोर्ट विवरण देखें",
 );
+static String get attendanceModuleTitle => text(
+  "ATTENDANCE MODULE",
+  "வருகைப் பதிவு தொகுதி",
+  "उपस्थिति मॉड्यूल",
+);
+static String get commHolidayAnnouncement => text("Holiday Announcement", "விடுமுறை அறிவிப்பு", "छुट्टी की घोषणा");
+static String get commSessionCancelled => text("Session Cancelled", "அமர்வு ரத்து செய்யப்பட்டது", "सेशन रद्द");
+static String get commSessionRescheduled => text("Session Rescheduled", "அமர்வு மறுநிர்ணயம் செய்யப்பட்டது", "सेशन पुनर्निर्धारित");
+static String get commMatchSchedule => text("Match Schedule", "போட்டி அட்டவணை", "मैच शेड्यूल");
+static String get commFeeReminder => text("Fee Reminder", "கட்டண நினைவூட்டல்", "फीस अनुस्मारक");
+static String get commTournamentUpdate => text("Tournament Update", "போட்டி தொடர் புதுப்பிப்பு", "टूर्नामेंट अपडेट");
+static String get commCampRegistration => text("Camp Registration", "முகாம் பதிவு", "कैंप पंजीकरण");
+static String get commGeneralAnnouncement => text("General Announcement", "பொது அறிவிப்பு", "सामान्य घोषणा");
+static String get commEmergencyAlert => text("Emergency Alert", "அவசர எச்சரிக்கை", "आपातकालीन चेतावनी");
+static String get commCustomMessage => text("Custom Message", "தனிப்பயன் செய்தி", "कस्टम संदेश");
+static String get commBatchWise => text("Batch Wise", "பேட்ச் வாரியாக", "बैच के अनुसार");
+static String get commSeniorBatch => text("Senior batch", "மூத்தோர் பேட்ச்", "सीनियर बैच");
+static String get commPendingApiIntegration => text("Pending API Integration", "API இணைப்பு நிலுவையில் உள்ளது", "API एकीकरण लंबित");
+static String get commNoSendAccess => text("You do not have access to send communication", "தகவல் அனுப்ப உங்களுக்கு அனுமதி இல்லை", "आपको संदेश भेजने की अनुमति नहीं है");
+static String get commFillTitleAndMessage => text("Please fill title and message", "தலைப்பு மற்றும் செய்தியை நிரப்பவும்", "कृपया शीर्षक और संदेश भरें");
+static String get commSavedApiLater => text("Communication saved. SMS/WhatsApp API will be connected later.", "தகவல் சேமிக்கப்பட்டது. SMS/WhatsApp API பின்னர் இணைக்கப்படும்.", "संदेश सहेजा गया। SMS/WhatsApp API बाद में जोड़ा जाएगा।");
+static String get commRecentCommunications => text("Recent Communications", "சமீபத்திய தகவல்கள்", "हाल के संदेश");
+static String get commCommunication => text("Communication", "தகவல் தொடர்பு", "संचार");
+static String get commSendAcademyAlerts => text("Send academy alerts and updates", "அகாடமி எச்சரிக்கைகள் மற்றும் புதுப்பிப்புகளை அனுப்பவும்", "अकादमी अलर्ट और अपडेट भेजें");
+static String get commViewCommunicationStatus => text("View academy communication status", "அகாடமி தகவல் தொடர்பு நிலையைப் பாருங்கள்", "अकादमी संचार स्थिति देखें");
+static String get commInApp => text("In-App", "ஆப்பில்", "इन-ऐप");
+static String get commSmsLater => text("SMS Later", "SMS பின்னர்", "SMS बाद में");
+static String get commWhatsappLater => text("WhatsApp Later", "WhatsApp பின்னர்", "WhatsApp बाद में");
+static String get commMessageType => text("Message Type", "செய்தி வகை", "संदेश प्रकार");
+static String get commTargetAudience => text("Target Audience", "இலக்கு பயனர்கள்", "लक्षित दर्शक");
+static String get commSending => text("Sending...", "அனுப்பப்படுகிறது...", "भेजा जा रहा है...");
+static String get commSendCommunication => text("Send Communication", "தகவலை அனுப்பு", "संदेश भेजें");
+static String get commViewOnlyAccess => text("View Only Access", "பார்வை மட்டும் அனுமதி", "केवल देखने की अनुमति");
+static String get commOnlyAdminCoachCanSend => text("Only Admin and Coach can send academy communication.", "நிர்வாகி மற்றும் பயிற்சியாளர் மட்டுமே அகாடமி தகவலை அனுப்ப முடியும்.", "केवल एडमिन और कोच अकादमी संदेश भेज सकते हैं।");
+static String get commCurrentIntegrationInfo => text("Currently this saves communication logs and creates in-app notifications. Real SMS/WhatsApp API integration will be connected later.", "தற்போது இது தகவல் பதிவுகளை சேமித்து ஆப்பில் அறிவிப்புகளை உருவாக்குகிறது. உண்மையான SMS/WhatsApp API இணைப்பு பின்னர் சேர்க்கப்படும்.", "फिलहाल यह संदेश लॉग सहेजता है और इन-ऐप सूचनाएँ बनाता है। वास्तविक SMS/WhatsApp API बाद में जोड़ा जाएगा।");
+static String get commUnableToLoadLogs => text("Unable to load logs", "பதிவுகளை ஏற்ற முடியவில்லை", "लॉग लोड नहीं हो सके");
+static String get commNoLogsFound => text("No communication logs found", "தகவல் தொடர்பு பதிவுகள் இல்லை", "कोई संदेश लॉग नहीं मिला");
+static String get commSentMessagesAppearHere => text("Sent messages will appear here", "அனுப்பிய செய்திகள் இங்கே தோன்றும்", "भेजे गए संदेश यहाँ दिखाई देंगे");
+static String get commUntitledCommunication => text("Untitled Communication", "தலைப்பில்லா தகவல்", "बिना शीर्षक का संदेश");
+static String get parents => text(
+  "Parents",
+  "பெற்றோர்",
+  "अभिभावक",
+);
+
+static String get saved => text(
+  "Saved",
+  "சேமிக்கப்பட்டது",
+  "सहेजा गया",
+);
+
+static String get failed => text(
+  "Failed",
+  "தோல்வியடைந்தது",
+  "विफल",
+);
+
+static String get title => text(
+  "Title",
+  "தலைப்பு",
+  "शीर्षक",
+);
+
+static String get message => text(
+  "Message",
+  "செய்தி",
+  "संदेश",
+);
+// Add only missing getters inside AppStrings before the final }.
+
+static String get cricketActivityTitle => text(
+  "Cricket Activity",
+  "கிரிக்கெட் செயல்பாடுகள்",
+  "क्रिकेट गतिविधि",
+);
+
+static String get cricketActivityMatchPractice => text(
+  "Match Practice",
+  "போட்டி பயிற்சி",
+  "मैच अभ्यास",
+);
+
+static String get cricketActivityMatchPracticeSubtitle => text(
+  "Sunday morning match simulation",
+  "ஞாயிறு காலை மாதிரி போட்டி பயிற்சி",
+  "रविवार सुबह मैच सिमुलेशन",
+);
+
+static String get cricketActivityFitnessDrill => text(
+  "Fitness Drill",
+  "உடற்தகுதி பயிற்சி",
+  "फिटनेस ड्रिल",
+);
+
+static String get cricketActivityFitnessDrillSubtitle => text(
+  "Speed, stamina and agility training",
+  "வேகம், சகிப்புத்தன்மை மற்றும் சுறுசுறுப்பு பயிற்சி",
+  "गति, सहनशक्ति और फुर्ती प्रशिक्षण",
+);
+
+static String get cricketActivityVideoAnalysis => text(
+  "Video Analysis",
+  "வீடியோ பகுப்பாய்வு",
+  "वीडियो विश्लेषण",
+);
+
+static String get cricketActivityVideoAnalysisSubtitle => text(
+  "Batting technique review session",
+  "பேட்டிங் நுட்ப மதிப்பாய்வு அமர்வு",
+  "बल्लेबाजी तकनीक समीक्षा सेशन",
+);
+
+static String get cricketActivityTournamentUpdate => text(
+  "Tournament Update",
+  "போட்டி தொடர் புதுப்பிப்பு",
+  "टूर्नामेंट अपडेट",
+);
+
+static String get cricketActivityTournamentUpdateSubtitle => text(
+  "YGCA selected for local academy league",
+  "உள்ளூர் அகாடமி லீக்கிற்கு YGCA தேர்வு செய்யப்பட்டது",
+  "YGCA स्थानीय अकादमी लीग के लिए चुना गया",
+);
+
+static String get cricketActivityAchievement => text(
+  "Achievement",
+  "சாதனை",
+  "उपलब्धि",
+);
+
+static String get cricketActivityAchievementSubtitle => text(
+  "Arjun scored 72 runs in practice match",
+  "பயிற்சி போட்டியில் அர்ஜுன் 72 ரன்கள் எடுத்தார்",
+  "अर्जुन ने अभ्यास मैच में 72 रन बनाए",
+);
+
+static String get cricketActivityLearning => text(
+  "Learning",
+  "கற்றல்",
+  "सीखना",
+);
+
+static String get cricketActivityHighlight => text(
+  "Highlight",
+  "சிறப்பம்சம்",
+  "मुख्य आकर्षण",
+);
+
+static String get cricketActivityOverview => text(
+  "Activity Overview",
+  "செயல்பாட்டு சுருக்கம்",
+  "गतिविधि अवलोकन",
+);
+
+static String get cricketActivityDrills => text(
+  "Drills",
+  "பயிற்சிகள்",
+  "ड्रिल",
+);
+
+static String get cricketActivityHighlights => text(
+  "Highlights",
+  "சிறப்பம்சங்கள்",
+  "मुख्य आकर्षण",
+);
+
+static String get cricketActivityAchievements => text(
+  "Achievements",
+  "சாதனைகள்",
+  "उपलब्धियाँ",
+);
+
+static String get cricketActivityFeatured => text(
+  "Featured Activity",
+  "சிறப்பு செயல்பாடு",
+  "विशेष गतिविधि",
+);
+
+static String get cricketActivityRecentUpcoming => text(
+  "Recent & Upcoming",
+  "சமீபத்திய மற்றும் வரவிருக்கும்",
+  "हाल की और आगामी",
+);
+
+static String get cricketActivityActivity => text(
+  "Activity",
+  "செயல்பாடு",
+  "गतिविधि",
+);
+
+static String get cricketActivityHub => text(
+  "Hub",
+  "மையம்",
+  "केंद्र",
+);
+
+static String get cricketActivityFeaturedUpdate => text(
+  "Featured Update",
+  "சிறப்பு புதுப்பிப்பு",
+  "विशेष अपडेट",
+);
+
+static String get cricketActivityPlayersReceiveScheduleSoon => text(
+  "Players will receive match schedule soon.",
+  "வீரர்களுக்கு போட்டி அட்டவணை விரைவில் வழங்கப்படும்.",
+  "खिलाड़ियों को मैच शेड्यूल जल्द मिलेगा।",
+);
+static String get event => text(
+  "Event",
+  "நிகழ்வு",
+  "कार्यक्रम",
+);
+
+static String get events => text(
+  "Events",
+  "நிகழ்வுகள்",
+  "कार्यक्रम",
+);
+
+static String get tournament => text(
+  "Tournament",
+  "போட்டி தொடர்",
+  "टूर्नामेंट",
+);
 }

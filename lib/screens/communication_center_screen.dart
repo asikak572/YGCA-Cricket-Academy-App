@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class CommunicationCenterScreen extends StatefulWidget {
   const CommunicationCenterScreen({super.key});
@@ -107,6 +108,48 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
     return role == 'Admin' || role == 'Coach';
   }
 
+  String _messageTypeLabel(String value) {
+    switch (value) {
+      case "Holiday Announcement": return AppStrings.commHolidayAnnouncement;
+      case "Session Cancelled": return AppStrings.commSessionCancelled;
+      case "Session Rescheduled": return AppStrings.commSessionRescheduled;
+      case "Match Schedule": return AppStrings.commMatchSchedule;
+      case "Fee Reminder": return AppStrings.commFeeReminder;
+      case "Tournament Update": return AppStrings.commTournamentUpdate;
+      case "Camp Registration": return AppStrings.commCampRegistration;
+      case "General Announcement": return AppStrings.commGeneralAnnouncement;
+      case "Emergency Alert": return AppStrings.commEmergencyAlert;
+      case "Custom Message": return AppStrings.commCustomMessage;
+      default: return value;
+    }
+  }
+
+  String _targetLabel(String value) {
+    switch (value) {
+      case "Students": return AppStrings.students;
+      case "Parents": return AppStrings.parents;
+      case "Coaches": return AppStrings.coaches;
+      case "Batch Wise": return AppStrings.commBatchWise;
+      default: return AppStrings.all;
+    }
+  }
+
+  String _statusLabel(String value) {
+    if (value == "Pending API Integration") {
+      return AppStrings.commPendingApiIntegration;
+    }
+    if (value == "Saved") return AppStrings.saved;
+    return value;
+  }
+
+  String _dropdownItemLabel(String item) {
+    if (messageTypes.contains(item)) return _messageTypeLabel(item);
+    if (targetOptions.contains(item)) return _targetLabel(item);
+    if (item == "All") return AppStrings.all;
+    if (item == "Senior batch") return AppStrings.commSeniorBatch;
+    return item;
+  }
+
   Future<void> _loadCurrentUser() async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -147,7 +190,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No Date";
+    if (timestamp == null) return AppStrings.noDate;
 
     try {
       if (timestamp is Timestamp) {
@@ -169,7 +212,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
 
       return timestamp.toString();
     } catch (_) {
-      return "No Date";
+      return AppStrings.noDate;
     }
   }
 
@@ -195,8 +238,8 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
   Future<void> _sendCommunication() async {
     if (!_canSendCommunication) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("You do not have access to send communication"),
+        SnackBar(
+          content: Text(AppStrings.commNoSendAccess),
           backgroundColor: Colors.red,
         ),
       );
@@ -208,8 +251,8 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
 
     if (title.isEmpty || message.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fill title and message"),
+        SnackBar(
+          content: Text(AppStrings.commFillTitleAndMessage),
           backgroundColor: Colors.red,
         ),
       );
@@ -260,10 +303,8 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
       messageController.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Communication saved. SMS/WhatsApp API will be connected later.",
-          ),
+        SnackBar(
+          content: Text(AppStrings.commSavedApiLater),
           backgroundColor: Colors.green,
         ),
       );
@@ -272,7 +313,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Failed: $e"),
+          content: Text("${AppStrings.failed}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -286,9 +327,12 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -311,13 +355,15 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                         const SizedBox(height: 16),
                         _infoCard(isDark),
                         const SizedBox(height: 18),
-                        _sectionTitle("RECENT COMMUNICATIONS", isDark),
+                        _sectionTitle(AppStrings.commRecentCommunications.toUpperCase(), isDark),
                         _recentLogs(isDark),
                         const SizedBox(height: 30),
                       ],
                     ),
                   ),
           ),
+            );
+          },
         );
       },
     );
@@ -346,7 +392,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "COMMUNICATION",
+                  AppStrings.commCommunication.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -358,8 +404,8 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                 ),
                 Text(
                   _canSendCommunication
-                      ? "Send academy alerts and updates"
-                      : "View academy communication status",
+                      ? AppStrings.commSendAcademyAlerts
+                      : AppStrings.commViewCommunicationStatus,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -512,8 +558,8 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "COMMUNICATION",
+                           Text(
+                            AppStrings.commCommunication.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 26,
@@ -522,7 +568,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                             ),
                           ),
                           Text(
-                            "CENTER",
+                            AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
                               fontSize: 24,
@@ -535,9 +581,9 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                             spacing: 8,
                             runSpacing: 6,
                             children: [
-                              _heroChip("In-App"),
-                              _heroChip("SMS Later"),
-                              _heroChip("WhatsApp Later"),
+                              _heroChip(AppStrings.commInApp),
+                              _heroChip(AppStrings.commSmsLater),
+                              _heroChip(AppStrings.commWhatsappLater),
                             ],
                           ),
                         ],
@@ -627,7 +673,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
           children: [
             _dropdown(
               isDark: isDark,
-              label: "Message Type",
+              label: AppStrings.commMessageType,
               value: selectedType,
               items: messageTypes,
               onChanged: (value) {
@@ -638,7 +684,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
             const SizedBox(height: 10),
             _dropdown(
               isDark: isDark,
-              label: "Target Audience",
+              label: AppStrings.commTargetAudience,
               value: selectedTarget,
               items: targetOptions,
               onChanged: (value) {
@@ -650,7 +696,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
               const SizedBox(height: 10),
               _dropdown(
                 isDark: isDark,
-                label: "Select Batch",
+                label: AppStrings.selectBatch,
                 value: selectedBatch,
                 items: batchOptions,
                 onChanged: (value) {
@@ -662,13 +708,13 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
             const SizedBox(height: 10),
             _inputField(
               isDark: isDark,
-              label: "Title",
+              label: AppStrings.title,
               controller: titleController,
             ),
             const SizedBox(height: 10),
             _inputField(
               isDark: isDark,
-              label: "Message",
+              label: AppStrings.message,
               controller: messageController,
               maxLines: 4,
             ),
@@ -696,7 +742,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                       )
                     : const Icon(Icons.send_rounded),
                 label: Text(
-                  isSending ? "SENDING..." : "SEND COMMUNICATION",
+                  isSending ? AppStrings.commSending.toUpperCase() : AppStrings.commSendCommunication.toUpperCase(),
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
               ),
@@ -727,7 +773,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              "View Only Access",
+              AppStrings.commViewOnlyAccess,
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontWeight: FontWeight.w900,
@@ -735,7 +781,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
             ),
             const SizedBox(height: 5),
             Text(
-              "Only Admin and Coach can send academy communication.",
+              AppStrings.commOnlyAdminCoachCanSend,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _secondaryText(isDark),
@@ -769,7 +815,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                "Currently this saves communication logs and creates in-app notifications. Real SMS/WhatsApp API integration will be connected later.",
+                AppStrings.commCurrentIntegrationInfo,
                 style: TextStyle(
                   color: isDark ? Colors.white70 : const Color(0xFF78350F),
                   fontSize: 12,
@@ -795,7 +841,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
           if (snapshot.hasError) {
             return _emptyCard(
               isDark,
-              "Unable to load logs",
+              AppStrings.commUnableToLoadLogs,
               snapshot.error.toString(),
               Icons.error_outline_rounded,
             );
@@ -813,8 +859,8 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
           if (logs.isEmpty) {
             return _emptyCard(
               isDark,
-              "No communication logs found",
-              "Sent messages will appear here",
+              AppStrings.commNoLogsFound,
+              AppStrings.commSentMessagesAppearHere,
               Icons.campaign_outlined,
             );
           }
@@ -824,7 +870,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
               final data = doc.data();
 
               final title = _text(data['title']).isEmpty
-                  ? 'Untitled Communication'
+                  ? AppStrings.commUntitledCommunication
                   : _text(data['title']);
 
               final message = _text(data['message']);
@@ -833,7 +879,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                   : _text(data['target']);
               final type = _text(data['type']);
               final status = _text(data['status']).isEmpty
-                  ? 'Saved'
+                  ? AppStrings.saved
                   : _text(data['status']);
               final date = _formatDate(data['createdAt']);
 
@@ -928,13 +974,13 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                     _chip(
                       isDark: isDark,
                       icon: Icons.category_rounded,
-                      text: type.isEmpty ? "Message" : type,
+                      text: type.isEmpty ? AppStrings.message : _messageTypeLabel(type),
                       color: Colors.blueAccent,
                     ),
                     _chip(
                       isDark: isDark,
                       icon: Icons.group_rounded,
-                      text: target.isEmpty ? "All" : target,
+                      text: target.isEmpty ? AppStrings.all : _targetLabel(target),
                       color: Colors.green,
                     ),
                     _chip(
@@ -988,7 +1034,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
             (item) => DropdownMenuItem<String>(
               value: item,
               child: Text(
-                item,
+                _dropdownItemLabel(item),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -1072,7 +1118,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
         border: Border.all(color: Colors.orange.withOpacity(0.25)),
       ),
       child: Text(
-        status,
+        _statusLabel(status),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,

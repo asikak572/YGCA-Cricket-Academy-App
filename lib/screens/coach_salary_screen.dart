@@ -353,7 +353,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                                     ? _text(data['coachName'])
                                     : _text(data['email']).isNotEmpty
                                         ? _text(data['email'])
-                                        : 'Coach';
+                                        : AppStrings.coachLabel;
 
                             final coachEmail = _text(data['email']);
 
@@ -388,7 +388,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                               selectedCoachUid = selectedDoc.id;
                               selectedCoachEmail = coachEmail;
                               coachNameController.text = coachName;
-                              roleController.text = "Coach";
+                              roleController.text = AppStrings.coachLabel;
                             });
                           },
                         ),
@@ -430,11 +430,14 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                         borderSide: BorderSide(color: isDark ? red : maroon),
                       ),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: "Paid", child: Text("Paid")),
+                    items: [
+                      DropdownMenuItem(
+                        value: "Paid",
+                        child: Text(AppStrings.paid),
+                      ),
                       DropdownMenuItem(
                         value: "Pending",
-                        child: Text("Pending"),
+                        child: Text(AppStrings.pending),
                       ),
                     ],
                     onChanged: (value) {
@@ -577,7 +580,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
-          backgroundColor: _bg(isDark),
+              backgroundColor: _bg(isDark),
           floatingActionButton: _isAdmin
               ? FloatingActionButton.extended(
                   backgroundColor: isDark ? red : maroon,
@@ -770,7 +773,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                       );
                     },
                   ),
-          ),
+              ),
             );
           },
         );
