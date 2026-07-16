@@ -21,7 +21,6 @@ import 'screens/add_student_screen.dart';
 
 import 'screens/attendance_screen.dart';
 import 'screens/attendance_history_screen.dart';
-import 'screens/student_attendance_module_screen.dart';
 
 import 'screens/fee_management_screen.dart';
 import 'screens/notification_screen.dart';
@@ -39,35 +38,53 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  double _getSafeTextScale({
+    required BuildContext context,
+    required bool largeTextMode,
+  }) {
+    final systemScale = MediaQuery.textScalerOf(context).scale(1);
+
+    if (!largeTextMode) {
+      return systemScale.clamp(0.95, 1.0).toDouble();
+    }
+
+    return systemScale.clamp(1.05, 1.12).toDouble();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
-      builder: (context, themeMode, _) {
+      builder: (context, themeMode, child) {
         return ValueListenableBuilder<String>(
           valueListenable: ThemeController.language,
-          builder: (context, language, __) {
+          builder: (context, language, child) {
             return ValueListenableBuilder<bool>(
               valueListenable: ThemeController.largeTextMode,
-              builder: (context, largeText, ___) {
+              builder: (context, largeTextMode, child) {
                 return MaterialApp(
                   debugShowCheckedModeBanner: false,
                   title: 'YGCA Management System',
 
+                  theme: YGCATheme.lightTheme,
+                  darkTheme: YGCATheme.darkTheme,
+                  themeMode: themeMode,
+
                   builder: (context, child) {
+                    final mediaQuery = MediaQuery.of(context);
+
+                    final safeScale = _getSafeTextScale(
+                      context: context,
+                      largeTextMode: largeTextMode,
+                    );
+
                     return MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        textScaler: TextScaler.linear(
-                          largeText ? 1.15 : 1.0,
-                        ),
+                      data: mediaQuery.copyWith(
+                        textScaler: TextScaler.linear(safeScale),
                       ),
                       child: child ?? const SizedBox.shrink(),
                     );
                   },
-
-                  theme: YGCATheme.lightTheme,
-                  darkTheme: YGCATheme.darkTheme,
-                  themeMode: themeMode,
 
                   home: const InitialSplashScreen(),
 
@@ -81,17 +98,24 @@ class MyApp extends StatelessWidget {
                     '/parent': (context) => const ParentDashboard(),
                     '/student': (context) => const StudentDashboard(),
 
-                    '/student-list': (context) => const StudentListScreen(),
-                    '/add-student': (context) => const AddStudentScreen(),
+                    '/student-list': (context) =>
+                        const StudentListScreen(),
+
+                    '/add-student': (context) =>
+                        const AddStudentScreen(),
 
                     '/mark-attendance': (context) =>
                         const AttendanceScreen(),
+
                     '/attendance-history': (context) =>
                         const AttendanceHistoryScreen(),
+
                     '/attendance': (context) =>
                         const AttendanceHistoryScreen(),
 
-                    '/fees': (context) => const FeeManagementScreen(),
+                    '/fees': (context) =>
+                        const FeeManagementScreen(),
+
                     '/notifications': (context) =>
                         const NotificationScreen(),
                   },
