@@ -135,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context, mode, _) {
         return ValueListenableBuilder<String>(
           valueListenable: ThemeController.language,
-          builder: (context, language, __) {
+          builder: (context, language, _) {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
@@ -187,8 +187,10 @@ class _LoginScreenState extends State<LoginScreen> {
     required bool isSmall,
   }) {
     return Container(
-      height: isSmall ? height * 0.34 : height * 0.37,
-      width: double.infinity,
+  width: double.infinity,
+  constraints: BoxConstraints(
+    minHeight: isSmall ? 330 : 350,
+  ),
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
@@ -258,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     fit: BoxFit.contain,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 30),
                 Text(
                   AppStrings.loginWelcomeBack.toUpperCase(),
                   style: TextStyle(
@@ -270,8 +272,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  AppStrings.loginTitle.toUpperCase(),
-                  style: TextStyle(
+  AppStrings.loginTitle.toUpperCase(),
+  maxLines: 2,
+  softWrap: true,
+  overflow: TextOverflow.visible,
+  style: TextStyle(
                     color: Colors.white,
                     fontSize: isSmall ? 34 : 40,
                     fontWeight: FontWeight.w900,
@@ -279,8 +284,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 Text(
-                  AppStrings.loginToContinue.toUpperCase(),
-                  style: TextStyle(
+  AppStrings.loginToContinue.toUpperCase(),
+  maxLines: 2,
+  softWrap: true,
+  overflow: TextOverflow.visible,
+  style: TextStyle(
                     color: gold,
                     fontSize: isSmall ? 25 : 30,
                     fontWeight: FontWeight.w900,
@@ -523,62 +531,114 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _registerCard({required bool isDark}) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF111111) : const Color(0xFFFFFBF2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? gold.withOpacity(0.55) : const Color(0xFFFDE68A),
-        ),
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: isDark
+          ? const Color(0xFF111111)
+          : const Color(0xFFFFFBF2),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: isDark
+            ? gold.withOpacity(0.55)
+            : const Color(0xFFFDE68A),
       ),
-      child: Row(
-        children: [
-          Icon(Icons.verified_user_outlined, color: isDark ? gold : maroon, size: 28),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              AppStrings.loginNewToYgca,
-              style: TextStyle(
-                color: _primaryText(isDark),
-                fontWeight: FontWeight.w900,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDark ? red : maroon,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: _goToRegister,
-            child: Text(
-              AppStrings.loginRegister.toUpperCase(),
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    ),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final useColumn =
+            constraints.maxWidth < 380 ||
+            ThemeController.language.value != 'en';
 
-  Widget _footerMini(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        AppStrings.loginPassionDisciplineSuccess,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: isDark ? gold : maroon,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
+        final titleWidget = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.verified_user_outlined,
+              color: isDark ? gold : maroon,
+              size: 28,
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                AppStrings.loginNewToYgca,
+                textAlign:
+                    useColumn ? TextAlign.center : TextAlign.start,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _primaryText(isDark),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        );
+
+        final registerButton = ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isDark ? red : maroon,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 11,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: _goToRegister,
+          child: Text(
+            AppStrings.loginRegister.toUpperCase(),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+
+        if (useColumn) {
+          return Column(
+            children: [
+              titleWidget,
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: registerButton,
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: titleWidget),
+            const SizedBox(width: 10),
+            registerButton,
+          ],
+        );
+      },
+    ),
+  );
+}
+
+ Widget _footerMini(bool isDark) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(
+      AppStrings.loginPassionDisciplineSuccess,
+      textAlign: TextAlign.center,
+      maxLines: 2,
+      softWrap: true,
+      style: TextStyle(
+        color: isDark ? gold : maroon,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
       ),
-    );
-  }
+    ),
+  );
+}
 }

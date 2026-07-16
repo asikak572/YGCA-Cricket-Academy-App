@@ -358,9 +358,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _hero(BuildContext context, double h, bool isDark) {
-    return Container(
-      height: (h * 0.35).clamp(285.0, 340.0),
-      width: double.infinity,
+   return Container(
+  width: double.infinity,
+  constraints: const BoxConstraints(
+    minHeight: 360,
+  ),
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
@@ -430,8 +432,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-                const Spacer(),
-                Image.asset(
+                const SizedBox(height: 24),
+Image.asset(
                   'assets/images/ygca_logo.jpg',
                   height: 74,
                   width: 74,
@@ -439,19 +441,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  AppStrings.registerCreateYour.toUpperCase(),
-                  style: TextStyle(
+  AppStrings.registerCreateYour.toUpperCase(),
+  textAlign: TextAlign.center,
+  maxLines: 2,
+  softWrap: true,
+  overflow: TextOverflow.visible,
+  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),
                 ),
                 Text(
-                  AppStrings.registerAccount.toUpperCase(),
-                  style: TextStyle(
+  AppStrings.registerAccount.toUpperCase(),
+  textAlign: TextAlign.center,
+  maxLines: 3,
+  softWrap: true,
+  overflow: TextOverflow.visible,
+  style: TextStyle(
                     color: gold,
-                    fontSize: 34,
+                    fontSize: 30,
                     fontWeight: FontWeight.w900,
                     height: 1,
                     letterSpacing: 1,
@@ -624,36 +634,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _loginText(bool isDark) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          AppStrings.registerAlreadyHaveAccount,
-          style: TextStyle(color: _secondaryText(isDark), fontSize: 12),
+ Widget _loginText(bool isDark) {
+  return Wrap(
+    alignment: WrapAlignment.center,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: 4,
+    runSpacing: 4,
+    children: [
+      Text(
+        AppStrings.registerAlreadyHaveAccount.trim(),
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: _secondaryText(isDark),
+          fontSize: 12,
         ),
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Text(
-            AppStrings.registerLoginNow,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
+      ),
+      GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Text(
+          AppStrings.registerLoginNow,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isDark ? gold : maroon,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Widget _footerMini(bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
-        AppStrings.registerPassionDisciplineSuccess,
-        textAlign: TextAlign.center,
-        style: TextStyle(
+  AppStrings.registerPassionDisciplineSuccess,
+  textAlign: TextAlign.center,
+  maxLines: 2,
+  softWrap: true,
+  style: TextStyle(
           color: isDark ? gold : maroon,
           fontSize: 12,
           fontWeight: FontWeight.bold,
