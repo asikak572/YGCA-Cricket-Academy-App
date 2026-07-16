@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -50,14 +51,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill name, email and password")),
+        SnackBar(content: Text(AppStrings.registerFillNameEmailPassword)),
       );
       return;
     }
 
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password must be at least 6 characters")),
+        SnackBar(content: Text(AppStrings.registerPasswordMinSix)),
       );
       return;
     }
@@ -65,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (selectedRole == "Student") {
       if (age.isEmpty || phone.isEmpty || parentName.isEmpty || parentEmail.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please fill student age, phone and parent details")),
+          SnackBar(content: Text(AppStrings.registerFillStudentDetails)),
         );
         return;
       }
@@ -73,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (selectedRole == "Coach" && phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill coach phone number")),
+        SnackBar(content: Text(AppStrings.registerFillCoachPhone)),
       );
       return;
     }
@@ -180,10 +181,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         SnackBar(
           content: Text(
             selectedRole == "Student"
-                ? "Student registered. Waiting for admin approval."
+                ? AppStrings.registerStudentWaitingApproval
                 : selectedRole == "Coach"
-                    ? "Coach registered. Waiting for admin approval."
-                    : "Parent account registered successfully.",
+                    ? AppStrings.registerCoachWaitingApproval
+                    : AppStrings.registerParentSuccess,
           ),
           backgroundColor: Colors.green,
         ),
@@ -191,14 +192,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      String message = "Registration failed";
+      String message = AppStrings.registerFailed;
 
       if (e.code == 'email-already-in-use') {
-        message = "This email is already registered";
+        message = AppStrings.registerEmailAlreadyUsed;
       } else if (e.code == 'weak-password') {
-        message = "Password is too weak";
+        message = AppStrings.registerWeakPassword;
       } else if (e.code == 'invalid-email') {
-        message = "Invalid email address";
+        message = AppStrings.registerInvalidEmail;
       }
 
       if (!mounted) return;
@@ -210,7 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Something went wrong: $e"), backgroundColor: Colors.red),
+        SnackBar(content: Text("${AppStrings.somethingWentWrong}: $e"), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -234,10 +235,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
-        final h = MediaQuery.of(context).size.height;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
+            final h = MediaQuery.of(context).size.height;
 
-        return Scaffold(
+            return Scaffold(
           resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
@@ -253,14 +257,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         _input(
                           isDark: isDark,
                           icon: Icons.person_outline,
-                          label: "Full Name",
+                          label: AppStrings.fullName,
                           controller: nameController,
                         ),
                         const SizedBox(height: 12),
                         _input(
                           isDark: isDark,
                           icon: Icons.mail_outline,
-                          label: "Email Address",
+                          label: AppStrings.registerEmailAddress,
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
                         ),
@@ -268,7 +272,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         _input(
                           isDark: isDark,
                           icon: Icons.lock_outline,
-                          label: "Password",
+                          label: AppStrings.registerPassword,
                           controller: passwordController,
                           obscureText: obscurePassword,
                           suffix: IconButton(
@@ -294,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _input(
                             isDark: isDark,
                             icon: Icons.cake_outlined,
-                            label: "Student Age",
+                            label: AppStrings.registerStudentAge,
                             controller: ageController,
                             keyboardType: TextInputType.number,
                           ),
@@ -302,7 +306,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _input(
                             isDark: isDark,
                             icon: Icons.phone_outlined,
-                            label: "Phone Number",
+                            label: AppStrings.phoneNumber,
                             controller: phoneController,
                             keyboardType: TextInputType.phone,
                           ),
@@ -310,14 +314,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _input(
                             isDark: isDark,
                             icon: Icons.family_restroom,
-                            label: "Parent Name",
+                            label: AppStrings.parentName,
                             controller: parentNameController,
                           ),
                           const SizedBox(height: 12),
                           _input(
                             isDark: isDark,
                             icon: Icons.email_outlined,
-                            label: "Parent Email",
+                            label: AppStrings.parentEmail,
                             controller: parentEmailController,
                             keyboardType: TextInputType.emailAddress,
                           ),
@@ -327,7 +331,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _input(
                             isDark: isDark,
                             icon: Icons.phone_outlined,
-                            label: "Phone Number",
+                            label: AppStrings.phoneNumber,
                             controller: phoneController,
                             keyboardType: TextInputType.phone,
                           ),
@@ -346,6 +350,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -353,7 +359,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _hero(BuildContext context, double h, bool isDark) {
     return Container(
-      height: h * 0.31,
+      height: (h * 0.35).clamp(285.0, 340.0),
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
@@ -432,8 +438,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  "CREATE YOUR",
+                Text(
+                  AppStrings.registerCreateYour.toUpperCase(),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -442,7 +448,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 Text(
-                  "ACCOUNT",
+                  AppStrings.registerAccount.toUpperCase(),
                   style: TextStyle(
                     color: gold,
                     fontSize: 34,
@@ -452,8 +458,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 5),
-                const Text(
-                  "Join YGCA and start your journey",
+                Text(
+                  AppStrings.registerJoinJourney,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   style: TextStyle(
@@ -525,7 +531,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         fontWeight: FontWeight.w700,
       ),
       decoration: InputDecoration(
-        labelText: "Select Role",
+        labelText: AppStrings.registerSelectRole,
         labelStyle: TextStyle(
           color: _secondaryText(isDark),
           fontWeight: FontWeight.w700,
@@ -543,10 +549,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderSide: BorderSide(color: _border(isDark)),
         ),
       ),
-      items: const [
-        DropdownMenuItem(value: "Student", child: Text("Student")),
-        DropdownMenuItem(value: "Coach", child: Text("Coach")),
-        DropdownMenuItem(value: "Parent", child: Text("Parent")),
+      items: [
+        DropdownMenuItem(value: "Student", child: Text(AppStrings.student)),
+        DropdownMenuItem(value: "Coach", child: Text(AppStrings.registerCoach)),
+        DropdownMenuItem(value: "Parent", child: Text(AppStrings.parent)),
       ],
       onChanged: isLoading
           ? null
@@ -559,8 +565,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _approvalNoteCard(bool isDark) {
     final message = selectedRole == "Coach"
-        ? "Coach account will be sent to admin approval. Admin will assign batch before dashboard access."
-        : "Student account will be sent to admin approval. Admin will assign batch and roll number.";
+        ? AppStrings.registerCoachApprovalNote
+        : AppStrings.registerStudentApprovalNote;
 
     return Container(
       width: double.infinity,
@@ -606,8 +612,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         icon: isLoading ? const SizedBox() : const Icon(Icons.person_add),
         label: isLoading
             ? CircularProgressIndicator(color: isDark ? Colors.white : gold, strokeWidth: 2)
-            : const Text(
-                "REGISTER ACCOUNT",
+            : Text(
+                  AppStrings.registerAccountButton.toUpperCase(),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
@@ -623,13 +629,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "Already have an account? ",
+          AppStrings.registerAlreadyHaveAccount,
           style: TextStyle(color: _secondaryText(isDark), fontSize: 12),
         ),
         GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Text(
-            "Login Now",
+            AppStrings.registerLoginNow,
             style: TextStyle(
               color: isDark ? gold : maroon,
               fontSize: 12,
@@ -645,7 +651,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
-        "♥ Passion  •  ★ Discipline  •  🏆 Success",
+        AppStrings.registerPassionDisciplineSuccess,
         textAlign: TextAlign.center,
         style: TextStyle(
           color: isDark ? gold : maroon,

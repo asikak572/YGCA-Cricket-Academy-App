@@ -148,32 +148,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 constraints: BoxConstraints(
                   minHeight: size.height - MediaQuery.of(context).padding.top,
                 ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      _hero(isDark: isDark, height: size.height, isSmall: isSmall),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            isSmall ? 16 : 22,
-                            18,
-                            isSmall ? 16 : 22,
-                            8,
-                          ),
-                          child: Column(
-                            children: [
-                              _loginPanel(isDark: isDark),
-                              const SizedBox(height: 14),
-                              _registerCard(isDark: isDark),
-                              const Spacer(),
-                              _footerMini(isDark),
-                              const SizedBox(height: 10),
-                            ],
-                          ),
-                        ),
+                child: Column(
+                  children: [
+                    _hero(isDark: isDark, height: size.height, isSmall: isSmall),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        isSmall ? 16 : 22,
+                        18,
+                        isSmall ? 16 : 22,
+                        14,
                       ),
-                    ],
-                  ),
+                      child: Column(
+                        children: [
+                          _loginPanel(isDark: isDark),
+                          const SizedBox(height: 14),
+                          _registerCard(isDark: isDark),
+                          const SizedBox(height: 16),
+                          _footerMini(isDark),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
