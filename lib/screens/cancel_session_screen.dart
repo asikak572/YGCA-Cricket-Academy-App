@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 
 class CancelSessionScreen extends StatefulWidget {
   const CancelSessionScreen({super.key});
@@ -721,7 +722,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
               style: TextStyle(
                 color: selected ? Colors.white : _primaryText(isDark),
                 fontWeight: FontWeight.w900,
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
               ),
             ),
           ],
@@ -916,7 +917,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 18,
+                    fontSize: ResponsiveText.heading(context),
                     fontWeight: FontWeight.w900,
                       letterSpacing: 1,
                     ),
@@ -928,7 +929,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1067,8 +1068,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
+                            fontSize: ResponsiveText.statLabel(context),
+                            fontWeight: FontWeight.w700,
                             letterSpacing: 1,
                           ),
                         ),
@@ -1077,8 +1078,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w900,
+                            fontSize: ResponsiveText.hero(context),
+                            fontWeight: FontWeight.w700,
                             height: 1,
                           ),
                         ),
@@ -1087,8 +1088,8 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
+                            fontSize: ResponsiveText.heroSubtitle(context),
+                            fontWeight: FontWeight.w700,
                             height: 1,
                           ),
                         ),
@@ -1149,9 +1150,9 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
+        style: TextStyle(
           color: gold,
-          fontSize: 11,
+          fontSize: ResponsiveText.small(context),
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -1179,7 +1180,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             child: Text(
               AppStrings.cancelSessionWarning,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
                 height: 1.35,
                 color: isDark ? Colors.red.shade200 : Colors.red,
                 fontWeight: FontWeight.w700,
@@ -1258,7 +1259,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                 softWrap: false,
                 style: TextStyle(
                   color: isDark ? Colors.white : maroon,
-                  fontSize: 17,
+                  fontSize: ResponsiveText.title(context),
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
                 ),
@@ -1329,7 +1330,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                    fontSize: ResponsiveText.cardTitle(context),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1337,7 +1338,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                   isStudent ? "${AppStrings.individual} • $batch" : AppStrings.fullBatch,
                   style: TextStyle(
                     color: isDark ? gold : maroon,
-                    fontSize: 12,
+                    fontSize: ResponsiveText.bodySmall(context),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -1346,7 +1347,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
                   time.isEmpty ? date : "$date • $time",
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 12,
+                    fontSize: ResponsiveText.bodySmall(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1397,7 +1398,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
-                fontSize: 11,
+                fontSize: ResponsiveText.small(context),
               ),
             ),
           ),
@@ -1470,7 +1471,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _secondaryText(isDark),
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
                 height: 1.35,
                 fontWeight: FontWeight.w600,
               ),

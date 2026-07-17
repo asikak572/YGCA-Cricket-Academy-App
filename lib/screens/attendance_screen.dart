@@ -3,8 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
-import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
 import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_spacing.dart';
+import '../core/responsive/responsive_radius.dart';
+import '../core/responsive/responsive_text.dart';
+
 import 'notification_service.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -195,8 +199,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   ) async {
     if (selectedBatch.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppStrings.noAssignedSessionFound),
+        const SnackBar(
+          content: Text("No assigned session found"),
           backgroundColor: Colors.red,
         ),
       );
@@ -205,7 +209,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     if (students.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.noStudentsInSession)),
+        const SnackBar(content: Text("No students found in this session")),
       );
       return;
     }
@@ -280,8 +284,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppStrings.attendanceSaved),
+        const SnackBar(
+          content: Text("Attendance saved successfully"),
           backgroundColor: Colors.green,
         ),
       );
@@ -290,7 +294,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("${AppStrings.errorSavingAttendance}: $e"),
+          content: Text("Error saving attendance: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -318,183 +322,182 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        return ValueListenableBuilder<String>(
-          valueListenable: ThemeController.language,
-          builder: (context, language, __) {
-            final isDark = mode == ThemeMode.dark;
+        final isDark = mode == ThemeMode.dark;
 
-            return Scaffold(
+        return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
-            child: loadingUser
-                ? Column(
-                    children: [
-                      _topHeader(context, isDark),
-                      const Expanded(
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    ],
-                  )
-                : availableBatches.isEmpty
-                    ? Column(
-                        children: [
-                          _topHeader(context, isDark),
-                          Expanded(
-                            child: _noAccessState(isDark),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        children: [
-                          _topHeader(context, isDark),
-                          _batchSelector(isDark),
-                          Expanded(
-                            child: StreamBuilder<
-                                QuerySnapshot<Map<String, dynamic>>>(
-                              stream: _studentsStream(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasError) {
-                                  return Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(18),
-                                      child: Text(
-                                        "Error loading students:\n${snapshot.error}",
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          color: Colors.redAccent,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-
-                                final students = snapshot.data?.docs ?? [];
-
-                                if (students.isEmpty) {
-                                  return _emptyState(isDark);
-                                }
-
-                                int presentCount = 0;
-                                int absentCount = 0;
-
-                                for (final student in students) {
-                                  attendanceStatus.putIfAbsent(
-                                    student.id,
-                                    () => true,
-                                  );
-
-                                  if (attendanceStatus[student.id] == true) {
-                                    presentCount++;
-                                  } else {
-                                    absentCount++;
-                                  }
-                                }
-
-                                return Column(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: _summaryCard(
-                                              isDark: isDark,
-                                              title: AppStrings.students,
-                                              value:
-                                                  students.length.toString(),
-                                              icon: Icons.groups_rounded,
-                                              color: Colors.blueAccent,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: ResponsiveHelper.maxContentWidth(context),
+                    ),
+                    child: loadingUser
+                        ? Column(
+                            children: [
+                              _topHeader(context, isDark),
+                              const Expanded(
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                            ],
+                          )
+                        : availableBatches.isEmpty
+                            ? Column(
+                                children: [
+                                  _topHeader(context, isDark),
+                                  Expanded(
+                                    child: _noAccessState(isDark),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                children: [
+                                  _topHeader(context, isDark),
+                                  _batchSelector(isDark),
+                                  Expanded(
+                                    child: StreamBuilder<
+                                        QuerySnapshot<Map<String, dynamic>>>(
+                                      stream: _studentsStream(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasError) {
+                                          return Center(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(
+                                                ResponsiveSpacing.medium(
+                                                  context,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                "Error loading students:\n${snapshot.error}",
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  color: Colors.redAccent,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: _summaryCard(
-                                              isDark: isDark,
-                                              title: AppStrings.present,
-                                              value: presentCount.toString(),
-                                              icon:
-                                                  Icons.check_circle_rounded,
-                                              color: Colors.green,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: _summaryCard(
-                                              isDark: isDark,
-                                              title: AppStrings.absent,
-                                              value: absentCount.toString(),
-                                              icon: Icons.cancel_rounded,
-                                              color: Colors.redAccent,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Expanded(
-                                      child: ListView.builder(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                        ),
-                                        itemCount: students.length,
-                                        itemBuilder: (context, index) {
-                                          final student = students[index];
-                                          final data = student.data();
-
-                                          final name =
-                                              data['name']?.toString() ??
-                                                  'No Name';
-                                          final attendance =
-                                              data['attendance']?.toString() ??
-                                                  '0%';
-                                          final rollNo =
-                                              data['rollNo']?.toString() ??
-                                                  '#YGCA';
-                                          final isPresent =
-                                              attendanceStatus[student.id] ??
-                                                  true;
-
-                                          final initials = name
-                                              .split(" ")
-                                              .where((e) => e.isNotEmpty)
-                                              .map((e) => e[0])
-                                              .take(2)
-                                              .join()
-                                              .toUpperCase();
-
-                                          return _studentAttendanceCard(
-                                            isDark: isDark,
-                                            studentId: student.id,
-                                            name: name,
-                                            rollNo: rollNo,
-                                            attendance: attendance,
-                                            initials: initials,
-                                            isPresent: isPresent,
                                           );
-                                        },
-                                      ),
+                                        }
+
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return const Center(
+                                            child: CircularProgressIndicator(),
+                                          );
+                                        }
+
+                                        final students = snapshot.data?.docs ?? [];
+
+                                        if (students.isEmpty) {
+                                          return _emptyState(isDark);
+                                        }
+
+                                        int presentCount = 0;
+                                        int absentCount = 0;
+
+                                        for (final student in students) {
+                                          attendanceStatus.putIfAbsent(
+                                            student.id,
+                                            () => true,
+                                          );
+
+                                          if (attendanceStatus[student.id] ==
+                                              true) {
+                                            presentCount++;
+                                          } else {
+                                            absentCount++;
+                                          }
+                                        }
+
+                                        return Column(
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal:
+                                                    ResponsivePadding.horizontal(
+                                                  context,
+                                                ),
+                                              ),
+                                              child: _summaryCardsRow(
+                                                isDark: isDark,
+                                                total: students.length,
+                                                present: presentCount,
+                                                absent: absentCount,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              height:
+                                                  ResponsiveSpacing.medium(
+                                                context,
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: ListView.builder(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal:
+                                                      ResponsivePadding
+                                                          .horizontal(context),
+                                                ),
+                                                itemCount: students.length,
+                                                itemBuilder: (context, index) {
+                                                  final student =
+                                                      students[index];
+                                                  final data = student.data();
+
+                                                  final name = data['name']
+                                                          ?.toString() ??
+                                                      'No Name';
+                                                  final attendance =
+                                                      data['attendance']
+                                                              ?.toString() ??
+                                                          '0%';
+                                                  final rollNo = data['rollNo']
+                                                          ?.toString() ??
+                                                      '#YGCA';
+                                                  final isPresent =
+                                                      attendanceStatus[
+                                                              student.id] ??
+                                                          true;
+
+                                                  final initials = name
+                                                      .split(" ")
+                                                      .where(
+                                                        (e) => e.isNotEmpty,
+                                                      )
+                                                      .map((e) => e[0])
+                                                      .take(2)
+                                                      .join()
+                                                      .toUpperCase();
+
+                                                  return _studentAttendanceCard(
+                                                    isDark: isDark,
+                                                    studentId: student.id,
+                                                    name: name,
+                                                    rollNo: rollNo,
+                                                    attendance: attendance,
+                                                    initials: initials,
+                                                    isPresent: isPresent,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            _saveButton(isDark, students),
+                                          ],
+                                        );
+                                      },
                                     ),
-                                    _saveButton(isDark, students),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+                                  ),
+                                ],
+                              ),
+                  ),
+                );
+              },
+            ),
           ),
-            );
-          },
         );
       },
     );
@@ -503,8 +506,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _topHeader(BuildContext context, bool isDark) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context) - 2,
+        12,
+        ResponsivePadding.horizontal(context) - 2,
+        10,
+      ),
+      padding: EdgeInsets.all(ResponsiveSpacing.medium(context)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -521,7 +529,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.large(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.40) : gold.withOpacity(0.8),
         ),
@@ -542,8 +550,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           const SizedBox(width: 12),
           Image.asset(
             'assets/images/ygca_logo.jpg',
-            width: 52,
-            height: 52,
+            width: ResponsiveHelper.isMobile(context) ? 48 : 56,
+            height: ResponsiveHelper.isMobile(context) ? 48 : 56,
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 12),
@@ -552,24 +560,24 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppStrings.markAttendanceTitle,
+                  "MARK ATTENDANCE",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: gold,
-                    fontSize: 17,
+                    fontSize: ResponsiveText.body(context),
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  AppStrings.attendanceSubtitle,
+                  "Weekly assigned session attendance",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -582,9 +590,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               final dark = mode == ThemeMode.dark;
 
               return _circleHeaderButton(
-                icon: dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 onTap: ThemeController.toggleTheme,
               );
             },
@@ -598,12 +604,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final size = ResponsiveHelper.isMobile(context) ? 42.0 : 46.0;
+
     return InkWell(
       borderRadius: BorderRadius.circular(50),
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.12),
           shape: BoxShape.circle,
@@ -612,7 +620,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         child: Icon(
           icon,
           color: Colors.white,
-          size: 21,
+          size: ResponsiveHelper.isMobile(context) ? 21 : 23,
         ),
       ),
     );
@@ -622,11 +630,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final isCoach = role == 'Coach';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      padding: const EdgeInsets.all(15),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        0,
+        ResponsivePadding.horizontal(context),
+        ResponsiveSpacing.medium(context),
+      ),
+      padding: EdgeInsets.all(ResponsiveSpacing.medium(context)),
       decoration: BoxDecoration(
         color: _card(isDark),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.28) : gold.withOpacity(0.65),
         ),
@@ -646,26 +659,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           Row(
             children: [
               CircleAvatar(
-                radius: 17,
+                radius: ResponsiveHelper.isMobile(context) ? 17 : 20,
                 backgroundColor: red.withOpacity(0.16),
                 child: Icon(
                   Icons.groups_rounded,
                   color: isDark ? gold : maroon,
-                  size: 18,
+                  size: ResponsiveHelper.isMobile(context) ? 18 : 21,
                 ),
               ),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
                   isCoach
-                      ? AppStrings.currentWeekAssignedSession
-                      : AppStrings.selectTrainingSession,
+                      ? "Current Week Assigned Session"
+                      : "Select Training Session",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
-                    fontSize: 14,
+                    fontSize: ResponsiveText.body(context),
                   ),
                 ),
               ),
@@ -682,8 +695,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       color: Colors.blue.withOpacity(0.10),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      AppStrings.refresh,
+                    child: const Text(
+                      "Refresh",
                       style: TextStyle(
                         color: Colors.blueAccent,
                         fontSize: 10,
@@ -718,7 +731,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _primaryText(isDark),
-                        fontSize: 13,
+                        fontSize: ResponsiveText.small(context) + 1,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -733,8 +746,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         color: Colors.green.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
-                        AppStrings.assigned,
+                      child: const Text(
+                        "Assigned",
                         style: TextStyle(
                           color: Colors.green,
                           fontSize: 10,
@@ -748,11 +761,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           else
             DropdownButtonFormField<String>(
               value: selectedBatch,
-              isExpanded: true,
               dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
+              isExpanded: true,
               style: TextStyle(
                 color: _primaryText(isDark),
-                fontSize: 13,
+                fontSize: ResponsiveText.small(context) + 1,
                 fontWeight: FontWeight.w700,
               ),
               decoration: InputDecoration(
@@ -804,20 +817,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _noAccessState(bool isDark) {
-    final title = role == 'Coach' ? AppStrings.noSessionAssigned : AppStrings.noAccess;
+    final title = role == 'Coach' ? "No Session Assigned" : "No Access";
     final message = role == 'Coach'
-        ? AppStrings.noSessionAssignedThisWeek
-        : AppStrings.noAccessMessage;
+        ? "Admin has not assigned any session to this coach for the current week."
+        : "Only Admin and assigned Coach can mark attendance.";
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: ResponsivePadding.screen(context),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(22),
+          padding: EdgeInsets.all(ResponsiveSpacing.large(context)),
           decoration: BoxDecoration(
             color: _card(isDark),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(ResponsiveRadius.large(context)),
             border: Border.all(color: _border(isDark)),
           ),
           child: Column(
@@ -826,7 +840,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Icon(
                 Icons.lock_outline_rounded,
                 color: isDark ? gold : maroon,
-                size: 48,
+                size: ResponsiveHelper.isMobile(context) ? 48 : 60,
               ),
               const SizedBox(height: 12),
               Text(
@@ -834,7 +848,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 17,
+                  fontSize: ResponsiveText.heading(context),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -844,7 +858,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _secondaryText(isDark),
-                  fontSize: 12,
+                  fontSize: ResponsiveText.small(context),
                   fontWeight: FontWeight.w600,
                   height: 1.4,
                 ),
@@ -858,14 +872,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Widget _emptyState(bool isDark) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: ResponsivePadding.screen(context),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(22),
+          padding: EdgeInsets.all(ResponsiveSpacing.large(context)),
           decoration: BoxDecoration(
             color: _card(isDark),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(ResponsiveRadius.large(context)),
             border: Border.all(color: _border(isDark)),
           ),
           child: Column(
@@ -874,15 +889,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Icon(
                 Icons.groups_2_outlined,
                 color: isDark ? gold : maroon,
-                size: 48,
+                size: ResponsiveHelper.isMobile(context) ? 48 : 60,
               ),
               const SizedBox(height: 12),
               Text(
-                AppStrings.noStudentsFound,
+                "No students found",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 17,
+                  fontSize: ResponsiveText.heading(context),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -892,7 +907,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _secondaryText(isDark),
-                  fontSize: 12,
+                  fontSize: ResponsiveText.small(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -900,6 +915,91 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _summaryCardsRow({
+    required bool isDark,
+    required int total,
+    required int present,
+    required int absent,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 360;
+
+        if (compact) {
+          return Column(
+            children: [
+              _summaryCard(
+                isDark: isDark,
+                title: "Students",
+                value: total.toString(),
+                icon: Icons.groups_rounded,
+                color: Colors.blueAccent,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _summaryCard(
+                      isDark: isDark,
+                      title: "Present",
+                      value: present.toString(),
+                      icon: Icons.check_circle_rounded,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _summaryCard(
+                      isDark: isDark,
+                      title: "Absent",
+                      value: absent.toString(),
+                      icon: Icons.cancel_rounded,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: _summaryCard(
+                isDark: isDark,
+                title: "Students",
+                value: total.toString(),
+                icon: Icons.groups_rounded,
+                color: Colors.blueAccent,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _summaryCard(
+                isDark: isDark,
+                title: "Present",
+                value: present.toString(),
+                icon: Icons.check_circle_rounded,
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _summaryCard(
+                isDark: isDark,
+                title: "Absent",
+                value: absent.toString(),
+                icon: Icons.cancel_rounded,
+                color: Colors.redAccent,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -911,7 +1011,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
+      padding: EdgeInsets.symmetric(
+        vertical: ResponsiveHelper.isMobile(context) ? 13 : 16,
+        horizontal: 8,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -926,7 +1029,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   color.withOpacity(0.08),
                 ],
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         border: Border.all(
           color: isDark ? red.withOpacity(0.25) : gold.withOpacity(0.6),
         ),
@@ -943,16 +1046,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: SizedBox(
-          width: 90,
+          width: ResponsiveHelper.isMobile(context) ? 90 : 120,
           child: Column(
             children: [
-              Icon(icon, color: color, size: 25),
+              Icon(
+                icon,
+                color: color,
+                size: ResponsiveHelper.isMobile(context) ? 25 : 30,
+              ),
               const SizedBox(height: 6),
               Text(
                 value,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 20,
+                  fontSize: ResponsiveText.heading(context),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -960,7 +1067,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 title,
                 style: TextStyle(
                   color: _secondaryText(isDark),
-                  fontSize: 11,
+                  fontSize: ResponsiveText.small(context),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -982,7 +1089,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(ResponsiveSpacing.small(context) + 4),
       decoration: BoxDecoration(
         color: _card(isDark),
         border: Border.all(
@@ -990,7 +1097,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ? Colors.green.withOpacity(isDark ? 0.35 : 0.25)
               : Colors.red.withOpacity(isDark ? 0.40 : 0.28),
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(ResponsiveRadius.medium(context)),
         boxShadow: [
           BoxShadow(
             color: isDark
@@ -1001,50 +1108,59 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: isPresent ? Colors.green : Colors.redAccent,
-            child: Text(
-              initials.isNotEmpty ? initials : "?",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 350;
+
+          final studentInfo = Row(
+            children: [
+              CircleAvatar(
+                radius: compact ? 23 : 25,
+                backgroundColor: isPresent ? Colors.green : Colors.redAccent,
+                child: Text(
+                  initials.isNotEmpty ? initials : "?",
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.w900,
-                    fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "$rollNo • ${AppStrings.currentAttendance}: $attendance",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontWeight: FontWeight.w900,
+                        fontSize: ResponsiveText.body(context),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "$rollNo • Current: $attendance",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _secondaryText(isDark),
+                        fontSize: ResponsiveText.small(context),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
+              ),
+            ],
+          );
+
+          final statusSwitch = Row(
+            mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment:
+                compact ? MainAxisAlignment.spaceBetween : MainAxisAlignment.end,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -1058,16 +1174,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isPresent ? AppStrings.present : AppStrings.absent,
+                  isPresent ? "Present" : "Absent",
                   style: TextStyle(
                     color: isPresent ? Colors.green : Colors.redAccent,
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
               Transform.scale(
-                scale: 0.82,
+                scale: compact ? 0.78 : 0.82,
                 child: Switch(
                   activeThumbColor: Colors.green,
                   inactiveThumbColor: Colors.redAccent,
@@ -1084,8 +1200,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
               ),
             ],
-          ),
-        ],
+          );
+
+          if (compact) {
+            return Column(
+              children: [
+                studentInfo,
+                const SizedBox(height: 8),
+                statusSwitch,
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: studentInfo),
+              const SizedBox(width: 8),
+              statusSwitch,
+            ],
+          );
+        },
       ),
     );
   }
@@ -1107,35 +1241,40 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           top: BorderSide(color: _border(isDark)),
         ),
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 54,
-        child: ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isDark ? red : maroon,
-            foregroundColor: isDark ? Colors.white : gold,
-            elevation: 8,
-            shadowColor: red.withOpacity(0.25),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: SizedBox(
+            width: double.infinity,
+            height: ResponsiveHelper.isMobile(context) ? 54 : 58,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDark ? red : maroon,
+                foregroundColor: isDark ? Colors.white : gold,
+                elevation: 8,
+                shadowColor: red.withOpacity(0.25),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: isSaving ? null : () => saveAttendance(students),
+              icon: isSaving
+                  ? const SizedBox()
+                  : const Icon(Icons.save_alt_rounded, size: 22),
+              label: isSaving
+                  ? CircularProgressIndicator(
+                      color: isDark ? Colors.white : gold,
+                      strokeWidth: 2,
+                    )
+                  : const Text(
+                      "SAVE ATTENDANCE",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
             ),
           ),
-          onPressed: isSaving ? null : () => saveAttendance(students),
-          icon: isSaving
-              ? const SizedBox()
-              : const Icon(Icons.save_alt_rounded, size: 22),
-          label: isSaving
-              ? CircularProgressIndicator(
-                  color: isDark ? Colors.white : gold,
-                  strokeWidth: 2,
-                )
-              : Text(
-                  AppStrings.saveAttendanceButton,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                  ),
-                ),
         ),
       ),
     );

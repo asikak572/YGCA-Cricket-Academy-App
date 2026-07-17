@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 import '../core/responsive/responsive_padding.dart';
 
 class MakeupSessionScreen extends StatefulWidget {
@@ -587,7 +588,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                     error,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: ResponsiveText.small(context),
                       color: _secondaryText(isDark),
                     ),
                   ),
@@ -631,7 +632,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 18,
+                    fontSize: ResponsiveText.heading(context),
                     fontWeight: FontWeight.w900,
                       letterSpacing: 1,
                     ),
@@ -643,7 +644,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -794,9 +795,10 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
+                            fontSize: ResponsiveText.statLabel(context),
+                            fontWeight: FontWeight.w500,
+                            height: 1.15,
+                            letterSpacing: 0,
                           ),
                         ),
                         Text(
@@ -804,9 +806,10 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w900,
-                            height: 1,
+                            fontSize: ResponsiveText.hero(context),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0,
+                            height: 1.15,
                           ),
                         ),
                         Text(
@@ -814,9 +817,10 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            height: 1,
+                            fontSize: ResponsiveText.heroSubtitle(context),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0,
+                            height: 1.15,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -879,7 +883,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
-          fontSize: 11,
+          fontSize: ResponsiveText.small(context),
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -910,7 +914,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
               softWrap: false,
               style: TextStyle(
                 color: isDark ? Colors.white : maroon,
-                fontSize: 17,
+                fontSize: ResponsiveText.title(context),
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1,
               ),
@@ -975,7 +979,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                 value,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 22,
+                  fontSize: ResponsiveText.statValue(context),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -983,7 +987,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                 title,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 11,
+                  fontSize: ResponsiveText.small(context),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -991,7 +995,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                 subtitle,
                 style: TextStyle(
                   color: _secondaryText(isDark),
-                  fontSize: 10,
+                  fontSize: ResponsiveText.tiny(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1035,7 +1039,7 @@ Widget _infoBanner(bool isDark) {
           child: Text(
             AppStrings.makeupInfoMessage,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: ResponsiveText.bodySmall(context),
               color: _secondaryText(isDark),
               fontWeight: FontWeight.w700,
               height: 1.45,
@@ -1120,7 +1124,7 @@ Widget _infoBanner(bool isDark) {
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontWeight: FontWeight.w900,
-                        fontSize: 15,
+                        fontSize: ResponsiveText.cardTitle(context),
                       ),
                     ),
                   ),
@@ -1266,7 +1270,7 @@ Widget _infoBanner(bool isDark) {
               label,
               style: TextStyle(
                 color: _secondaryText(isDark),
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1279,7 +1283,7 @@ Widget _infoBanner(bool isDark) {
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontWeight: FontWeight.w900,
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
               ),
             ),
           ),
@@ -1300,7 +1304,7 @@ Widget _infoBanner(bool isDark) {
         text,
         style: TextStyle(
           color: color,
-          fontSize: 11,
+          fontSize: ResponsiveText.small(context),
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -1652,7 +1656,7 @@ class _ScheduleMakeupSessionScreenState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 18,
+                    fontSize: ResponsiveText.heading(context),
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),
@@ -1663,7 +1667,7 @@ class _ScheduleMakeupSessionScreenState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1736,7 +1740,7 @@ class _ScheduleMakeupSessionScreenState
               AppStrings.selectMakeupDateTimeInfo,
               style: TextStyle(
                 color: _secondaryText(isDark),
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
                 fontWeight: FontWeight.w700,
                 height: 1.35,
               ),

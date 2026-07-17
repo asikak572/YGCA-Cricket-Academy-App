@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 
 import 'notification_service.dart';
 
@@ -748,7 +749,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 18,
+                    fontSize: ResponsiveText.heading(context),
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),
@@ -759,7 +760,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -906,8 +907,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             AppStrings.academy.toUpperCase(),
                             style: TextStyle(
                               color: gold,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
+                              fontSize: ResponsiveText.statLabel(context),
+                              fontWeight: FontWeight.w700,
                               letterSpacing: 1,
                             ),
                           ),
@@ -915,8 +916,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             AppStrings.leave.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
+                              fontSize: ResponsiveText.hero(context),
+                              fontWeight: FontWeight.w700,
                               height: 1,
                             ),
                           ),
@@ -924,8 +925,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                             AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
+                              fontSize: ResponsiveText.heroSubtitle(context),
+                              fontWeight: FontWeight.w700,
                               height: 1,
                             ),
                           ),
@@ -968,7 +969,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
-          fontSize: 11,
+          fontSize: ResponsiveText.small(context),
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -990,7 +991,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: isDark ? gold : maroon,
-                  fontSize: 15,
+                  fontSize: ResponsiveText.cardTitle(context),
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
                 ),
@@ -1070,7 +1071,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontWeight: FontWeight.w900,
-                        fontSize: 15,
+                        fontSize: ResponsiveText.cardTitle(context),
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1080,7 +1081,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _secondaryText(isDark),
-                        fontSize: 12,
+                        fontSize: ResponsiveText.bodySmall(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1184,7 +1185,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
         text,
         style: TextStyle(
           color: color,
-          fontSize: 11,
+          fontSize: ResponsiveText.small(context),
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -1201,7 +1202,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               label,
               style: TextStyle(
                 color: _secondaryText(isDark),
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1213,7 +1214,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               style: TextStyle(
                 color: _primaryText(isDark),
                 fontWeight: FontWeight.w800,
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
               ),
             ),
           ),
@@ -1811,7 +1812,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 18,
+                    fontSize: ResponsiveText.heading(context),
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),
@@ -1822,7 +1823,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1904,7 +1905,7 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
               AppStrings.leaveInfoMessage,
               style: TextStyle(
                 color: _secondaryText(isDark),
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
                 fontWeight: FontWeight.w700,
                 height: 1.35,
               ),

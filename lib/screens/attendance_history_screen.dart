@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   final List<String> allowedStudentIds;
@@ -739,7 +740,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               backgroundColor: maroon,
               child: Text(
                 studentName.isNotEmpty ? studentName[0].toUpperCase() : "?",
-                style: const TextStyle(
+                style: TextStyle(
                   color: gold,
                   fontWeight: FontWeight.bold,
                 ),
@@ -757,7 +758,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     style: TextStyle(
                       color: _primaryText(isDark),
                       fontWeight: FontWeight.w900,
-                      fontSize: 15,
+                      fontSize: ResponsiveText.body(context),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -767,7 +768,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: _secondaryText(isDark),
-                      fontSize: 12,
+                      fontSize: ResponsiveText.bodySmall(context),
                     ),
                   ),
                 ],
@@ -810,7 +811,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: _primaryText(isDark),
-                      fontSize: 18,
+                      fontSize: ResponsiveText.heading(context),
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1,
                     ),
@@ -825,7 +826,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: _secondaryText(isDark),
-                      fontSize: 11,
+                      fontSize: ResponsiveText.small(context),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -921,27 +922,27 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   children: [
                     Text(
                       role.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: gold,
-                        fontSize: 13,
+                        fontSize: ResponsiveText.bodySmall(context),
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1,
                       ),
                     ),
                     Text(
                       AppStrings.attendance.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: ResponsiveText.hero(context),
                         fontWeight: FontWeight.w900,
                         height: 1,
                       ),
                     ),
                     Text(
                       AppStrings.history.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: gold,
-                        fontSize: 24,
+                        fontSize: ResponsiveText.pageTitle(context),
                         fontWeight: FontWeight.w900,
                         height: 1,
                       ),
@@ -981,9 +982,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
+        style: TextStyle(
           color: gold,
-          fontSize: 11,
+          fontSize: ResponsiveText.small(context),
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -1005,7 +1006,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: isDark ? gold : maroon,
-                  fontSize: 15,
+                  fontSize: ResponsiveText.body(context),
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
                 ),
@@ -1055,7 +1056,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: color,
-                  fontSize: 12,
+                  fontSize: ResponsiveText.statLabel(context),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -1066,7 +1067,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             value,
             style: TextStyle(
               color: _primaryText(isDark),
-              fontSize: 24,
+              fontSize: ResponsiveText.statValue(context),
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -1120,7 +1121,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                    fontSize: ResponsiveText.body(context),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1130,7 +1131,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 12,
+                    fontSize: ResponsiveText.bodySmall(context),
                   ),
                 ),
               ],

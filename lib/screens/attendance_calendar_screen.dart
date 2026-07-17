@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 
 class AttendanceCalendarScreen extends StatefulWidget {
   final String studentId;
@@ -592,7 +593,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 18,
+                    fontSize: ResponsiveText.heading(context),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -602,7 +603,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -712,7 +713,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           ),
           style: TextStyle(
             color: _primaryText(isDark),
-            fontSize: 13,
+            fontSize: ResponsiveText.bodySmall(context),
             fontWeight: FontWeight.w700,
           ),
           items: students.map((student) {
@@ -773,10 +774,10 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
       ),
       child: Text(
         percent,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.green,
           fontWeight: FontWeight.w900,
-          fontSize: 12,
+          fontSize: ResponsiveText.statLabel(context),
         ),
       ),
     );
@@ -788,7 +789,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           backgroundColor: maroon,
           child: Text(
             initials,
-            style: const TextStyle(
+            style: TextStyle(
               color: gold,
               fontWeight: FontWeight.w900,
             ),
@@ -805,7 +806,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 17,
+                  fontSize: ResponsiveText.title(context),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -816,7 +817,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: _secondaryText(isDark),
-                  fontSize: 12,
+                  fontSize: ResponsiveText.bodySmall(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -870,43 +871,61 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [maroon, darkMaroon, Colors.black]
-              : [maroon, red.withOpacity(0.82), darkMaroon],
+  gradient: LinearGradient(
+    colors: isDark
+        ? [maroon, darkMaroon, Colors.black]
+        : [maroon, red.withOpacity(0.82), darkMaroon],
+  ),
+  borderRadius: BorderRadius.circular(20),
+  border: Border.all(
+    color: gold.withOpacity(0.75),
+    width: 1.2,
+  ),
+),
+child: Column(
+  children: [
+    Text(
+      AppStrings.firebaseAttendance,
+      style: TextStyle(
+        color: gold,
+        fontSize: ResponsiveText.heading(context),
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+    const SizedBox(height: 6),
+    Text(
+      AppStrings.studentWiseAttendanceCalendar,
+      style: TextStyle(
+        color: Colors.white70,
+        fontSize: ResponsiveText.small(context),
+      ),
+    ),
+    const SizedBox(height: 16),
+    Wrap(
+      alignment: WrapAlignment.spaceAround,
+      spacing: 16,
+      runSpacing: 12,
+      children: [
+        _MiniStat(
+          title: AppStrings.present,
+          value: present.toString(),
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.75), width: 1.2),
-      ),
-      child: Column(
-        children: [
-          Text(
-            AppStrings.firebaseAttendance,
-            style: const TextStyle(
-              color: gold,
-              fontSize: 19,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            AppStrings.studentWiseAttendanceCalendar,
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            alignment: WrapAlignment.spaceAround,
-            spacing: 16,
-            runSpacing: 12,
-            children: [
-              _MiniStat(title: AppStrings.present, value: present.toString()),
-              _MiniStat(title: AppStrings.absent, value: absent.toString()),
-              _MiniStat(title: AppStrings.leave, value: leave.toString()),
-              _MiniStat(title: AppStrings.percent, value: '$percent%'),
-            ],
-          ),
-        ],
-      ),
+        _MiniStat(
+          title: AppStrings.absent,
+          value: absent.toString(),
+        ),
+        _MiniStat(
+          title: AppStrings.leave,
+          value: leave.toString(),
+        ),
+        _MiniStat(
+          title: AppStrings.percent,
+          value: '$percent%',
+        ),
+      ],
+    ),
+  ],
+),
     );
   }
 
@@ -976,7 +995,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                   color: status.isEmpty
                       ? _secondaryText(isDark)
                       : Colors.white,
-                  fontSize: 12,
+                  fontSize: ResponsiveText.bodySmall(context),
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -1008,7 +1027,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
               AppStrings.calendarCurrentMonthNote,
               style: TextStyle(
                 color: _secondaryText(isDark),
-                fontSize: 12,
+                fontSize: ResponsiveText.bodySmall(context),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1034,18 +1053,18 @@ class _MiniStat extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: ResponsiveText.statValue(context),
             fontWeight: FontWeight.w900,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white70,
-            fontSize: 11,
+            fontSize: ResponsiveText.statLabel(context),
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -1083,7 +1102,7 @@ class _LegendItem extends StatelessWidget {
           label,
           style: TextStyle(
             color: isDark ? Colors.white70 : Colors.black87,
-            fontSize: 11,
+            fontSize: ResponsiveText.small(context),
             fontWeight: FontWeight.w700,
           ),
         ),
