@@ -796,6 +796,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           style: TextStyle(
                             color: gold,
                             fontSize: ResponsiveText.statLabel(context),
+                            fontFamily: ResponsiveText.fontFamily,
                             fontWeight: FontWeight.w500,
                             height: 1.15,
                             letterSpacing: 0,
@@ -806,6 +807,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
+                            fontFamily: ResponsiveText.fontFamily,
                             fontSize: ResponsiveText.hero(context),
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0,
@@ -817,6 +819,7 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
                             color: gold,
+                            fontFamily: ResponsiveText.fontFamily,
                             fontSize: ResponsiveText.heroSubtitle(context),
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0,

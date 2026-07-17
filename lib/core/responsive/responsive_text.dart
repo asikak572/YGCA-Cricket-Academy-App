@@ -14,6 +14,13 @@ class ResponsiveText {
         _language == 'tamil' ||
         _language == 'தமிழ்';
   }
+  static String get fontFamily {
+  if (_isTamil) {
+    return 'NotoSansTamil';
+  }
+
+  return 'Poppins';
+}
   // General title used in cards, headers and dashboard sections
 static double title(BuildContext context) {
   return _size(
