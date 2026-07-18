@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 
 class TrainingScheduleScreen extends StatefulWidget {
   const TrainingScheduleScreen({super.key});
@@ -94,6 +95,14 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   Color _secondaryText(bool isDark) {
     return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
+
+  bool get _isTamil {
+    final language = ThemeController.language.value.trim().toLowerCase();
+    return language == 'ta' || language == 'tamil';
+  }
+
+  FontWeight get _heavyWeight =>
+      _isTamil ? FontWeight.w700 : FontWeight.w900;
 
   bool get _canManageTraining {
     return role == 'Admin';
@@ -536,8 +545,9 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
           title: Text(
             AppStrings.addTraining,
             style: TextStyle(
+              fontFamily: ResponsiveText.fontFamily,
               color: _primaryText(isDark),
-              fontWeight: FontWeight.w900,
+              fontWeight: _heavyWeight,
             ),
           ),
           content: SingleChildScrollView(
@@ -593,6 +603,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
               child: Text(
                 AppStrings.cancel,
                 style: TextStyle(
+                  fontFamily: ResponsiveText.fontFamily,
                   color: isDark ? Colors.white70 : maroon,
                   fontWeight: FontWeight.w800,
                 ),
@@ -669,7 +680,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
               },
               child: Text(
                 AppStrings.save,
-                style: TextStyle(fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  fontFamily: ResponsiveText.fontFamily,
+                  fontWeight: _heavyWeight,
+                ),
               ),
             ),
           ],
@@ -701,6 +715,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
         readOnly: readOnly,
         onTap: onTap,
         style: TextStyle(
+          fontFamily: ResponsiveText.fontFamily,
           color: _primaryText(isDark),
           fontWeight: FontWeight.w700,
         ),
@@ -709,7 +724,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
           hintText: hintText,
           hintStyle: TextStyle(
             color: _secondaryText(isDark).withOpacity(0.65),
-            fontSize: 12,
+            fontSize: ResponsiveText.bodySmall(context),
           ),
           labelStyle: TextStyle(color: _secondaryText(isDark)),
           suffixIcon: icon == null
@@ -749,20 +764,27 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
         title: Text(
           AppStrings.deleteTraining,
           style: TextStyle(
+            fontFamily: ResponsiveText.fontFamily,
             color: _primaryText(isDark),
-            fontWeight: FontWeight.w900,
+            fontWeight: _heavyWeight,
           ),
         ),
         content: Text(
           AppStrings.deleteTrainingConfirm,
-          style: TextStyle(color: _secondaryText(isDark)),
+          style: TextStyle(
+            fontFamily: ResponsiveText.fontFamily,
+            color: _secondaryText(isDark),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               AppStrings.cancel,
-              style: TextStyle(color: isDark ? Colors.white70 : maroon),
+              style: TextStyle(
+                fontFamily: ResponsiveText.fontFamily,
+                color: isDark ? Colors.white70 : maroon,
+              ),
             ),
           ),
           ElevatedButton(
@@ -835,7 +857,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                     icon: const Icon(Icons.add_rounded),
                     label: Text(
                       AppStrings.addTraining,
-                      style: TextStyle(fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontFamily: ResponsiveText.fontFamily,
+                        fontWeight: _heavyWeight,
+                      ),
                     ),
                   ),
                 )
@@ -1042,9 +1067,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
+                      fontFamily: ResponsiveText.fontFamily,
                     color: _primaryText(isDark),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
+                    fontSize: ResponsiveText.pageTitle(context),
+                    fontWeight: _heavyWeight,
                       letterSpacing: 1,
                     ),
                   ),
@@ -1056,8 +1082,9 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
+                    fontFamily: ResponsiveText.fontFamily,
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1206,9 +1233,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                           "YGCA",
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
+                            fontFamily: ResponsiveText.fontFamily,
                             color: gold,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
+                            fontSize: ResponsiveText.body(context),
+                            fontWeight: _heavyWeight,
                             letterSpacing: 1,
                           ),
                         ),
@@ -1216,9 +1244,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                           AppStrings.training.toUpperCase(),
                           textAlign: TextAlign.center,
                           style: TextStyle(
+                            fontFamily: ResponsiveText.fontFamily,
                             color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w900,
+                            fontSize: ResponsiveText.hero(context),
+                            fontWeight: _heavyWeight,
                             height: 1,
                           ),
                         ),
@@ -1226,9 +1255,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                           AppStrings.center.toUpperCase(),
                           textAlign: compact ? TextAlign.center : TextAlign.left,
                           style: TextStyle(
+                            fontFamily: ResponsiveText.fontFamily,
                             color: gold,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
+                            fontSize: ResponsiveText.heroSubtitle(context),
+                            fontWeight: _heavyWeight,
                             height: 1,
                           ),
                         ),
@@ -1250,21 +1280,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                   ),
                 );
 
-                if (compact) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      icon,
-                      const SizedBox(height: 10),
-                      Expanded(child: content),
-                    ],
-                  );
-                }
-
                 return Row(
                   children: [
                     icon,
-                    const SizedBox(width: 14),
+                    SizedBox(width: compact ? 10 : 14),
                     Expanded(child: content),
                   ],
                 );
@@ -1290,9 +1309,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
+          fontFamily: ResponsiveText.fontFamily,
           color: gold,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
+          fontSize: ResponsiveText.small(context),
+          fontWeight: _heavyWeight,
         ),
       ),
     );
@@ -1312,9 +1332,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 maxLines: 1,
                 softWrap: false,
                 style: TextStyle(
+                  fontFamily: ResponsiveText.fontFamily,
                   color: isDark ? gold : maroon,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
+                  fontSize: ResponsiveText.title(context),
+                  fontWeight: _heavyWeight,
                   letterSpacing: 1,
                 ),
               ),
@@ -1386,9 +1407,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
+                        fontFamily: ResponsiveText.fontFamily,
                         color: _primaryText(isDark),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
+                        fontWeight: _heavyWeight,
+                        fontSize: ResponsiveText.title(context),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1397,8 +1419,9 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
+                        fontFamily: ResponsiveText.fontFamily,
                         color: _secondaryText(isDark),
-                        fontSize: 12,
+                        fontSize: ResponsiveText.bodySmall(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1475,9 +1498,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
+          fontFamily: ResponsiveText.fontFamily,
           color: color,
-          fontWeight: FontWeight.w900,
-          fontSize: 11,
+          fontWeight: _heavyWeight,
+          fontSize: ResponsiveText.small(context),
         ),
       ),
     );
@@ -1503,6 +1527,7 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
           Text(
             AppStrings.noScheduleAvailable,
             style: TextStyle(
+              fontFamily: ResponsiveText.fontFamily,
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
             ),
@@ -1513,7 +1538,10 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                 ? AppStrings.clickAddTrainingCreateOne
                 : AppStrings.noTrainingScheduleForBatch,
             textAlign: TextAlign.center,
-            style: TextStyle(color: _secondaryText(isDark)),
+            style: TextStyle(
+              fontFamily: ResponsiveText.fontFamily,
+              color: _secondaryText(isDark),
+            ),
           ),
         ],
       ),
@@ -1547,8 +1575,9 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
+              fontFamily: ResponsiveText.fontFamily,
               color: _primaryText(isDark),
-              fontWeight: FontWeight.w900,
+              fontWeight: _heavyWeight,
             ),
           ),
           const SizedBox(height: 6),
@@ -1556,8 +1585,9 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
             message,
             textAlign: TextAlign.center,
             style: TextStyle(
+              fontFamily: ResponsiveText.fontFamily,
               color: _secondaryText(isDark),
-              fontSize: 12,
+              fontSize: ResponsiveText.bodySmall(context),
               height: 1.35,
               fontWeight: FontWeight.w600,
             ),

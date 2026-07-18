@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 
 class CoachSalaryScreen extends StatefulWidget {
   const CoachSalaryScreen({super.key});
@@ -311,7 +312,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                             AppStrings.noCoachUsersFoundEnterManually,
                             style: TextStyle(
                               color: _secondaryText(isDark),
-                              fontSize: 12,
+                              fontSize: ResponsiveText.bodySmall(context),
+                              fontFamily: ResponsiveText.fontFamily,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -809,7 +811,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 18,
+                    fontSize: ResponsiveText.title(context),
+                    fontFamily: ResponsiveText.fontFamily,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),
@@ -822,7 +825,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: ResponsiveText.small(context),
+                    fontFamily: ResponsiveText.fontFamily,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -971,7 +975,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                             AppStrings.monthly.toUpperCase(),
                             style: TextStyle(
                               color: gold,
-                              fontSize: 13,
+                              fontSize: ResponsiveText.bodySmall(context),
+                              fontFamily: ResponsiveText.fontFamily,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1,
                             ),
@@ -980,7 +985,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                             AppStrings.salary.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 30,
+                              fontSize: ResponsiveText.hero(context),
+                              fontFamily: ResponsiveText.fontFamily,
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -989,7 +995,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                             AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
-                              fontSize: 24,
+                              fontSize: ResponsiveText.heroSubtitle(context),
+                              fontFamily: ResponsiveText.fontFamily,
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -1033,7 +1040,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: gold,
-          fontSize: 11,
+          fontSize: ResponsiveText.small(context),
+          fontFamily: ResponsiveText.fontFamily,
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -1049,7 +1057,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
             title,
             style: TextStyle(
               color: isDark ? gold : maroon,
-              fontSize: 15,
+              fontSize: ResponsiveText.title(context),
+              fontFamily: ResponsiveText.fontFamily,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
@@ -1123,7 +1132,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 20,
+                  fontSize: ResponsiveText.statValue(context),
+                  fontFamily: ResponsiveText.fontFamily,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -1133,7 +1143,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 11,
+                  fontSize: ResponsiveText.small(context),
+                  fontFamily: ResponsiveText.fontFamily,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -1142,7 +1153,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _secondaryText(isDark),
-                  fontSize: 10,
+                  fontSize: ResponsiveText.tiny(context),
+                  fontFamily: ResponsiveText.fontFamily,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1191,10 +1203,11 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
             backgroundColor: maroon,
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : "?",
-              style: const TextStyle(
+              style: TextStyle(
                 color: gold,
                 fontWeight: FontWeight.w900,
-                fontSize: 18,
+                fontSize: ResponsiveText.title(context),
+                fontFamily: ResponsiveText.fontFamily,
               ),
             ),
           ),
@@ -1210,7 +1223,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                    fontSize: ResponsiveText.title(context),
+                    fontFamily: ResponsiveText.fontFamily,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1220,7 +1234,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 12,
+                    fontSize: ResponsiveText.bodySmall(context),
+                    fontFamily: ResponsiveText.fontFamily,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1321,7 +1336,8 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w900,
-              fontSize: 11,
+              fontSize: ResponsiveText.small(context),
+              fontFamily: ResponsiveText.fontFamily,
             ),
           ),
         ],

@@ -30,6 +30,54 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
     "Pending",
   ];
 
+  String get _currentLanguage =>
+      ThemeController.language.value.trim().toLowerCase();
+
+  bool get _isTamil =>
+      _currentLanguage.startsWith('ta') ||
+      _currentLanguage.contains('tamil') ||
+      _currentLanguage.contains('தமிழ்');
+
+  bool get _isHindi =>
+      _currentLanguage.startsWith('hi') ||
+      _currentLanguage.contains('hindi') ||
+      _currentLanguage.contains('हिन्दी') ||
+      _currentLanguage.contains('हिंदी');
+
+  String _tr({
+    required String en,
+    required String ta,
+    required String hi,
+  }) {
+    if (_isTamil) return ta;
+    if (_isHindi) return hi;
+    return en;
+  }
+
+  String _localizedStatus(String status) {
+    switch (status.trim().toLowerCase()) {
+      case 'paid':
+        return _tr(en: 'Paid', ta: 'செலுத்தப்பட்டது', hi: 'भुगतान किया गया');
+      case 'pending':
+        return _tr(en: 'Pending', ta: 'நிலுவையில்', hi: 'लंबित');
+      default:
+        return status;
+    }
+  }
+
+  String _localizedFilterLabel(int index) {
+    switch (index) {
+      case 0:
+        return _tr(en: 'All', ta: 'அனைத்தும்', hi: 'सभी');
+      case 1:
+        return _localizedStatus('Paid');
+      case 2:
+        return _localizedStatus('Pending');
+      default:
+        return filters[index];
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -151,7 +199,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return "No Date";
+    if (timestamp == null) return _tr(en: 'No Date', ta: 'தேதி இல்லை', hi: 'तारीख उपलब्ध नहीं');
 
     try {
       if (timestamp is Timestamp) {
@@ -166,7 +214,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
 
       return timestamp.toString();
     } catch (_) {
-      return "No Date";
+      return _tr(en: 'No Date', ta: 'தேதி இல்லை', hi: 'तारीख उपलब्ध नहीं');
     }
   }
 
@@ -191,7 +239,9 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Salary marked as $status"),
+            content: Text(
+              "${_tr(en: 'Salary marked as', ta: 'சம்பள நிலை மாற்றப்பட்டது:', hi: 'वेतन की स्थिति बदली गई:')} ${_localizedStatus(status)}",
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -200,7 +250,9 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Update failed: $e"),
+            content: Text(
+              "${_tr(en: 'Update failed', ta: 'புதுப்பிப்பு தோல்வியடைந்தது', hi: 'अपडेट विफल रहा')}: $e",
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -239,7 +291,11 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "Change Payment Status",
+                  _tr(
+                    en: 'Change Payment Status',
+                    ta: 'கட்டண நிலையை மாற்றவும்',
+                    hi: 'भुगतान स्थिति बदलें',
+                  ),
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 18,
@@ -259,8 +315,16 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                 _statusAction(
                   isDark: isDark,
                   icon: Icons.verified_rounded,
-                  title: "Mark as Paid",
-                  subtitle: "Salary payment completed",
+                  title: _tr(
+                    en: 'Mark as Paid',
+                    ta: 'செலுத்தப்பட்டது எனக் குறிக்கவும்',
+                    hi: 'भुगतान किया गया चिह्नित करें',
+                  ),
+                  subtitle: _tr(
+                    en: 'Salary payment completed',
+                    ta: 'சம்பளப் பணம் செலுத்தப்பட்டது',
+                    hi: 'वेतन भुगतान पूरा हुआ',
+                  ),
                   color: Colors.green,
                   onTap: () {
                     Navigator.pop(context);
@@ -275,8 +339,16 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                 _statusAction(
                   isDark: isDark,
                   icon: Icons.pending_actions_rounded,
-                  title: "Mark as Pending",
-                  subtitle: "Salary payment not completed",
+                  title: _tr(
+                    en: 'Mark as Pending',
+                    ta: 'நிலுவையில் எனக் குறிக்கவும்',
+                    hi: 'लंबित चिह्नित करें',
+                  ),
+                  subtitle: _tr(
+                    en: 'Salary payment not completed',
+                    ta: 'சம்பளப் பணம் இன்னும் செலுத்தப்படவில்லை',
+                    hi: 'वेतन भुगतान पूरा नहीं हुआ',
+                  ),
                   color: Colors.orange,
                   onTap: () {
                     Navigator.pop(context);
@@ -361,7 +433,10 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
       builder: (context, mode, _) {
         final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -385,7 +460,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(18),
                                   child: Text(
-                                    "Error: ${snapshot.error}",
+                                    "${_tr(en: 'Error', ta: 'பிழை', hi: 'त्रुटि')}: ${snapshot.error}",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.redAccent,
@@ -456,7 +531,14 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                           SliverToBoxAdapter(child: _filterTabs(isDark)),
                           const SliverToBoxAdapter(child: SizedBox(height: 16)),
                           SliverToBoxAdapter(
-                            child: _sectionTitle("PAYMENT STATUS LIST", isDark),
+                            child: _sectionTitle(
+                              _tr(
+                                en: 'PAYMENT STATUS LIST',
+                                ta: 'கட்டண நிலைப் பட்டியல்',
+                                hi: 'भुगतान स्थिति सूची',
+                              ),
+                              isDark,
+                            ),
                           ),
                           SliverPadding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -470,12 +552,20 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
 
                                         final name =
                                             _text(data['coachName']).isEmpty
-                                                ? 'Unknown Coach'
+                                                ? _tr(
+                                                    en: 'Unknown Coach',
+                                                    ta: 'தெரியாத பயிற்சியாளர்',
+                                                    hi: 'अज्ञात कोच',
+                                                  )
                                                 : _text(data['coachName']);
 
                                         final coachRole =
                                             _text(data['role']).isEmpty
-                                                ? 'Coach'
+                                                ? _tr(
+                                                    en: 'Coach',
+                                                    ta: 'பயிற்சியாளர்',
+                                                    hi: 'कोच',
+                                                  )
                                                 : _text(data['role']);
 
                                         final salary = _toInt(data['salary']);
@@ -508,7 +598,9 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                       );
                     },
                   ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -537,7 +629,11 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "PAYMENT STATUS",
+                  _tr(
+                    en: 'PAYMENT STATUS',
+                    ta: 'கட்டண நிலை',
+                    hi: 'भुगतान स्थिति',
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -549,8 +645,16 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                 ),
                 Text(
                   _isAdmin
-                      ? "Update paid and pending salary"
-                      : "View your salary payment status",
+                      ? _tr(
+                          en: 'Update paid and pending salary',
+                          ta: 'செலுத்தப்பட்ட மற்றும் நிலுவைச் சம்பளத்தைப் புதுப்பிக்கவும்',
+                          hi: 'भुगतान और लंबित वेतन अपडेट करें',
+                        )
+                      : _tr(
+                          en: 'View your salary payment status',
+                          ta: 'உங்கள் சம்பளக் கட்டண நிலையைப் பார்க்கவும்',
+                          hi: 'अपने वेतन भुगतान की स्थिति देखें',
+                        ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -664,7 +768,11 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Coach Payment Status",
+                      _tr(
+                        en: 'Coach Payment Status',
+                        ta: 'பயிற்சியாளர் கட்டண நிலை',
+                        hi: 'कोच भुगतान स्थिति',
+                      ),
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontSize: 17,
@@ -673,7 +781,11 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "Track paid and pending coach salary payments.",
+                      _tr(
+                        en: 'Track paid and pending coach salary payments.',
+                        ta: 'பயிற்சியாளரின் செலுத்தப்பட்ட மற்றும் நிலுவைச் சம்பளத்தைக் கண்காணிக்கவும்.',
+                        hi: 'कोच के भुगतान और लंबित वेतन को ट्रैक करें।',
+                      ),
                       style: TextStyle(
                         color: _secondaryText(isDark),
                         fontSize: 12,
@@ -692,7 +804,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
               Expanded(
                 child: _miniStat(
                   isDark: isDark,
-                  label: "Total",
+                  label: _tr(en: 'Total', ta: 'மொத்தம்', hi: 'कुल'),
                   value: total.toString(),
                   color: Colors.blueAccent,
                 ),
@@ -700,7 +812,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
               Expanded(
                 child: _miniStat(
                   isDark: isDark,
-                  label: "Paid",
+                  label: _localizedStatus('Paid'),
                   value: paidCount.toString(),
                   color: Colors.green,
                 ),
@@ -708,7 +820,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
               Expanded(
                 child: _miniStat(
                   isDark: isDark,
-                  label: "Pending",
+                  label: _localizedStatus('Pending'),
                   value: pendingCount.toString(),
                   color: Colors.orange,
                 ),
@@ -721,7 +833,11 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
               Expanded(
                 child: _amountBox(
                   isDark: isDark,
-                  label: "Paid Amount",
+                  label: _tr(
+                    en: 'Paid Amount',
+                    ta: 'செலுத்திய தொகை',
+                    hi: 'भुगतान राशि',
+                  ),
                   value: "₹$paidAmount",
                   color: Colors.green,
                 ),
@@ -730,7 +846,11 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
               Expanded(
                 child: _amountBox(
                   isDark: isDark,
-                  label: "Pending Amount",
+                  label: _tr(
+                    en: 'Pending Amount',
+                    ta: 'நிலுவைத் தொகை',
+                    hi: 'लंबित राशि',
+                  ),
                   value: "₹$pendingAmount",
                   color: Colors.orange,
                 ),
@@ -861,7 +981,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
               ),
               child: Center(
                 child: Text(
-                  filters[index],
+                  _localizedFilterLabel(index),
                   style: TextStyle(
                     color: selected
                         ? Colors.white
@@ -999,7 +1119,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                         _chip(
                           isDark: isDark,
                           icon: Icons.verified_rounded,
-                          text: status,
+                          text: _localizedStatus(status),
                           color: statusColor,
                         ),
                       ],
@@ -1073,7 +1193,11 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            "No Payment Records Found",
+            _tr(
+              en: 'No Payment Records Found',
+              ta: 'கட்டணப் பதிவுகள் எதுவும் இல்லை',
+              hi: 'कोई भुगतान रिकॉर्ड नहीं मिला',
+            ),
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -1081,7 +1205,11 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            "No salary payment records available for this filter.",
+            _tr(
+              en: 'No salary payment records available for this filter.',
+              ta: 'இந்த வடிகட்டலுக்கு சம்பளக் கட்டணப் பதிவுகள் இல்லை.',
+              hi: 'इस फ़िल्टर के लिए कोई वेतन भुगतान रिकॉर्ड उपलब्ध नहीं है।',
+            ),
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

@@ -988,12 +988,15 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     required int batches,
   }) {
     return Container(
+      width: double.infinity,
       height: 220,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9)),
+        border: Border.all(
+          color: isDark ? red.withOpacity(0.55) : gold.withOpacity(0.9),
+        ),
         boxShadow: [
           BoxShadow(
             color: isDark ? red.withOpacity(0.20) : maroon.withOpacity(0.16),
@@ -1005,7 +1008,10 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset('assets/images/home_hero_bg.png', fit: BoxFit.cover),
+            child: Image.asset(
+              'assets/images/home_hero_bg.png',
+              fit: BoxFit.cover,
+            ),
           ),
           Positioned.fill(
             child: Container(
@@ -1041,92 +1047,82 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             padding: const EdgeInsets.all(18),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final compact = constraints.maxWidth < 300;
-
-                final icon = CircleAvatar(
-                  radius: compact ? 40 : 46,
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.event_busy_rounded,
-                    color: maroon,
-                    size: compact ? 36 : 42,
-                  ),
-                );
-
-                final content = FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: compact ? Alignment.center : Alignment.centerLeft,
-                  child: SizedBox(
-                    width: 230,
-                    child: Column(
-                      crossAxisAlignment: compact
-                          ? CrossAxisAlignment.center
-                          : CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppStrings.academy.toUpperCase(),
-                          textAlign: compact ? TextAlign.center : TextAlign.left,
-                          style: TextStyle(
-                            color: gold,
-                            fontSize: ResponsiveText.statLabel(context),
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          AppStrings.session.toUpperCase(),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: ResponsiveText.hero(context),
-                            fontWeight: FontWeight.w700,
-                            height: 1,
-                          ),
-                        ),
-                        Text(
-                          AppStrings.control.toUpperCase(),
-                          textAlign: compact ? TextAlign.center : TextAlign.left,
-                          style: TextStyle(
-                            color: gold,
-                            fontSize: ResponsiveText.heroSubtitle(context),
-                            fontWeight: FontWeight.w700,
-                            height: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          alignment: compact
-                              ? WrapAlignment.center
-                              : WrapAlignment.start,
-                          spacing: 8,
-                          runSpacing: 6,
-                          children: [
-                            _heroChip("${AppStrings.cancelled}: $total"),
-                            _heroChip("${AppStrings.batches}: $batches"),
-                            _heroChip("${AppStrings.makeup}: $makeupPending"),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-
-                if (compact) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      icon,
-                      const SizedBox(height: 10),
-                      Expanded(child: content),
-                    ],
-                  );
-                }
+                final isSmallPhone = constraints.maxWidth < 340;
+                final iconRadius = isSmallPhone ? 38.0 : 46.0;
+                final iconSize = isSmallPhone ? 34.0 : 42.0;
 
                 return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    icon,
-                    const SizedBox(width: 14),
-                    Expanded(child: content),
+                    CircleAvatar(
+                      radius: iconRadius,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.event_busy_rounded,
+                        color: maroon,
+                        size: iconSize,
+                      ),
+                    ),
+                    SizedBox(width: isSmallPhone ? 10 : 14),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: SizedBox(
+                          width: isSmallPhone ? 205 : 230,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppStrings.academy.toUpperCase(),
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                  color: gold,
+                                  fontFamily: ResponsiveText.fontFamily,
+                                  fontSize: ResponsiveText.statLabel(context),
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              Text(
+                                AppStrings.session.toUpperCase(),
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: ResponsiveText.fontFamily,
+                                  fontSize: ResponsiveText.hero(context),
+                                  fontWeight: FontWeight.w700,
+                                  height: 1,
+                                ),
+                              ),
+                              Text(
+                                AppStrings.control.toUpperCase(),
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                  color: gold,
+                                  fontFamily: ResponsiveText.fontFamily,
+                                  fontSize: ResponsiveText.heroSubtitle(context),
+                                  fontWeight: FontWeight.w700,
+                                  height: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Wrap(
+                                alignment: WrapAlignment.start,
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: [
+                                  _heroChip("${AppStrings.cancelled}: $total"),
+                                  _heroChip("${AppStrings.batches}: $batches"),
+                                  _heroChip("${AppStrings.makeup}: $makeupPending"),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 );
               },

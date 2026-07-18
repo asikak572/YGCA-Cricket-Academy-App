@@ -317,14 +317,29 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     await _loadUserAccess();
   }
 
+  bool get _isTamil {
+    final language = ThemeController.language.value.trim().toLowerCase();
+    return language == 'tamil' ||
+        language == 'தமிழ்' ||
+        language == 'ta' ||
+        language == 'ta_in';
+  }
+
+  String _localized(String english, String tamil) {
+    return _isTamil ? tamil : english;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: LayoutBuilder(
@@ -498,6 +513,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -560,7 +577,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "MARK ATTENDANCE",
+                  _localized("MARK ATTENDANCE", "வருகையை பதிவு செய்"),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -572,7 +589,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  "Weekly assigned session attendance",
+                  _localized("Weekly assigned session attendance", "வாரத்திற்கு ஒதுக்கப்பட்ட பயிற்சி அமர்வு வருகை"),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -671,8 +688,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Expanded(
                 child: Text(
                   isCoach
-                      ? "Current Week Assigned Session"
-                      : "Select Training Session",
+                      ? _localized("Current Week Assigned Session", "இந்த வாரம் ஒதுக்கப்பட்ட அமர்வு")
+                      : _localized("Select Training Session", "பயிற்சி அமர்வைத் தேர்வு செய்க"),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -695,8 +712,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       color: Colors.blue.withOpacity(0.10),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      "Refresh",
+                    child: Text(
+                      _localized("Refresh", "புதுப்பி"),
                       style: TextStyle(
                         color: Colors.blueAccent,
                         fontSize: 10,
@@ -746,8 +763,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         color: Colors.green.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        "Assigned",
+                      child: Text(
+                        _localized("Assigned", "ஒதுக்கப்பட்டது"),
                         style: TextStyle(
                           color: Colors.green,
                           fontSize: 10,
@@ -817,10 +834,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _noAccessState(bool isDark) {
-    final title = role == 'Coach' ? "No Session Assigned" : "No Access";
+    final title = role == 'Coach' ? _localized("No Session Assigned", "அமர்வு ஒதுக்கப்படவில்லை") : _localized("No Access", "அணுகல் இல்லை");
     final message = role == 'Coach'
-        ? "Admin has not assigned any session to this coach for the current week."
-        : "Only Admin and assigned Coach can mark attendance.";
+        ? _localized("Admin has not assigned any session to this coach for the current week.", "இந்த வாரத்திற்கு நிர்வாகி இந்த பயிற்சியாளருக்கு எந்த அமர்வையும் ஒதுக்கவில்லை.")
+        : _localized("Only Admin and assigned Coach can mark attendance.", "நிர்வாகி மற்றும் ஒதுக்கப்பட்ட பயிற்சியாளர் மட்டுமே வருகையை பதிவு செய்யலாம்.");
 
     return Center(
       child: SingleChildScrollView(
@@ -893,7 +910,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                "No students found",
+                _localized("No students found", "மாணவர்கள் எவரும் இல்லை"),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _primaryText(isDark),
@@ -933,7 +950,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             children: [
               _summaryCard(
                 isDark: isDark,
-                title: "Students",
+                title: _localized("Students", "மாணவர்கள்"),
                 value: total.toString(),
                 icon: Icons.groups_rounded,
                 color: Colors.blueAccent,
@@ -944,7 +961,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   Expanded(
                     child: _summaryCard(
                       isDark: isDark,
-                      title: "Present",
+                      title: _localized("Present", "வருகை"),
                       value: present.toString(),
                       icon: Icons.check_circle_rounded,
                       color: Colors.green,
@@ -954,7 +971,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   Expanded(
                     child: _summaryCard(
                       isDark: isDark,
-                      title: "Absent",
+                      title: _localized("Absent", "வரவில்லை"),
                       value: absent.toString(),
                       icon: Icons.cancel_rounded,
                       color: Colors.redAccent,
@@ -971,7 +988,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             Expanded(
               child: _summaryCard(
                 isDark: isDark,
-                title: "Students",
+                title: _localized("Students", "மாணவர்கள்"),
                 value: total.toString(),
                 icon: Icons.groups_rounded,
                 color: Colors.blueAccent,
@@ -981,7 +998,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             Expanded(
               child: _summaryCard(
                 isDark: isDark,
-                title: "Present",
+                title: _localized("Present", "வருகை"),
                 value: present.toString(),
                 icon: Icons.check_circle_rounded,
                 color: Colors.green,
@@ -991,7 +1008,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             Expanded(
               child: _summaryCard(
                 isDark: isDark,
-                title: "Absent",
+                title: _localized("Absent", "வரவில்லை"),
                 value: absent.toString(),
                 icon: Icons.cancel_rounded,
                 color: Colors.redAccent,
@@ -1142,7 +1159,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "$rollNo • Current: $attendance",
+                      "$rollNo • ${_localized("Current", "தற்போது")}: $attendance",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1174,7 +1191,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isPresent ? "Present" : "Absent",
+                  isPresent ? _localized("Present", "வருகை") : _localized("Absent", "வரவில்லை"),
                   style: TextStyle(
                     color: isPresent ? Colors.green : Colors.redAccent,
                     fontSize: ResponsiveText.small(context),
@@ -1266,8 +1283,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       color: isDark ? Colors.white : gold,
                       strokeWidth: 2,
                     )
-                  : const Text(
-                      "SAVE ATTENDANCE",
+                  : Text(
+                      _localized("SAVE ATTENDANCE", "வருகையை சேமி"),
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1,
