@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
 import '../core/responsive/responsive_text.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   final List<String> allowedStudentIds;
@@ -426,6 +428,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             }
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: students.isEmpty
@@ -880,10 +883,18 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     required int leave,
     required int percentage,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
-      height: 205,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.all(18),
+      height: isMobile ? 190 : 205,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        12,
+        horizontalPadding,
+        0,
+      ),
+      padding: EdgeInsets.all(isMobile ? 12 : 18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -905,18 +916,22 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 46,
+          CircleAvatar(
+            radius: isMobile ? 34 : 46,
             backgroundColor: Colors.white,
-            child: Icon(Icons.fact_check_rounded, color: maroon, size: 42),
+            child: Icon(
+              Icons.fact_check_rounded,
+              color: maroon,
+              size: isMobile ? 32 : 42,
+            ),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: isMobile ? 10 : 14),
           Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: SizedBox(
-                width: 230,
+                width: isMobile ? 205 : 230,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

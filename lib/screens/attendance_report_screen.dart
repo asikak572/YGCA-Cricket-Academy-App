@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 import 'widgets/ygca_app_bar.dart';
 
@@ -50,6 +52,7 @@ class AttendanceReportScreen extends StatelessWidget {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           appBar: YgcaAppBar(title: AppStrings.attendanceReports),
           body: SafeArea(
@@ -206,11 +209,15 @@ class AttendanceReportScreen extends StatelessWidget {
                           ],
                         ),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: ResponsiveHelper.isTablet(context) ||
+                                  ResponsiveHelper.isDesktop(context)
+                              ? 4
+                              : 2,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 1.18,
+                          childAspectRatio:
+                              ResponsiveHelper.isMobile(context) ? 1.0 : 1.18,
                         ),
                       ),
                     ),
@@ -359,6 +366,8 @@ class AttendanceReportScreen extends StatelessWidget {
     required int presentCount,
     required int absentCount,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
     String health = AppStrings.needsAttention;
     Color healthColor = Colors.redAccent;
 
@@ -373,8 +382,13 @@ class AttendanceReportScreen extends StatelessWidget {
     final progress = attendancePercent.clamp(0, 100) / 100;
 
     return Container(
-      height: 245,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      height: isMobile ? 225 : 245,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        12,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -428,25 +442,25 @@ class AttendanceReportScreen extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(isMobile ? 12 : 18),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 46,
+                  radius: isMobile ? 34 : 46,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.fact_check_rounded,
                     color: maroon,
-                    size: 42,
+                    size: isMobile ? 32 : 42,
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: isMobile ? 10 : 14),
                 Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: SizedBox(
-                      width: 235,
+                      width: isMobile ? 205 : 235,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -463,7 +477,7 @@ class AttendanceReportScreen extends StatelessWidget {
                             AppStrings.attendance.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 28,
+                              fontSize: isMobile ? 24 : 28,
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -472,7 +486,7 @@ class AttendanceReportScreen extends StatelessWidget {
                             AppStrings.report.toUpperCase(),
                             style: TextStyle(
                               color: gold,
-                              fontSize: 24,
+                              fontSize: isMobile ? 20 : 24,
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),

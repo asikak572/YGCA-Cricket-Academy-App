@@ -340,6 +340,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: LayoutBuilder(

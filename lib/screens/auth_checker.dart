@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_text.dart';
 
 import 'login_screen.dart';
 import 'admin_dashboard.dart';
@@ -152,6 +155,7 @@ class SplashLoadingScreen extends StatelessWidget {
     final bottomSafe = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.black,
       body: Stack(
         children: [
@@ -166,7 +170,7 @@ class SplashLoadingScreen extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: 0,
-            height: 230,
+            height: ResponsiveHelper.isMobile(context) ? 200 : 230,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -270,14 +274,19 @@ class PendingApprovalScreen extends StatelessWidget {
         final isDark = mode == ThemeMode.dark;
 
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(22),
-                child: Container(
+                padding: EdgeInsets.all(ResponsivePadding.horizontal(context)),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: ResponsiveHelper.maxContentWidth(context),
+                  ),
+                  child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(22),
+                  padding: EdgeInsets.all(ResponsivePadding.horizontal(context)),
                   decoration: BoxDecoration(
                     color: _card(isDark),
                     borderRadius: BorderRadius.circular(24),
@@ -321,7 +330,7 @@ class PendingApprovalScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: isDark ? gold : maroon,
-                          fontSize: 20,
+                          fontSize: ResponsiveText.pageTitle(context),
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -402,6 +411,7 @@ class PendingApprovalScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                  ),
                 ),
               ),
             ),
@@ -441,14 +451,20 @@ class ErrorScreen extends StatelessWidget {
         final isDark = mode == ThemeMode.dark;
 
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor:
               isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA),
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(22),
-                child: Container(
-                  padding: const EdgeInsets.all(22),
+                padding: EdgeInsets.all(ResponsivePadding.horizontal(context)),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: ResponsiveHelper.maxContentWidth(context),
+                  ),
+                  child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(ResponsivePadding.horizontal(context)),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF111111) : Colors.white,
                     borderRadius: BorderRadius.circular(22),
@@ -472,7 +488,7 @@ class ErrorScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: isDark ? Colors.white : Colors.black87,
-                          fontSize: 14,
+                          fontSize: ResponsiveText.body(context),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -496,6 +512,7 @@ class ErrorScreen extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
                   ),
                 ),
               ),

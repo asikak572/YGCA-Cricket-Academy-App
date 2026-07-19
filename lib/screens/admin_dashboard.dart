@@ -93,6 +93,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           key: _scaffoldKey,
           backgroundColor: _bg(isDark),
           drawer: YgcaDrawer(

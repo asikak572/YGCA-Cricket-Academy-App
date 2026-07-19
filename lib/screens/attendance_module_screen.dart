@@ -183,6 +183,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,

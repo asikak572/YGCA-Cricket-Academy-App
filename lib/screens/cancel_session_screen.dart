@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
 import '../core/responsive/responsive_text.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class CancelSessionScreen extends StatefulWidget {
   const CancelSessionScreen({super.key});
@@ -474,6 +476,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -987,10 +990,18 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
     required int makeupPending,
     required int batches,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
       width: double.infinity,
-      height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      height: isMobile ? 200 : 220,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        12,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),

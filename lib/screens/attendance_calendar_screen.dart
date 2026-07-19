@@ -438,6 +438,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
         }
 
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: students.isEmpty

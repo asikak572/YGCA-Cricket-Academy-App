@@ -231,13 +231,24 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
           builder: (context, language, __) {
             final isDark = mode == ThemeMode.dark;
 
+            final screenWidth = MediaQuery.sizeOf(context).width;
+            final horizontalPadding = screenWidth < 360 ? 10.0 : 16.0;
+
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
-            child: Column(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    10,
+                    horizontalPadding,
+                    12,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark ? Colors.black : maroon,
                     border: Border(
@@ -276,8 +287,8 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                       const SizedBox(width: 10),
                       Image.asset(
                         'assets/images/ygca_logo.jpg',
-                        width: 46,
-                        height: 46,
+                        width: screenWidth < 360 ? 38 : 46,
+                        height: screenWidth < 360 ? 38 : 46,
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(width: 10),
@@ -286,7 +297,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                           AppStrings.addCoach,
                           style: TextStyle(
                             color: isDark ? Colors.white : gold,
-                            fontSize: 20,
+                            fontSize: screenWidth < 360 ? 17 : 20,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -297,9 +308,12 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(horizontalPadding),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 720),
+                        child: Container(
+                      padding: EdgeInsets.all(screenWidth < 360 ? 13 : 16),
                       decoration: BoxDecoration(
                         color: _card(isDark),
                         borderRadius: BorderRadius.circular(22),
@@ -364,7 +378,11 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                             items: specializations.map((item) {
                               return DropdownMenuItem<String>(
                                 value: item,
-                                child: Text(item),
+                                child: Text(
+                                  item,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               );
                             }).toList(),
                             onChanged: isSaving
@@ -404,15 +422,24 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                         ],
                       ),
                     ),
+                      ),
+                    ),
                   ),
                 ),
               ],
+                );
+              },
             ),
           ),
           bottomNavigationBar: SafeArea(
             top: false,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                10,
+                horizontalPadding,
+                14,
+              ),
               decoration: BoxDecoration(
                 color: _bg(isDark),
                 border: Border(

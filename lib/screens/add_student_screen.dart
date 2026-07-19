@@ -222,17 +222,28 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           builder: (context, language, __) {
             final isDark = mode == ThemeMode.dark;
 
+            final screenWidth = MediaQuery.sizeOf(context).width;
+
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
-            child: SingleChildScrollView(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Form(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewInsetsOf(context).bottom > 0 ? 12 : 0,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 760),
+                  child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
                     _topHeader(context, isDark),
-                    _heroBanner(isDark),
+                    _heroBanner(isDark, screenWidth),
                     const SizedBox(height: 18),
                     _sectionTitle(AppStrings.studentInformation, isDark),
                     Padding(
@@ -331,7 +342,11 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     const SizedBox(height: 30),
                   ],
                 ),
+                  ),
+                ),
               ),
+                );
+              },
             ),
           ),
             );
@@ -342,10 +357,13 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   }
 
   Widget _topHeader(BuildContext context, bool isDark) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompact = screenWidth < 380;
+
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.fromLTRB(isCompact ? 10 : 14, 12, isCompact ? 10 : 14, 10),
+      padding: EdgeInsets.all(isCompact ? 10 : 14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -380,40 +398,43 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             icon: Icons.arrow_back_rounded,
             onTap: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isCompact ? 8 : 12),
           Image.asset(
             'assets/images/ygca_logo_background.png',
-            width: 55,
-            height: 55,
+            width: isCompact ? 42 : 55,
+            height: isCompact ? 42 : 55,
             fit: BoxFit.contain,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isCompact ? 8 : 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   AppStrings.addStudentTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  maxLines: 2,
+                  overflow: TextOverflow.fade,
+                  style: TextStyle(
                     color: gold,
-                    fontSize: 17,
+                    fontSize: isCompact ? 14 : 17,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  AppStrings.createNewAcademyPlayerProfile,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                if (!isCompact) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    AppStrings.createNewAcademyPlayerProfile,
+                    maxLines: 2,
+                    overflow: TextOverflow.fade,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -452,10 +473,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     );
   }
 
-  Widget _heroBanner(bool isDark) {
+  Widget _heroBanner(bool isDark, double screenWidth) {
+    final isCompact = screenWidth < 380;
+
     return Container(
-      height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      height: isCompact ? 190 : 220,
+      margin: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 16),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -509,25 +532,25 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(isCompact ? 12 : 18),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 46,
+                  radius: isCompact ? 34 : 46,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.person_add_alt_1_rounded,
                     color: maroon,
-                    size: 42,
+                    size: isCompact ? 32 : 42,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: isCompact ? 10 : 16),
                 Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: SizedBox(
-                      width: 230,
+                      width: isCompact ? 205 : 230,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,9 +566,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                           ),
                           Text(
                             AppStrings.student.toUpperCase(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 31,
+                              fontSize: isCompact ? 25 : 31,
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -554,7 +577,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                             AppStrings.registration.toUpperCase(),
                             style: TextStyle(
                               color: gold,
-                              fontSize: 23,
+                              fontSize: isCompact ? 19 : 23,
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -682,6 +705,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
         value: selectedBatch,
+        isExpanded: true,
         dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
         style: TextStyle(
           color: _primaryText(isDark),
@@ -735,6 +759,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
         value: feeStatus,
+        isExpanded: true,
         dropdownColor: isDark ? const Color(0xFF111111) : Colors.white,
         style: TextStyle(
           color: _primaryText(isDark),

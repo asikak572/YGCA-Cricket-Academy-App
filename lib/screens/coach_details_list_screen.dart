@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_text.dart';
 
 import 'coach_details_screen.dart';
 
@@ -102,6 +105,7 @@ class CoachDetailsListScreen extends StatelessWidget {
         final isDark = mode == ThemeMode.dark;
 
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot>(
@@ -156,7 +160,9 @@ class CoachDetailsListScreen extends StatelessWidget {
                       child: _sectionTitle(AppStrings.coachDetailsList, isDark),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: coaches.isEmpty
                           ? SliverToBoxAdapter(child: _emptyCard(isDark))
                           : SliverList(
@@ -207,7 +213,12 @@ class CoachDetailsListScreen extends StatelessWidget {
 
   Widget _topHeader(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        14,
+      ),
       decoration: BoxDecoration(
         color: isDark ? Colors.black : maroon,
         border: Border(
@@ -226,8 +237,8 @@ class CoachDetailsListScreen extends StatelessWidget {
           const SizedBox(width: 10),
           Image.asset(
             'assets/images/ygca_logo.jpg',
-            width: 46,
-            height: 46,
+            width: ResponsiveHelper.isMobile(context) ? 40 : 46,
+            height: ResponsiveHelper.isMobile(context) ? 40 : 46,
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 10),
@@ -238,7 +249,7 @@ class CoachDetailsListScreen extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: isDark ? Colors.white : gold,
-                fontSize: 20,
+                fontSize: ResponsiveText.heading(context),
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1,
               ),

@@ -582,93 +582,109 @@ final childrenCount = childInfo['childCount'] ?? '0';
   }
 
   Widget _topBar(bool isDark) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        ResponsivePadding.horizontal(context) - 2,
-        ResponsiveSpacing.small(context),
-        ResponsivePadding.horizontal(context) - 2,
-        6,
-      ),
-      child: Row(
-        children: [
-          _circleButton(
-            isDark: isDark,
-            icon: Icons.menu_rounded,
-            onTap: () => _scaffoldKey.currentState?.openDrawer(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final veryCompact = constraints.maxWidth < 360;
+        final compact = constraints.maxWidth < 410;
+        final gap = veryCompact ? 4.0 : compact ? 6.0 : 7.0;
+        final logoSize = veryCompact
+            ? 34.0
+            : ResponsiveSize.logo(context);
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            ResponsivePadding.horizontal(context) - 2,
+            ResponsiveSpacing.small(context),
+            ResponsivePadding.horizontal(context) - 2,
+            6,
           ),
-          const SizedBox(width: 10),
-          Image.asset(
-            logoAsset,
-            width: ResponsiveSize.logo(context),
-            height: ResponsiveSize.logo(context),
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "YGCA",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 21,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  AppStrings.parentControlCenter,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _secondaryText(isDark),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Stack(
-            clipBehavior: Clip.none,
+          child: Row(
             children: [
               _circleButton(
                 isDark: isDark,
-                icon: Icons.notifications_none_rounded,
-                onTap: () => _open(const NotificationScreen()),
+                icon: Icons.menu_rounded,
+                onTap: () => _scaffoldKey.currentState?.openDrawer(),
               ),
-              Positioned(
-                right: 3,
-                top: 2,
-                child: Container(
-                  width: 9,
-                  height: 9,
-                  decoration: const BoxDecoration(
-                    color: red,
-                    shape: BoxShape.circle,
-                  ),
+              SizedBox(width: gap),
+              Image.asset(
+                logoAsset,
+                width: logoSize,
+                height: logoSize,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(width: gap),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'YGCA',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _primaryText(isDark),
+                        fontSize: veryCompact ? 17 : 21,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: veryCompact ? 0.8 : 1.2,
+                      ),
+                    ),
+                    if (!veryCompact) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        AppStrings.parentControlCenter,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _secondaryText(isDark),
+                          fontSize: compact ? 10 : 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
+              ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  _circleButton(
+                    isDark: isDark,
+                    icon: Icons.notifications_none_rounded,
+                    onTap: () => _open(const NotificationScreen()),
+                  ),
+                  Positioned(
+                    right: 3,
+                    top: 2,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: const BoxDecoration(
+                        color: red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(width: gap),
+              _circleButton(
+                isDark: isDark,
+                icon: isDark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: ThemeController.toggleTheme,
+              ),
+              SizedBox(width: gap),
+              _circleButton(
+                isDark: isDark,
+                icon: Icons.logout_rounded,
+                onTap: _logout,
               ),
             ],
           ),
-          const SizedBox(width: 7),
-          _circleButton(
-            isDark: isDark,
-            icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-            onTap: ThemeController.toggleTheme,
-          ),
-          const SizedBox(width: 7),
-          _circleButton(
-            isDark: isDark,
-            icon: Icons.logout_rounded,
-            onTap: _logout,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -972,7 +988,12 @@ final childrenCount = childInfo['childCount'] ?? '0';
     required bool isDark,
   }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        0,
+        ResponsivePadding.horizontal(context),
+        10,
+      ),
       child: Row(
         children: [
           Flexible(
@@ -1013,7 +1034,10 @@ final childrenCount = childInfo['childCount'] ?? '0';
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.isMobile(context) ? 9 : 12,
+        vertical: ResponsiveHelper.isMobile(context) ? 8 : 10,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
