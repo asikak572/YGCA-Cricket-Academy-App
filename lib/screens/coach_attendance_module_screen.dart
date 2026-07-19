@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 
 import 'attendance_screen.dart';
 import 'attendance_history_screen.dart';
@@ -161,9 +162,12 @@ class _CoachAttendanceModuleScreenState
                   const SizedBox(height: 6),
                   Text(
                     _subtitle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: _secondaryText(isDark),
-                      fontSize: 12,
+                      fontFamily: ResponsiveText.fontFamily,
+                      fontSize: ResponsiveText.bodySmall(context),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -210,7 +214,8 @@ class _CoachAttendanceModuleScreenState
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: _primaryText(isDark),
-              fontSize: 18,
+              fontFamily: ResponsiveText.fontFamily,
+              fontSize: ResponsiveText.heading(context),
               fontWeight: FontWeight.w900,
               letterSpacing: 0.8,
             ),
@@ -312,13 +317,14 @@ class _CoachAttendanceModuleScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "ATTENDANCE MODULE",
+                Text(
+                  AppStrings.attendanceModule.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.pageTitle(context),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -329,7 +335,8 @@ class _CoachAttendanceModuleScreenState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: gold,
-                    fontSize: 13,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.body(context),
                     fontWeight: FontWeight.w900,
                     height: 1.25,
                   ),
@@ -341,7 +348,8 @@ class _CoachAttendanceModuleScreenState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.78),
-                    fontSize: 12,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.bodySmall(context),
                     fontWeight: FontWeight.w600,
                     height: 1.25,
                   ),
@@ -377,9 +385,12 @@ class _CoachAttendanceModuleScreenState
           Expanded(
             child: Text(
               AppStrings.coachAttendanceFilteringInfo,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: _secondaryText(isDark),
-                fontSize: 12,
+                fontFamily: ResponsiveText.fontFamily,
+                fontSize: ResponsiveText.bodySmall(context),
                 fontWeight: FontWeight.w700,
                 height: 1.35,
               ),
@@ -423,7 +434,8 @@ class _CoachAttendanceModuleScreenState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 20,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.pageTitle(context),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -434,7 +446,8 @@ class _CoachAttendanceModuleScreenState
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 12,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.bodySmall(context),
                     height: 1.35,
                     fontWeight: FontWeight.w700,
                   ),
@@ -464,7 +477,8 @@ class _CoachAttendanceModuleScreenState
               softWrap: false,
               style: TextStyle(
                 color: isDark ? gold : maroon,
-                fontSize: 18,
+                fontFamily: ResponsiveText.fontFamily,
+                fontSize: ResponsiveText.heading(context),
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.1,
               ),
@@ -536,7 +550,8 @@ class _CoachAttendanceModuleScreenState
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: _primaryText(isDark),
-                              fontSize: 14.5,
+                              fontFamily: ResponsiveText.fontFamily,
+                              fontSize: ResponsiveText.title(context),
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -547,7 +562,8 @@ class _CoachAttendanceModuleScreenState
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: _secondaryText(isDark),
-                              fontSize: 11.2,
+                              fontFamily: ResponsiveText.fontFamily,
+                              fontSize: ResponsiveText.small(context),
                               height: 1.25,
                               fontWeight: FontWeight.w600,
                             ),
@@ -633,7 +649,8 @@ class _CoachAttendanceModuleScreenState
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: _secondaryText(isDark),
-              fontSize: 9.2,
+              fontFamily: ResponsiveText.fontFamily,
+              fontSize: ResponsiveText.tiny(context),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -644,7 +661,8 @@ class _CoachAttendanceModuleScreenState
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: _primaryText(isDark),
-              fontSize: 12.5,
+              fontFamily: ResponsiveText.fontFamily,
+              fontSize: ResponsiveText.bodySmall(context),
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -725,12 +743,15 @@ class _CoachAttendanceModuleScreenState
               const SizedBox(height: 3),
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: selected
                       ? (isDark ? gold : maroon)
                       : _secondaryText(isDark),
                   fontWeight: FontWeight.w900,
-                  fontSize: 10,
+                  fontFamily: ResponsiveText.fontFamily,
+                  fontSize: ResponsiveText.small(context),
                 ),
               ),
             ],
