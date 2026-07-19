@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 import 'register_screen.dart';
 import 'auth_checker.dart';
 
@@ -139,9 +140,9 @@ class _LoginScreenState extends State<LoginScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
-          resizeToAvoidBottomInset: true,
-          backgroundColor: _bg(isDark),
-          body: SafeArea(
+              resizeToAvoidBottomInset: true,
+              backgroundColor: _bg(isDark),
+              body: SafeArea(
             child: SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: ConstrainedBox(
@@ -173,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          ),
+              ),
             );
           },
         );
@@ -265,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   AppStrings.loginWelcomeBack.toUpperCase(),
                   style: TextStyle(
                     color: gold,
-                    fontSize: 12,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
                   ),
@@ -278,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
   overflow: TextOverflow.visible,
   style: TextStyle(
                     color: Colors.white,
-                    fontSize: isSmall ? 34 : 40,
+                    fontSize: ResponsiveText.hero(context),
                     fontWeight: FontWeight.w900,
                     height: 0.95,
                   ),
@@ -290,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen> {
   overflow: TextOverflow.visible,
   style: TextStyle(
                     color: gold,
-                    fontSize: isSmall ? 25 : 30,
+                    fontSize: ResponsiveText.heroSubtitle(context),
                     fontWeight: FontWeight.w900,
                     height: 1,
                   ),
@@ -300,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   AppStrings.youngGenCricketAcademy,
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 13,
+                    fontSize: ResponsiveText.bodySmall(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -371,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         color: _primaryText(isDark),
                         fontWeight: FontWeight.w900,
-                        fontSize: 15,
+                        fontSize: ResponsiveText.cardTitle(context),
                       ),
                     ),
                     Text(
@@ -379,7 +380,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         color: _secondaryText(isDark),
                         fontWeight: FontWeight.w600,
-                        fontSize: 11,
+                        fontSize: ResponsiveText.small(context),
                       ),
                     ),
                   ],
@@ -443,7 +444,7 @@ class _LoginScreenState extends State<LoginScreen> {
           label,
           style: TextStyle(
             color: isDark ? gold : maroon,
-            fontSize: 12,
+            fontSize: ResponsiveText.small(context),
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -457,7 +458,7 @@ class _LoginScreenState extends State<LoginScreen> {
           onSubmitted: obscure ? (_) => _login() : null,
           style: TextStyle(
             color: _primaryText(isDark),
-            fontSize: 15,
+            fontSize: ResponsiveText.input(context),
             fontWeight: FontWeight.w700,
           ),
           cursorColor: isDark ? gold : maroon,
@@ -465,6 +466,7 @@ class _LoginScreenState extends State<LoginScreen> {
             hintText: hint,
             hintStyle: TextStyle(
               color: isDark ? Colors.white38 : Colors.black38,
+              fontSize: ResponsiveText.input(context),
               fontWeight: FontWeight.w500,
             ),
             prefixIcon: Icon(icon, color: isDark ? gold : maroon),
@@ -522,7 +524,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 AppStrings.loginTitle.toUpperCase(),
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 15,
+                  fontSize: ResponsiveText.button(context),
                   letterSpacing: 0.8,
                 ),
               ),
@@ -569,7 +571,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   color: _primaryText(isDark),
                   fontWeight: FontWeight.w900,
-                  fontSize: 13,
+                  fontSize: ResponsiveText.bodySmall(context),
                 ),
               ),
             ),
@@ -593,8 +595,8 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Text(
             AppStrings.loginRegister.toUpperCase(),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
+            style: TextStyle(
+              fontSize: ResponsiveText.button(context),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -635,7 +637,7 @@ class _LoginScreenState extends State<LoginScreen> {
       softWrap: true,
       style: TextStyle(
         color: isDark ? gold : maroon,
-        fontSize: 12,
+        fontSize: ResponsiveText.caption(context),
         fontWeight: FontWeight.bold,
       ),
     ),
