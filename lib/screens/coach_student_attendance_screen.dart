@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_text.dart';
 
 class CoachStudentAttendanceScreen extends StatelessWidget {
   const CoachStudentAttendanceScreen({super.key});
@@ -173,6 +174,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   _topHeader(context, isDark),
                   Expanded(
                     child: _messageCard(
+                        context: context,
                       isDark: isDark,
                       icon: Icons.lock_outline_rounded,
                       title: AppStrings.noCoachLoggedIn,
@@ -210,6 +212,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                       _topHeader(context, isDark),
                       Expanded(
                         child: _messageCard(
+                        context: context,
                           isDark: isDark,
                           icon: Icons.error_outline_rounded,
                           title: AppStrings.weeklyAssignmentError,
@@ -237,6 +240,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                       _topHeader(context, isDark),
                       Expanded(
                         child: _messageCard(
+                        context: context,
                           isDark: isDark,
                           icon: Icons.event_busy_rounded,
                           title: AppStrings.noSessionAssigned,
@@ -269,6 +273,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                           _topHeader(context, isDark),
                           Expanded(
                             child: _messageCard(
+                        context: context,
                               isDark: isDark,
                               icon: Icons.error_outline_rounded,
                               title: AppStrings.studentsLoadingError,
@@ -306,6 +311,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         ),
                         SliverToBoxAdapter(
                           child: _heroBanner(
+                             context: context,
                             isDark: isDark,
                             coachName: coachName,
                             sessionCount: assignedSessions.length,
@@ -316,6 +322,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 16)),
                         SliverToBoxAdapter(
                           child: _sectionTitle(
+                             context,
                             AppStrings.currentWeekSessionsTitle,
                             isDark,
                           ),
@@ -324,6 +331,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: _sessionCard(
+                               context: context,
                               isDark: isDark,
                               sessions: assignedSessions,
                             ),
@@ -332,6 +340,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 18)),
                         SliverToBoxAdapter(
                           child: _summaryCards(
+                             context: context,
                             isDark: isDark,
                             present: totalPresent,
                             absent: totalAbsent,
@@ -342,6 +351,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 18)),
                         SliverToBoxAdapter(
                           child: _sectionTitle(
+                             context,
                             AppStrings.studentAttendanceTitle.toUpperCase(),
                             isDark,
                           ),
@@ -352,7 +362,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                   ),
-                                  child: _emptyCard(isDark),
+                                  child: _emptyCard(context, isDark),
                                 ),
                               )
                             : SliverPadding(
@@ -398,6 +408,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                                       );
 
                                       return _attendanceStudentCard(
+                                         context: context,
                                         isDark: isDark,
                                         name: name,
                                         rollNo: rollNo,
@@ -456,7 +467,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 18,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.heading(context),
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),
@@ -467,7 +479,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.small(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -526,6 +539,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
   }
 
   Widget _heroBanner({
+    required BuildContext context,
     required bool isDark,
     required String coachName,
     required int sessionCount,
@@ -610,9 +624,10 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                               coachName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 24,
+                                fontFamily: ResponsiveText.fontFamily,
+                                fontSize: ResponsiveText.hero(context),
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
@@ -621,7 +636,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                               AppStrings.currentWeekAttendance,
                               style: TextStyle(
                                 color: gold,
-                                fontSize: 13,
+                                fontFamily: ResponsiveText.fontFamily,
+                                fontSize: ResponsiveText.body(context),
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
@@ -630,9 +646,10 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                               spacing: 8,
                               runSpacing: 6,
                               children: [
-                                _heroChip("${AppStrings.sessions}: $sessionCount"),
-                                _heroChip("${AppStrings.students}: $studentCount"),
+                                _heroChip(context, "${AppStrings.sessions}: $sessionCount"),
+                                _heroChip(context, "${AppStrings.students}: $studentCount"),
                                 _heroChip(
+                                  context,
                                   "${AppStrings.avg}: ${percentage.toStringAsFixed(0)}%",
                                 ),
                               ],
@@ -651,7 +668,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
     );
   }
 
-  Widget _heroChip(String text) {
+  Widget _heroChip(BuildContext context, String text) {
     return Container(
       constraints: const BoxConstraints(maxWidth: 150),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -664,9 +681,10 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
+        style: TextStyle(
           color: gold,
-          fontSize: 11,
+          fontFamily: ResponsiveText.fontFamily,
+          fontSize: ResponsiveText.small(context),
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -674,6 +692,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
   }
 
   Widget _sessionCard({
+    required BuildContext context,
     required bool isDark,
     required List<String> sessions,
   }) {
@@ -704,7 +723,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
               session,
               style: TextStyle(
                 color: isDark ? gold : maroon,
-                fontSize: 11,
+                fontFamily: ResponsiveText.fontFamily,
+                fontSize: ResponsiveText.small(context),
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -715,6 +735,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
   }
 
   Widget _summaryCards({
+    required BuildContext context,
     required bool isDark,
     required int present,
     required int absent,
@@ -732,6 +753,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
         childAspectRatio: 1.45,
         children: [
           _summaryCard(
+            context: context,
             isDark: isDark,
             icon: Icons.check_circle_rounded,
             title: AppStrings.present,
@@ -739,6 +761,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
             color: Colors.green,
           ),
           _summaryCard(
+            context: context,
             isDark: isDark,
             icon: Icons.cancel_rounded,
             title: AppStrings.absent,
@@ -746,6 +769,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
             color: Colors.redAccent,
           ),
           _summaryCard(
+            context: context,
             isDark: isDark,
             icon: Icons.event_busy_rounded,
             title: AppStrings.leave,
@@ -753,6 +777,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
             color: Colors.orange,
           ),
           _summaryCard(
+            context: context,
             isDark: isDark,
             icon: Icons.percent_rounded,
             title: AppStrings.average,
@@ -765,6 +790,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
   }
 
   Widget _summaryCard({
+    required BuildContext context,
     required bool isDark,
     required IconData icon,
     required String title,
@@ -800,7 +826,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontWeight: FontWeight.w900,
-                    fontSize: 18,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.heading(context),
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -809,7 +836,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontWeight: FontWeight.w700,
-                    fontSize: 11,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.small(context),
                   ),
                 ),
               ],
@@ -820,7 +848,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
     );
   }
 
-  Widget _sectionTitle(String title, bool isDark) {
+  Widget _sectionTitle(BuildContext context, String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
@@ -829,7 +857,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
             title,
             style: TextStyle(
               color: isDark ? gold : maroon,
-              fontSize: 16,
+              fontFamily: ResponsiveText.fontFamily,
+              fontSize: ResponsiveText.title(context),
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
             ),
@@ -847,6 +876,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
   }
 
   Widget _attendanceStudentCard({
+    required BuildContext context,
     required bool isDark,
     required String name,
     required String rollNo,
@@ -876,9 +906,10 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
             backgroundColor: maroon,
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : "?",
-              style: const TextStyle(
+              style: TextStyle(
                 color: gold,
-                fontSize: 19,
+                fontFamily: ResponsiveText.fontFamily,
+                fontSize: ResponsiveText.pageTitle(context),
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -894,7 +925,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _primaryText(isDark),
-                    fontSize: 15,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.title(context),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -905,7 +937,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 12,
+                    fontFamily: ResponsiveText.fontFamily,
+                    fontSize: ResponsiveText.bodySmall(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -915,30 +948,35 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                   runSpacing: 6,
                   children: [
                     _chip(
+                            context: context,
                       isDark: isDark,
                       icon: Icons.check_circle_rounded,
                       text: "${AppStrings.presentShort} $present",
                       color: Colors.green,
                     ),
                     _chip(
+                            context: context,
                       isDark: isDark,
                       icon: Icons.cancel_rounded,
                       text: "${AppStrings.absentShort} $absent",
                       color: Colors.redAccent,
                     ),
                     _chip(
+                            context: context,
                       isDark: isDark,
                       icon: Icons.event_busy_rounded,
                       text: "${AppStrings.leaveShort} $leave",
                       color: Colors.orange,
                     ),
                     _chip(
+                            context: context,
                       isDark: isDark,
                       icon: Icons.percent_rounded,
                       text: "${percentage.toStringAsFixed(0)}%",
                       color: Colors.blueAccent,
                     ),
                     _chip(
+                            context: context,
                       isDark: isDark,
                       icon: Icons.verified_rounded,
                       text: status.toLowerCase().trim() == 'active' ? AppStrings.active : status,
@@ -955,6 +993,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
   }
 
   Widget _chip({
+    required BuildContext context,
     required bool isDark,
     required IconData icon,
     required String text,
@@ -977,7 +1016,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
-              fontSize: 11,
+              fontFamily: ResponsiveText.fontFamily,
+              fontSize: ResponsiveText.small(context),
             ),
           ),
         ],
@@ -985,7 +1025,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
     );
   }
 
-  Widget _emptyCard(bool isDark) {
+  Widget _emptyCard(BuildContext context, bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
@@ -1007,6 +1047,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.w900,
+              fontFamily: ResponsiveText.fontFamily,
             ),
           ),
           const SizedBox(height: 6),
@@ -1015,7 +1056,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: _secondaryText(isDark),
-              fontSize: 12,
+              fontFamily: ResponsiveText.fontFamily,
+              fontSize: ResponsiveText.bodySmall(context),
               height: 1.4,
             ),
           ),
@@ -1025,6 +1067,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
   }
 
   Widget _messageCard({
+    required BuildContext context,
     required bool isDark,
     required IconData icon,
     required String title,
@@ -1056,7 +1099,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                 style: TextStyle(
                   color: _primaryText(isDark),
                   fontWeight: FontWeight.w900,
-                  fontSize: 16,
+                  fontFamily: ResponsiveText.fontFamily,
+                  fontSize: ResponsiveText.title(context),
                 ),
               ),
               const SizedBox(height: 6),
@@ -1065,7 +1109,8 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _secondaryText(isDark),
-                  fontSize: 12,
+                  fontFamily: ResponsiveText.fontFamily,
+                  fontSize: ResponsiveText.bodySmall(context),
                   height: 1.4,
                 ),
               ),
