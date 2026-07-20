@@ -809,10 +809,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    AppStrings.attendance.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+  AppStrings.history.toUpperCase(),
+  maxLines: 1,
+  softWrap: false,
+  style: TextStyle(
                       color: _primaryText(isDark),
                       fontSize: ResponsiveText.heading(context),
                       fontWeight: FontWeight.w900,
@@ -945,8 +945,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       ),
                     ),
                     Text(
-                      AppStrings.attendance.toUpperCase(),
-                      style: TextStyle(
+  AppStrings.attendance.toUpperCase(),
+  maxLines: 1,
+  softWrap: false,
+  style: TextStyle(
                         color: Colors.white,
                         fontSize: ResponsiveText.hero(context),
                         fontWeight: FontWeight.w900,

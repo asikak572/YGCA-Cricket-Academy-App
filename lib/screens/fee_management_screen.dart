@@ -884,7 +884,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
             padding: const EdgeInsets.all(18),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final compact = constraints.maxWidth < 300;
+                final compact = constraints.maxWidth < 240;
 
                 final icon = CircleAvatar(
                   radius: compact ? 40 : 46,
@@ -1144,7 +1144,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
           const SizedBox(height: 14),
           LayoutBuilder(
             builder: (context, constraints) {
-              if (constraints.maxWidth < 310) {
+              if (constraints.maxWidth < 260) {
                 final boxWidth = (constraints.maxWidth - 8) / 2;
 
                 return Wrap(
