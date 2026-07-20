@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -337,6 +338,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
 
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: CustomScrollView(
@@ -352,7 +354,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: SizedBox(height: 18),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ResponsivePadding.horizontal(context),
+                  ),
                   sliver: SliverToBoxAdapter(
                     child: Column(
                       children: [
@@ -436,7 +440,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _topHeader(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        14,
+      ),
       decoration: BoxDecoration(
         color: isDark ? Colors.black : maroon,
         border: Border(

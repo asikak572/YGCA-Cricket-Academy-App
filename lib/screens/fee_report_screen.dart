@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 import '../services/pdf_service.dart';
 import '../services/excel_service.dart';
 
@@ -497,6 +499,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -597,11 +600,15 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                             const SizedBox(height: 18),
                             _sectionTitle(AppStrings.feeReportSummary, isDark),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsivePadding.horizontal(context),
                               ),
                               child: GridView.count(
-                                crossAxisCount: 2,
+                                crossAxisCount:
+                                    ResponsiveHelper.isTablet(context) ||
+                                            ResponsiveHelper.isDesktop(context)
+                                        ? 4
+                                        : 2,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 crossAxisSpacing: 12,
@@ -882,11 +889,18 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
     required int totalFee,
   }) {
     final progress = (collectionPercent / 100).clamp(0.0, 1.0);
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
 
     return Container(
-      height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.all(18),
+      height: isMobile ? 200 : 220,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        12,
+        horizontalPadding,
+        0,
+      ),
+      padding: EdgeInsets.all(isMobile ? 12 : 18),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -942,21 +956,21 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
           Row(
             children: [
               CircleAvatar(
-                radius: 46,
+                radius: isMobile ? 34 : 46,
                 backgroundColor: Colors.white,
                 child: Icon(
                   Icons.analytics_rounded,
                   color: maroon,
-                  size: 42,
+                  size: isMobile ? 32 : 42,
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: isMobile ? 10 : 14),
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: SizedBox(
-                    width: 235,
+                    width: isMobile ? 205 : 235,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

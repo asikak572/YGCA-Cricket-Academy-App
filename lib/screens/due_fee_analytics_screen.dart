@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class DueFeeAnalyticsScreen extends StatefulWidget {
   const DueFeeAnalyticsScreen({super.key});
@@ -128,6 +129,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -212,7 +214,9 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                       child: _sectionTitle(AppStrings.dueFeeAnalyticsTitle, isDark),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: dueDocs.isEmpty
                           ? SliverToBoxAdapter(child: _emptyCard(isDark))
                           : SliverList(

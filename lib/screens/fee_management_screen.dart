@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 import 'notification_service.dart';
 
@@ -562,6 +564,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           floatingActionButton: _canAddPayment
               ? SafeArea(
@@ -649,8 +652,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                             const SizedBox(height: 18),
                             _sectionTitle(AppStrings.feeRecords, isDark),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsivePadding.horizontal(context),
                               ),
                               child: fees.isEmpty
                                   ? _emptyCard(isDark)
@@ -814,9 +817,17 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
     required int totalPending,
     required int records,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
-      height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      height: isMobile ? 215 : 230,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        12,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
