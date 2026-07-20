@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_text.dart';
 
 class DigitalIdCardScreen extends StatelessWidget {
   final String name;
@@ -62,11 +65,17 @@ class DigitalIdCardScreen extends StatelessWidget {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: EdgeInsets.fromLTRB(
+                ResponsivePadding.horizontal(context),
+                12,
+                ResponsivePadding.horizontal(context),
+                24,
+              ),
               child: Column(
                 children: [
                   _topHeader(context, isDark),
@@ -96,8 +105,8 @@ class DigitalIdCardScreen extends StatelessWidget {
         const SizedBox(width: 12),
         Image.asset(
           'assets/images/ygca_logo.jpg',
-          width: 46,
-          height: 46,
+          width: ResponsiveHelper.isMobile(context) ? 40 : 46,
+          height: ResponsiveHelper.isMobile(context) ? 40 : 46,
           fit: BoxFit.contain,
         ),
         const SizedBox(width: 10),
@@ -111,7 +120,7 @@ class DigitalIdCardScreen extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: _primaryText(isDark),
-                  fontSize: 18,
+                  fontSize: ResponsiveText.heading(context),
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
                 ),

@@ -55,21 +55,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
-      builder: (context, themeMode, child) {
+      builder: (context, themeMode, _) {
         return ValueListenableBuilder<String>(
           valueListenable: ThemeController.language,
-          builder: (context, language, child) {
+          builder: (context, language, _) {
             return ValueListenableBuilder<bool>(
               valueListenable: ThemeController.largeTextMode,
-              builder: (context, largeTextMode, child) {
+              builder: (context, largeTextMode, _) {
                 return MaterialApp(
                   debugShowCheckedModeBanner: false,
                   title: 'YGCA Management System',
-
                   theme: YGCATheme.lightTheme,
                   darkTheme: YGCATheme.darkTheme,
                   themeMode: themeMode,
-
                   builder: (context, child) {
                     final mediaQuery = MediaQuery.of(context);
 
@@ -85,15 +83,13 @@ class MyApp extends StatelessWidget {
                       child: child ?? const SizedBox.shrink(),
                     );
                   },
-
                   home: const InitialSplashScreen(),
-
                   routes: {
                     '/login': (context) => const LoginScreen(),
                     '/register': (context) => const RegisterScreen(),
                     '/auth-checker': (context) => const AuthChecker(),
 
-                    '/admin': (context) => AdminDashboard(),
+                    '/admin': (context) => const AdminDashboard(),
                     '/coach': (context) => const CoachDashboard(),
                     '/parent': (context) => const ParentDashboard(),
                     '/student': (context) => const StudentDashboard(),

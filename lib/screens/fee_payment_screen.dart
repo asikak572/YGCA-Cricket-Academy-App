@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_spacing.dart';
 import '../theme/theme_controller.dart';
 import 'widgets/ygca_app_bar.dart';
 
@@ -17,59 +20,83 @@ class FeePaymentScreen extends StatelessWidget {
       valueListenable: ThemeController.language,
       builder: (context, language, _) {
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: bg,
-          appBar: YgcaAppBar(
-            title: AppStrings.feePaymentTitle,
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _summaryCard(),
-                const SizedBox(height: 16),
-                _paymentMethod(
-                  AppStrings.upiPayment,
-                  Icons.qr_code,
-                ),
-                _paymentMethod(
-                  AppStrings.cashPayment,
-                  Icons.money,
-                ),
-                _paymentMethod(
-                  AppStrings.bankTransfer,
-                  Icons.account_balance,
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: maroon,
-                      foregroundColor: gold,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+          appBar: YgcaAppBar(title: AppStrings.feePaymentTitle),
+          body: SafeArea(
+            top: false,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.all(
+                    ResponsivePadding.horizontal(context),
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: ResponsiveHelper.maxContentWidth(context),
+                        minHeight: constraints.maxHeight -
+                            (ResponsivePadding.horizontal(context) * 2),
                       ),
-                    ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AppStrings.paymentRecordedSuccessfully,
-                          ),
-                          backgroundColor: Colors.green,
+                      child: IntrinsicHeight(
+                        child: Column(
+                          children: [
+                            _summaryCard(),
+                            SizedBox(
+                              height: ResponsiveSpacing.medium(context),
+                            ),
+                            _paymentMethod(
+                              AppStrings.upiPayment,
+                              Icons.qr_code,
+                            ),
+                            _paymentMethod(
+                              AppStrings.cashPayment,
+                              Icons.money,
+                            ),
+                            _paymentMethod(
+                              AppStrings.bankTransfer,
+                              Icons.account_balance,
+                            ),
+                            const Spacer(),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: maroon,
+                                  foregroundColor: gold,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        AppStrings.paymentRecordedSuccessfully,
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  AppStrings.payNow,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                    child: Text(
-                      AppStrings.payNow,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         );
@@ -88,7 +115,7 @@ class FeePaymentScreen extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            "Arjun R",
+            'Arjun R',
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -96,24 +123,12 @@ class FeePaymentScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            "${AppStrings.totalFee}: ₹12,000",
-            style: const TextStyle(
-              color: Colors.white70,
-            ),
-          ),
-          Text(
-            "${AppStrings.paid}: ₹8,000",
-            style: const TextStyle(
-              color: Colors.white70,
-            ),
-          ),
-          Text(
-            "${AppStrings.pending}: ₹4,000",
-            style: const TextStyle(
-              color: gold,
-            ),
-          ),
+          Text('${AppStrings.totalFee}: ₹12,000',
+              style: const TextStyle(color: Colors.white70)),
+          Text('${AppStrings.paid}: ₹8,000',
+              style: const TextStyle(color: Colors.white70)),
+          Text('${AppStrings.pending}: ₹4,000',
+              style: const TextStyle(color: gold)),
         ],
       ),
     );
@@ -125,21 +140,15 @@ class FeePaymentScreen extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: maroon,
-          child: Icon(
-            icon,
-            color: gold,
-          ),
+          child: Icon(icon, color: gold),
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       ),
     );
   }
