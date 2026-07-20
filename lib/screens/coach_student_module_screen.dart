@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_spacing.dart';
+import '../core/responsive/responsive_text.dart';
 
 import 'coach_assigned_students_screen.dart';
 import 'coach_student_attendance_screen.dart';
@@ -136,12 +140,18 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             bottom: false,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              padding: EdgeInsets.fromLTRB(
+                ResponsivePadding.horizontal(context),
+                ResponsiveSpacing.small(context),
+                ResponsivePadding.horizontal(context),
+                ResponsiveSpacing.large(context),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -162,7 +172,7 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
                     _subtitle,
                     style: TextStyle(
                       color: _secondaryText(isDark),
-                      fontSize: 12,
+                      fontSize: ResponsiveText.bodySmall(context),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -502,7 +512,7 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
     return Row(
       children: [
         SizedBox(
-          width: 230,
+          width: ResponsiveHelper.isMobile(context) ? 200 : 230,
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -512,7 +522,7 @@ class _CoachStudentModuleScreenState extends State<CoachStudentModuleScreen> {
               softWrap: false,
               style: TextStyle(
                 color: isDark ? gold : maroon,
-                fontSize: 18,
+                fontSize: ResponsiveText.heading(context),
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.1,
               ),

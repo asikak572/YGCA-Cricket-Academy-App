@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class CoachStatusScreen extends StatefulWidget {
   const CoachStatusScreen({super.key});
@@ -365,6 +366,7 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot>(
@@ -444,7 +446,9 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
                       child: _sectionTitle(AppStrings.coachStatusList.toUpperCase(), isDark),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: filtered.isEmpty
                           ? SliverToBoxAdapter(child: _emptyCard(isDark))
                           : SliverList(
@@ -718,7 +722,9 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
     return SizedBox(
       height: 42,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsivePadding.horizontal(context),
+        ),
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -734,7 +740,9 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsivePadding.horizontal(context),
+              ),
               decoration: BoxDecoration(
                 gradient: selected
                     ? LinearGradient(

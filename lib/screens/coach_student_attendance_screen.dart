@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
 import '../core/responsive/responsive_text.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class CoachStudentAttendanceScreen extends StatelessWidget {
   const CoachStudentAttendanceScreen({super.key});
@@ -189,6 +191,7 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
         }
 
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: FutureBuilder<Map<String, dynamic>>(
@@ -546,9 +549,17 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
     required int studentCount,
     required double percentage,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
-      height: 190,
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      height: isMobile ? 180 : 190,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        14,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -597,25 +608,25 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(18),
+              padding: EdgeInsets.all(isMobile ? 12 : 18),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 44,
+                  CircleAvatar(
+                    radius: isMobile ? 34 : 44,
                     backgroundColor: Colors.white,
                     child: Icon(
                       Icons.fact_check_rounded,
                       color: maroon,
-                      size: 42,
+                      size: isMobile ? 32 : 42,
                     ),
                   ),
-                  const SizedBox(width: 15),
+                  SizedBox(width: isMobile ? 10 : 15),
                   Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: SizedBox(
-                        width: 230,
+                        width: isMobile ? 205 : 230,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,9 +754,14 @@ class CoachStudentAttendanceScreen extends StatelessWidget {
     required double percentage,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: GridView.count(
-        crossAxisCount: 2,
+        crossAxisCount: ResponsiveHelper.isTablet(context) ||
+                ResponsiveHelper.isDesktop(context)
+            ? 4
+            : 2,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         crossAxisSpacing: 10,

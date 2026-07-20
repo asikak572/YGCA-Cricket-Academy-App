@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class CoachSessionAssignmentScreen extends StatefulWidget {
   const CoachSessionAssignmentScreen({super.key});
@@ -263,6 +264,7 @@ class _CoachSessionAssignmentScreenState
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -337,8 +339,12 @@ class _CoachSessionAssignmentScreenState
                             )
                           : ListView(
                               physics: const BouncingScrollPhysics(),
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                              padding: EdgeInsets.fromLTRB(
+                                ResponsivePadding.horizontal(context),
+                                8,
+                                ResponsivePadding.horizontal(context),
+                                100,
+                              ),
                               children: [
                                 _infoBanner(isDark),
                                 const SizedBox(height: 14),

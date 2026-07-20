@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_text.dart';
 
 class CommunicationCenterScreen extends StatefulWidget {
   const CommunicationCenterScreen({super.key});
@@ -333,6 +336,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -471,9 +475,17 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
   }
 
   Widget _heroCard(bool isDark) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
-      height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      height: isMobile ? 200 : 220,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        12,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -527,25 +539,25 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(isMobile ? 12 : 18),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 46,
+                  radius: isMobile ? 34 : 46,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.campaign_rounded,
                     color: maroon,
-                    size: 42,
+                    size: isMobile ? 32 : 42,
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: isMobile ? 10 : 14),
                 Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: SizedBox(
-                      width: 235,
+                      width: isMobile ? 205 : 235,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -562,7 +574,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                             AppStrings.commCommunication.toUpperCase(),
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 26,
+                              fontSize: ResponsiveText.pageTitle(context),
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -571,7 +583,7 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
                             AppStrings.center.toUpperCase(),
                             style: TextStyle(
                               color: gold,
-                              fontSize: 24,
+                              fontSize: ResponsiveText.heroSubtitle(context),
                               fontWeight: FontWeight.w900,
                               height: 1,
                             ),
@@ -649,7 +661,9 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
 
   Widget _formCard(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),
@@ -755,7 +769,9 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
 
   Widget _accessCard(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
@@ -797,7 +813,9 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
 
   Widget _infoCard(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),
@@ -832,7 +850,9 @@ class _CommunicationCenterScreenState extends State<CommunicationCenterScreen> {
 
   Widget _recentLogs(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection('communication_logs')

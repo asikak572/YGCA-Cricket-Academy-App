@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
 import '../core/responsive/responsive_text.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class CoachSalaryScreen extends StatefulWidget {
   const CoachSalaryScreen({super.key});
@@ -582,6 +584,7 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+              resizeToAvoidBottomInset: true,
               backgroundColor: _bg(isDark),
           floatingActionButton: _isAdmin
               ? FloatingActionButton.extended(
@@ -680,10 +683,15 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
                             const SizedBox(height: 18),
                             _sectionTitle(AppStrings.salaryOverview, isDark),
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsivePadding.horizontal(context),
+                              ),
                               child: GridView.count(
-                                crossAxisCount: 2,
+                                crossAxisCount:
+                                    ResponsiveHelper.isTablet(context) ||
+                                            ResponsiveHelper.isDesktop(context)
+                                        ? 4
+                                        : 2,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 crossAxisSpacing: 12,
@@ -893,9 +901,17 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
     required int pendingBudget,
     required int records,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
-      height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      height: isMobile ? 200 : 220,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        12,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -949,25 +965,25 @@ class _CoachSalaryScreenState extends State<CoachSalaryScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(isMobile ? 12 : 18),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 46,
+                  radius: isMobile ? 34 : 46,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.currency_rupee_rounded,
                     color: maroon,
-                    size: 42,
+                    size: isMobile ? 32 : 42,
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: isMobile ? 10 : 14),
                 Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: SizedBox(
-                      width: 235,
+                      width: isMobile ? 205 : 235,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

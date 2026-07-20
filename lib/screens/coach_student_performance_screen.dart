@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_text.dart';
 
 class CoachStudentPerformanceScreen extends StatelessWidget {
   const CoachStudentPerformanceScreen({super.key});
@@ -169,6 +172,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
         }
 
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: FutureBuilder<Map<String, dynamic>>(
@@ -303,6 +307,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                         SliverToBoxAdapter(child: _topHeader(context, isDark)),
                         SliverToBoxAdapter(
                           child: _heroBanner(
+                            context: context,
                             isDark: isDark,
                             coachName: coachName,
                             studentCount: students.length,
@@ -312,6 +317,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 16)),
                         SliverToBoxAdapter(
                           child: _summaryCards(
+                            context: context,
                             isDark: isDark,
                             batting: avgBatting,
                             bowling: avgBowling,
@@ -505,14 +511,23 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
 }
 
   Widget _heroBanner({
+    required BuildContext context,
     required bool isDark,
     required String coachName,
     required int studentCount,
     required int overall,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
-      height: 190,
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      height: isMobile ? 180 : 190,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        14,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -561,25 +576,25 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(18),
+              padding: EdgeInsets.all(isMobile ? 12 : 18),
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 44,
+                    radius: isMobile ? 34 : 44,
                     backgroundColor: Colors.white,
                     child: Icon(
                       Icons.analytics_rounded,
                       color: maroon,
-                      size: 42,
+                      size: isMobile ? 32 : 42,
                     ),
                   ),
-                  const SizedBox(width: 15),
+                  SizedBox(width: isMobile ? 10 : 15),
                   Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: SizedBox(
-                        width: 230,
+                        width: isMobile ? 205 : 230,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,9 +603,9 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
                               coachName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 24,
+                                fontSize: ResponsiveText.pageTitle(context),
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
@@ -649,6 +664,7 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
   }
 
   Widget _summaryCards({
+    required BuildContext context,
     required bool isDark,
     required int batting,
     required int bowling,
@@ -656,9 +672,14 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
     required int fitness,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: GridView.count(
-        crossAxisCount: 2,
+        crossAxisCount: ResponsiveHelper.isTablet(context) ||
+                ResponsiveHelper.isDesktop(context)
+            ? 4
+            : 2,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         crossAxisSpacing: 10,

@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_text.dart';
 
 import 'coach_details_screen.dart';
 import 'add_coach_screen.dart';
@@ -514,6 +517,7 @@ class CoachManagementScreen extends StatelessWidget {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           floatingActionButton: FloatingActionButton.extended(
             backgroundColor: isDark ? red : maroon,
@@ -597,6 +601,7 @@ class CoachManagementScreen extends StatelessWidget {
                     SliverToBoxAdapter(child: _topHeader(context, isDark)),
                     SliverToBoxAdapter(
                       child: _heroBanner(
+                        context: context,
                         isDark: isDark,
                         total: coaches.length,
                         active: active,
@@ -794,14 +799,23 @@ class CoachManagementScreen extends StatelessWidget {
   }
 
   Widget _heroBanner({
+    required BuildContext context,
     required bool isDark,
     required int total,
     required int active,
     required int pending,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
-      height: 188,
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      height: isMobile ? 178 : 188,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        14,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -855,25 +869,25 @@ class CoachManagementScreen extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(isMobile ? 12 : 18),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 42,
+                  radius: isMobile ? 34 : 42,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.sports_cricket_rounded,
                     color: maroon,
-                    size: 38,
+                    size: isMobile ? 31 : 38,
                   ),
                 ),
-                const SizedBox(width: 15),
+                SizedBox(width: isMobile ? 10 : 15),
                 Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: SizedBox(
-                      width: 230,
+                      width: isMobile ? 205 : 230,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,

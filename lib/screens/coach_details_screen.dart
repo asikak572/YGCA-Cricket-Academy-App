@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
+import '../core/responsive/responsive_text.dart';
 
 import 'coach_salary_screen.dart';
 
@@ -758,6 +761,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
             final isActive = status.toLowerCase() == "active";
 
             return Scaffold(
+              resizeToAvoidBottomInset: true,
               backgroundColor: _bg(isDark),
               body: SafeArea(
                 child: CustomScrollView(
@@ -768,6 +772,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     ),
                     SliverToBoxAdapter(
                       child: _profileHero(
+                        context: context,
                         isDark: isDark,
                         initial: initial,
                         name: name,
@@ -777,7 +782,9 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: SliverGrid(
                         delegate: SliverChildListDelegate(
                           [
@@ -816,8 +823,11 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                           ],
                         ),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: ResponsiveHelper.isTablet(context) ||
+                                  ResponsiveHelper.isDesktop(context)
+                              ? 4
+                              : 2,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                           childAspectRatio: 1.07,
@@ -1105,15 +1115,24 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
   }
 
   Widget _profileHero({
+    required BuildContext context,
     required bool isDark,
     required String initial,
     required String name,
     required String role,
     required String status,
   }) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final horizontalPadding = ResponsivePadding.horizontal(context);
+
     return Container(
-      height: 214,
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      height: isMobile ? 195 : 214,
+      margin: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        14,
+        horizontalPadding,
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -1162,28 +1181,28 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(18),
+              padding: EdgeInsets.all(isMobile ? 12 : 18),
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 48,
+                    radius: isMobile ? 36 : 48,
                     backgroundColor: Colors.white,
                     child: Text(
                       initial,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: maroon,
-                        fontSize: 34,
+                        fontSize: isMobile ? 28 : 34,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: isMobile ? 10 : 16),
                   Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: SizedBox(
-                        width: 230,
+                        width: isMobile ? 205 : 230,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1192,9 +1211,9 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                               name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 28,
+                                fontSize: ResponsiveText.pageTitle(context),
                                 fontWeight: FontWeight.w900,
                               ),
                             ),

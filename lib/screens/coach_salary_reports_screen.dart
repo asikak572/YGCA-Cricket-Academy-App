@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class CoachSalaryReportsScreen extends StatefulWidget {
   const CoachSalaryReportsScreen({super.key});
@@ -174,6 +176,7 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -303,7 +306,9 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
                             child: _sectionTitle(AppStrings.recentSalaryRecords.toUpperCase(), isDark),
                           ),
                           SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: ResponsivePadding.horizontal(context),
+                            ),
                             sliver: salaryDocs.isEmpty
                                 ? SliverToBoxAdapter(child: _emptyCard(isDark))
                                 : SliverList(
@@ -656,14 +661,20 @@ class _CoachSalaryReportsScreenState extends State<CoachSalaryReportsScreen> {
     required double paidPercentage,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: GridView.count(
-        crossAxisCount: 2,
+        crossAxisCount: ResponsiveHelper.isTablet(context) ||
+                ResponsiveHelper.isDesktop(context)
+            ? 4
+            : 2,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 1.45,
+        childAspectRatio:
+            ResponsiveHelper.isMobile(context) ? 1.25 : 1.45,
         children: [
           _summaryCard(
             isDark: isDark,

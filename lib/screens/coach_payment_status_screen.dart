@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class CoachPaymentStatusScreen extends StatefulWidget {
   const CoachPaymentStatusScreen({super.key});
@@ -437,6 +438,7 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
           valueListenable: ThemeController.language,
           builder: (context, language, __) {
             return Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: loadingUser
@@ -541,7 +543,9 @@ class _CoachPaymentStatusScreenState extends State<CoachPaymentStatusScreen> {
                             ),
                           ),
                           SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: ResponsivePadding.horizontal(context),
+                            ),
                             sliver: filteredDocs.isEmpty
                                 ? SliverToBoxAdapter(child: _emptyCard(isDark))
                                 : SliverList(
