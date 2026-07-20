@@ -52,7 +52,7 @@ class _InitialSplashScreenState extends State<InitialSplashScreen> {
         color: Colors.black,
         child: Center(
           child: Image.asset(
-            'assets/images/splash1_screen.png',
+            'assets/images/splash12_screen.jpeg',
             width: double.infinity,
             height: double.infinity,
             fit: BoxFit.contain,
