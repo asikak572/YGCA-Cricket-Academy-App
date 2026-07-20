@@ -257,7 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: Border.all(color: gold.withOpacity(0.70)),
                   ),
                   child: Image.asset(
-                    'assets/images/ygca_logo.jpg',
+                    'assets/images/ygca_logo_background.png',
                     fit: BoxFit.contain,
                   ),
                 ),

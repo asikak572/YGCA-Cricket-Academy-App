@@ -5,6 +5,8 @@ import 'package:fl_chart/fl_chart.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class PerformanceChartScreen extends StatefulWidget {
   const PerformanceChartScreen({super.key});
@@ -408,7 +410,12 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
                           final topDocs = _topFivePlayers(docs);
 
                           return SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                            padding: EdgeInsets.fromLTRB(
+                              ResponsivePadding.horizontal(context),
+                              0,
+                              ResponsivePadding.horizontal(context),
+                              24,
+                            ),
                             child: Column(
                               children: [
                                 _topBar(context, isDark),
@@ -789,12 +796,13 @@ class _PerformanceChartScreenState extends State<PerformanceChartScreen> {
     required double fitness,
   }) {
     return GridView.count(
-      crossAxisCount: 2,
+      crossAxisCount: ResponsiveHelper.isMobile(context) ? 2 : 4,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.22,
+      childAspectRatio:
+          ResponsiveHelper.isMobile(context) ? 1.22 : 1.10,
       children: [
         _statCard(
           isDark: isDark,

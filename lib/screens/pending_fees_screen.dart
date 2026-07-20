@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class PendingFeesScreen extends StatefulWidget {
   const PendingFeesScreen({super.key});
@@ -347,16 +349,20 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                             const SizedBox(height: 18),
                             _sectionTitle(AppStrings.pendingOverview, isDark),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsivePadding.horizontal(context),
                               ),
                               child: GridView.count(
-                                crossAxisCount: 2,
+                                crossAxisCount:
+                                    ResponsiveHelper.isMobile(context) ? 2 : 4,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 crossAxisSpacing: 12,
                                 mainAxisSpacing: 12,
-                                childAspectRatio: 1.18,
+                                childAspectRatio:
+                                    ResponsiveHelper.isMobile(context)
+                                        ? 1.18
+                                        : 1.10,
                                 children: [
                                   _statCard(
                                     isDark: isDark,
@@ -369,7 +375,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                                   _statCard(
                                     isDark: isDark,
                                     icon: Icons.groups_rounded,
-                                    title: "STUDENTS",
+                                    title: AppStrings.students.toUpperCase(),
                                     value: pendingStudents.length.toString(),
                                     subtitle: AppStrings.withDue,
                                     color: Colors.redAccent,
@@ -377,7 +383,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                                   _statCard(
                                     isDark: isDark,
                                     icon: Icons.payments_rounded,
-                                    title: "PAID",
+                                    title: AppStrings.paid.toUpperCase(),
                                     value: "₹$totalPaid",
                                     subtitle: AppStrings.collected,
                                     color: Colors.green,
@@ -385,7 +391,7 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                                   _statCard(
                                     isDark: isDark,
                                     icon: Icons.receipt_long_rounded,
-                                    title: "RECORDS",
+                                    title: AppStrings.records.toUpperCase(),
                                     value: pendingStudents.length.toString(),
                                     subtitle: AppStrings.feeEntries,
                                     color: Colors.purpleAccent,
@@ -396,8 +402,8 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
                             const SizedBox(height: 18),
                             _sectionTitle(AppStrings.pendingFeeList, isDark),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsivePadding.horizontal(context),
                               ),
                               child: pendingStudents.isEmpty
                                   ? _emptyCard(isDark)
@@ -561,7 +567,12 @@ class _PendingFeesScreenState extends State<PendingFeesScreen> {
   }) {
     return Container(
       height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),

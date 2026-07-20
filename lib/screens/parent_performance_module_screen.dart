@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 import 'widgets/ygca_app_bar.dart';
 import 'performance_report_screen.dart';
@@ -52,13 +54,13 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
-                  child: _header(isDark),
+                  child: _header(context, isDark),
                 ),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 16),
                 ),
                 SliverToBoxAdapter(
-                  child: _infoCard(isDark),
+                  child: _infoCard(context, isDark),
                 ),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 18),
@@ -67,7 +69,12 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
                   child: _sectionTitle(AppStrings.parentPerformanceAccess.toUpperCase(), isDark),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsivePadding.horizontal(context),
+                    0,
+                    ResponsivePadding.horizontal(context),
+                    20,
+                  ),
                   sliver: SliverGrid(
                     delegate: SliverChildListDelegate(
                       [
@@ -91,11 +98,12 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
                       ],
                     ),
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                        SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.78,
+                      childAspectRatio:
+                          ResponsiveHelper.isMobile(context) ? 0.78 : 1.05,
                     ),
                   ),
                 ),
@@ -109,10 +117,15 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
     );
   }
 
-  Widget _header(bool isDark) {
+  Widget _header(BuildContext context, bool isDark) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -205,9 +218,11 @@ class ParentPerformanceModuleScreen extends StatelessWidget {
     );
   }
 
-  Widget _infoCard(bool isDark) {
+  Widget _infoCard(BuildContext context, bool isDark) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),

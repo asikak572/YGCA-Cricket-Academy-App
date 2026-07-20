@@ -2,6 +2,7 @@
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 import 'performance_report_screen.dart';
 
@@ -176,7 +177,12 @@ class _StudentPerformanceModuleScreenState
             bottom: false,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              padding: EdgeInsets.fromLTRB(
+                ResponsivePadding.horizontal(context),
+                12,
+                ResponsivePadding.horizontal(context),
+                20,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -856,7 +862,12 @@ class _StudentPerformanceModuleScreenState
     ];
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        0,
+        ResponsivePadding.horizontal(context),
+        12,
+      ),
       padding: const EdgeInsets.all(7),
       height: 76,
       decoration: BoxDecoration(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 import 'match_schedule_screen.dart';
 import 'training_schedule_screen.dart';
@@ -63,11 +64,13 @@ class ScheduleModuleScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _topHeader(context, isDark),
-                  _heroBanner(isDark),
+                  _heroBanner(context, isDark),
                   const SizedBox(height: 18),
                   _sectionTitle(AppStrings.scheduleOptions, isDark),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsivePadding.horizontal(context),
+                    ),
                     child: Column(
                       children: [
                         _optionTile(
@@ -134,7 +137,7 @@ class ScheduleModuleScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 22),
-                  _infoCard(isDark),
+                  _infoCard(context, isDark),
                 ],
               ),
             ),
@@ -243,10 +246,15 @@ class ScheduleModuleScreen extends StatelessWidget {
     );
   }
 
-  Widget _heroBanner(bool isDark) {
+  Widget _heroBanner(BuildContext context, bool isDark) {
     return Container(
       height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -520,9 +528,11 @@ class ScheduleModuleScreen extends StatelessWidget {
     );
   }
 
-  Widget _infoCard(bool isDark) {
+  Widget _infoCard(BuildContext context, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),

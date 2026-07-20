@@ -49,7 +49,7 @@ class _CoachDashboardState extends State<CoachDashboard> {
   }
 }
 
-  static const String logoAsset = 'assets/images/ygca_logo.jpg';
+  static const String logoAsset = 'assets/images/ygca_logo_background.png';
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();

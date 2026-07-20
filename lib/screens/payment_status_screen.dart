@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class PaymentStatusScreen extends StatefulWidget {
   const PaymentStatusScreen({super.key});
@@ -199,7 +200,9 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                       child: _sectionTitle(AppStrings.paymentStatusList, isDark),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: filteredDocs.isEmpty
                           ? SliverToBoxAdapter(child: _emptyCard(isDark))
                           : SliverList(
@@ -363,7 +366,12 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     required int pendingAmount,
   }) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        14,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -518,7 +526,9 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     return SizedBox(
       height: 42,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsivePadding.horizontal(context),
+        ),
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),

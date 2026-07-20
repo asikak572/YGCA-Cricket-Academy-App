@@ -1442,3 +1442,4 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     );
   }
 }
+

@@ -47,7 +47,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
   }
 }
 
-  static const String logoAsset = 'assets/images/ygca_logo.jpg';
+  static const String logoAsset = 'assets/images/ygca_logo_background.png';
 
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
@@ -318,8 +318,8 @@ final childNameText = childNames.isEmpty
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text("No user logged in")),
+      return Scaffold(
+        body: Center(child: Text(AppStrings.noUserLoggedIn)),
       );
     }
 
@@ -354,7 +354,7 @@ final childNameText = childNames.isEmpty
                       Expanded(
                         child: Center(
                           child: Text(
-                            "Something went wrong",
+                            AppStrings.somethingWentWrong,
                             style: TextStyle(color: _primaryText(isDark)),
                           ),
                         ),
@@ -381,7 +381,7 @@ final childNameText = childNames.isEmpty
                       Expanded(
                         child: Center(
                           child: Text(
-                            "Parent details not found",
+                            AppStrings.userDataNotFound,
                             style: TextStyle(color: _primaryText(isDark)),
                           ),
                         ),
@@ -437,7 +437,7 @@ final childNameText = childNames.isEmpty
 if (childSnapshot.hasError) {
   return Center(
     child: Text(
-      "Child loading error: ${childSnapshot.error}",
+      "${AppStrings.error}: ${childSnapshot.error}",
       style: TextStyle(color: _primaryText(isDark)),
     ),
   );

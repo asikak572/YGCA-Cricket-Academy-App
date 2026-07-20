@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 import 'add_student_screen.dart';
 import 'student_details_screen.dart';
@@ -693,6 +694,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
           builder: (context, language, __) {
             final isDark = mode == ThemeMode.dark;
             final small = isSmallScreen;
+            final horizontalPadding = ResponsivePadding.horizontal(context);
+            final overviewColumns = MediaQuery.sizeOf(context).width >= 700 ? 4 : 2;
 
             return Scaffold(
           backgroundColor: _bg(isDark),
@@ -785,10 +788,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       ),
                       Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: small ? 12 : 16,
+                          horizontal: horizontalPadding,
                         ),
                         child: GridView.count(
-                          crossAxisCount: 2,
+                          crossAxisCount: overviewColumns,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisSpacing: small ? 8 : 10,
@@ -839,7 +842,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       ),
                       Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: small ? 12 : 16,
+                          horizontal: horizontalPadding,
                         ),
                         child: _searchBox(isDark),
                       ),
@@ -852,7 +855,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       ),
                       Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: small ? 12 : 16,
+                          horizontal: horizontalPadding,
                         ),
                         child: pendingStudents.isEmpty
                             ? _emptyCard(
@@ -892,7 +895,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       ),
                       Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: small ? 12 : 16,
+                          horizontal: horizontalPadding,
                         ),
                         child: approvedStudents.isEmpty
                             ? _emptyCard(
@@ -1064,7 +1067,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
     return Container(
       height: small ? 210 : 230,
-      margin: EdgeInsets.fromLTRB(small ? 12 : 16, 12, small ? 12 : 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -1222,7 +1230,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
     final small = isSmallScreen;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(small ? 12 : 16, 0, small ? 12 : 16, 10),
+      padding: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        0,
+        ResponsivePadding.horizontal(context),
+        10,
+      ),
       child: Row(
         children: [
           Container(

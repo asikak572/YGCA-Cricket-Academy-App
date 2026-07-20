@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 import '../core/responsive/responsive_text.dart';
 
 class TrainingScheduleScreen extends StatefulWidget {
@@ -967,8 +968,8 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
                                 const SizedBox(height: 18),
                                 _sectionTitle(AppStrings.trainingSchedules, isDark),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: ResponsivePadding.horizontal(context),
                                   ),
                                   child: schedules.isEmpty
                                       ? _emptyCard(isDark)
@@ -1150,7 +1151,12 @@ class _TrainingScheduleScreenState extends State<TrainingScheduleScreen> {
   }) {
     return Container(
       height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),

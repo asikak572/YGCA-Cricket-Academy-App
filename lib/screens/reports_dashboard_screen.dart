@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class ReportsDashboardScreen extends StatelessWidget {
   const ReportsDashboardScreen({super.key});
@@ -165,6 +167,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                     children: [
                       _topHeader(context, isDark),
                       _heroBanner(
+                        context: context,
                         isDark: isDark,
                         students: students.toString(),
                         collected: _money(collected),
@@ -173,7 +176,9 @@ class ReportsDashboardScreen extends StatelessWidget {
                       const SizedBox(height: 18),
                       _sectionTitle(AppStrings.reportsFinanceSummary.toUpperCase(), isDark),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsivePadding.horizontal(context),
+                        ),
                         child: Row(
                           children: [
                             Expanded(
@@ -201,14 +206,21 @@ class ReportsDashboardScreen extends StatelessWidget {
                       const SizedBox(height: 18),
                       _sectionTitle(AppStrings.reportsOverview.toUpperCase(), isDark),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsivePadding.horizontal(context),
+                        ),
                         child: GridView.count(
-                          crossAxisCount: 2,
+                          crossAxisCount: ResponsiveHelper.isDesktop(context)
+                              ? 6
+                              : ResponsiveHelper.isTablet(context)
+                                  ? 3
+                                  : 2,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 1.25,
+                          childAspectRatio:
+                              ResponsiveHelper.isDesktop(context) ? 1.05 : 1.25,
                           children: [
                             _reportCard(
                               isDark: isDark,
@@ -263,7 +275,9 @@ class ReportsDashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsivePadding.horizontal(context),
+                        ),
                         child: _insightCard(
                           isDark: isDark,
                           collected: collected,
@@ -273,6 +287,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 18),
                       _miniSummary(
+                        context: context,
                         isDark: isDark,
                         attendance: attendance,
                         performance: performance,
@@ -280,7 +295,7 @@ class ReportsDashboardScreen extends StatelessWidget {
                         matches: matches,
                       ),
                       const SizedBox(height: 22),
-                      _footer(isDark),
+                      _footer(context, isDark),
                       const SizedBox(height: 26),
                     ],
                   ),
@@ -390,6 +405,7 @@ class ReportsDashboardScreen extends StatelessWidget {
   }
 
   Widget _heroBanner({
+    required BuildContext context,
     required bool isDark,
     required String students,
     required String collected,
@@ -397,7 +413,12 @@ class ReportsDashboardScreen extends StatelessWidget {
   }) {
     return Container(
       height: 230,
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        10,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -792,6 +813,7 @@ class ReportsDashboardScreen extends StatelessWidget {
   }
 
   Widget _miniSummary({
+    required BuildContext context,
     required bool isDark,
     required int attendance,
     required int performance,
@@ -799,7 +821,9 @@ class ReportsDashboardScreen extends StatelessWidget {
     required int matches,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
@@ -890,9 +914,11 @@ class ReportsDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _footer(bool isDark) {
+  Widget _footer(BuildContext context, bool isDark) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(

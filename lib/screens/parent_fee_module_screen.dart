@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 import 'widgets/ygca_app_bar.dart';
 import 'fee_report_screen.dart';
@@ -38,32 +41,40 @@ class ParentFeeModuleScreen extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, child) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
-          appBar: const YgcaAppBar(title: "Fee Module"),
+          appBar: YgcaAppBar(title: AppStrings.feeModule),
           body: SafeArea(
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
-                  child: _header(isDark),
+                  child: _header(context, isDark),
                 ),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 16),
                 ),
                 SliverToBoxAdapter(
-                  child: _infoCard(isDark),
+                  child: _infoCard(context, isDark),
                 ),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 18),
                 ),
                 SliverToBoxAdapter(
-                  child: _sectionTitle("FEE ACCESS", isDark),
+                  child: _sectionTitle(AppStrings.feeModule.toUpperCase(), isDark),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsivePadding.horizontal(context),
+                    0,
+                    ResponsivePadding.horizontal(context),
+                    20,
+                  ),
                   sliver: SliverGrid(
                     delegate: SliverChildListDelegate(
                       [
@@ -71,8 +82,8 @@ class ParentFeeModuleScreen extends StatelessWidget {
                           context: context,
                           isDark: isDark,
                           icon: Icons.receipt_long_rounded,
-                          title: "Payment History",
-                          subtitle: "View fee payment records",
+                          title: AppStrings.paymentHistory,
+                          subtitle: AppStrings.viewFeePaymentRecords,
                           color: const Color(0xFF16A34A),
                           onTap: () {
                             Navigator.push(
@@ -86,26 +97,34 @@ class ParentFeeModuleScreen extends StatelessWidget {
                       ],
                     ),
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                        SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.78,
+                      childAspectRatio:
+                          ResponsiveHelper.isMobile(context) ? 0.78 : 1.05,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _header(bool isDark) {
+  Widget _header(BuildContext context, bool isDark) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -170,10 +189,10 @@ class ParentFeeModuleScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "FEE MODULE",
+              Text(
+                AppStrings.feeModule.toUpperCase(),
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 21,
                   fontWeight: FontWeight.w900,
@@ -182,7 +201,7 @@ class ParentFeeModuleScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                "View your child fee status and payment history",
+                "${AppStrings.feeStatus} • ${AppStrings.paymentHistory}",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.78),
@@ -198,9 +217,11 @@ class ParentFeeModuleScreen extends StatelessWidget {
     );
   }
 
-  Widget _infoCard(bool isDark) {
+  Widget _infoCard(BuildContext context, bool isDark) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
@@ -230,7 +251,7 @@ class ParentFeeModuleScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Parents can view payment history and fee status. Payment editing is controlled by Admin.",
+              "${AppStrings.paymentHistory} • ${AppStrings.feeStatus}",
               style: TextStyle(
                 color: _secondaryText(isDark),
                 fontSize: 12,

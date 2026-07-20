@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class StudentAttendanceAnalyticsScreen extends StatefulWidget {
   const StudentAttendanceAnalyticsScreen({super.key});
@@ -215,7 +216,9 @@ class _StudentAttendanceAnalyticsScreenState
                       child: _sectionTitle(AppStrings.studentAttendanceAnalyticsTitle, isDark),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: sortedStudents.isEmpty
                           ? SliverToBoxAdapter(child: _emptyCard(isDark))
                           : SliverList(
@@ -388,7 +391,12 @@ class _StudentAttendanceAnalyticsScreenState
     final color = _gradeColor(averagePercentage);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        14,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -541,7 +549,9 @@ class _StudentAttendanceAnalyticsScreenState
 
   Widget _searchBox(bool isDark) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 13),
       decoration: BoxDecoration(
         color: _card(isDark),

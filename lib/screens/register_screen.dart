@@ -361,7 +361,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
    return Container(
   width: double.infinity,
   constraints: const BoxConstraints(
-    minHeight: 360,
+    minHeight: 325,
   ),
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
@@ -432,11 +432,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 14),
 Image.asset(
-                  'assets/images/ygca_logo.jpg',
-                  height: 74,
-                  width: 74,
+                  'assets/images/ygca_logo_background.png',
+                  height: 68,
+                  width: 68,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 6),

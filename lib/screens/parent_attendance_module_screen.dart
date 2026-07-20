@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 import 'widgets/ygca_app_bar.dart';
 import 'attendance_calendar_screen.dart';
@@ -172,7 +174,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Column(
                     children: [
-                      _header(isDark, AppStrings.parentAttendanceLoading, AppStrings.parentAttendancePleaseWait),
+                      _header(context, isDark, AppStrings.parentAttendanceLoading, AppStrings.parentAttendancePleaseWait),
                       const Expanded(
                         child: Center(child: CircularProgressIndicator()),
                       ),
@@ -183,7 +185,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                 if (snapshot.hasError) {
                   return Column(
                     children: [
-                      _header(isDark, AppStrings.error, AppStrings.parentAttendanceUnableToLoad),
+                      _header(context, isDark, AppStrings.error, AppStrings.parentAttendanceUnableToLoad),
                       Expanded(
                         child: _messageCard(
                           isDark: isDark,
@@ -202,6 +204,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                   return Column(
                     children: [
                       _header(
+                        context,
                         isDark,
                         AppStrings.parentAttendanceNoChildLinked,
                         AppStrings.parentAttendanceContactAdmin,
@@ -250,6 +253,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                   slivers: [
                     SliverToBoxAdapter(
                       child: _header(
+                        context,
                         isDark,
                         firstName,
                         "$firstBatch • ${AppStrings.rollNo}: $firstRollNo",
@@ -260,6 +264,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                     ),
                     SliverToBoxAdapter(
                       child: _summaryCard(
+                        context: context,
                         isDark: isDark,
                         studentName: firstName,
                         attendance: firstAttendance,
@@ -274,7 +279,12 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                       child: _sectionTitle(AppStrings.parentAttendanceAccess.toUpperCase(), isDark),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
+                      padding: EdgeInsets.fromLTRB(
+                        ResponsivePadding.horizontal(context),
+                        0,
+                        ResponsivePadding.horizontal(context),
+                        20,
+                      ),
                       sliver: SliverGrid(
                         delegate: SliverChildListDelegate(
                           [
@@ -321,17 +331,19 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
                           ],
                         ),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
+                            SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 0.78,
+                          childAspectRatio:
+                              ResponsiveHelper.isMobile(context) ? 0.78 : 1.05,
                         ),
                       ),
                     ),
                     if (children.length > 1)
                       SliverToBoxAdapter(
                         child: _childrenList(
+                          context: context,
                           isDark: isDark,
                           children: children,
                         ),
@@ -351,10 +363,20 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
     );
   }
 
-  Widget _header(bool isDark, String title, String subtitle) {
+  Widget _header(
+    BuildContext context,
+    bool isDark,
+    String title,
+    String subtitle,
+  ) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -462,6 +484,7 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
   }
 
   Widget _summaryCard({
+    required BuildContext context,
     required bool isDark,
     required String studentName,
     required String attendance,
@@ -471,7 +494,9 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
     final progress = attendanceNumber.clamp(0, 100) / 100;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: _card(isDark),
@@ -705,11 +730,14 @@ class ParentAttendanceModuleScreen extends StatelessWidget {
   }
 
   Widget _childrenList({
+    required BuildContext context,
     required bool isDark,
     required List<Map<String, dynamic>> children,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _card(isDark),
