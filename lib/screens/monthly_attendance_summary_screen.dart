@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
+import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_helper.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class MonthlyAttendanceSummaryScreen extends StatefulWidget {
   const MonthlyAttendanceSummaryScreen({super.key});
@@ -54,8 +57,22 @@ class _MonthlyAttendanceSummaryScreenState
     }
   }
 
+  String get _language =>
+      ThemeController.language.value.trim().toLowerCase();
+
+  bool get _isTamil =>
+      _language.startsWith('ta') ||
+      _language.contains('tamil') ||
+      _language.contains('தமிழ்');
+
+  bool get _isHindi =>
+      _language.startsWith('hi') ||
+      _language.contains('hindi') ||
+      _language.contains('हिन्दी') ||
+      _language.contains('हिंदी');
+
   String _monthName(int month) {
-    const months = [
+    const englishMonths = [
       "January",
       "February",
       "March",
@@ -70,7 +87,49 @@ class _MonthlyAttendanceSummaryScreenState
       "December",
     ];
 
+    const tamilMonths = [
+      "ஜனவரி",
+      "பிப்ரவரி",
+      "மார்ச்",
+      "ஏப்ரல்",
+      "மே",
+      "ஜூன்",
+      "ஜூலை",
+      "ஆகஸ்ட்",
+      "செப்டம்பர்",
+      "அக்டோபர்",
+      "நவம்பர்",
+      "டிசம்பர்",
+    ];
+
+    const hindiMonths = [
+      "जनवरी",
+      "फ़रवरी",
+      "मार्च",
+      "अप्रैल",
+      "मई",
+      "जून",
+      "जुलाई",
+      "अगस्त",
+      "सितंबर",
+      "अक्टूबर",
+      "नवंबर",
+      "दिसंबर",
+    ];
+
+    final months = _isTamil
+        ? tamilMonths
+        : _isHindi
+            ? hindiMonths
+            : englishMonths;
+
     return months[month - 1];
+  }
+
+  String get _dayWiseRecordsLabel {
+    if (_isTamil) return "நாள் வாரியான பதிவுகள்";
+    if (_isHindi) return "दिनवार रिकॉर्ड";
+    return "DAY WISE RECORDS";
   }
 
   void _previousMonth() {
@@ -137,9 +196,12 @@ class _MonthlyAttendanceSummaryScreenState
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
       builder: (context, mode, _) {
-        final isDark = mode == ThemeMode.dark;
+        return ValueListenableBuilder<String>(
+          valueListenable: ThemeController.language,
+          builder: (context, language, __) {
+            final isDark = mode == ThemeMode.dark;
 
-        return Scaffold(
+            return Scaffold(
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -154,7 +216,7 @@ class _MonthlyAttendanceSummaryScreenState
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              "Error: ${snapshot.error}",
+                              "${AppStrings.error}: ${snapshot.error}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.redAccent,
@@ -231,11 +293,16 @@ class _MonthlyAttendanceSummaryScreenState
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("MONTHLY SUMMARY", isDark),
+                      child: _sectionTitle(
+                        AppStrings.monthlySummary.toUpperCase(),
+                        isDark,
+                      ),
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsivePadding.horizontal(context),
+                        ),
                         child: _summaryGrid(
                           isDark: isDark,
                           present: present,
@@ -249,10 +316,15 @@ class _MonthlyAttendanceSummaryScreenState
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
                     SliverToBoxAdapter(
-                      child: _sectionTitle("DAY WISE RECORDS", isDark),
+                      child: _sectionTitle(
+                        _dayWiseRecordsLabel.toUpperCase(),
+                        isDark,
+                      ),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: dayWise.isEmpty
                           ? SliverToBoxAdapter(child: _emptyCard(isDark))
                           : SliverList(
@@ -278,6 +350,8 @@ class _MonthlyAttendanceSummaryScreenState
               },
             ),
           ),
+            );
+          },
         );
       },
     );
@@ -306,7 +380,7 @@ class _MonthlyAttendanceSummaryScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "MONTHLY SUMMARY",
+                  AppStrings.monthlySummary.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -317,7 +391,7 @@ class _MonthlyAttendanceSummaryScreenState
                   ),
                 ),
                 Text(
-                  "Monthly attendance overview",
+                  "${AppStrings.monthlySummary} • ${AppStrings.attendance}",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -411,7 +485,7 @@ class _MonthlyAttendanceSummaryScreenState
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  "Tap arrows to change month",
+                  AppStrings.tapArrowsChangeMonth,
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 11,
@@ -465,7 +539,9 @@ class _MonthlyAttendanceSummaryScreenState
     required double percentage,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -505,7 +581,7 @@ class _MonthlyAttendanceSummaryScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Monthly Attendance",
+                  "${AppStrings.monthlySummary} ${AppStrings.attendance}",
                   style: TextStyle(
                     color: _primaryText(isDark),
                     fontSize: 17,
@@ -514,7 +590,7 @@ class _MonthlyAttendanceSummaryScreenState
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "Total records: $total • Present: $present • Absent: $absent • Leave: $leave",
+                  "${AppStrings.total} ${AppStrings.records}: $total • ${AppStrings.present}: $present • ${AppStrings.absent}: $absent • ${AppStrings.leave}: $leave",
                   style: TextStyle(
                     color: _secondaryText(isDark),
                     fontSize: 12,
@@ -563,52 +639,56 @@ class _MonthlyAttendanceSummaryScreenState
     required int total,
   }) {
     return GridView.count(
-      crossAxisCount: 2,
+      crossAxisCount: ResponsiveHelper.isDesktop(context)
+          ? 6
+          : ResponsiveHelper.isTablet(context)
+              ? 3
+              : 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
-      childAspectRatio: 1.45,
+      childAspectRatio: ResponsiveHelper.isDesktop(context) ? 1.25 : 1.45,
       children: [
         _summaryCard(
           isDark: isDark,
           icon: Icons.check_circle_rounded,
-          title: "Present",
+          title: AppStrings.present,
           value: present.toString(),
           color: Colors.green,
         ),
         _summaryCard(
           isDark: isDark,
           icon: Icons.cancel_rounded,
-          title: "Absent",
+          title: AppStrings.absent,
           value: absent.toString(),
           color: Colors.redAccent,
         ),
         _summaryCard(
           isDark: isDark,
           icon: Icons.event_busy_rounded,
-          title: "Leave",
+          title: AppStrings.leave,
           value: leave.toString(),
           color: Colors.orange,
         ),
         _summaryCard(
           isDark: isDark,
           icon: Icons.event_repeat_rounded,
-          title: "Makeup",
+          title: AppStrings.makeup,
           value: makeup.toString(),
           color: Colors.teal,
         ),
         _summaryCard(
           isDark: isDark,
           icon: Icons.block_rounded,
-          title: "Cancelled",
+          title: AppStrings.cancelled,
           value: cancelled.toString(),
           color: Colors.deepOrange,
         ),
         _summaryCard(
           isDark: isDark,
           icon: Icons.receipt_long_rounded,
-          title: "Total",
+          title: AppStrings.total,
           value: total.toString(),
           color: Colors.blueAccent,
         ),
@@ -754,7 +834,7 @@ class _MonthlyAttendanceSummaryScreenState
               ),
             ),
             child: Text(
-              "$count records",
+              "$count ${AppStrings.records}",
               style: const TextStyle(
                 color: Colors.blueAccent,
                 fontSize: 11,
@@ -786,7 +866,7 @@ class _MonthlyAttendanceSummaryScreenState
           ),
           const SizedBox(height: 10),
           Text(
-            "No Monthly Records Found",
+            AppStrings.noAttendanceRecordsFound,
             style: TextStyle(
               color: _primaryText(isDark),
               fontWeight: FontWeight.bold,
@@ -794,7 +874,7 @@ class _MonthlyAttendanceSummaryScreenState
           ),
           const SizedBox(height: 4),
           Text(
-            "No attendance records are available for this selected month.",
+            AppStrings.noAttendanceDataAvailable,
             textAlign: TextAlign.center,
             style: TextStyle(color: _secondaryText(isDark)),
           ),

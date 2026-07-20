@@ -156,7 +156,7 @@ class _FeeModuleScreenState extends State<FeeModuleScreen> {
         title: AppStrings.monthlyCollection,
         subtitle: AppStrings.viewMonthlyFeeCollectionSummary,
         color: Colors.blueAccent,
-        screen: const MonthlyFeeCollectionScreen(),
+        screen: MonthlyFeeCollectionScreen(),
       ),
       _InfoItem(
         icon: Icons.warning_rounded,

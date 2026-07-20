@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'communication_center_screen.dart';
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -494,7 +495,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             const SizedBox(height: 14),
                             _sectionTitle(AppStrings.notificationReceivedTitle.toUpperCase(), isDark),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsivePadding.horizontal(context),
+                              ),
                               child: tabFiltered.isEmpty
                                   ? _emptyCard(isDark)
                                   : Column(
@@ -659,7 +662,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }) {
     return Container(
       height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -786,7 +794,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Widget _sendCommunicationButton(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: _openCommunicationCenter,
@@ -905,7 +915,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsivePadding.horizontal(context),
+        ),
         itemCount: tabs.length,
         itemBuilder: (context, index) {
           final selected = selectedTabIndex == index;
@@ -952,13 +964,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
       child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? gold : maroon,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isDark ? gold : maroon,
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
             ),
           ),
           const SizedBox(width: 10),

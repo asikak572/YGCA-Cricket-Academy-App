@@ -473,13 +473,17 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
                            
                             const SizedBox(height: 18),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsivePadding.horizontal(context),
+                              ),
                               child: _infoBanner(isDark),
                             ),
                             const SizedBox(height: 18),
                             _sectionTitle(AppStrings.makeupSessionList, isDark),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ResponsivePadding.horizontal(context),
+                              ),
                               child: sessions.isEmpty
                                   ? _emptyCard(isDark)
                                   : Column(
@@ -712,7 +716,12 @@ class _MakeupSessionScreenState extends State<MakeupSessionScreen> {
     return Container(
       width: double.infinity,
       height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),

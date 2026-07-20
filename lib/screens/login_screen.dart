@@ -130,6 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isSmall = size.width < 370;
+    final isShort = size.height < 850;
 
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.themeMode,
@@ -140,40 +141,32 @@ class _LoginScreenState extends State<LoginScreen> {
             final isDark = mode == ThemeMode.dark;
 
             return Scaffold(
-              resizeToAvoidBottomInset: true,
+              resizeToAvoidBottomInset: false,
               backgroundColor: _bg(isDark),
               body: SafeArea(
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: size.height - MediaQuery.of(context).padding.top,
-                ),
                 child: Column(
                   children: [
                     _hero(isDark: isDark, height: size.height, isSmall: isSmall),
                     Padding(
                       padding: EdgeInsets.fromLTRB(
                         isSmall ? 16 : 22,
-                        18,
+                        isShort ? 10 : 18,
                         isSmall ? 16 : 22,
-                        14,
+                        isShort ? 8 : 14,
                       ),
                       child: Column(
                         children: [
                           _loginPanel(isDark: isDark),
-                          const SizedBox(height: 14),
+                          SizedBox(height: isShort ? 8 : 14),
                           _registerCard(isDark: isDark),
-                          const SizedBox(height: 16),
+                          SizedBox(height: isShort ? 8 : 16),
                           _footerMini(isDark),
-                          const SizedBox(height: 8),
+                          SizedBox(height: isShort ? 2 : 8),
                         ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
               ),
             );
           },
@@ -187,10 +180,12 @@ class _LoginScreenState extends State<LoginScreen> {
     required double height,
     required bool isSmall,
   }) {
+    final isShort = height < 850;
+
     return Container(
   width: double.infinity,
   constraints: BoxConstraints(
-    minHeight: isSmall ? 330 : 350,
+    minHeight: isShort ? 240 : (isSmall ? 330 : 350),
   ),
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
@@ -243,13 +238,18 @@ class _LoginScreenState extends State<LoginScreen> {
             child: _themeButton(isDark),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(24, isSmall ? 12 : 16, 24, 18),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              isShort ? 10 : (isSmall ? 12 : 16),
+              24,
+              isShort ? 12 : 18,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: isSmall ? 68 : 78,
-                  height: isSmall ? 68 : 78,
+                  width: isShort ? 62 : (isSmall ? 68 : 78),
+                  height: isShort ? 62 : (isSmall ? 68 : 78),
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.42),
@@ -261,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: isShort ? 14 : 30),
                 Text(
                   AppStrings.loginWelcomeBack.toUpperCase(),
                   style: TextStyle(

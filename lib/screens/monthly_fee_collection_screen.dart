@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class MonthlyFeeCollectionScreen extends StatefulWidget {
   const MonthlyFeeCollectionScreen({super.key});
@@ -281,7 +282,9 @@ class _MonthlyFeeCollectionScreenState
                       child: _sectionTitle(AppStrings.dayWiseCollection, isDark),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: dayWise.isEmpty
                           ? SliverToBoxAdapter(child: _emptyCard(isDark))
                           : SliverList(
@@ -306,7 +309,9 @@ class _MonthlyFeeCollectionScreenState
                       child: _sectionTitle(AppStrings.monthlyTransactions, isDark),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsivePadding.horizontal(context),
+                      ),
                       sliver: monthDocs.isEmpty
                           ? const SliverToBoxAdapter(child: SizedBox.shrink())
                           : SliverList(
@@ -549,7 +554,9 @@ class _MonthlyFeeCollectionScreenState
     required int pendingCount,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(

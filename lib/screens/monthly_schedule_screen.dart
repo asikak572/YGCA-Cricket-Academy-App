@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 
 class MonthlyScheduleScreen extends StatefulWidget {
   const MonthlyScheduleScreen({super.key});
@@ -726,7 +727,9 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
                           const SizedBox(height: 18),
                           _sectionTitle(AppStrings.monthlySchedule.toUpperCase(), isDark),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: ResponsivePadding.horizontal(context),
+                            ),
                             child: _hasNoAssignedBatch
                                 ? _messageCard(
                                     isDark: isDark,
@@ -875,7 +878,12 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
   Widget _heroBanner(bool isDark) {
     return Container(
       height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -1031,7 +1039,9 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
         monthlyItems.where((item) => item.category == "Cancelled").length;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.horizontal(context),
+      ),
       child: Row(
         children: [
           Expanded(

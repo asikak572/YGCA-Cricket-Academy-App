@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/theme_controller.dart';
 import '../core/language/app_strings.dart';
+import '../core/responsive/responsive_padding.dart';
 import '../core/responsive/responsive_text.dart';
 
 import 'notification_service.dart';
@@ -596,7 +597,9 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                 Expanded(
                                   child: Center(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(16),
+                                      padding: EdgeInsets.all(
+                                        ResponsivePadding.horizontal(context),
+                                      ),
                                       child: Text(
                                         "${AppStrings.error}: ${snapshot.error}",
                                         textAlign: TextAlign.center,
@@ -649,8 +652,9 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                                       const SizedBox(height: 14),
                                       _sectionTitle(AppStrings.leaveRequestsTitle, isDark),
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal:
+                                              ResponsivePadding.horizontal(context),
                                         ),
                                         child: requests.isEmpty
                                             ? _emptyCard(isDark)
@@ -827,7 +831,12 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   }) {
     return Container(
       height: 220,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: EdgeInsets.fromLTRB(
+        ResponsivePadding.horizontal(context),
+        12,
+        ResponsivePadding.horizontal(context),
+        0,
+      ),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -1698,7 +1707,12 @@ class _LeaveFormScreenState extends State<LeaveFormScreen> {
                             ],
                           )
                         : SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                            padding: EdgeInsets.fromLTRB(
+                              ResponsivePadding.horizontal(context),
+                              0,
+                              ResponsivePadding.horizontal(context),
+                              24,
+                            ),
                             child: Column(
                               children: [
                                 _topHeader(context, isDark),
