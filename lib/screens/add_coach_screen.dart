@@ -20,17 +20,41 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
 
-  String selectedSpecialization = AppStrings.battingCoach;
+  String selectedSpecialization = 'Batting Coach';
   bool isSaving = false;
 
-  final List<String> specializations = [
-    AppStrings.battingCoach,
-    AppStrings.bowlingCoach,
-    AppStrings.fieldingCoach,
-    AppStrings.fitnessCoach,
-    AppStrings.headCoach,
-    AppStrings.assistantCoach,
-  ];
+final List<String> specializations = const [
+  'Batting Coach',
+  'Bowling Coach',
+  'Fielding Coach',
+  'Fitness Coach',
+  'Head Coach',
+  'Assistant Coach',
+];
+String _specializationLabel(String value) {
+  switch (value) {
+    case 'Batting Coach':
+      return AppStrings.battingCoach;
+
+    case 'Bowling Coach':
+      return AppStrings.bowlingCoach;
+
+    case 'Fielding Coach':
+      return AppStrings.fieldingCoach;
+
+    case 'Fitness Coach':
+      return AppStrings.fitnessCoach;
+
+    case 'Head Coach':
+      return AppStrings.headCoach;
+
+    case 'Assistant Coach':
+      return AppStrings.assistantCoach;
+
+    default:
+      return value;
+  }
+}
 
   @override
   void dispose() {
@@ -167,13 +191,18 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
   }
 
   InputDecoration _inputDecoration({
-    required bool isDark,
-    required String label,
-    IconData? icon,
-  }) {
-    return InputDecoration(
-      labelText: label,
+  required bool isDark,
+  required String label,
+  IconData? icon,
+  bool useHint = false,
+}) {
+  return InputDecoration(
+    labelText: useHint ? null : label,
+    hintText: useHint ? label : null,
+    floatingLabelBehavior:
+        useHint ? FloatingLabelBehavior.never : FloatingLabelBehavior.auto,
       labelStyle: TextStyle(color: _secondaryText(isDark)),
+      hintStyle: TextStyle(color: _secondaryText(isDark)),
       prefixIcon: icon == null
           ? null
           : Icon(
@@ -286,7 +315,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                       ),
                       const SizedBox(width: 10),
                       Image.asset(
-                        'assets/images/ygca_logo.jpg',
+                        'assets/images/ygca_logo_background.png',
                         width: screenWidth < 360 ? 38 : 46,
                         height: screenWidth < 360 ? 38 : 46,
                         fit: BoxFit.contain,
@@ -360,6 +389,7 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                             icon: Icons.phone_rounded,
                             keyboardType: TextInputType.phone,
                           ),
+                          const SizedBox(height: 4),
                           DropdownButtonFormField<String>(
                             value: selectedSpecialization,
                             isExpanded: true,
@@ -371,15 +401,16 @@ class _AddCoachScreenState extends State<AddCoachScreen> {
                               fontWeight: FontWeight.w700,
                             ),
                             decoration: _inputDecoration(
-                              isDark: isDark,
-                              label: AppStrings.specialization,
-                              icon: Icons.sports_cricket_rounded,
-                            ),
+  isDark: isDark,
+  label: AppStrings.specialization,
+  icon: Icons.sports_cricket_rounded,
+  useHint: true,
+),
                             items: specializations.map((item) {
                               return DropdownMenuItem<String>(
                                 value: item,
-                                child: Text(
-                                  item,
+                               child: Text(
+  _specializationLabel(item),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),

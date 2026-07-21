@@ -799,14 +799,17 @@ class _StudentPerformanceModuleScreenState
     );
   }
 
-  Widget _miniStat({
-    required bool isDark,
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
+ Widget _miniStat({
+  required bool isDark,
+  required IconData icon,
+  required String label,
+  required String value,
+  required Color color,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 3),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           icon,
@@ -814,36 +817,52 @@ class _StudentPerformanceModuleScreenState
           size: 21,
         ),
         const SizedBox(height: 5),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: _secondaryText(isDark),
-              fontSize: 9.2,
-              fontWeight: FontWeight.w700,
+
+        SizedBox(
+          width: double.infinity,
+          height: 18,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _secondaryText(isDark),
+                fontSize: 9.2,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
+
         const SizedBox(height: 3),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: _primaryText(isDark),
-              fontSize: 12.5,
-              fontWeight: FontWeight.w900,
+
+        SizedBox(
+          width: double.infinity,
+          height: 23,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: Text(
+              value,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryText(isDark),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _bottomNavigation(bool isDark) {
     final items = [

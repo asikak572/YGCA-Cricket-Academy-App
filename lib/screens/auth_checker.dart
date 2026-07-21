@@ -309,7 +309,7 @@ class PendingApprovalScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Image.asset(
-                        'assets/images/ygca_logo.jpg',
+                        'assets/images/ygca_logo_background.png',
                         width: 76,
                         height: 76,
                         fit: BoxFit.contain,

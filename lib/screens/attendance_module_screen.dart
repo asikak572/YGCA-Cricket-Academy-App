@@ -256,7 +256,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
         ),
         const SizedBox(width: 12),
         Image.asset(
-          'assets/images/ygca_logo.jpg',
+          'assets/images/ygca_logo_background.png',
           width: ResponsiveHelper.isMobile(context) ? 42 : 52,
           height: ResponsiveHelper.isMobile(context) ? 42 : 52,
           fit: BoxFit.contain,
@@ -708,6 +708,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
     required String value,
     required Color color,
   }) {
+    final compactValue = value.runes.length > 3;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -736,7 +737,7 @@ class _AttendanceModuleScreenState extends State<AttendanceModuleScreen> {
             maxLines: 1,
             style: TextStyle(
               color: _primaryText(isDark),
-              fontSize: 17,
+              fontSize: compactValue ? 11 : 17,
               fontWeight: FontWeight.w900,
             ),
           ),

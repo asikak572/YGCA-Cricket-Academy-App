@@ -567,7 +567,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
           const SizedBox(width: 12),
           Image.asset(
-            'assets/images/ygca_logo.jpg',
+            'assets/images/ygca_logo_background.png',
             width: ResponsiveHelper.isMobile(context) ? 48 : 56,
             height: ResponsiveHelper.isMobile(context) ? 48 : 56,
             fit: BoxFit.contain,

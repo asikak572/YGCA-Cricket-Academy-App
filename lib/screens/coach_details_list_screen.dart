@@ -63,9 +63,96 @@ class CoachDetailsListScreen extends StatelessWidget {
     if (value == null || value.toString().trim().isEmpty) return fallback;
     return value.toString().trim();
   }
+  String _canonicalStatus(String status) {
+  final value = status.toLowerCase().trim();
 
-  Color _statusColor(String status) {
-    final value = status.toLowerCase().trim();
+  if (value == 'active' ||
+      value == 'approved' ||
+      value == 'செயலில்' ||
+      value == 'அங்கீகரிக்கப்பட்டது') {
+    return 'active';
+  }
+
+  if (value == 'inactive' ||
+      value == 'செயலில் இல்லை' ||
+      value == 'செயலற்றது') {
+    return 'inactive';
+  }
+
+  if (value == 'pending' ||
+      value == 'waiting' ||
+      value == 'நிலுவை' ||
+      value == 'காத்திருக்கிறது') {
+    return 'pending';
+  }
+
+  return value;
+}
+
+String _localizedStatus(String status) {
+  switch (_canonicalStatus(status)) {
+    case 'active':
+      return AppStrings.active;
+
+    case 'inactive':
+      return AppStrings.inactive;
+
+    case 'pending':
+      return AppStrings.pending;
+
+    default:
+      return status;
+  }
+}
+
+String _localizedSpecialization(String specialization) {
+  final value = specialization.toLowerCase().trim();
+
+  if (value == 'batting coach' ||
+      value == 'batting' ||
+      value == 'பேட்டிங் பயிற்சியாளர்') {
+    return AppStrings.coachMgmtBattingCoach;
+  }
+
+  if (value == 'bowling coach' ||
+      value == 'bowling' ||
+      value == 'பந்துவீச்சு பயிற்சியாளர்') {
+    return AppStrings.coachMgmtBowlingCoach;
+  }
+
+  if (value == 'fielding coach' ||
+      value == 'fielding' ||
+      value == 'களத்தடுப்பு பயிற்சியாளர்') {
+    return AppStrings.coachMgmtFieldingCoach;
+  }
+
+  if (value == 'fitness coach' ||
+      value == 'fitness' ||
+      value == 'உடற்தகுதி பயிற்சியாளர்') {
+    return AppStrings.coachMgmtFitnessCoach;
+  }
+
+  if (value == 'head coach' ||
+      value == 'தலைமை பயிற்சியாளர்') {
+    return AppStrings.coachMgmtHeadCoach;
+  }
+
+  if (value == 'assistant coach' ||
+      value == 'உதவி பயிற்சியாளர்') {
+    return AppStrings.coachMgmtAssistantCoach;
+  }
+
+  if (value.isEmpty ||
+      value == 'no specialization' ||
+      value == 'சிறப்பு துறை இல்லை') {
+    return AppStrings.noSpecialization;
+  }
+
+  return specialization;
+}
+
+ Color _statusColor(String status) {
+  final value = _canonicalStatus(status);
 
     if (value == "active" || value == "approved") return Colors.green;
     if (value == "inactive") return Colors.redAccent;
@@ -175,14 +262,17 @@ class CoachDetailsListScreen extends StatelessWidget {
                                   final role = _text(data, 'role', AppStrings.coachLabel);
                                   final phone = _text(data, 'phone', AppStrings.noPhone);
                                   final batch = _batchesText(data);
-                                  final status = _text(data, 'status', AppStrings.pending);
+                                  final status = _localizedStatus(
+  _text(data, 'status', 'Pending'),
+);
                                   final email = _text(data, 'email', AppStrings.noEmail);
-                                  final specialization = _text(
-                                    data,
-                                    'specialization',
-                                    AppStrings.noSpecialization,
-                                  );
-
+                                 final specialization = _localizedSpecialization(
+  _text(
+    data,
+    'specialization',
+    'No Specialization',
+  ),
+);
                                   return _coachDetailsCard(
                                     context: context,
                                     isDark: isDark,

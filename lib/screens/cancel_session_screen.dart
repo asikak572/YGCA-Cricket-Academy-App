@@ -901,7 +901,7 @@ class _CancelSessionScreenState extends State<CancelSessionScreen> {
           ),
           const SizedBox(width: 12),
           Image.asset(
-            'assets/images/ygca_logo.jpg',
+            'assets/images/ygca_logo_background.png',
             width: 46,
             height: 46,
             fit: BoxFit.contain,

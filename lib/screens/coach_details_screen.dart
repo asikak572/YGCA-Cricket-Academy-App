@@ -1050,7 +1050,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
           ),
           const SizedBox(width: 10),
           Image.asset(
-            'assets/images/ygca_logo.jpg',
+            'assets/images/ygca_logo_background.png',
             width: 46,
             height: 46,
             fit: BoxFit.contain,
