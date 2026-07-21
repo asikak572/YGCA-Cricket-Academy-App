@@ -17,7 +17,24 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
   static const Color maroon = Color(0xFF7F0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  String searchText = '';
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _feesStream;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  final ValueNotifier<String> _searchQuery = ValueNotifier<String>('');
+
+  @override
+  void initState() {
+    super.initState();
+    _feesStream = _feesQuery().snapshots();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _searchQuery.dispose();
+    super.dispose();
+  }
 
   Color _bg(bool isDark) {
     return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
@@ -83,8 +100,9 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _filteredDocs(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    String searchValue,
   ) {
-    final query = searchText.trim().toLowerCase();
+    final query = searchValue.trim().toLowerCase();
 
     if (query.isEmpty) return docs;
 
@@ -302,7 +320,7 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _feesQuery().snapshots(),
+              stream: _feesStream,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Column(
@@ -327,7 +345,8 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                   );
                 }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData &&
+                    snapshot.connectionState == ConnectionState.waiting) {
                   return Column(
                     children: [
                       _topHeader(context, isDark),
@@ -339,8 +358,6 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                 }
 
                 final allDocs = _sortDocs(snapshot.data?.docs ?? []);
-                final receipts = _filteredDocs(allDocs);
-
                 int totalAmount = 0;
                 for (final doc in allDocs) {
                   final data = doc.data();
@@ -364,13 +381,18 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                     SliverToBoxAdapter(
                       child: _sectionTitle(AppStrings.feeReceiptsList, isDark),
                     ),
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ResponsivePadding.horizontal(context),
-                      ),
-                      sliver: receipts.isEmpty
-                          ? SliverToBoxAdapter(child: _emptyCard(isDark))
-                          : SliverList(
+                    ValueListenableBuilder<String>(
+                      valueListenable: _searchQuery,
+                      builder: (context, query, _) {
+                        final receipts = _filteredDocs(allDocs, query);
+
+                        return SliverPadding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsivePadding.horizontal(context),
+                          ),
+                          sliver: receipts.isEmpty
+                              ? SliverToBoxAdapter(child: _emptyCard(isDark))
+                              : SliverList(
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
                                   final doc = receipts[index];
@@ -421,7 +443,9 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
                                 },
                                 childCount: receipts.length,
                               ),
-                            ),
+                                ),
+                        );
+                      },
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   ],
@@ -620,10 +644,11 @@ class _FeeReceiptsScreenState extends State<FeeReceiptsScreen> {
         ),
       ),
       child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        textInputAction: TextInputAction.search,
         onChanged: (value) {
-          setState(() {
-            searchText = value;
-          });
+          _searchQuery.value = value;
         },
         style: TextStyle(
           color: _primaryText(isDark),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -17,7 +19,34 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
   static const Color maroon = Color(0xFF7F0000);
   static const Color gold = Color(0xFFD4AF37);
 
-  String searchText = '';
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _feesStream;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _studentsSubscription;
+
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  final ValueNotifier<String> _searchQuery = ValueNotifier<String>('');
+
+  final Map<String, String> _rollNoByStudentId = <String, String>{};
+  final Map<String, String> _rollNoByNameBatch = <String, String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _feesStream = _feesQuery().snapshots();
+    _studentsSubscription = FirebaseFirestore.instance
+        .collection('students')
+        .snapshots()
+        .listen(_updateStudentRollNumbers);
+  }
+
+  @override
+  void dispose() {
+    _studentsSubscription?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _searchQuery.dispose();
+    super.dispose();
+  }
 
   Color _bg(bool isDark) {
     return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
@@ -55,10 +84,80 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
     return FirebaseFirestore.instance.collection('fees');
   }
 
+  String _studentLookupKey(String name, String batch) {
+    return '${name.trim().toLowerCase()}|${batch.trim().toLowerCase()}';
+  }
+
+  String _rollNoFromStudentData(Map<String, dynamic> data) {
+    for (final key in ['rollNo', 'rollNumber', 'studentRollNo']) {
+      final value = _text(data[key]);
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
+  void _updateStudentRollNumbers(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    final byId = <String, String>{};
+    final byNameBatch = <String, String>{};
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final rollNo = _rollNoFromStudentData(data);
+      if (rollNo.isEmpty) continue;
+
+      byId[doc.id] = rollNo;
+
+      final name = _text(data['name']).isNotEmpty
+          ? _text(data['name'])
+          : _text(data['studentName']);
+      final batch = _text(data['batch']);
+      if (name.isNotEmpty) {
+        byNameBatch[_studentLookupKey(name, batch)] = rollNo;
+        byNameBatch.putIfAbsent(
+          _studentLookupKey(name, ''),
+          () => rollNo,
+        );
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _rollNoByStudentId
+        ..clear()
+        ..addAll(byId);
+      _rollNoByNameBatch
+        ..clear()
+        ..addAll(byNameBatch);
+    });
+  }
+
+  String _resolvedRollNo(Map<String, dynamic> data) {
+    final directRollNo = _rollNoFromStudentData(data);
+    if (directRollNo.isNotEmpty) return directRollNo;
+
+    for (final key in ['studentId', 'studentDocId', 'studentUid']) {
+      final studentId = _text(data[key]);
+      final rollNo = _rollNoByStudentId[studentId];
+      if (rollNo != null && rollNo.isNotEmpty) return rollNo;
+    }
+
+    final name = _text(data['studentName']).isNotEmpty
+        ? _text(data['studentName'])
+        : _text(data['name']);
+    final batch = _text(data['batch']);
+
+    return _rollNoByNameBatch[_studentLookupKey(name, batch)] ??
+        _rollNoByNameBatch[_studentLookupKey(name, '')] ??
+        '';
+  }
+
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _dueDocs(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    String searchValue,
   ) {
-    final query = searchText.trim().toLowerCase();
+    final query = searchValue.trim().toLowerCase();
 
     final dues = docs.where((doc) {
       final data = doc.data();
@@ -79,7 +178,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
 
       final studentName = _text(data['studentName']).toLowerCase();
       final name = _text(data['name']).toLowerCase();
-      final rollNo = _text(data['rollNo']).toLowerCase();
+      final rollNo = _resolvedRollNo(data).toLowerCase();
       final batch = _text(data['batch']).toLowerCase();
 
       return studentName.contains(query) ||
@@ -133,7 +232,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
           backgroundColor: _bg(isDark),
           body: SafeArea(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _feesQuery().snapshots(),
+              stream: _feesStream,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Column(
@@ -158,7 +257,8 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                   );
                 }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData &&
+                    snapshot.connectionState == ConnectionState.waiting) {
                   return Column(
                     children: [
                       _topHeader(context, isDark),
@@ -170,14 +270,14 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                 }
 
                 final allDocs = snapshot.data?.docs ?? [];
-                final dueDocs = _sortByDueAmount(_dueDocs(allDocs));
+                final allDueDocs = _sortByDueAmount(_dueDocs(allDocs, ''));
 
                 int totalPending = 0;
                 int highDueCount = 0;
                 int mediumDueCount = 0;
                 int lowDueCount = 0;
 
-                for (final doc in dueDocs) {
+                for (final doc in allDueDocs) {
                   final data = doc.data();
                   final pendingAmount = _toInt(data['pendingAmount']);
 
@@ -200,7 +300,7 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                       child: _analyticsHeader(
                         isDark: isDark,
                         totalStudents: allDocs.length,
-                        dueStudents: dueDocs.length,
+                        dueStudents: allDueDocs.length,
                         totalPending: totalPending,
                         highDueCount: highDueCount,
                         mediumDueCount: mediumDueCount,
@@ -213,13 +313,19 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                     SliverToBoxAdapter(
                       child: _sectionTitle(AppStrings.dueFeeAnalyticsTitle, isDark),
                     ),
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ResponsivePadding.horizontal(context),
-                      ),
-                      sliver: dueDocs.isEmpty
-                          ? SliverToBoxAdapter(child: _emptyCard(isDark))
-                          : SliverList(
+                    ValueListenableBuilder<String>(
+                      valueListenable: _searchQuery,
+                      builder: (context, query, _) {
+                        final dueDocs =
+                            _sortByDueAmount(_dueDocs(allDocs, query));
+
+                        return SliverPadding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsivePadding.horizontal(context),
+                          ),
+                          sliver: dueDocs.isEmpty
+                              ? SliverToBoxAdapter(child: _emptyCard(isDark))
+                              : SliverList(
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
                                   final doc = dueDocs[index];
@@ -232,8 +338,10 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                                               ? _text(data['name'])
                                               : AppStrings.unknownStudent;
 
-                                  final rollNo = _text(data['rollNo']).isNotEmpty
-                                      ? _text(data['rollNo'])
+                                  final resolvedRollNo =
+                                      _resolvedRollNo(data);
+                                  final rollNo = resolvedRollNo.isNotEmpty
+                                      ? resolvedRollNo
                                       : AppStrings.noRollNo;
 
                                   final batch = _text(data['batch']).isNotEmpty
@@ -263,7 +371,9 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
                                 },
                                 childCount: dueDocs.length,
                               ),
-                            ),
+                                ),
+                        );
+                      },
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   ],
@@ -570,10 +680,11 @@ class _DueFeeAnalyticsScreenState extends State<DueFeeAnalyticsScreen> {
         ),
       ),
       child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        textInputAction: TextInputAction.search,
         onChanged: (value) {
-          setState(() {
-            searchText = value;
-          });
+          _searchQuery.value = value;
         },
         style: TextStyle(
           color: _primaryText(isDark),

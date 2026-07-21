@@ -901,13 +901,19 @@ class CoachManagementScreen extends StatelessWidget {
                               letterSpacing: 1,
                             ),
                           ),
-                          const Text(
-                            "COACH",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 31,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              AppStrings.coachLabel.toUpperCase(),
+                              maxLines: 1,
+                              softWrap: false,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 31,
+                                fontWeight: FontWeight.w900,
+                                height: 1,
+                              ),
                             ),
                           ),
                           Text(

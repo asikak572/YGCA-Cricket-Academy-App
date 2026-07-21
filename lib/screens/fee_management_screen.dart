@@ -450,7 +450,9 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
                     final pending = totalFee - paidAmount;
                     final safePending = pending < 0 ? 0 : pending;
-                    final status = safePending <= 0 ? 'Paid' : AppStrings.pending;
+                    // Store a language-independent value in Firestore.
+                    // The UI translates this value when it is displayed.
+                    final status = safePending <= 0 ? 'Paid' : 'Pending';
 
                     try {
                       await FirebaseFirestore.instance.collection('fees').add({
@@ -673,13 +675,14 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                                         final pending =
                                             _toInt(data['pendingAmount']);
 
-                                        final status =
-                                            _text(data['status']).isEmpty
-                                                ? AppStrings.pending
-                                                : _text(data['status']);
-
+                                        // Derive the canonical status from the
+                                        // amount so older records containing a
+                                        // translated status also display in the
+                                        // currently selected language.
+                                        final canonicalStatus =
+                                            pending <= 0 ? 'Paid' : 'Pending';
                                         final localizedStatus =
-                                            _localizedFeeStatus(status);
+                                            _localizedFeeStatus(canonicalStatus);
 
                                         return _feeTile(
                                           isDark: isDark,
@@ -688,8 +691,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                                           total: "₹$total",
                                           paid: "₹$paid",
                                           pending: "₹$pending",
-                                          status: status,
-                                          statusColor: status == AppStrings.paid
+                                          status: localizedStatus,
+                                          statusColor: pending <= 0
                                               ? Colors.green
                                               : Colors.orange,
                                         );
@@ -884,6 +887,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
             padding: const EdgeInsets.all(18),
             child: LayoutBuilder(
               builder: (context, constraints) {
+                // A normal phone still has enough room for the original
+                // horizontal hero. Stack only on extremely narrow screens.
                 final compact = constraints.maxWidth < 240;
 
                 final icon = CircleAvatar(
@@ -1144,6 +1149,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
           const SizedBox(height: 14),
           LayoutBuilder(
             builder: (context, constraints) {
+              // Keep Total, Paid and Pending in one row on normal phones.
+              // Use the wrapped fallback only on exceptionally narrow widths.
               if (constraints.maxWidth < 260) {
                 final boxWidth = (constraints.maxWidth - 8) / 2;
 

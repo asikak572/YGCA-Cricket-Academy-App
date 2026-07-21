@@ -942,82 +942,38 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     required int present,
     required int absent,
   }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 360;
-
-        if (compact) {
-          return Column(
-            children: [
-              _summaryCard(
-                isDark: isDark,
-                title: _localized("Students", "மாணவர்கள்"),
-                value: total.toString(),
-                icon: Icons.groups_rounded,
-                color: Colors.blueAccent,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _summaryCard(
-                      isDark: isDark,
-                      title: _localized("Present", "வருகை"),
-                      value: present.toString(),
-                      icon: Icons.check_circle_rounded,
-                      color: Colors.green,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _summaryCard(
-                      isDark: isDark,
-                      title: _localized("Absent", "வரவில்லை"),
-                      value: absent.toString(),
-                      icon: Icons.cancel_rounded,
-                      color: Colors.redAccent,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        }
-
-        return Row(
-          children: [
-            Expanded(
-              child: _summaryCard(
-                isDark: isDark,
-                title: _localized("Students", "மாணவர்கள்"),
-                value: total.toString(),
-                icon: Icons.groups_rounded,
-                color: Colors.blueAccent,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _summaryCard(
-                isDark: isDark,
-                title: _localized("Present", "வருகை"),
-                value: present.toString(),
-                icon: Icons.check_circle_rounded,
-                color: Colors.green,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _summaryCard(
-                isDark: isDark,
-                title: _localized("Absent", "வரவில்லை"),
-                value: absent.toString(),
-                icon: Icons.cancel_rounded,
-                color: Colors.redAccent,
-              ),
-            ),
-          ],
-        );
-      },
+    return Row(
+      children: [
+        Expanded(
+          child: _summaryCard(
+            isDark: isDark,
+            title: _localized("Students", "மாணவர்கள்"),
+            value: total.toString(),
+            icon: Icons.groups_rounded,
+            color: Colors.blueAccent,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _summaryCard(
+            isDark: isDark,
+            title: _localized("Present", "வருகை"),
+            value: present.toString(),
+            icon: Icons.check_circle_rounded,
+            color: Colors.green,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _summaryCard(
+            isDark: isDark,
+            title: _localized("Absent", "வரவில்லை"),
+            value: absent.toString(),
+            icon: Icons.cancel_rounded,
+            color: Colors.redAccent,
+          ),
+        ),
+      ],
     );
   }
 

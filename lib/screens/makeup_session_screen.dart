@@ -1236,6 +1236,22 @@ Widget _infoBanner(bool isDark) {
                       )
                     : null;
 
+                // The completed label is short enough to remain beside the
+                // delete action even on narrow phones. Keeping both in this
+                // row prevents the bin from dropping below the label.
+                if (!isPending && !canComplete) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(child: mainAction),
+                      if (deleteButton != null) ...[
+                        const SizedBox(width: 8),
+                        deleteButton,
+                      ],
+                    ],
+                  );
+                }
+
                 if (compact) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
