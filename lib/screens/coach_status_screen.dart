@@ -112,24 +112,44 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
     return batches.join(', ');
   }
 
-  List<QueryDocumentSnapshot> _filteredCoaches(
-    List<QueryDocumentSnapshot> coaches,
-  ) {
-    final filter = filters[selectedFilter].toLowerCase();
-
-    if (filter == "all") return coaches;
-
-    return coaches.where((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      final status = _statusText(data).toLowerCase().trim();
-
-      if (filter == "pending") {
-        return _isPending(data);
-      }
-
-      return status == filter;
-    }).toList();
+ List<QueryDocumentSnapshot> _filteredCoaches(
+  List<QueryDocumentSnapshot> coaches,
+) {
+  // 0 = All
+  if (selectedFilter == 0) {
+    return coaches;
   }
+
+  return coaches.where((doc) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    final status =
+        data['status']?.toString().toLowerCase().trim() ?? '';
+
+    final approvalStatus =
+        data['approvalStatus']?.toString().toLowerCase().trim() ?? '';
+
+    // 1 = Active
+    if (selectedFilter == 1) {
+      return status == 'active' ||
+          approvalStatus == 'approved' ||
+          data['isApproved'] == true;
+    }
+
+    // 2 = Inactive
+    if (selectedFilter == 2) {
+      return status == 'inactive' ||
+          approvalStatus == 'inactive';
+    }
+
+    // 3 = Pending
+    if (selectedFilter == 3) {
+      return _isPending(data);
+    }
+
+    return true;
+  }).toList();
+}
 
   Future<void> _updateStatus({
     required BuildContext context,
@@ -639,41 +659,40 @@ class _CoachStatusScreenState extends State<CoachStatusScreen> {
             ],
           ),
           const SizedBox(height: 15),
-          Row(
-            children: [
-              Expanded(
-                child: _miniStat(
-                  isDark: isDark,
-                  label: AppStrings.total,
-                  value: total.toString(),
-                  color: Colors.blue,
-                ),
-              ),
-              Expanded(
-                child: _miniStat(
-                  isDark: isDark,
-                  label: AppStrings.active,
-                  value: active.toString(),
-                  color: Colors.green,
-                ),
-              ),
-              Expanded(
-                child: _miniStat(
-                  isDark: isDark,
-                  label: AppStrings.inactive,
-                  value: inactive.toString(),
-                  color: Colors.redAccent,
-                ),
-              ),
-              Expanded(
-                child: _miniStat(
-                  isDark: isDark,
-                  label: AppStrings.pending,
-                  value: pending.toString(),
-                  color: Colors.orange,
-                ),
-              ),
-            ],
+          GridView.count(
+  crossAxisCount:
+      MediaQuery.sizeOf(context).width < 600 ? 2 : 4,
+  shrinkWrap: true,
+  physics: const NeverScrollableScrollPhysics(),
+  mainAxisSpacing: 8,
+  crossAxisSpacing: 8,
+  childAspectRatio: 1.85,
+  children: [
+    _miniStat(
+      isDark: isDark,
+      label: AppStrings.total,
+      value: total.toString(),
+      color: Colors.blue,
+    ),
+    _miniStat(
+      isDark: isDark,
+      label: AppStrings.active,
+      value: active.toString(),
+      color: Colors.green,
+    ),
+    _miniStat(
+      isDark: isDark,
+      label: AppStrings.inactive,
+      value: inactive.toString(),
+      color: Colors.redAccent,
+    ),
+    _miniStat(
+      isDark: isDark,
+      label: AppStrings.pending,
+      value: pending.toString(),
+      color: Colors.orange,
+       ),
+     ],
           ),
         ],
       ),

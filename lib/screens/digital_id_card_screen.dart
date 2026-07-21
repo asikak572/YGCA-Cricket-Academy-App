@@ -291,83 +291,108 @@ class DigitalIdCardScreen extends StatelessWidget {
     );
   }
 
-  Widget _cardHeader(bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  Colors.black,
-                  darkMaroon,
-                  red.withOpacity(0.48),
-                ]
-              : [
-                  maroon,
-                  darkMaroon,
-                  Colors.black.withOpacity(0.85),
-                ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+ Widget _cardHeader(bool isDark) {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: isDark
+            ? [
+                Colors.black,
+                darkMaroon,
+                red.withOpacity(0.48),
+              ]
+            : [
+                maroon,
+                darkMaroon,
+                Colors.black.withOpacity(0.85),
+              ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -18,
-            bottom: -28,
-            child: Icon(
-              Icons.sports_cricket_rounded,
-              color: Colors.white.withOpacity(0.08),
-              size: 105,
+    ),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              right: -18,
+              bottom: -28,
+              child: Icon(
+                Icons.sports_cricket_rounded,
+                color: Colors.white.withOpacity(0.08),
+                size: 105,
+              ),
             ),
-          ),
-          Column(
-            children: [
-              Image.asset(
-                'assets/images/ygca_logo.jpg',
-                height: 66,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                AppStrings.youngGenCricketAcademy.toUpperCase(),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.7,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.30),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: gold.withOpacity(0.85)),
-                ),
-                child: Text(
-                AppStrings.studentIdCard.toUpperCase(),
-                  style: TextStyle(
-                    color: gold,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
+            SizedBox(
+              width: constraints.maxWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Center(
+                    child: Image.asset(
+                      'assets/images/ygca_logo.jpg',
+                      height: 54,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: constraints.maxWidth,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.center,
+                      child: Text(
+                        AppStrings.youngGenCricketAcademy.toUpperCase(),
+                        maxLines: 1,
+                        softWrap: false,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.7,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.30),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: gold.withOpacity(0.85),
+                        ),
+                      ),
+                      child: Text(
+                        AppStrings.studentIdCard.toUpperCase(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: gold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
 
   Widget _profilePhoto() {
     return Container(
