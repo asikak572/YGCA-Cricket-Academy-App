@@ -172,6 +172,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
 
     DateTime? selectedDate;
     TimeOfDay? selectedTime;
+    bool isSaving = false;
 
     Future<void> pickDate(BuildContext dialogContext) async {
       final now = DateTime.now();
@@ -261,11 +262,13 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
       }
     }
 
-    await showDialog(
+    final matchSaved = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        return AlertDialog(
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
           backgroundColor: _card(isDark),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
@@ -334,7 +337,9 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: isSaving
+                  ? null
+                  : () => Navigator.of(dialogContext).pop(false),
               child: Text(
                 AppStrings.cancel,
                 style: TextStyle(
@@ -348,7 +353,9 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                 backgroundColor: isDark ? red : maroon,
                 foregroundColor: isDark ? Colors.white : gold,
               ),
-              onPressed: () async {
+              onPressed: isSaving
+                  ? null
+                  : () async {
                 final title = titleController.text.trim();
                 final opponent = opponentController.text.trim();
                 final date = dateController.text.trim();
@@ -375,6 +382,8 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                   return;
                 }
 
+                setDialogState(() => isSaving = true);
+
                 try {
                   await FirebaseFirestore.instance.collection('matches').add({
                     'title': title,
@@ -391,19 +400,17 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                   });
 
                   if (dialogContext.mounted) {
-                    Navigator.pop(dialogContext);
+                    await Future<void>.delayed(
+                      const Duration(milliseconds: 100),
+                    );
                   }
 
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(AppStrings.matchAdded),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop(true);
                   }
                 } catch (e) {
                   if (dialogContext.mounted) {
+                    setDialogState(() => isSaving = false);
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(
                         content: Text("${AppStrings.saveFailed}: $e"),
@@ -413,15 +420,30 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                   }
                 }
               },
-              child: Text(
-                AppStrings.save,
-                style: TextStyle(fontWeight: FontWeight.w900),
-              ),
+              child: isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      AppStrings.save,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
             ),
           ],
+            );
+          },
         );
       },
     );
+
+    // Wait until the dialog route and all inherited dependencies have been
+    // removed before disposing controllers used by the dialog TextFields.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
 
     titleController.dispose();
     opponentController.dispose();
@@ -430,6 +452,15 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
     venueController.dispose();
     batchController.dispose();
     statusController.dispose();
+
+    if (matchSaved == true && mounted) {
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.matchAdded),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   Widget _input({

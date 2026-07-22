@@ -271,8 +271,14 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
 
     final totalFeeController = TextEditingController();
     final paidAmountController = TextEditingController();
+    final studentsFuture = FirebaseFirestore.instance
+        .collection('students')
+        .orderBy('name')
+        .get();
 
-    await showDialog(
+    bool isSaving = false;
+
+    final paymentSaved = await showDialog<bool>(
       context: context,
       builder: (_) {
         return StatefulBuilder(
@@ -289,11 +295,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
               content: SingleChildScrollView(
                 child: Column(
                   children: [
-                    StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                      stream: FirebaseFirestore.instance
-                          .collection('students')
-                          .orderBy('name')
-                          .snapshots(),
+                    FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      future: studentsFuture,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -400,7 +403,7 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.of(context).pop(false),
                   child: Text(
                     AppStrings.cancel,
                     style: TextStyle(color: isDark ? Colors.white70 : maroon),
@@ -411,7 +414,9 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     backgroundColor: isDark ? red : maroon,
                     foregroundColor: isDark ? Colors.white : gold,
                   ),
-                  onPressed: () async {
+                  onPressed: isSaving
+                      ? null
+                      : () async {
                     if (selectedStudentId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -454,6 +459,8 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                     // The UI translates this value when it is displayed.
                     final status = safePending <= 0 ? 'Paid' : 'Pending';
 
+                    setDialogState(() => isSaving = true);
+
                     try {
                       await FirebaseFirestore.instance.collection('fees').add({
                         'studentId': selectedStudentId,
@@ -493,16 +500,17 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                       }
 
                       if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(AppStrings.feePaymentSaved),
-                            backgroundColor: Colors.green,
-                          ),
+                        await Future<void>.delayed(
+                          const Duration(milliseconds: 100),
                         );
+                      }
+
+                      if (context.mounted) {
+                        Navigator.of(context).pop(true);
                       }
                     } catch (e) {
                       if (context.mounted) {
+                        setDialogState(() => isSaving = false);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text("${AppStrings.saveFailed}: $e"),
@@ -512,7 +520,16 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
                       }
                     }
                   },
-                  child: Text(AppStrings.save),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(AppStrings.save),
                 ),
               ],
             );
@@ -521,8 +538,21 @@ class _FeeManagementScreenState extends State<FeeManagementScreen> {
       },
     );
 
+    // Let the dialog route finish its reverse animation before disposing the
+    // controllers used by its TextFields.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+
     totalFeeController.dispose();
     paidAmountController.dispose();
+
+    if (paymentSaved == true && mounted) {
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.feePaymentSaved),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   Widget _dialogField({
