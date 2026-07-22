@@ -57,25 +57,25 @@ class _MonthlyScheduleScreenState extends State<MonthlyScheduleScreen> {
   }
 
   String _localizedShortDay(DateTime date) {
-    switch (date.weekday) {
-      case DateTime.monday:
-        return AppStrings.mon;
-      case DateTime.tuesday:
-        return AppStrings.tue;
-      case DateTime.wednesday:
-        return AppStrings.wed;
-      case DateTime.thursday:
-        return AppStrings.thu;
-      case DateTime.friday:
-        return AppStrings.fri;
-      case DateTime.saturday:
-        return AppStrings.sat;
-      case DateTime.sunday:
-        return AppStrings.sun;
-      default:
-        return '';
-    }
+  switch (date.weekday) {
+    case DateTime.monday:
+      return AppStrings.monday;
+    case DateTime.tuesday:
+      return AppStrings.tuesday;
+    case DateTime.wednesday:
+      return AppStrings.wednesday;
+    case DateTime.thursday:
+      return AppStrings.thursday;
+    case DateTime.friday:
+      return AppStrings.friday;
+    case DateTime.saturday:
+      return AppStrings.saturday;
+    case DateTime.sunday:
+      return AppStrings.sunday;
+    default:
+      return '';
   }
+}
 
   String _localizedMonthName(int month) {
     switch (month) {

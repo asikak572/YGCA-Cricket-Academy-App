@@ -19,7 +19,7 @@ import 'widgets/ygca_bottom_nav.dart';
 import 'notification_screen.dart';
 import 'student_performance_module_screen.dart';
 import 'student_schedule_module_screen.dart';
-import 'attendance_history_screen.dart';
+import 'parent_attendance_module_screen.dart';
 
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key});
@@ -550,7 +550,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
                 icon: Icons.fact_check_rounded,
                 label: AppStrings.attendance,
                 onTap: () => _open(
-                  const AttendanceHistoryScreen(),
+                  const ParentAttendanceModuleScreen(),
                 ),
               ),
               YgcaBottomNavItem(
@@ -1147,7 +1147,7 @@ final childrenCount = childInfo['childCount'] ?? '0';
             title: AppStrings.childAttendance,
             color: Colors.green,
             onTap: () => _open(
-              const AttendanceHistoryScreen(),
+              const ParentAttendanceModuleScreen(),
             ),
           ),
           _quickActionCard(

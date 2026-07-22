@@ -789,28 +789,25 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    AppStrings.feeReportsTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                    color: _primaryText(isDark),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
+                Text(
+  AppStrings.feeReportsTitle,
+  maxLines: 2,
+  overflow: TextOverflow.ellipsis,
+  style: TextStyle(
+    color: _primaryText(isDark),
+    fontSize: 15,
+    height: 1.15,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 0.2,
+  ),
+),
                 Text(
                   AppStrings.collectionSummaryExports,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _secondaryText(isDark),
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

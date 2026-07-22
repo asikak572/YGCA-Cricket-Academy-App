@@ -56,9 +56,9 @@ class CoachStudentPerformanceScreen extends StatelessWidget {
     );
   }
 
-  String _dateId(DateTime date) {
-    return "\${date.year}-\${date.month.toString().padLeft(2, '0')}-\${date.day.toString().padLeft(2, '0')}";
-  }
+ String _dateId(DateTime date) {
+  return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+}
 
   Future<Map<String, dynamic>> _loadCoachWeeklyData(String coachUid) async {
     final firestore = FirebaseFirestore.instance;
