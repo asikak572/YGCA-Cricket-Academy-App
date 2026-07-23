@@ -209,8 +209,6 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
 
       final request = http.MultipartRequest('POST', uploadUri)
         ..fields['upload_preset'] = _cloudinaryUploadPreset
-        ..fields['public_id'] = 'student_${widget.studentId}'
-        ..fields['tags'] = 'ygca_profile_photo,student_profile'
         ..files.add(
           http.MultipartFile.fromBytes(
             'file',

@@ -23,6 +23,7 @@ import 'makeup_session_screen.dart';
 import 'student_attendance_module_screen.dart';
 import 'student_performance_module_screen.dart';
 import 'student_schedule_module_screen.dart';
+import '../services/cloudinary_profile_photo_service.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -33,6 +34,7 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _uploadingPhoto = false;
 
   static const Color red = Color(0xFFE50914);
   static const Color maroon = Color(0xFF7F0000);
@@ -172,6 +174,52 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
+  Future<void> _updateOwnPhoto() async {
+    if (_uploadingPhoto) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() => _uploadingPhoto = true);
+
+    try {
+      final result = await CloudinaryProfilePhotoService.pickAndUpload();
+      if (result == null) return;
+
+      final photoData = <String, dynamic>{
+        'photoUrl': result.url,
+        'photoProvider': 'cloudinary',
+        'photoPublicId': result.publicId,
+        'photoAssetId': result.assetId,
+        'photoUpdatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set(photoData, SetOptions(merge: true));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile photo updated successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Photo upload failed: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -288,6 +336,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ['feeStatus'],
                   'Pending',
                 );
+                final photoUrl = _safeText(data, ['photoUrl'], '');
 
                 return Center(
                   child: ConstrainedBox(
@@ -308,6 +357,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         email: email,
                         batch: batch,
                         rollNo: rollNo,
+                        photoUrl: photoUrl,
                       ),
                       SizedBox(height: ResponsiveSpacing.medium(context)),
                       _sectionTitle(
@@ -550,6 +600,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     required String email,
     required String batch,
     required String rollNo,
+    required String photoUrl,
   }) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : "S";
 
@@ -663,29 +714,77 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 ),
                               ),
                             ),
-                            Container(
-                              width: avatarInner,
-                              height: avatarInner,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isDark
-                                    ? Colors.black.withOpacity(0.35)
-                                    : Colors.white.withOpacity(0.55),
-                                border: Border.all(
+                            InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: _uploadingPhoto ? null : _updateOwnPhoto,
+                              child: Container(
+                                width: avatarInner,
+                                height: avatarInner,
+                                clipBehavior: Clip.antiAlias,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
                                   color: isDark
-                                      ? red.withOpacity(0.45)
-                                      : red.withOpacity(0.20),
-                                  width: 1.2,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  initial,
-                                  style: TextStyle(
-                                    color: isDark ? gold : maroon,
-                                    fontSize: compact ? 30 : 38,
-                                    fontWeight: FontWeight.w900,
+                                      ? Colors.black.withOpacity(0.35)
+                                      : Colors.white.withOpacity(0.55),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? red.withOpacity(0.45)
+                                        : red.withOpacity(0.20),
+                                    width: 1.2,
                                   ),
+                                ),
+                                child: _uploadingPhoto
+                                    ? const Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                    : photoUrl.isNotEmpty
+                                        ? Image.network(
+                                            photoUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                Center(
+                                              child: Text(
+                                                initial,
+                                                style: TextStyle(
+                                                  color:
+                                                      isDark ? gold : maroon,
+                                                  fontSize:
+                                                      compact ? 30 : 38,
+                                                  fontWeight:
+                                                      FontWeight.w900,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : Center(
+                                            child: Text(
+                                              initial,
+                                              style: TextStyle(
+                                                color:
+                                                    isDark ? gold : maroon,
+                                                fontSize: compact ? 30 : 38,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                width: compact ? 27 : 31,
+                                height: compact ? 27 : 31,
+                                decoration: const BoxDecoration(
+                                  color: gold,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_rounded,
+                                  color: maroon,
+                                  size: 16,
                                 ),
                               ),
                             ),

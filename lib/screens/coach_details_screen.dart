@@ -8,6 +8,7 @@ import '../core/responsive/responsive_padding.dart';
 import '../core/responsive/responsive_text.dart';
 
 import 'coach_salary_screen.dart';
+import '../services/cloudinary_profile_photo_service.dart';
 
 class CoachDetailsScreen extends StatefulWidget {
   final String coachId;
@@ -36,6 +37,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
   static const Color maroon = Color(0xFF7F0000);
   static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
+  bool _uploadingPhoto = false;
 
   Color _bg(bool isDark) {
     return isDark ? const Color(0xFF070707) : const Color(0xFFFAFAFA);
@@ -164,6 +166,65 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
         .collection('users')
         .doc(userSnapshot.docs.first.id)
         .set(data, SetOptions(merge: true));
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> _coachUserPhotoStream(
+    String email,
+  ) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .where('emailLower', isEqualTo: _cleanEmail(email))
+        .limit(1)
+        .snapshots();
+  }
+
+  Future<void> _updateCoachPhoto({
+    required String email,
+  }) async {
+    if (_uploadingPhoto) return;
+    setState(() => _uploadingPhoto = true);
+
+    try {
+      final result = await CloudinaryProfilePhotoService.pickAndUpload();
+      if (result == null) return;
+
+      final photoData = <String, dynamic>{
+        'photoUrl': result.url,
+        'photoProvider': 'cloudinary',
+        'photoPublicId': result.publicId,
+        'photoAssetId': result.assetId,
+        'photoUpdatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('coaches')
+          .doc(widget.coachId)
+          .set(photoData, SetOptions(merge: true));
+
+      await _syncCoachUserByEmail(
+        email: email,
+        data: photoData,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Coach photo updated successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Photo upload failed: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
   }
 
   Future<void> _deleteCoach() async {
@@ -756,6 +817,7 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
             final specialization = _text(data, 'specialization', 'Coach');
             final email = _text(data, 'email', 'No Email');
             final coachUid = _text(data, 'uid', widget.coachId);
+            final photoUrl = _text(data, 'photoUrl', '');
 
             final initial = name.isNotEmpty ? name[0].toUpperCase() : "?";
             final isActive = status.toLowerCase() == "active";
@@ -778,6 +840,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
                         name: name,
                         role: role,
                         status: status,
+                        email: email,
+                        photoUrl: photoUrl,
                       ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 18)),
@@ -1121,6 +1185,8 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
     required String name,
     required String role,
     required String status,
+    required String email,
+    required String photoUrl,
   }) {
     final isMobile = ResponsiveHelper.isMobile(context);
     final horizontalPadding = ResponsivePadding.horizontal(context);
@@ -1184,17 +1250,81 @@ class _CoachDetailsScreenState extends State<CoachDetailsScreen> {
               padding: EdgeInsets.all(isMobile ? 12 : 18),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: isMobile ? 36 : 48,
-                    backgroundColor: Colors.white,
-                    child: Text(
-                      initial,
-                      style: TextStyle(
-                        color: maroon,
-                        fontSize: isMobile ? 28 : 34,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _coachUserPhotoStream(email),
+                    builder: (context, userSnapshot) {
+                      String resolvedPhotoUrl = photoUrl;
+
+                      if (userSnapshot.hasData &&
+                          userSnapshot.data!.docs.isNotEmpty) {
+                        final userData =
+                            userSnapshot.data!.docs.first.data();
+                        final userPhotoUrl =
+                            userData['photoUrl']?.toString().trim() ?? '';
+                        if (userPhotoUrl.isNotEmpty) {
+                          resolvedPhotoUrl = userPhotoUrl;
+                        }
+                      }
+
+                      return SizedBox(
+                        width: isMobile ? 78 : 104,
+                        height: isMobile ? 78 : 104,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: _uploadingPhoto
+                                    ? null
+                                    : () =>
+                                        _updateCoachPhoto(email: email),
+                                child: CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                  backgroundImage:
+                                      resolvedPhotoUrl.isNotEmpty
+                                          ? NetworkImage(resolvedPhotoUrl)
+                                          : null,
+                                  child: _uploadingPhoto
+                                      ? const CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: maroon,
+                                        )
+                                      : resolvedPhotoUrl.isEmpty
+                                          ? Text(
+                                              initial,
+                                              style: TextStyle(
+                                                color: maroon,
+                                                fontSize:
+                                                    isMobile ? 28 : 34,
+                                                fontWeight:
+                                                    FontWeight.w900,
+                                              ),
+                                            )
+                                          : null,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                width: isMobile ? 27 : 31,
+                                height: isMobile ? 27 : 31,
+                                decoration: const BoxDecoration(
+                                  color: gold,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_rounded,
+                                  color: maroon,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(width: isMobile ? 10 : 16),
                   Expanded(

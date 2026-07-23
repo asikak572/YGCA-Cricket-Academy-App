@@ -927,6 +927,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                   final feeStatus =
                                       data['feeStatus']?.toString() ??
                                           AppStrings.pending;
+                                  final email =
+                                      data['email']?.toString() ?? '';
+                                  final photoUrl =
+                                      data['photoUrl']?.toString() ?? '';
 
                                   return _studentCard(
                                     context: context,
@@ -940,6 +944,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                     phone: phone,
                                     attendance: attendance,
                                     feeStatus: feeStatus,
+                                    email: email,
+                                    photoUrl: photoUrl,
                                   );
                                 }).toList(),
                               ),
@@ -1636,6 +1642,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
     required String phone,
     required String attendance,
     required String feeStatus,
+    required String email,
+    required String photoUrl,
   }) {
     final small = isSmallScreen;
 
@@ -1680,17 +1688,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
           ),
           child: Row(
             children: [
-              CircleAvatar(
+              _studentAvatar(
+                email: email,
+                fallbackPhotoUrl: photoUrl,
+                initial: name.isNotEmpty ? name[0].toUpperCase() : "?",
                 radius: small ? 23 : 26,
-                backgroundColor: maroon,
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : "?",
-                  style: TextStyle(
-                    color: gold,
-                    fontWeight: FontWeight.bold,
-                    fontSize: small ? 15 : 17,
-                  ),
-                ),
+                fontSize: small ? 15 : 17,
               ),
               SizedBox(width: small ? 9 : 11),
               Expanded(
@@ -1750,6 +1753,77 @@ class _StudentListScreenState extends State<StudentListScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _studentAvatar({
+    required String email,
+    required String fallbackPhotoUrl,
+    required String initial,
+    required double radius,
+    required double fontSize,
+  }) {
+    final emailLower = email.trim().toLowerCase();
+
+    if (emailLower.isEmpty) {
+      return _studentAvatarContent(
+        photoUrl: fallbackPhotoUrl,
+        initial: initial,
+        radius: radius,
+        fontSize: fontSize,
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .where('emailLower', isEqualTo: emailLower)
+          .limit(1)
+          .snapshots(),
+      builder: (context, snapshot) {
+        String resolvedPhotoUrl = fallbackPhotoUrl;
+
+        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          final userData = snapshot.data!.docs.first.data();
+          final userPhotoUrl =
+              userData['photoUrl']?.toString().trim() ?? '';
+
+          if (userPhotoUrl.isNotEmpty) {
+            resolvedPhotoUrl = userPhotoUrl;
+          }
+        }
+
+        return _studentAvatarContent(
+          photoUrl: resolvedPhotoUrl,
+          initial: initial,
+          radius: radius,
+          fontSize: fontSize,
+        );
+      },
+    );
+  }
+
+  Widget _studentAvatarContent({
+    required String photoUrl,
+    required String initial,
+    required double radius,
+    required double fontSize,
+  }) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: maroon,
+      backgroundImage:
+          photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+      child: photoUrl.isEmpty
+          ? Text(
+              initial,
+              style: TextStyle(
+                color: gold,
+                fontWeight: FontWeight.bold,
+                fontSize: fontSize,
+              ),
+            )
+          : null,
     );
   }
 

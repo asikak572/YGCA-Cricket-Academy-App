@@ -266,6 +266,7 @@ String _localizedSpecialization(String specialization) {
   _text(data, 'status', 'Pending'),
 );
                                   final email = _text(data, 'email', AppStrings.noEmail);
+                                  final photoUrl = _text(data, 'photoUrl', '');
                                  final specialization = _localizedSpecialization(
   _text(
     data,
@@ -283,6 +284,7 @@ String _localizedSpecialization(String specialization) {
                                     batch: batch,
                                     status: status,
                                     email: email,
+                                    photoUrl: photoUrl,
                                     specialization: specialization,
                                   );
                                 },
@@ -508,6 +510,7 @@ String _localizedSpecialization(String specialization) {
     required String batch,
     required String status,
     required String email,
+    required String photoUrl,
     required String specialization,
   }) {
     final statusColor = _statusColor(status);
@@ -548,17 +551,10 @@ String _localizedSpecialization(String specialization) {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: maroon,
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    color: gold,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 20,
-                  ),
-                ),
+              _coachAvatar(
+                email: email,
+                fallbackPhotoUrl: photoUrl,
+                initial: initial,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -628,6 +624,69 @@ String _localizedSpecialization(String specialization) {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _coachAvatar({
+    required String email,
+    required String fallbackPhotoUrl,
+    required String initial,
+  }) {
+    final emailLower = email.trim().toLowerCase();
+
+    if (emailLower.isEmpty || email == AppStrings.noEmail) {
+      return _avatarContent(
+        photoUrl: fallbackPhotoUrl,
+        initial: initial,
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .where('emailLower', isEqualTo: emailLower)
+          .limit(1)
+          .snapshots(),
+      builder: (context, snapshot) {
+        String resolvedPhotoUrl = fallbackPhotoUrl;
+
+        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          final userData = snapshot.data!.docs.first.data();
+          final userPhotoUrl =
+              userData['photoUrl']?.toString().trim() ?? '';
+
+          if (userPhotoUrl.isNotEmpty) {
+            resolvedPhotoUrl = userPhotoUrl;
+          }
+        }
+
+        return _avatarContent(
+          photoUrl: resolvedPhotoUrl,
+          initial: initial,
+        );
+      },
+    );
+  }
+
+  Widget _avatarContent({
+    required String photoUrl,
+    required String initial,
+  }) {
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: maroon,
+      backgroundImage:
+          photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+      child: photoUrl.isEmpty
+          ? Text(
+              initial,
+              style: const TextStyle(
+                color: gold,
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+              ),
+            )
+          : null,
     );
   }
 
