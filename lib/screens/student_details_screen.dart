@@ -1,8 +1,10 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../theme/theme_controller.dart';
@@ -52,6 +54,9 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
   static const Color maroon = Color(0xFF7F0000);
   static const Color darkMaroon = Color(0xFF3B0000);
   static const Color gold = Color(0xFFD4AF37);
+
+  static const String _cloudinaryCloudName = 'nvzfopj6';
+  static const String _cloudinaryUploadPreset = 'ygca_profile_photos';
 
   bool uploading = false;
   bool deleting = false;
@@ -125,40 +130,161 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
     return isDark ? Colors.white60 : const Color(0xFF64748B);
   }
 
+  Future<Uint8List?> _compressPhotoUnder250Kb(String sourcePath) async {
+    const maxBytes = 250 * 1024;
+
+    final settings = <({int size, int quality})>[
+      (size: 1000, quality: 70),
+      (size: 900, quality: 60),
+      (size: 800, quality: 50),
+      (size: 700, quality: 40),
+      (size: 600, quality: 35),
+      (size: 500, quality: 30),
+      (size: 450, quality: 25),
+      (size: 400, quality: 22),
+    ];
+
+    Uint8List? smallestResult;
+
+    for (final setting in settings) {
+      final result = await FlutterImageCompress.compressWithFile(
+        sourcePath,
+        minWidth: setting.size,
+        minHeight: setting.size,
+        quality: setting.quality,
+        format: CompressFormat.jpeg,
+        keepExif: false,
+      );
+
+      if (result == null || result.isEmpty) continue;
+
+      if (smallestResult == null || result.lengthInBytes < smallestResult.lengthInBytes) {
+        smallestResult = result;
+      }
+
+      if (result.lengthInBytes <= maxBytes) {
+        return result;
+      }
+    }
+
+    return smallestResult != null && smallestResult.lengthInBytes <= maxBytes
+        ? smallestResult
+        : null;
+  }
+
   Future<void> _uploadPhoto() async {
     try {
       final pickedImage = await ImagePicker().pickImage(
         source: ImageSource.gallery,
         imageQuality: 70,
+        maxWidth: 1400,
+        maxHeight: 1400,
       );
 
       if (pickedImage == null) return;
 
+      if (!mounted) return;
       setState(() => uploading = true);
 
-      final file = File(pickedImage.path);
+      final compressedPhoto =
+          await _compressPhotoUnder250Kb(pickedImage.path);
 
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('student_photos')
-          .child('${widget.studentId}.jpg');
+      if (compressedPhoto == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to reduce this photo below 250 KB. Please choose another photo.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
-      await ref.putFile(file);
+      final uploadUri = Uri.parse(
+        'https://api.cloudinary.com/v1_1/'
+        '$_cloudinaryCloudName/image/upload',
+      );
 
-      final url = await ref.getDownloadURL();
+      final request = http.MultipartRequest('POST', uploadUri)
+        ..fields['upload_preset'] = _cloudinaryUploadPreset
+        ..fields['public_id'] = 'student_${widget.studentId}'
+        ..fields['tags'] = 'ygca_profile_photo,student_profile'
+        ..files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            compressedPhoto,
+            filename: 'profile.jpg',
+          ),
+        );
 
-      await FirebaseFirestore.instance
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 45));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      final responseData =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final errorData = responseData['error'];
+        final errorMessage = errorData is Map<String, dynamic>
+            ? errorData['message']?.toString()
+            : null;
+
+        throw Exception(
+          errorMessage ?? 'Cloudinary photo upload failed.',
+        );
+      }
+
+      final url = responseData['secure_url']?.toString().trim() ?? '';
+      final publicId = responseData['public_id']?.toString().trim() ?? '';
+      final assetId = responseData['asset_id']?.toString().trim() ?? '';
+
+      if (url.isEmpty) {
+        throw Exception('Cloudinary did not return a secure photo URL.');
+      }
+
+      final studentRef = FirebaseFirestore.instance
           .collection('students')
-          .doc(widget.studentId)
-          .set({
+          .doc(widget.studentId);
+
+      await studentRef.set({
         'photoUrl': url,
+        'photoProvider': 'cloudinary',
+        'photoPublicId': publicId,
+        'photoAssetId': assetId,
+        'photoUpdatedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      await FirebaseFirestore.instance.collection('users').doc(widget.studentId).set({
-        'photoUrl': url,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      // Sync the Authentication user only when an existing user document can
+      // be resolved. Never create users/{studentId} accidentally.
+      final studentSnapshot = await studentRef.get();
+      final studentData = studentSnapshot.data() ?? <String, dynamic>{};
+      final possibleUserIds = <String>{
+        studentData['authUid']?.toString().trim() ?? '',
+        studentData['userId']?.toString().trim() ?? '',
+        studentData['uid']?.toString().trim() ?? '',
+      }..removeWhere((value) => value.isEmpty);
+
+      for (final userId in possibleUserIds) {
+        final userRef =
+            FirebaseFirestore.instance.collection('users').doc(userId);
+        final userSnapshot = await userRef.get();
+
+        if (userSnapshot.exists) {
+          await userRef.update({
+            'photoUrl': url,
+            'photoProvider': 'cloudinary',
+            'photoPublicId': publicId,
+            'photoAssetId': assetId,
+            'photoUpdatedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          break;
+        }
+      }
 
       if (!mounted) return;
 
@@ -940,18 +1066,43 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                     CircleAvatar(
                       radius: ResponsiveHelper.isMobile(context) ? 45 : 55,
                       backgroundColor: Colors.white,
-                      backgroundImage:
-                          photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                      child: photoUrl.isEmpty
-                          ? Text(
-                              initials.isEmpty ? "S" : initials,
-                              style: TextStyle(
-                                color: maroon,
-                                fontSize: ResponsiveHelper.isMobile(context) ? 28 : 34,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            )
-                          : null,
+                      child: ClipOval(
+                        child: SizedBox.expand(
+                          child: photoUrl.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    initials.isEmpty ? "S" : initials,
+                                    style: TextStyle(
+                                      color: maroon,
+                                      fontSize:
+                                          ResponsiveHelper.isMobile(context)
+                                              ? 28
+                                              : 34,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                )
+                              : Image.network(
+                                  photoUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Text(
+                                        initials.isEmpty ? "S" : initials,
+                                        style: TextStyle(
+                                          color: maroon,
+                                          fontSize:
+                                              ResponsiveHelper.isMobile(context)
+                                                  ? 28
+                                                  : 34,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ),
                     ),
                     Positioned(
                       bottom: 0,

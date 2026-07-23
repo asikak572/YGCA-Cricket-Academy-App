@@ -44,6 +44,8 @@ dependencies:
   path_provider: ^2.1.5
   open_filex: ^4.5.0
   fl_chart: ^0.68.0
+  flutter_image_compress: ^2.4.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
