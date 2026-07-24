@@ -1,10 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
 
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
+
+import 'services/fcm_service.dart';
 
 import 'screens/initial_splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -25,11 +28,31 @@ import 'screens/attendance_history_screen.dart';
 import 'screens/fee_management_screen.dart';
 import 'screens/notification_screen.dart';
 
+final GlobalKey<NavigatorState> appNavigatorKey =
+    GlobalKey<NavigatorState>();
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(
+  RemoteMessage message,
+) async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  FirebaseMessaging.onBackgroundMessage(
+    firebaseMessagingBackgroundHandler,
+  );
+
+  await FcmService.initialize(
+    navigatorKey: appNavigatorKey,
   );
 
   runApp(const MyApp());
@@ -63,6 +86,7 @@ class MyApp extends StatelessWidget {
               valueListenable: ThemeController.largeTextMode,
               builder: (context, largeTextMode, _) {
                 return MaterialApp(
+                  navigatorKey: appNavigatorKey,
                   debugShowCheckedModeBanner: false,
                   title: 'YGCA Management System',
                   theme: YGCATheme.lightTheme,
@@ -88,30 +112,22 @@ class MyApp extends StatelessWidget {
                     '/login': (context) => const LoginScreen(),
                     '/register': (context) => const RegisterScreen(),
                     '/auth-checker': (context) => const AuthChecker(),
-
                     '/admin': (context) => const AdminDashboard(),
                     '/coach': (context) => const CoachDashboard(),
                     '/parent': (context) => const ParentDashboard(),
                     '/student': (context) => const StudentDashboard(),
-
                     '/student-list': (context) =>
                         const StudentListScreen(),
-
                     '/add-student': (context) =>
                         const AddStudentScreen(),
-
                     '/mark-attendance': (context) =>
                         const AttendanceScreen(),
-
                     '/attendance-history': (context) =>
                         const AttendanceHistoryScreen(),
-
                     '/attendance': (context) =>
                         const AttendanceHistoryScreen(),
-
                     '/fees': (context) =>
                         const FeeManagementScreen(),
-
                     '/notifications': (context) =>
                         const NotificationScreen(),
                   },
